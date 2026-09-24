@@ -1,12 +1,12 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, overnight branch `claude/milestones-5-9-qagq4b` (draft PR against `main`). See `git log` for the latest commit, and `git status` for anything uncommitted._
+_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main` (Milestones 5–9 merged from PR #1). Development moves to the owner's local machine. See `git log` for the latest commit, and `git status` for anything uncommitted._
 
 ## Current Phase
 Phase 1
 
 ## Current Milestone
-Overnight run (owner decision 2026-09-24): Milestones 5 → 9 in order on the branch above, all done; **M10 is not started** (by instruction).
+Milestones 5 → 9 were built overnight (owner decision 2026-09-24) and merged into `main` at the owner's request; **M10 is not started**.
 Milestones 5 (interaction framework), 6 (sock), 7 (physics toys), 8 (sniff mode, plus bark) and 9 (rest) are complete and awaiting owner review. The owner's hands-on playtest of
 Milestones 2–4 (movement, camera and room) is still pending.
 
@@ -184,7 +184,7 @@ Earlier, at the end of Milestone 4:
 - `src/interactions/`, `src/props/`, `src/senses/`, `src/audio/`.
 
 ## Next Recommended Task
-1. The owner reviews the draft PR "Milestones 5–9 (overnight)" and playtests Milestones 2–9 in Chrome with a
+1. The owner playtests (locally, from `main`) Milestones 2–9 in Chrome with a
    physical mouse and keyboard: movement, camera, sock, ball/toy, sniff, bark (listen!) and the bed.
 2. The owner answers the open questions (bark sound, walk key C, camera auto-follow strength), then we tune.
 3. Only after approval: Milestone 10 (polish). Candidates are in Known Issues above.

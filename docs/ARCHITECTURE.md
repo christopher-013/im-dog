@@ -20,6 +20,7 @@ src/
     engine.ts             renderer, lens, fixed timestep
     input.ts              actions, key bindings, mouse sensitivity, control hints
     movement.ts           Moke's movement feel (speeds, acceleration, turning) + collision capsule
+    camera.ts             third-person camera feel (distance, zoom, smoothing, collision, whiskers, auto-follow)
     animation.ts          body-language tuning (lean, idle looks, tail, ducking)
     world.ts              world scale: Moke's size, furniture heights
     assets.ts             asset manifest (preloaded behind the loading screen)
@@ -28,8 +29,9 @@ src/
     GameLoop.ts           FixedStep accumulator + rAF loop
     GameRenderer.ts       WebGLRenderer, resize/DPR handling, context loss
     InputState.ts         DOM-free input logic (tested)
-    InputManager.ts       DOM wiring: keyboard, mouse, pointer lock
+    InputManager.ts       DOM wiring: keyboard, mouse, wheel, pointer lock
     AssetManager.ts       runtime asset loading with graceful fallbacks (tested)
+    PlayerSettings.ts     mouse sensitivity / invert-Y, saved in localStorage with safe fallbacks (tested)
   player/
     Locomotion.ts         pure movement model: speed, heading, gaits (tested; no three/Rapier)
     MokeController.ts     gameplay body: locomotion + collision + interpolation (tested with real Rapier)
@@ -38,9 +40,12 @@ src/
     PlaceholderDogVisual.ts  TEMPORARY stand-in dog, animated procedurally
     Moke.ts               composite: controller + animation + visual
   physics/
-    PhysicsWorld.ts       Rapier world (lazy WASM load), static box colliders
+    PhysicsWorld.ts       Rapier world (lazy WASM load), static box colliders, camera sphere sweep
     CharacterBody.ts      kinematic capsule driven by Rapier's character controller
-  camera/PreviewOrbitCamera.ts   TEMPORARY: orbits and follows Moke, no collision. Replaced by ThirdPersonCamera in M3
+    collisionGroups.ts    collision layers (world / thin world / character)
+  camera/
+    ThirdPersonCamera.ts  orbit, follow, collision, tight-space handling, zoom, FOV (tested with a fake collider)
+    MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
   world/
     RoomLighting.ts       hemisphere fill + window sun with soft shadows
     FoundationStage.ts    TEMPORARY: true-scale greybox + its colliders. Replaced by LivingRoom in M4
@@ -58,9 +63,10 @@ Planned additions follow the brief: `interactions/`, `senses/`, `audio/`.
 1. `input.beginFrame()` latches key presses/releases and mouse delta for the frame.
 2. Global keys: debug toggle, pause.
 3. `FixedStep.advance(dt)` runs gameplay/physics at **60 Hz fixed** (0 steps while not playing). Each step:
-   build a camera-relative move intent → `Moke.fixedUpdate` → `PhysicsWorld.step`.
+   build a camera-relative move intent (via `MoveBasis`) → `Moke.fixedUpdate` → `PhysicsWorld.step`.
 4. `Moke.update(dt, alpha)`: place the visual between the last two steps (interpolation) and animate it.
-5. Camera update at display rate (follows Moke's interpolated position).
+5. `ThirdPersonCamera.update` at display rate (follows Moke's interpolated position; hides him if walls
+   force the camera inside him).
 6. Render, then debug panel (refreshes 5×/s, only while visible).
 
 **Why fixed timestep:** movement feel (acceleration, turn rate) and physics must be identical at 60/144/240 Hz.
@@ -102,6 +108,31 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - Camera, interactions, pickup, scent and physics must talk to `Moke.controller` (and later the mouth socket),
   never to the visual.
 
+## Third-person camera (`camera/ThirdPersonCamera.ts`, tuning in `config/camera.ts`)
+It's never parented to Moke. Each frame:
+1. **Orbit:** mouse yaw/pitch (× player sensitivity, optional invert), clamped pitch, and wheel zoom between the
+   min and max distance. The rotation is smoothed.
+2. **Follow:** the pivot (about Moke's head) is damped toward him. Under low ceilings it drops below them.
+3. **Low ceilings** (the coffee table): the pitch is capped so the camera stays underneath, flattening into a low, level shot.
+4. **Squeezed from behind:**
+   - *Whiskers:* if the mouse is idle, it probes ±0.5/1.0/1.5 rad and drifts toward open space, giving a side view.
+   - *Lift:* otherwise it lifts toward a top-down view. The lift is computed from a sweep at the natural angle,
+     so it can't feed back on itself and wobble.
+5. **Collision:** a 0.1 m sphere is swept (Rapier `castShape`) from the pivot. The camera pulls in instantly and
+   eases back out. Walls always win. If that forces the camera inside Moke, `Game` hides his visual.
+   - The sweep only hits the `world` layer: Moke's capsule and thin props (table legs, marked
+     `blocksCamera: false`) are ignored, so the camera doesn't pop in and out as legs pass.
+6. **Auto-follow:** while Moke moves and the mouse has been idle for 1.5 s, the camera drifts behind him, faster
+   at speed. It doesn't do this when he's running roughly toward the camera.
+7. **Field of view** widens by up to 6° at a run.
+
+**Controls stay predictable:** `MoveBasis` captures the camera yaw when a movement key goes down and then follows
+only the player's own mouse turns. Auto-follow, whiskers and recentring therefore never bend the path being
+steered. Holding D runs Moke straight right while the camera swings behind him.
+
+The camera talks to physics only through a `CameraCollider` interface (`sweepSphere`), which makes it unit-testable
+with a fake. Cost: about 5–7 µs per frame.
+
 ## Assets
 - Runtime assets live in `public/assets/{models,textures,audio}` and are loaded **by URL from a manifest**
   (`src/config/assets.ts`). Dropping `moke.glb` into `public/assets/models/moke/` needs no import changes.
@@ -127,6 +158,11 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
   - It's short enough to fit under the 0.40 m coffee-table clearance. An upward ray measures headroom so the visual ducks.
   - The capsule is round, so the visual's nose and tail can poke a few centimetres past it into walls.
   - Impulses to dynamic bodies are already enabled for the toys in Milestone 7.
+- **Collision layers** (`physics/collisionGroups.ts`):
+  - `world`: walls, floor, furniture.
+  - `worldThin`: e.g. table legs; they block Moke but not the camera.
+  - `character`: Moke.
+  - Queries filter by layer: the camera sweep sees `world` only.
 - **Gravity** applies only while airborne. On the ground, snap-to-ground keeps him planted. Also pushing down into
   the floor made Rapier's controller occasionally drop a whole step of horizontal movement, which read as a
   stutter; this was measured and fixed.

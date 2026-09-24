@@ -1,5 +1,6 @@
 import '@fontsource-variable/fredoka';
 import './styles/main.css';
+import { CAMERA } from './config/camera';
 import { MOUSE } from './config/input';
 import { MOVEMENT } from './config/movement';
 import { Game } from './core/Game';
@@ -25,7 +26,9 @@ try {
   if (!viewport) throw new Error('#viewport is missing from index.html');
   const game = new Game(viewport, ui);
   // Dev only: inspect the game and tweak feel live from the console, e.g. `tuning.movement.runSpeed = 5`.
-  if (import.meta.env.DEV) Object.assign(window, { imdog: game, tuning: { movement: MOVEMENT, mouse: MOUSE } });
+  if (import.meta.env.DEV) {
+    Object.assign(window, { imdog: game, tuning: { movement: MOVEMENT, camera: CAMERA, mouse: MOUSE } });
+  }
   game.start().catch(fail);
 } catch (err) {
   fail(err);

@@ -14,8 +14,8 @@ export const RENDER = {
   background: '#f3e3cf',
 } as const;
 
+/** Clipping planes. Field of view and everything else about the camera lives in config/camera.ts. */
 export const CAMERA_LENS = {
-  fov: 55,
   /** Small near plane: the camera lives at dog height and gets close to furniture. */
   near: 0.03,
   far: 60,

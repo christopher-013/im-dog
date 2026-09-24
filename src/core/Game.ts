@@ -1,9 +1,10 @@
 import { Color, PerspectiveCamera, Scene, Vector3 } from 'three';
-import { PreviewOrbitCamera } from '../camera/PreviewOrbitCamera';
+import { MoveBasis } from '../camera/MoveBasis';
+import { ThirdPersonCamera, type CameraInput, type CameraTarget } from '../camera/ThirdPersonCamera';
 import { ASSET_MANIFEST } from '../config/assets';
+import { CAMERA } from '../config/camera';
 import { CAMERA_LENS, RENDER } from '../config/engine';
 import { MOKE_BODY } from '../config/movement';
-import { MOKE_SIZE } from '../config/world';
 import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { MoveIntent } from '../player/Locomotion';
@@ -19,6 +20,7 @@ import { FixedStep, GameLoop } from './GameLoop';
 import { GameRenderer } from './GameRenderer';
 import { InputManager } from './InputManager';
 import type { Vec2Like } from './InputState';
+import { applySettings, loadSettings, saveSettings } from './PlayerSettings';
 
 export type GameState = 'loading' | 'menu' | 'playing' | 'paused';
 
@@ -31,7 +33,7 @@ export type GameState = 'loading' | 'menu' | 'playing' | 'paused';
 export class Game {
   private state: GameState = 'loading';
   private readonly scene = new Scene();
-  private readonly camera = new PerspectiveCamera(CAMERA_LENS.fov, 1, CAMERA_LENS.near, CAMERA_LENS.far);
+  private readonly camera = new PerspectiveCamera(CAMERA.fov, 1, CAMERA_LENS.near, CAMERA_LENS.far);
   private readonly gfx: GameRenderer;
   private readonly input: InputManager;
   private readonly assets = new AssetManager();
@@ -40,14 +42,16 @@ export class Game {
   private readonly fixedStep = new FixedStep();
   private readonly frameStats = new FrameStats();
   private readonly stage = new FoundationStage();
-  private readonly previewCamera: PreviewOrbitCamera;
+  private readonly followCamera: ThirdPersonCamera;
+  private readonly moveBasis = new MoveBasis();
   private physics: PhysicsWorld | null = null;
   private moke: Moke | null = null;
 
   private readonly lookDelta: Vec2Like = { x: 0, y: 0 };
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
   private readonly moveIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
-  private readonly cameraTarget = new Vector3();
+  private readonly cameraInput: CameraInput = { lookX: 0, lookY: 0, zoom: 0 };
+  private readonly cameraTarget: CameraTarget = { position: new Vector3(), heading: 0, speed: 0, headroom: Infinity };
 
   constructor(
     viewport: HTMLElement,
@@ -60,9 +64,15 @@ export class Game {
 
     this.scene.background = new Color(RENDER.background);
     this.scene.add(new RoomLighting().object, this.stage.object);
-    this.previewCamera = new PreviewOrbitCamera(this.camera, this.computeCameraTarget());
+    this.followCamera = new ThirdPersonCamera(this.camera, this.updateCameraTarget());
 
     ui.bind({ onPlay: () => this.play(), onResume: () => this.resume() });
+    const settings = loadSettings();
+    applySettings(settings);
+    ui.bindSettings(settings, (changed) => {
+      applySettings(changed);
+      saveSettings(changed);
+    });
     this.input.onPointerLockChange = (locked) => {
       if (!locked && this.state === 'playing') this.pause();
       this.ui.setPointerHint(this.state === 'playing' && !locked);
@@ -91,6 +101,8 @@ export class Game {
     physics.commitStaticGeometry();
     this.physics = physics;
     this.moke = this.spawnMoke(physics);
+    this.followCamera.collider = physics;
+    this.followCamera.snapBehind(this.updateCameraTarget());
 
     // Compile shaders up front so the first frames don't hitch.
     this.ui.setLoadingProgress(0.75, 'Fluffing the cushions…');
@@ -120,13 +132,14 @@ export class Game {
   private setState(next: GameState): void {
     this.state = next;
     this.input.gameplayFocus = next === 'playing';
-    this.previewCamera.mode = next === 'loading' || next === 'menu' ? 'attract' : 'look';
+    this.followCamera.mode = next === 'loading' || next === 'menu' ? 'attract' : 'follow';
     this.ui.showScreen(next === 'playing' ? null : next);
   }
 
   private play(): void {
     if (this.state !== 'menu') return;
     this.setState('playing');
+    this.followCamera.recenterBehind(this.updateCameraTarget());
     void this.input.requestPointerLock();
     this.ui.showToast('WASD to trot · hold Shift to run · hold C to walk · mouse to look', 5000);
   }
@@ -155,12 +168,14 @@ export class Game {
     const alpha = this.fixedStep.advance(this.state === 'playing' ? dt : 0, this.fixedUpdate);
     this.moke?.update(dt, alpha);
 
+    const playing = this.state === 'playing';
     input.getLookDelta(this.lookDelta);
-    if (this.state !== 'playing') {
-      this.lookDelta.x = 0;
-      this.lookDelta.y = 0;
-    }
-    this.previewCamera.update(dt, this.lookDelta, this.computeCameraTarget());
+    this.cameraInput.lookX = playing ? this.lookDelta.x : 0;
+    this.cameraInput.lookY = playing ? this.lookDelta.y : 0;
+    this.cameraInput.zoom = playing ? input.getZoomDelta() : 0;
+    this.followCamera.update(dt, this.cameraInput, this.updateCameraTarget());
+    // Walls can force the camera right up against Moke; hide him then rather than render his insides.
+    if (this.moke) this.moke.visual.object.visible = !this.followCamera.isInsideTarget;
 
     this.gfx.render(this.scene, this.camera);
     this.frameStats.record(dt);
@@ -174,11 +189,15 @@ export class Game {
     this.physics.step();
   };
 
-  /** WASD relative to where the camera looks: W = away from the camera. */
+  /**
+   * WASD relative to the camera: W = away from it. While keys stay held, the reference angle only
+   * follows the player's own mouse turns (see MoveBasis), so automatic camera motion can't bend his path.
+   */
   private updateMoveIntent(): void {
     const input = this.input.state;
     const axis = input.getMoveAxis(this.moveAxis);
-    const yaw = this.previewCamera.yaw;
+    const moving = axis.x !== 0 || axis.y !== 0;
+    const yaw = this.moveBasis.update(moving, this.followCamera.yaw, this.followCamera.takeManualYawDelta());
     const sin = Math.sin(yaw);
     const cos = Math.cos(yaw);
     // Camera forward is (-sin, -cos); camera right is (cos, -sin).
@@ -188,10 +207,20 @@ export class Game {
     this.moveIntent.run = input.isDown('run');
   }
 
-  /** The camera orbits Moke's eyes (or the spawn point before he exists). */
-  private computeCameraTarget(): Vector3 {
-    const feet = this.moke ? this.moke.renderPosition : this.stage.spawn.position;
-    return this.cameraTarget.set(feet.x, feet.y + MOKE_SIZE.eyeHeight, feet.z);
+  /** What the camera follows: Moke as rendered this frame (or the spawn point before he exists). */
+  private updateCameraTarget(): CameraTarget {
+    const target = this.cameraTarget;
+    if (this.moke) {
+      const c = this.moke.controller;
+      target.position.copy(this.moke.renderPosition);
+      target.heading = c.heading;
+      target.speed = c.actualSpeed;
+      target.headroom = c.headroom;
+    } else {
+      target.position.copy(this.stage.spawn.position);
+      target.heading = this.stage.spawn.heading;
+    }
+    return target;
   }
 
   private registerDebugSections(): void {
@@ -242,6 +271,6 @@ export class Game {
         move: `${move.x.toFixed(2)}, ${move.y.toFixed(2)}`,
       };
     });
-    this.debug.addSection('Camera', () => this.previewCamera.debugInfo());
+    this.debug.addSection('Camera', () => this.followCamera.debugInfo());
   }
 }

@@ -1,4 +1,5 @@
 import type { Collider, KinematicCharacterController, Ray, RigidBody, Vector } from '@dimforge/rapier3d-compat';
+import { interactionGroups, LAYER } from './collisionGroups';
 import type { PhysicsWorld } from './PhysicsWorld';
 
 export interface Vec3Like {
@@ -47,7 +48,12 @@ export class CharacterBody {
     this.body = world.createRigidBody(
       rapier.RigidBodyDesc.kinematicPositionBased().setTranslation(this.center.x, this.center.y, this.center.z),
     );
-    this.collider = world.createCollider(rapier.ColliderDesc.capsule(options.halfHeight, options.radius), this.body);
+    this.collider = world.createCollider(
+      rapier.ColliderDesc.capsule(options.halfHeight, options.radius).setCollisionGroups(
+        interactionGroups(LAYER.character),
+      ),
+      this.body,
+    );
 
     this.controller = world.createCharacterController(options.skin);
     this.controller.setSlideEnabled(true);

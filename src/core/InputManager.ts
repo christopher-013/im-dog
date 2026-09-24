@@ -38,6 +38,7 @@ export class InputManager {
     }, opts);
     window.addEventListener('mouseup', (e) => e.button === 0 && (this.dragLooking = false), opts);
     surface.addEventListener('contextmenu', (e) => e.preventDefault(), opts);
+    surface.addEventListener('wheel', this.handleWheel, { signal: this.listeners.signal, passive: false });
 
     document.addEventListener('pointerlockchange', this.handlePointerLockChange, opts);
     document.addEventListener('pointerlockerror', () => this.onPointerLockError?.(), opts);
@@ -104,6 +105,14 @@ export class InputManager {
     } else if (this.dragLooking) {
       this.state.addLook(e.movementX, e.movementY);
     }
+  };
+
+  private readonly handleWheel = (e: WheelEvent): void => {
+    if (!this.gameplayFocus) return;
+    e.preventDefault();
+    // Normalize to wheel "notches": ~100 px per notch in Chromium, ~3 lines in Firefox.
+    const perNotch = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? 3 : e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? 1 : 100;
+    this.state.addZoom(clamp(e.deltaY / perNotch, -3, 3));
   };
 
   private readonly handlePointerLockChange = (): void => {

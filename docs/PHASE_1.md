@@ -16,8 +16,8 @@ Humans, full house, backyard, missions/quests, economy, complex needs, mobile co
 | # | Milestone | Status |
 |---|---|---|
 | 1 | Foundation: Vite/TS/three, renderer, loop, resize, input, start/loading screens, docs, Moke reference | **Done** |
-| 2 | Moke movement: placeholder visual, controller, walk/trot/run, accel/decel, turning, collision | **Done, awaiting owner review.** Rapier physics, placeholder Moke, trot/run/walk, collision. The camera follows Moke but has no collision until Milestone 3. |
-| 3 | Third-person camera: orbit, follow, collision, pointer lock, tuning | |
+| 2 | Moke movement: placeholder visual, controller, walk/trot/run, accel/decel, turning, collision | **Done.** Rapier physics, placeholder Moke, trot/run/walk, collision. The owner's hands-on feel playtest is still pending. |
+| 3 | Third-person camera: orbit, follow, collision, pointer lock, tuning | **Done, awaiting owner review.** Collision and wall avoidance, low-ceiling handling, zoom, auto-follow, sensitivity/invert settings. Pointer lock still needs a physical-mouse check. |
 | 4 | Living room: stylized room, furniture, colliders, lighting | |
 | 5 | Interaction framework and contextual prompts | |
 | 6 | Sock: pick up, mouth attachment, carry, drop | |

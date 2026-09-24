@@ -84,6 +84,16 @@ describe('InputState', () => {
     expect(input.getLookDelta({ x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
   });
 
+  it('accumulates wheel zoom per frame', () => {
+    const input = new InputState(KEY_BINDINGS);
+    input.addZoom(1);
+    input.addZoom(0.5);
+    frame(input);
+    expect(input.getZoomDelta()).toBe(1.5);
+    frame(input);
+    expect(input.getZoomDelta()).toBe(0);
+  });
+
   it('releaseAll lets go of every key (e.g. on window blur)', () => {
     const input = new InputState(KEY_BINDINGS);
     input.keyDown('KeyW');

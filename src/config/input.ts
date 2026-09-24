@@ -38,8 +38,10 @@ export const KEY_BINDINGS: Readonly<Record<Action, readonly string[]>> = {
 };
 
 export interface MouseSettings {
-  /** Radians of camera rotation per pixel of mouse movement. */
+  /** Radians of camera rotation per pixel of mouse movement, at 1× scale. */
   sensitivity: number;
+  /** Player's multiplier from the pause-menu slider. */
+  sensitivityScale: number;
   invertY: boolean;
   /** Single mouse events larger than this (px) are clamped; some browsers spike when pointer lock engages. */
   maxDeltaPerEvent: number;
@@ -48,6 +50,7 @@ export interface MouseSettings {
 /** Mutable so a future settings screen can change it at runtime. */
 export const MOUSE: MouseSettings = {
   sensitivity: 0.0024,
+  sensitivityScale: 1,
   invertY: false,
   maxDeltaPerEvent: 250,
 };
@@ -55,7 +58,7 @@ export const MOUSE: MouseSettings = {
 export interface ControlHint {
   label: string;
   /** Actions whose first key is shown, or a device name. */
-  input: readonly Action[] | 'Mouse';
+  input: readonly Action[] | 'Mouse' | 'Wheel';
   /** False until the milestone that implements it lands; the UI marks it "soon". */
   ready: boolean;
 }
@@ -64,6 +67,7 @@ export interface ControlHint {
 export const CONTROL_HINTS: readonly ControlHint[] = [
   { label: 'Move (trot)', input: ['moveForward', 'moveLeft', 'moveBackward', 'moveRight'], ready: true },
   { label: 'Look around', input: 'Mouse', ready: true },
+  { label: 'Zoom camera', input: 'Wheel', ready: true },
   { label: 'Run (hold)', input: ['run'], ready: true },
   { label: 'Walk / sneak (hold)', input: ['walk'], ready: true },
   { label: 'Interact · pick up · drop', input: ['interact'], ready: false },

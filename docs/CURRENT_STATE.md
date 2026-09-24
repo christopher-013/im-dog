@@ -1,12 +1,13 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-23. Repo: private `christopher-013/im-dog`, branch `main`. Milestone 2 is committed; see `git log` for the latest commit._
+_Last updated: 2026-09-23. Repo: private `christopher-013/im-dog`, branch `main`. Milestone 3 is committed; see `git log` for the latest commit._
 
 ## Current Phase
 Phase 1
 
 ## Current Milestone
-Milestone 2 (basic Moke character) is complete and awaiting owner review and a hands-on playtest. Milestone 3 has not started.
+Milestone 3 (third-person camera) is complete and awaiting owner review. The owner's hands-on playtest of
+Milestones 2 and 3 (movement and camera feel) is still pending. Milestone 4 has not started.
 
 ## Last Developer
 Claude Code
@@ -14,104 +15,104 @@ Claude Code
 ## Completed
 **Milestone 1: foundation.**
 - Vite + strict TypeScript + three.js, Vitest, static build.
-- Loading screen with progress; start menu with the original I'M DOG? identity; controls dialog; pause/resume; error screen.
-- State machine (loading → menu → playing ⇄ paused) and a fixed 60 Hz step.
-- Resize/DPR-aware renderer; action-based input with pointer lock and a drag-to-look fallback.
-- AssetManager with missing-file fallbacks; debug panel; the private-photo guards.
-- Temporary greybox room and warm lighting.
+- Loading and start screens with the original I'M DOG? identity; controls dialog; pause; error screen.
+- State machine, fixed 60 Hz step, resize/DPR-aware renderer, action-based input.
+- Asset fallbacks, debug panel, the private-photo guards, and the temporary greybox room.
 
 **Milestone 2: basic Moke character.**
-- **Rapier physics (0.20):** loaded lazily behind the loading screen, stepped every fixed step. The greybox room's
-  floor, walls, couch and coffee table are colliders derived from their meshes (18 colliders).
-- **Placeholder Moke** (`PlaceholderDogVisual`): original geometry echoing the reference analysis.
-  - Look: round lumpy "cotton" head, topknot, cream-tinted drop ears, dark wide-set eyes with catchlights, black button nose, pom tail carried high.
-  - Procedural animation: leg swing with paw lift (trot diagonals, bounding run), body bob, lean into turns, head lead,
-    ear bounce, tail wag, tongue out at a run, breathing.
-- **Movement** (`Locomotion` + `MokeController`):
-  - Gaits: trot by default (1.8 m/s), run with Shift (4.0 m/s), walk/sneak with C (0.8 m/s).
-  - Smooth acceleration and deceleration, plus braking for sharp turns.
-  - Turn-rate-limited facing: quick pivots when slow, wider arcs at a run; reversals are brake → pivot → go.
-  - He never moves backwards or sideways relative to his facing.
-- **Collision:** stops at walls and furniture and slides along them at glancing angles. He walks under the coffee
-  table (0.40 m clearance) and ducks there. He can't climb the couch.
-- **Camera-relative controls:** W is away from the camera. The temporary preview camera now orbits **and follows** Moke.
-- **Interpolation:** the visual and camera are smoothed between fixed steps, for high-refresh displays.
-- **Idle personality:** glances around, occasional curious head tilt, tail wag, breathing.
-- **Debug panel:** new Moke section (position, actual vs. target speed, gait, heading, turn rate, grounded,
-  headroom, duck) and Physics section (Rapier version, colliders, bodies).
-- **Dev-only live tuning** from the browser console: `tuning.movement.runSpeed = 5`, etc.
+- Rapier physics.
+- Placeholder Moke with procedural animation and idle personality.
+- Trot (default), run (Shift), walk/sneak (C), with smooth acceleration, braking and turn-limited facing.
+- Collision with walls and furniture; he ducks under the coffee table.
+
+**Milestone 3: third-person camera** (`ThirdPersonCamera`, which replaces the temporary preview camera).
+- Low, dog-height orbit: about 1.35 m back and 0.63 m high by default. Mouse orbit with clamped pitch; smoothed follow (never parented).
+- **Mouse-wheel zoom,** 0.7–2.6 m.
+- **Collision:** a swept sphere against Rapier world geometry. It pulls in instantly and eases back out; walls always win.
+  Thin table legs and Moke's own body are ignored, via collision layers.
+- **Wall avoidance ("whiskers"):** when squeezed and the mouse is idle, it drifts sideways to open space.
+  Otherwise it lifts up and over Moke without wobbling. If walls force the camera inside him, he's hidden for that moment.
+- **Tight spaces:** under the coffee table, the pivot drops and the camera flattens into a level shot underneath.
+- **Auto-follow:** drifts behind Moke while he moves and the mouse is idle. Not when he runs toward the camera.
+- **Re-centres** behind Moke when PLAY is pressed.
+- **Stable controls:** the WASD direction is locked while keys are held (`MoveBasis`). Automatic camera motion never bends his path; only the player's mouse turns do.
+- **Settings:** pause-screen mouse-sensitivity slider (0.25–3×) and invert-Y, remembered in localStorage (safe if storage is blocked).
+- **Field of view** widens slightly at a run.
+- All camera tuning is in `src/config/camera.ts`, and live in dev via `tuning.camera`.
 
 ## Current Architecture
 - `Game` owns the scene, renderer, input, physics, UI and state machine. Frame order:
   1. input
   2. global keys
-  3. fixed steps: camera-relative `MoveIntent` → `Moke.fixedUpdate` → `PhysicsWorld.step`
+  3. fixed steps: `MoveBasis` → camera-relative `MoveIntent` → `Moke.fixedUpdate` → `PhysicsWorld.step`
   4. `Moke.update` (interpolate + animate)
-  5. camera
+  5. `ThirdPersonCamera.update` (and hide Moke if the camera is inside him)
   6. render
   7. debug
-- The Moke data flow is one-way: `MokeController` (gameplay: `Locomotion` + `CharacterBody`) → `MokeAnimationController`
-  (plain numbers) → `MokeVisual`. Gameplay never touches meshes. `createMokeVisual()` is the only place that picks a visual.
-- `physics/` wraps Rapier: `PhysicsWorld` (world, static boxes) and `CharacterBody` (kinematic capsule plus Rapier's character controller).
-- All tuning is in `src/config/`: `movement.ts` (feel and capsule), `animation.ts` (body language), `input.ts` (bindings), `engine.ts`, `world.ts`.
-- Temporary pieces:
-  - `PreviewOrbitCamera`, to be replaced by `ThirdPersonCamera` in Milestone 3.
-  - `FoundationStage`, to be replaced by `LivingRoom` in Milestone 4.
-  - `PlaceholderDogVisual`, until `moke.glb` exists.
+- **Moke:** `MokeController` (gameplay) → `MokeAnimationController` (plain numbers) → `MokeVisual` (placeholder). Gameplay never touches meshes.
+- **Physics:** `PhysicsWorld` (static boxes with collision layers, `sweepSphere` for the camera) and `CharacterBody` (kinematic capsule).
+- **Camera:** it talks to physics only through the `CameraCollider` interface, so it's unit-tested with a fake.
+- **Tuning** is in `src/config/`: `movement.ts`, `camera.ts`, `animation.ts`, `input.ts`, `engine.ts`, `world.ts`.
+- **Temporary pieces:** `FoundationStage` (to be replaced by `LivingRoom` in Milestone 4) and `PlaceholderDogVisual` (until `moke.glb`).
 - Details: `docs/ARCHITECTURE.md`.
 
 ## Current Gameplay State
-- The game loads, and the placeholder Moke idles in the room behind the start menu.
-- After PLAY, Moke trots, runs and walks. Measured in the browser with scripted key holds:
-  - trot 1.8 m/s, run 4.0 m/s, walk 0.8 m/s;
-  - 0 → run in about 0.45 s; run → stop in about 0.36 s (about 0.7 m);
-  - 180° reversal from a trot: brake to 0 in about 0.1 s, full trot the other way by about 0.35 s.
-- Walls, couch and table legs block him. He slides along walls at glancing angles, and walked under the coffee
-  table with headroom 0.40 m while visibly ducking.
-- Mouse look works through drag-to-look in the embedded test browser. Pointer lock is still unconfirmed with a
-  physical mouse (see Known Issues).
-- No console errors or warnings on a fresh dev load or in the production preview.
-- **Movement feel has not yet been judged hands-on with a real keyboard.** It's tuned by numbers and automated checks only.
+Verified in the browser (scripted input on the dev server, plus a production-build load):
+- The game loads. PLAY swings the camera behind Moke. Movement works as in Milestone 2.
+- **Backed into a wall** (Moke facing the front wall, camera trapped behind him): the camera stops at the wall
+  face (never inside it). Once the mouse is idle, it swings to a side view at full distance.
+- **Under the coffee table:** Moke ducks; the camera drops to a level shot about 0.27 m high and stays underneath.
+- **Next to the couch** with the camera turned so the couch is behind him: the camera stays in front of the couch,
+  never inside it. When idle, it slides round to a clear side angle.
+- **Zoom:** the wheel reaches the 0.7 m minimum. Zooming out stops where a wall limits it (2.40 m toward the front wall in this room).
+- **Holding D with the mouse idle:** Moke runs dead straight while the camera swings smoothly behind him.
+- **Pause settings:** the slider and invert-Y apply immediately and survive a reload. The test values were cleared afterward.
+- No console errors on a fresh load, dev or production.
+  - Stale errors from mid-edit hot-reloads can linger in an old tab's console; always check a fresh tab.
+- **Not yet judged hands-on with a physical mouse and keyboard.**
 
 ## Known Issues
-Carried over from Milestone 1 (not addressed in Milestone 2):
+Carried over (not addressed in Milestone 3):
 - During the final "Ready!" loading frame, the start menu is faintly visible behind the loading overlay, creating a doubled logo and ghosted buttons.
-- Pointer lock did not engage during automated browser testing. It needs manual confirmation with a physical mouse.
-- An automated test reported approximately 28–35 FPS at 1920×953. Claude's Milestone 2 measurements disagree, so recheck manually:
-  - about 1.5 ms per frame (render, synchronous) at 1280×720 and 2.1 ms at 2560×1440, with Moke in the scene;
-  - 0.022 ms per fixed step (Moke + Rapier);
+- **Pointer lock has still only been tested where it's unavailable** (the embedded test browser uses drag-to-look). It needs a physical-mouse check in Chrome.
+- An automated test reported approximately 28–35 FPS at 1920×953. Claude's measurements disagree, so recheck manually:
+  - about 1.5 ms per frame (render) at 1280×720 and 2.1 ms at 2560×1440;
+  - 0.022 ms per fixed step;
+  - 4.5–7.3 µs per camera update;
   - 138–165 FPS live in the embedded browser, on a GTX 1660 SUPER.
 - Hidden screens may need improved accessibility handling using `aria-hidden` or `inert`.
+- Moke's nose and tail can poke a few centimetres into walls (the collision capsule is round).
+- The walk/sneak key is C (Ctrl is unsafe because Ctrl+W closes the tab), which is unconfirmed with the owner.
+- Moke's real size is still an estimate (0.28 m shoulder).
 
-New in Milestone 2:
-- **The camera has no collision yet (Milestone 3).** When Moke backs toward a wall, or runs at the camera near a
-  wall, the camera passes through it and the view becomes a flat wall colour.
-- Moke's nose and tail can poke a few centimetres into walls: the collision capsule is round, the dog is long.
-- The walk/sneak key is **C**, a new choice. Ctrl is unsafe (Ctrl+W closes the tab) and Alt focuses the browser menu.
-- Moke's real size is still an estimate (0.28 m shoulder). A measurement would let us confirm the scale and the capsule.
+New in Milestone 3:
+- **The camera turns by itself in a few situations:** auto-follow while moving, whiskers near walls, recentring on PLAY.
+  - This is intentional and tunable in `config/camera.ts` (`autoFollow.strength = 0` disables auto-follow).
+  - Whether it feels helpful or intrusive needs the owner's playtest.
+- The room is only 6 m deep, so the 2.6 m maximum zoom is often capped by walls. That's expected.
 
 ## Verification Status
-Run on 2026-09-23 at the end of Milestone 2:
+Run on 2026-09-23 at the end of Milestone 3:
 
 | Command / check | Result |
 |---|---|
 | `npm run typecheck` | Pass |
-| `npm test` | Pass: 7 files, 55 tests, including Rapier integration tests |
-| `npm run build` | Pass. Main bundle 657 kB (170 kB gzipped); Rapier chunk 2,854 kB (1,094 kB gzipped), lazy-loaded. `verify-dist`: 13 files, no private photos. |
-| Dev server, browser | Menu → PLAY → trot/run/walk, reversal, walls, sliding, under-table ducking, pause. No console errors on a fresh load. |
-| Production preview (`npm run preview`), browser | Loads the menu; all files return 200 including the Rapier chunk; no console messages. |
+| `npm test` | Pass: 11 files, 87 tests |
+| `npm run build` | Pass, no warnings. Main bundle 664 kB (173 kB gzipped); Rapier chunk 2,854 kB (1,094 kB gzipped). `verify-dist`: no private photos. |
+| Dev server, browser | Wall, table, couch, zoom, auto-follow and direction lock, pause settings, as described above. Some checks drove `imdog.frame()` directly, because the hidden browser pane pauses `requestAnimationFrame`. |
+| Production preview, browser | Fresh load: all files 200, no console messages, PLAY enters play, settings present. |
 | Not verified | Hands-on feel with a physical keyboard and mouse; pointer lock; Firefox and Safari; a real high-DPI display. |
 
 ## Important Files
 - `AGENTS.md`, `CLAUDE.md`, and in `docs/`: `PHASE_1.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `CONTROLS.md`.
-- `src/config/movement.ts`: **movement feel.** Start here when tuning.
-- `src/config/animation.ts`, `src/config/input.ts`.
+- `src/config/camera.ts`: **camera feel.** `src/config/movement.ts`: **movement feel.**
+- `src/camera/ThirdPersonCamera.ts`, `src/camera/MoveBasis.ts`.
 - `src/player/`: `Locomotion.ts`, `MokeController.ts`, `MokeAnimationController.ts`, `MokeVisual.ts`, `PlaceholderDogVisual.ts`, `Moke.ts`.
-- `src/physics/`: `PhysicsWorld.ts`, `CharacterBody.ts`.
-- `src/core/Game.ts`: state machine, frame order, move intent, debug sections.
-- `src/camera/PreviewOrbitCamera.ts`: temporary follow/orbit camera.
+- `src/physics/`: `PhysicsWorld.ts`, `CharacterBody.ts`, `collisionGroups.ts`.
+- `src/core/Game.ts` (frame order, move intent, camera target, debug sections); `src/core/PlayerSettings.ts`.
 - `src/world/FoundationStage.ts`: temporary greybox room and its colliders.
 
 ## Next Recommended Task
-1. The owner playtests Milestone 2 with a physical keyboard and mouse, and we tune `src/config/movement.ts` together.
-2. After approval, Milestone 3: a third-person camera with collision/obstacle avoidance and tuning. This also fixes the see-through-walls issue.
+1. The owner playtests Milestones 2 and 3 with a physical keyboard and mouse in Chrome, including a pointer-lock
+   check. We tune `src/config/movement.ts` and `src/config/camera.ts` together.
+2. After approval, Milestone 4: the stylized living room (replacing the greybox), with colliders and lighting.

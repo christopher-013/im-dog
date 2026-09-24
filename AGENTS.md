@@ -9,8 +9,9 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - **Current phase:** Phase 1, the first playable prototype (one living room). Scope: `docs/PHASE_1.md`.
 - **Completed:**
   - Milestone 1, project foundation and architecture.
-  - Milestone 2, the basic Moke character. It still awaits owner review and a hands-on playtest.
-- **Next:** Milestone 3, the third-person camera. Only start it when the owner says to.
+  - Milestone 2, the basic Moke character.
+  - Milestone 3, the third-person camera. Milestones 2 and 3 still await the owner's hands-on playtest.
+- **Next:** Milestone 4, the living room. Only start it when the owner says to.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES

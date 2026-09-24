@@ -1,5 +1,6 @@
 import { CONTROL_HINTS, KEY_BINDINGS } from '../config/input';
 import { keyLabel } from '../core/InputState';
+import { SENSITIVITY_RANGE, type PlayerSettings } from '../core/PlayerSettings';
 
 export type Screen = 'loading' | 'menu' | 'paused' | 'error';
 
@@ -59,6 +60,32 @@ export class UIManager {
     this.handlers = handlers;
   }
 
+  /** Wires the pause-screen settings: shows `initial`, reports every change. */
+  bindSettings(initial: PlayerSettings, onChange: (settings: PlayerSettings) => void): void {
+    const slider = this.el<HTMLInputElement>('setting-sensitivity');
+    const readout = this.el<HTMLOutputElement>('setting-sensitivity-value');
+    const invert = this.el<HTMLInputElement>('setting-invert-y');
+    const current = { ...initial };
+
+    slider.min = String(SENSITIVITY_RANGE.min);
+    slider.max = String(SENSITIVITY_RANGE.max);
+    slider.step = String(SENSITIVITY_RANGE.step);
+    slider.value = String(current.mouseSensitivity);
+    invert.checked = current.invertY;
+    const showValue = () => (readout.textContent = `${current.mouseSensitivity.toFixed(2)}×`);
+    showValue();
+
+    slider.addEventListener('input', () => {
+      current.mouseSensitivity = Number(slider.value);
+      showValue();
+      onChange({ ...current });
+    });
+    invert.addEventListener('change', () => {
+      current.invertY = invert.checked;
+      onChange({ ...current });
+    });
+  }
+
   /** Shows one full-screen overlay, or none (null) during play. */
   showScreen(screen: Screen | null): void {
     for (const [name, element] of Object.entries(this.screens)) {
@@ -104,7 +131,8 @@ export class UIManager {
 
       const keys = this.doc.createElement('span');
       keys.className = 'control-keys';
-      const labels = hint.input === 'Mouse' ? ['Mouse'] : hint.input.map((a) => keyLabel(KEY_BINDINGS[a][0] ?? '?'));
+      const labels =
+        typeof hint.input === 'string' ? [hint.input] : hint.input.map((a) => keyLabel(KEY_BINDINGS[a][0] ?? '?'));
       for (const label of labels) {
         const kbd = this.doc.createElement('kbd');
         kbd.textContent = label;

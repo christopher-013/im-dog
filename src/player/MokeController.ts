@@ -24,7 +24,7 @@ export class MokeController {
   readonly position = new Vector3();
   /** Horizontal speed actually achieved after collisions (m/s). */
   actualSpeed = 0;
-  /** Free space above Moke's feet (m), for ducking under furniture. */
+  /** Free space above Moke's feet (m), for ducking under furniture. Infinity when nothing is low overhead. */
   headroom = Infinity;
 
   private readonly previousPosition = new Vector3();
@@ -43,7 +43,7 @@ export class MokeController {
     this.previousHeading = heading;
     // Settle onto the floor and probe the surroundings, so state is valid before the first step.
     this.body.move(this.desired, this.applied);
-    this.headroom = this.body.spaceAbove(HEADROOM_PROBE) + this.body.centerHeight;
+    this.probeHeadroom();
     this.syncPositionFromBody();
     this.previousPosition.copy(this.position);
   }
@@ -84,7 +84,12 @@ export class MokeController {
     if (this.blockedSteps >= BLOCKED_STEPS) this.locomotion.speed = this.actualSpeed;
 
     this.syncPositionFromBody();
-    this.headroom = this.body.spaceAbove(HEADROOM_PROBE) + this.body.centerHeight;
+    this.probeHeadroom();
+  }
+
+  private probeHeadroom(): void {
+    const above = this.body.spaceAbove(HEADROOM_PROBE);
+    this.headroom = above >= HEADROOM_PROBE ? Infinity : above + this.body.centerHeight;
   }
 
   /** Feet position blended between the last two fixed steps (alpha 0..1). */

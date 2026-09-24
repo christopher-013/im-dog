@@ -28,6 +28,8 @@ export class InputState {
   private pendingLookY = 0;
   private lookX = 0;
   private lookY = 0;
+  private pendingZoom = 0;
+  private zoom = 0;
 
   constructor(bindings: Readonly<Record<Action, readonly string[]>>) {
     for (const [action, keys] of Object.entries(bindings) as [Action, readonly string[]][]) {
@@ -71,11 +73,17 @@ export class InputState {
     this.pendingLookY += dy;
   }
 
+  /** Mouse-wheel zoom in notches (positive = zoom out). */
+  addZoom(steps: number): void {
+    this.pendingZoom += steps;
+  }
+
   /** Releases everything, e.g. when the window loses focus and keyup events would be lost. */
   releaseAll(): void {
     for (const key of [...this.keysDown]) this.keyUp(key);
     this.pendingLookX = 0;
     this.pendingLookY = 0;
+    this.pendingZoom = 0;
   }
 
   beginFrame(): void {
@@ -88,6 +96,8 @@ export class InputState {
     this.lookY = this.pendingLookY;
     this.pendingLookX = 0;
     this.pendingLookY = 0;
+    this.zoom = this.pendingZoom;
+    this.pendingZoom = 0;
   }
 
   isDown(action: Action): boolean {
@@ -119,6 +129,11 @@ export class InputState {
     out.x = this.lookX;
     out.y = this.lookY;
     return out;
+  }
+
+  /** Wheel notches this frame (positive = zoom out). */
+  getZoomDelta(): number {
+    return this.zoom;
   }
 
   heldActions(): Action[] {

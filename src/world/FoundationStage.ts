@@ -44,6 +44,8 @@ interface MeshOptions {
   receive?: boolean;
   /** Also register a static box collider matching this mesh's bounds. */
   solid?: boolean;
+  /** Thin solids (table legs) block Moke but not the camera. */
+  thin?: boolean;
 }
 
 const tmpSize = new Vector3();
@@ -196,7 +198,7 @@ export class FoundationStage {
       [-0.5, 0.24],
       [0.5, 0.24],
     ] as const) {
-      this.add(legGeometry, m.walnut, [tx + dx, (tableH - top) / 2, tz + dz], solid);
+      this.add(legGeometry, m.walnut, [tx + dx, (tableH - top) / 2, tz + dz], { solid: true, thin: true });
     }
   }
 
@@ -210,12 +212,12 @@ export class FoundationStage {
     mesh.updateMatrix();
     mesh.matrixAutoUpdate = false;
     this.object.add(mesh);
-    if (options.solid) this.addColliderFor(mesh);
+    if (options.solid) this.addColliderFor(mesh, !options.thin);
     return mesh;
   }
 
   /** A box matching the mesh's bounds (stage-local = world space, since the stage sits at the origin). */
-  private addColliderFor(mesh: Mesh): void {
+  private addColliderFor(mesh: Mesh, blocksCamera: boolean): void {
     mesh.geometry.computeBoundingBox();
     const bounds = mesh.geometry.boundingBox!;
     const half = bounds.getSize(tmpSize).multiply(mesh.scale).multiplyScalar(0.5);
@@ -225,6 +227,7 @@ export class FoundationStage {
       center: [center.x, center.y, center.z],
       halfExtents: [half.x, half.y, half.z],
       rotation: [q.x, q.y, q.z, q.w],
+      blocksCamera,
     });
   }
 }

@@ -144,6 +144,17 @@
         <div class="card stack">
           <h2 class="card-title">Paused</h2>
           <p class="card-text">Moke is waiting patiently.</p>
+          <div class="settings">
+            <div class="setting">
+              <label class="setting-label" for="setting-sensitivity">Mouse sensitivity</label>
+              <output id="setting-sensitivity-value" for="setting-sensitivity">1.00×</output>
+              <input id="setting-sensitivity" type="range" />
+            </div>
+            <div class="setting setting-toggle">
+              <input id="setting-invert-y" type="checkbox" />
+              <label class="setting-label" for="setting-invert-y">Invert vertical look</label>
+            </div>
+          </div>
           <div class="menu-buttons">
             <button id="btn-resume" class="btn btn-primary" type="button">RESUME</button>
             <button class="btn btn-secondary" type="button" data-open-controls>CONTROLS</button>

@@ -1,5 +1,8 @@
 import type { Collider, KinematicCharacterController, Ray, RigidBody, Vector } from '@dimforge/rapier3d-compat';
-import { interactionGroups, LAYER } from './collisionGroups';
+import { interactionGroups, LAYER, WORLD_QUERY_GROUPS } from './collisionGroups';
+
+/** Moke's capsule collides with everything except toys (the bumper handles those). */
+const CAPSULE_GROUPS = interactionGroups(LAYER.character, 0xffff & ~LAYER.toy);
 import type { PhysicsWorld } from './PhysicsWorld';
 
 export interface Vec3Like {
@@ -16,6 +19,11 @@ export interface CharacterBodyOptions {
   mass: number;
   maxSlopeClimb: number;
   snapToGround: number;
+  /**
+   * A low, upright cylinder that pushes toys. The capsule's round bottom would otherwise press a
+   * small ball down into the floor and ride over it; a vertical face knocks it along instead.
+   */
+  toyBumper?: { radius: number; halfHeight: number; centerAboveFeet: number };
 }
 
 /**
@@ -49,18 +57,26 @@ export class CharacterBody {
       rapier.RigidBodyDesc.kinematicPositionBased().setTranslation(this.center.x, this.center.y, this.center.z),
     );
     this.collider = world.createCollider(
-      rapier.ColliderDesc.capsule(options.halfHeight, options.radius).setCollisionGroups(
-        interactionGroups(LAYER.character),
-      ),
+      rapier.ColliderDesc.capsule(options.halfHeight, options.radius).setCollisionGroups(CAPSULE_GROUPS),
       this.body,
     );
+    const bumper = options.toyBumper;
+    if (bumper) {
+      world.createCollider(
+        rapier.ColliderDesc.cylinder(bumper.halfHeight, bumper.radius)
+          .setTranslation(0, bumper.centerAboveFeet - this.centerHeight, 0)
+          .setCollisionGroups(interactionGroups(LAYER.character, LAYER.toy)),
+        this.body,
+      );
+    }
 
     this.controller = world.createCharacterController(options.skin);
     this.controller.setSlideEnabled(true);
     this.controller.enableSnapToGround(options.snapToGround);
     this.controller.setMaxSlopeClimbAngle(options.maxSlopeClimb);
     this.controller.setCharacterMass(options.mass);
-    // Lets Moke nudge dynamic bodies (the tennis ball, toys) once they exist in Milestone 7.
+    // Toys aren't obstacles for the controller (see CAPSULE_GROUPS); this only matters if some
+    // other dynamic body ever is.
     this.controller.setApplyImpulsesToDynamicBodies(true);
 
     this.ray = new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 });
@@ -72,7 +88,7 @@ export class CharacterBody {
    * step. Writes the movement actually applied into `out`.
    */
   move(desired: Vec3Like, out: Vec3Like): Vec3Like {
-    this.controller.computeColliderMovement(this.collider, desired);
+    this.controller.computeColliderMovement(this.collider, desired, undefined, CAPSULE_GROUPS);
     const applied = this.controller.computedMovement(this.computed);
     this.grounded = this.controller.computedGrounded();
 
@@ -92,7 +108,7 @@ export class CharacterBody {
     this.ray.origin.x = this.center.x;
     this.ray.origin.y = this.center.y;
     this.ray.origin.z = this.center.z;
-    const hit = this.physics.world.castRay(this.ray, max, true, undefined, undefined, this.collider);
+    const hit = this.physics.world.castRay(this.ray, max, true, undefined, WORLD_QUERY_GROUPS, this.collider);
     return hit ? hit.timeOfImpact : max;
   }
 }

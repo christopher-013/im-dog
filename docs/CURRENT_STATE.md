@@ -7,7 +7,7 @@ Phase 1
 
 ## Current Milestone
 Overnight run (owner decision 2026-09-24): Milestones 5 → 9 in order on the branch above; M10 is not started.
-Milestones 5 (interaction framework) and 6 (sock) are complete and awaiting owner review. The owner's hands-on playtest of
+Milestones 5 (interaction framework), 6 (sock) and 7 (physics toys) are complete and awaiting owner review. The owner's hands-on playtest of
 Milestones 2–4 (movement, camera and room) is still pending.
 
 ## Last Developer
@@ -59,6 +59,14 @@ Claude Code
 - The sock doesn't collide with Moke (he walks over it); nothing collides with the camera.
 - Debug panel: "carrying" in the Interaction section; Physics shows the extra bodies.
 
+**Milestone 7: physics toys.**
+- A tennis ball (`landmarks.ball`, open floor right of spawn) and a teal/cream knotted rope toy (`landmarks.toy`,
+  near the TV console). Both roll or slide when Moke bumps them, and both can be picked up, carried and dropped
+  ("Pick Up Tennis Ball", "Pick Up Rope Toy") through the same `PickupSystem`, with no one-off logic.
+- A toy-only bumper collider on Moke knocks the ball ahead (Rapier tests: he never climbs a toy; the ball stays in
+  the room and settles). Speeds are capped per prop; props that escape return to their spot.
+- Debug panel → Physics → `props`: each prop's state (carried / asleep / speed).
+
 ## Current Architecture
 - `Game` owns the scene, renderer, input, physics, UI and state machine. Frame order:
   1. input
@@ -105,7 +113,7 @@ New in Milestone 4:
 - The potted plant looks a little sparse and spiky. It could be lusher in the polish milestone.
 - The window's sun patch is fairly subtle under the brighter room lighting.
 - There's no ambient occlusion (a post-processing choice), so contact areas under furniture are softer than in a film look.
-- The tennis ball and dog toy arrive with Milestone 7.
+- Carried props have no collision, so they can visually poke into walls.
 
 ## Verification Status
 Run on 2026-09-24 at the end of Milestone 4:

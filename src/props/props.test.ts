@@ -110,4 +110,59 @@ describe('room props', () => {
     expect(p.z).toBeLessThan(3);
     expect(p.y).toBeGreaterThan(-0.01);
   });
+
+  it('tennis ball: rolls away when Moke trots into it, with bounded speed, and he is not blocked', async () => {
+    const { room, moke, prop, walkTo, step } = await setup();
+    const { ball } = room.landmarks;
+    // Line up 1 m in front of the ball (toward -x), then trot straight through its spot.
+    expect(walkTo(ball.x - 1, ball.z)).toBe(true);
+    let maxSpeed = 0;
+    let mokeMaxY = 0;
+    for (let i = 0; i < 90; i++) {
+      step(1, 0);
+      maxSpeed = Math.max(maxSpeed, prop('ball').body.speed);
+      mokeMaxY = Math.max(mokeMaxY, moke.position.y);
+    }
+    const p = prop('ball').position;
+    expect(p.x - ball.x).toBeGreaterThan(0.3);
+    expect(maxSpeed).toBeLessThanOrEqual(4.5 + 1e-3);
+    expect(moke.position.x).toBeGreaterThan(ball.x - 0.2); // he kept going
+    expect(mokeMaxY).toBeLessThan(0.03); // didn't climb onto it
+    for (let i = 0; i < 600; i++) step();
+    expect(prop('ball').body.speed).toBeLessThan(0.05); // settles down
+    expect(Math.abs(prop('ball').position.x)).toBeLessThan(3.5);
+    expect(Math.abs(prop('ball').position.z)).toBeLessThan(3);
+  });
+
+  it('tennis ball survives a full-speed run into it and stays in the room', async () => {
+    const { room, prop, walkTo, step } = await setup();
+    const { ball } = room.landmarks;
+    expect(walkTo(ball.x - 2.5, ball.z)).toBe(true);
+    for (let i = 0; i < 120; i++) step(1, 0, true);
+    for (let i = 0; i < 300; i++) step();
+    const p = prop('ball').position;
+    expect(p.y).toBeGreaterThan(0);
+    expect(p.x).toBeLessThan(3.5 + 3.2); // in the room or the hallway
+    expect(Math.abs(p.z)).toBeLessThan(3);
+  });
+
+  it('rope toy: nudged by a bump, and carried and dropped with the same pickup system', async () => {
+    const { room, moke, prop, interactions, pickup, walkTo, idle, step } = await setup();
+    const { toy } = room.landmarks;
+    expect(walkTo(toy.x, toy.z - 0.8)).toBe(true);
+    for (let i = 0; i < 60; i++) step(0, 1);
+    expect(Math.hypot(prop('toy').position.x - toy.x, prop('toy').position.z - toy.z)).toBeGreaterThan(0.05);
+
+    for (let i = 0; i < 60 && interactions.update(moke)?.label !== 'Pick Up Rope Toy'; i++) {
+      const t = prop('toy').position;
+      walkTo(t.x - Math.sin(moke.heading) * 0.3, t.z - Math.cos(moke.heading) * 0.3, 0.1, 0.2);
+    }
+    expect(interactions.update(moke)?.label).toBe('Pick Up Rope Toy');
+    interactions.interact();
+    expect(pickup.carried?.name).toBe('Rope Toy');
+    idle(0.2);
+    pickup.drop();
+    idle(1.5);
+    expect(prop('toy').position.y).toBeLessThan(0.06);
+  });
 });

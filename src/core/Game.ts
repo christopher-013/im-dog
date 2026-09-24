@@ -315,6 +315,9 @@ export class Game {
         status: `Rapier ${this.physics.version}`,
         colliders: this.physics.colliderCount,
         bodies: this.physics.bodyCount,
+        props: this.props
+          .map((p) => `${p.id} ${p.carried ? 'carried' : p.body.sleeping ? 'asleep' : `${p.body.speed.toFixed(1)} m/s`}`)
+          .join(' · '),
       };
     });
     this.debug.addSection('Input', () => {

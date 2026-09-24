@@ -9,6 +9,8 @@ import { createPropView } from './propVisuals';
 export function createRoomProps(physics: PhysicsWorld, room: LivingRoom): Prop[] {
   const spots: Record<PropId, { position: { x: number; y: number; z: number }; heading: number }> = {
     sock: { position: room.landmarks.sock, heading: 0.9 },
+    ball: { position: room.landmarks.ball, heading: 0 },
+    toy: { position: room.landmarks.toy, heading: -0.6 },
   };
   return (Object.keys(PROPS) as PropId[]).map((id) => {
     const def = PROPS[id];

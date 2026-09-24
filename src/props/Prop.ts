@@ -50,7 +50,8 @@ export class Prop implements Carryable {
 
   drop(at: Vec3Like, heading: number, velocity: Vec3Like): void {
     this.carriedNow = false;
-    this.body.place(at, heading, velocity);
+    // Let go of it the way it was held (a sock or rope lands crosswise in front of him).
+    this.body.place(at, heading + this.definition.carry.turn, velocity);
     this.snapToBody();
   }
 

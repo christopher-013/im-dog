@@ -62,7 +62,7 @@ src/
     PickupSystem.ts       pick up / carry / drop for any Carryable (tested; DOM/three-free)
   props/
     Prop.ts               a loose prop: PropBody + view, interpolated; implements Carryable; escape rescue
-    propVisuals.ts        original code-built prop models (sock, …)
+    propVisuals.ts        original code-built prop models (sock, tennis ball, rope toy)
     roomProps.ts          creates the living room's props at their landmarks (Rapier-tested in props.test.ts)
   ui/
     UIManager.ts          screens, controls dialog, toast, hints, contextual prompt
@@ -149,6 +149,12 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
   - Presentation listens through `onPickUp`/`onDrop`: `Game` parents the prop's view to `MokeVisual.mouthSocket`
     with the prop's `carry` pose, and sets `Moke.carrying` so body language reacts (head up, tail wag).
 - Frame order: `Moke.fixedUpdate` → `PhysicsWorld.step` → `Prop.afterStep` (fixed); `Prop.render(alpha)` per frame.
+- **Pushing toys (Milestone 7):** Moke's capsule and the character controller ignore the `toy` layer. Instead
+  `CharacterBody` carries a low upright **toy bumper** cylinder (`MOKE_BODY.toyBumper`, just inside the capsule)
+  that only touches toys. The capsule's round bottom pressed a small ball down into the floor and rode over it at
+  a run; the bumper's vertical face knocks it ahead instead (trot: the ball rolls at about his speed; run: about
+  3.3 m/s, capped at `maxSpeed`). Kinematic contacts do the pushing, so no impulse tuning is needed.
+- Dropped items land turned by their `carry.turn` (crosswise, the way they were held).
 
 ## Third-person camera (`camera/ThirdPersonCamera.ts`, tuning in `config/camera.ts`)
 It's never parented to Moke. Each frame:
@@ -220,12 +226,13 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
   `config/movement.ts`) moved by Rapier's kinematic character controller: slide on, snap-to-ground, 45° slope limit.
   - It's short enough to fit under the 0.40 m coffee-table clearance. An upward ray measures headroom so the visual ducks.
   - The capsule is round, so the visual's nose and tail can poke a few centimetres past it into walls.
-  - Impulses to dynamic bodies are already enabled for the toys in Milestone 7.
+  - Toys are pushed by a separate toy-bumper collider on the same body (see "Props and carrying").
 - **Collision layers** (`physics/collisionGroups.ts`):
   - `world`: walls, floor, furniture.
   - `worldThin`: e.g. table legs; they block Moke but not the camera.
   - `character`: Moke.
-  - `toy`: loose props (dynamic bodies). The camera ignores them; the sock also ignores Moke.
+  - `toy`: loose props (dynamic bodies). The camera and Moke's capsule ignore them; his toy bumper pushes the
+    pushable ones (ball, rope toy). The sock ignores Moke entirely.
   - Queries filter by layer: the camera sweep sees `world` only.
 - **Gravity** applies only while airborne. On the ground, snap-to-ground keeps him planted. Also pushing down into
   the floor made Rapier's controller occasionally drop a whole step of horizontal movement, which read as a

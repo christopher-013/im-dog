@@ -1,6 +1,6 @@
 import type { PropPhysics } from '../physics/PropBody';
 
-export type PropId = 'sock';
+export type PropId = 'sock' | 'ball' | 'toy';
 
 export interface PropDefinition {
   id: PropId;
@@ -34,6 +34,39 @@ export const PROPS: Readonly<Record<PropId, PropDefinition>> = {
     restHeight: 0.012,
     // Held crosswise like a real dog carries a sock, dangling a little.
     carry: { offset: [0, -0.03, 0.01], turn: Math.PI / 2 },
+  },
+  ball: {
+    id: 'ball',
+    name: 'Tennis Ball',
+    physics: {
+      shape: { kind: 'ball', radius: 0.033 },
+      mass: 0.057,
+      friction: 0.7,
+      restitution: 0.55,
+      // Rolls a good way on floorboards, but always comes to rest.
+      linearDamping: 0.35,
+      angularDamping: 0.8,
+      pushable: true,
+      maxSpeed: 4.5,
+    },
+    restHeight: 0.033,
+    carry: { offset: [0, -0.02, 0.02], turn: 0 },
+  },
+  toy: {
+    id: 'toy',
+    name: 'Rope Toy',
+    physics: {
+      shape: { kind: 'capsule', radius: 0.03, halfLength: 0.09 },
+      mass: 0.12,
+      friction: 0.9,
+      restitution: 0.15,
+      linearDamping: 1.2,
+      angularDamping: 2,
+      pushable: true,
+      maxSpeed: 3.5,
+    },
+    restHeight: 0.03,
+    carry: { offset: [0, -0.025, 0.015], turn: Math.PI / 2 },
   },
 };
 

@@ -1,4 +1,17 @@
-import { CapsuleGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, type BufferGeometry, type Material } from 'three';
+import {
+  CapsuleGeometry,
+  ConeGeometry,
+  CylinderGeometry,
+  Curve,
+  Group,
+  Mesh,
+  MeshStandardMaterial,
+  SphereGeometry,
+  TubeGeometry,
+  Vector3,
+  type BufferGeometry,
+  type Material,
+} from 'three';
 import type { PropId } from '../config/props';
 
 // Original, code-built prop models. Each is centred on its physics body, lying the way it rests.
@@ -7,6 +20,10 @@ const PALETTE = {
   sockBody: '#ef7f63',
   sockStripe: '#f6c453',
   sockHeel: '#fbe7c6',
+  ball: '#d8ec4a',
+  ballSeam: '#fbfbf2',
+  ropeA: '#3f8fa8',
+  ropeB: '#f3ede0',
 };
 
 function mesh(parent: Group, geometry: BufferGeometry, material: Material, position: [number, number, number], rotation: [number, number, number] = [0, 0, 0]): Mesh {
@@ -43,9 +60,51 @@ function sock(): Group {
   return root;
 }
 
+/** The curved seam of a tennis ball, on a sphere of radius `r`. */
+class SeamCurve extends Curve<Vector3> {
+  constructor(private readonly r: number) {
+    super();
+  }
+  override getPoint(t: number, target = new Vector3()): Vector3 {
+    const a = t * Math.PI * 2;
+    target.set(Math.cos(a) + 0.35 * Math.cos(3 * a), Math.sin(a) - 0.35 * Math.sin(3 * a), 1.1 * Math.sin(2 * a));
+    return target.setLength(this.r);
+  }
+}
+
+/** A fuzzy yellow-green tennis ball with its white seam. */
+function ball(): Group {
+  const root = new Group();
+  const r = 0.033;
+  mesh(root, new SphereGeometry(r, 24, 16), new MeshStandardMaterial({ color: PALETTE.ball, roughness: 1 }), [0, 0, 0]);
+  mesh(root, new TubeGeometry(new SeamCurve(r * 1.004), 80, 0.0022, 5, true), new MeshStandardMaterial({ color: PALETTE.ballSeam, roughness: 0.9 }), [0, 0, 0]).castShadow = false;
+  return root;
+}
+
+/** A two-tone knotted rope toy lying along z, with tassels. */
+function ropeToy(): Group {
+  const root = new Group();
+  const a = new MeshStandardMaterial({ color: PALETTE.ropeA, roughness: 1 });
+  const b = new MeshStandardMaterial({ color: PALETTE.ropeB, roughness: 1 });
+  // Two twisted strands: slightly offset, tilted cylinders read as a rope at this size.
+  mesh(root, new CylinderGeometry(0.013, 0.013, 0.16, 8), a, [0.006, 0, 0], [Math.PI / 2, 0, 0.06]);
+  mesh(root, new CylinderGeometry(0.013, 0.013, 0.16, 8), b, [-0.006, 0, 0], [Math.PI / 2, 0, -0.06]);
+  const knot = new SphereGeometry(0.03, 14, 10);
+  const tassel = new ConeGeometry(0.024, 0.05, 10);
+  for (const side of [1, -1]) {
+    mesh(root, knot, side > 0 ? a : b, [0, 0, side * 0.085]).scale.set(1, 1, 0.8);
+    mesh(root, tassel, side > 0 ? b : a, [0, 0, side * 0.125], [-side * (Math.PI / 2), 0, 0]);
+  }
+  return root;
+}
+
 export function createPropView(id: PropId): Group {
   switch (id) {
     case 'sock':
       return sock();
+    case 'ball':
+      return ball();
+    case 'toy':
+      return ropeToy();
   }
 }

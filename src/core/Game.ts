@@ -6,12 +6,15 @@ import { CAMERA } from '../config/camera';
 import { CAMERA_LENS, RENDER } from '../config/engine';
 import { MOKE_BODY } from '../config/movement';
 import { InteractionSystem } from '../interactions/InteractionSystem';
+import { PickupSystem } from '../interactions/PickupSystem';
 import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { MoveIntent } from '../player/Locomotion';
 import { Moke } from '../player/Moke';
 import { MokeController } from '../player/MokeController';
 import { createMokeVisual } from '../player/MokeVisual';
+import type { Prop } from '../props/Prop';
+import { createRoomProps } from '../props/roomProps';
 import { DebugPanel, FrameStats, type DebugValues } from '../ui/DebugPanel';
 import type { UIManager } from '../ui/UIManager';
 import { LivingRoom } from '../world/LivingRoom';
@@ -48,6 +51,8 @@ export class Game {
   private readonly interactions = new InteractionSystem();
   private physics: PhysicsWorld | null = null;
   private moke: Moke | null = null;
+  private props: Prop[] = [];
+  private pickup: PickupSystem<Prop> | null = null;
 
   private readonly lookDelta: Vec2Like = { x: 0, y: 0 };
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
@@ -103,7 +108,8 @@ export class Game {
     physics.addStaticBoxes(this.room.colliders);
     physics.commitStaticGeometry();
     this.physics = physics;
-    this.moke = this.spawnMoke(physics);
+    const moke = (this.moke = this.spawnMoke(physics));
+    this.spawnProps(physics, moke);
     this.followCamera.collider = physics;
     this.followCamera.snapBehind(this.updateCameraTarget());
 
@@ -130,6 +136,25 @@ export class Game {
     const moke = new Moke(new MokeController(body, heading), createMokeVisual());
     this.scene.add(moke.visual.object);
     return moke;
+  }
+
+  /** The loose props, and carrying them: the view rides in the mouth socket, physics stays out of it. */
+  private spawnProps(physics: PhysicsWorld, moke: Moke): void {
+    this.props = createRoomProps(physics, this.room);
+    for (const prop of this.props) this.scene.add(prop.view);
+    const pickup = new PickupSystem<Prop>(this.interactions, moke.controller, (origin, direction, max) =>
+      physics.rayDistance(origin, direction, max),
+    );
+    for (const prop of this.props) pickup.add(prop);
+    pickup.onPickUp = (prop) => {
+      prop.holdIn(moke.visual.mouthSocket);
+      moke.carrying = true;
+    };
+    pickup.onDrop = (prop) => {
+      prop.release(this.scene);
+      moke.carrying = false;
+    };
+    this.pickup = pickup;
   }
 
   private setState(next: GameState): void {
@@ -174,6 +199,7 @@ export class Game {
     // The world only advances while playing; menus and pause freeze it.
     const alpha = this.fixedStep.advance(playing ? dt : 0, this.fixedUpdate);
     this.moke?.update(dt, alpha);
+    for (const prop of this.props) prop.render(alpha);
     this.updateInteractionPrompt(playing);
 
     input.getLookDelta(this.lookDelta);
@@ -194,6 +220,7 @@ export class Game {
     this.updateMoveIntent();
     this.moke.fixedUpdate(step, this.moveIntent);
     this.physics.step();
+    for (const prop of this.props) prop.afterStep();
   };
 
   /**
@@ -271,7 +298,11 @@ export class Game {
     });
     this.debug.addSection('Interaction', (): DebugValues => {
       const current = this.interactions.current;
-      const values: DebugValues = { registered: this.interactions.count, current: current ? `${current.type} "${current.label}"` : '—' };
+      const values: DebugValues = {
+        registered: this.interactions.count,
+        current: current ? `${current.type} "${current.label}"` : '—',
+        carrying: this.pickup?.carried?.name ?? '—',
+      };
       if (current && this.moke) {
         const p = this.moke.controller.position;
         values.distance = `${Math.hypot(current.position.x - p.x, current.position.z - p.z).toFixed(2)} m (id ${current.id})`;

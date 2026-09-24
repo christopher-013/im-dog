@@ -11,6 +11,7 @@ import {
   type Material,
 } from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { MOKE_ANIMATION } from '../config/animation';
 import { clamp, lerp, TAU } from '../utils/math';
 import type { MokeAnimationState } from './MokeAnimationController';
 import type { MokeVisual } from './MokeVisual';
@@ -186,7 +187,7 @@ export class PlaceholderDogVisual implements MokeVisual {
     this.rig.position.y = -s.crouch * 0.03;
 
     this.neck.position.y = NECK_HEIGHT - s.crouch * 0.05 - bob * 0.5;
-    this.neck.rotation.x = s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1;
+    this.neck.rotation.x = s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * MOKE_ANIMATION.carryHeadLift;
     this.head.rotation.y = s.headYaw;
     this.head.rotation.z = -s.headTilt;
 
@@ -201,7 +202,7 @@ export class PlaceholderDogVisual implements MokeVisual {
     this.tail.rotation.z = wag;
     this.tail.rotation.x = 0.35 - s.runBlend * 0.9;
 
-    this.tongue.visible = s.runBlend > 0.25;
+    this.tongue.visible = s.runBlend > 0.25 && s.carry < 0.5;
   }
 
   dispose(): void {

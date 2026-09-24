@@ -24,6 +24,7 @@ src/
     animation.ts          body-language tuning (lean, idle looks, tail, ducking)
     world.ts              world scale: Moke's size, furniture heights
     interaction.ts        interaction reach/facing tuning
+    props.ts              prop definitions (shape, mass, damping, carry pose) + pickup/drop tuning
     assets.ts             asset manifest (preloaded behind the loading screen)
   core/
     Game.ts               state machine + frame orchestration
@@ -43,7 +44,8 @@ src/
   physics/
     PhysicsWorld.ts       Rapier world (lazy WASM load), static box colliders, camera sphere sweep
     CharacterBody.ts      kinematic capsule driven by Rapier's character controller
-    collisionGroups.ts    collision layers (world / thin world / character)
+    PropBody.ts           small dynamic body for a loose prop (ball/box/capsule), speed-capped, can be switched off
+    collisionGroups.ts    collision layers (world / thin world / character / toy)
   camera/
     ThirdPersonCamera.ts  orbit, follow, collision, tight-space handling, zoom, FOV (tested with a fake collider)
     MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
@@ -57,6 +59,11 @@ src/
   interactions/
     Interactable.ts       the Interactable contract (id, type, label, distance, enabled, position, callback) + INTERACTION_TYPES
     InteractionSystem.ts  registry + "what would E do now?" selection (tested; DOM/three-free)
+    PickupSystem.ts       pick up / carry / drop for any Carryable (tested; DOM/three-free)
+  props/
+    Prop.ts               a loose prop: PropBody + view, interpolated; implements Carryable; escape rescue
+    propVisuals.ts        original code-built prop models (sock, …)
+    roomProps.ts          creates the living room's props at their landmarks (Rapier-tested in props.test.ts)
   ui/
     UIManager.ts          screens, controls dialog, toast, hints, contextual prompt
     DebugPanel.ts         ` overlay + FrameStats
@@ -127,6 +134,21 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - `Game` reads `wasPressed('interact')` once per rendered frame and calls `interactions.interact()`; the UI shows
   the current target as "E — label" (`UIManager.setPrompt`, which only touches the DOM when the text changes).
 - Systems register their own interactables (pickup, rest). `MokeController` knows nothing about interactions.
+
+## Props and carrying (Milestone 6)
+- `PropBody` (physics, no three.js) is a small dynamic Rapier body with CCD, damping and a hard speed cap applied
+  after every step. Props sit on the `toy` layer, so the camera sweep ignores them. `pushable: false` props (the
+  sock) also skip the `character` layer, so Moke walks over them instead of tripping.
+- `Prop` = `PropBody` + view. The view is interpolated between fixed steps like Moke. A prop that escapes (below
+  the floor, far outside) goes back to its landmark.
+- `PickupSystem<T extends Carryable>` registers a PICKUP interactable per item ("Pick Up Sock", disabled while his
+  mouth is full) and one DROP interactable ("Drop Sock", priority 10, no facing check) while carrying.
+  - Picking up switches the body off. Dropping puts it back just ahead of his mouth, computed from
+    `MokeController`'s position and heading (never the mesh), pulled back from walls with a
+    `PhysicsWorld.rayDistance` probe, and gives it half his velocity, so it falls and tumbles naturally.
+  - Presentation listens through `onPickUp`/`onDrop`: `Game` parents the prop's view to `MokeVisual.mouthSocket`
+    with the prop's `carry` pose, and sets `Moke.carrying` so body language reacts (head up, tail wag).
+- Frame order: `Moke.fixedUpdate` → `PhysicsWorld.step` → `Prop.afterStep` (fixed); `Prop.render(alpha)` per frame.
 
 ## Third-person camera (`camera/ThirdPersonCamera.ts`, tuning in `config/camera.ts`)
 It's never parented to Moke. Each frame:
@@ -203,6 +225,7 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
   - `world`: walls, floor, furniture.
   - `worldThin`: e.g. table legs; they block Moke but not the camera.
   - `character`: Moke.
+  - `toy`: loose props (dynamic bodies). The camera ignores them; the sock also ignores Moke.
   - Queries filter by layer: the camera sweep sees `world` only.
 - **Gravity** applies only while airborne. On the ground, snap-to-ground keeps him planted. Also pushing down into
   the floor made Rapier's controller occasionally drop a whole step of horizontal movement, which read as a

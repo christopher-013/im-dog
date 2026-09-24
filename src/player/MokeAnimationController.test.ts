@@ -60,4 +60,12 @@ describe('MokeAnimationController', () => {
     expect(under.crouch).toBeGreaterThan(0.6);
     expect(open.crouch).toBeLessThan(1e-3);
   });
+
+  it('carries his head up and wags harder while holding something', () => {
+    const plain = simulate(new MokeAnimationController(MOVEMENT), { speed: 1.8, turnRate: 0, headroom: OPEN_SKY }, 1);
+    const proud = simulate(new MokeAnimationController(MOVEMENT), { speed: 1.8, turnRate: 0, headroom: OPEN_SKY, carrying: true }, 1);
+    expect(plain.carry).toBeLessThan(0.01);
+    expect(proud.carry).toBeGreaterThan(0.99);
+    expect(proud.tailWag).toBeGreaterThan(plain.tailWag);
+  });
 });

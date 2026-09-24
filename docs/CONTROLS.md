@@ -9,7 +9,7 @@ Desktop keyboard + mouse. Bindings live in `src/config/input.ts`, the single sou
 | Mouse wheel | Zoom the camera in/out (0.7–2.6 m) | Working |
 | Shift (hold) | Run | Working |
 | C (hold) | Walk / sneak | Working. Not Ctrl, because Ctrl+W closes the browser tab. |
-| E | Interact · pick up · drop | Milestones 5–6 |
+| E | Interact · pick up · drop | Working (Milestones 5–6): the prompt shows what E will do |
 | F | Bark | Later milestone |
 | Q | Sniff mode | Milestone 8 |
 | Space | Jump (optional, undecided) | Not planned yet |

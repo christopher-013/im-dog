@@ -18,6 +18,10 @@ export const MOKE_ANIMATION = {
   /** Tail wag intensity (0..1) when idle vs. moving. */
   idleTailWag: 0.6,
   movingTailWag: 0.35,
+  /** Carrying a prize makes him happy. */
+  carryTailWag: 0.8,
+  /** Head lift while carrying (radians). */
+  carryHeadLift: 0.14,
   /** Start ducking when the space above Moke's feet is below this (m). His fluffy head reaches ~0.42 m. */
   duckBelowHeadroom: 0.45,
   /** Headroom range over which he goes from standing to fully ducked (m). */

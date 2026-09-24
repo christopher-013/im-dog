@@ -11,6 +11,8 @@ export interface MokeMotionSample {
   turnRate: number;
   /** Free space above Moke's feet (m). */
   headroom: number;
+  /** Something in his mouth. Default false. */
+  carrying?: boolean;
 }
 
 /**
@@ -33,6 +35,8 @@ export interface MokeAnimationState {
   tailWag: number;
   /** 0 = standing tall, 1 = fully ducked under something low. */
   crouch: number;
+  /** 0..1: something in his mouth (head carried proudly, mouth closed on it). */
+  carry: number;
   /** Seconds since creation, for cyclic motion. */
   time: number;
 }
@@ -47,6 +51,7 @@ export class MokeAnimationController {
     headTilt: 0,
     tailWag: MOKE_ANIMATION.idleTailWag,
     crouch: 0,
+    carry: 0,
     time: 0,
   };
 
@@ -85,7 +90,9 @@ export class MokeAnimationController {
     s.headYaw = damp(s.headYaw, this.lookTarget, 5, dt);
     s.headTilt = damp(s.headTilt, this.tiltTarget, 6, dt);
 
-    s.tailWag = damp(s.tailWag, s.gait === 'idle' ? a.idleTailWag : a.movingTailWag, 3, dt);
+    s.carry = damp(s.carry, sample.carrying ? 1 : 0, 10, dt);
+    const wag = s.gait === 'idle' ? a.idleTailWag : a.movingTailWag;
+    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag), 3, dt);
 
     const crouchTarget = clamp((a.duckBelowHeadroom - sample.headroom) / a.duckRange, 0, 1);
     s.crouch = damp(s.crouch, crouchTarget, 10, dt);

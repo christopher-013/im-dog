@@ -12,6 +12,8 @@ export class Moke {
   readonly animation: MokeAnimationController;
   /** Feet position interpolated for the current rendered frame. */
   readonly renderPosition = new Vector3();
+  /** Set by gameplay (the pickup system) so body language can react. */
+  carrying = false;
 
   constructor(
     readonly controller: MokeController,
@@ -32,7 +34,12 @@ export class Moke {
     this.visual.object.position.copy(this.renderPosition);
     this.visual.object.rotation.y = c.interpolatedHeading(alpha);
 
-    this.animation.update(dt, { speed: c.actualSpeed, turnRate: c.locomotion.turnRate, headroom: c.headroom });
+    this.animation.update(dt, {
+      speed: c.actualSpeed,
+      turnRate: c.locomotion.turnRate,
+      headroom: c.headroom,
+      carrying: this.carrying,
+    });
     this.visual.update(dt, this.animation.state);
   }
 }

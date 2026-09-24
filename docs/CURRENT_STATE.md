@@ -7,7 +7,7 @@ Phase 1
 
 ## Current Milestone
 Overnight run (owner decision 2026-09-24): Milestones 5 → 9 in order on the branch above; M10 is not started.
-Milestone 5 (interaction framework) is complete and awaiting owner review. The owner's hands-on playtest of
+Milestones 5 (interaction framework) and 6 (sock) are complete and awaiting owner review. The owner's hands-on playtest of
 Milestones 2–4 (movement, camera and room) is still pending.
 
 ## Last Developer
@@ -50,6 +50,14 @@ Claude Code
 - Contextual prompt overlay ("E — Pick Up Sock" style), hidden outside play. E triggers the current target.
 - Debug panel section "Interaction" (registered count, current target and distance).
 - No interactable is registered yet in M5 itself; the sock (M6) is the first.
+
+**Milestone 6: sock.**
+- A coral sock with mustard stripes lies on the rug (`landmarks.sock`). "E — Pick Up Sock" → it rides crosswise in
+  his mouth (`mouthSocket`); he can walk, turn and run with it (head up, happier tail, tongue hidden).
+- "E — Drop Sock" drops it just ahead of his mouth with some of his momentum; Rapier makes it fall and settle.
+- Generic `PickupSystem` / `Carryable` and `Prop` / `PropBody`: the ball and toy (M7) reuse them unchanged.
+- The sock doesn't collide with Moke (he walks over it); nothing collides with the camera.
+- Debug panel: "carrying" in the Interaction section; Physics shows the extra bodies.
 
 ## Current Architecture
 - `Game` owns the scene, renderer, input, physics, UI and state machine. Frame order:
@@ -97,7 +105,7 @@ New in Milestone 4:
 - The potted plant looks a little sparse and spiky. It could be lusher in the polish milestone.
 - The window's sun patch is fairly subtle under the brighter room lighting.
 - There's no ambient occlusion (a post-processing choice), so contact areas under furniture are softer than in a film look.
-- Sock, tennis ball and dog toy aren't placed yet. They arrive with their milestones (6 and 7).
+- The tennis ball and dog toy arrive with Milestone 7.
 
 ## Verification Status
 Run on 2026-09-24 at the end of Milestone 4:

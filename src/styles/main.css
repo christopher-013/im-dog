@@ -561,7 +561,7 @@ kbd {
 .interact-prompt {
   position: absolute;
   left: 50%;
-  bottom: 22%;
+  bottom: 14%;
   display: flex;
   align-items: center;
   gap: 0.5em;

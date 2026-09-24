@@ -70,7 +70,7 @@ export const CONTROL_HINTS: readonly ControlHint[] = [
   { label: 'Zoom camera', input: 'Wheel', ready: true },
   { label: 'Run (hold)', input: ['run'], ready: true },
   { label: 'Walk / sneak (hold)', input: ['walk'], ready: true },
-  { label: 'Interact · pick up · drop', input: ['interact'], ready: false },
+  { label: 'Interact · pick up · drop', input: ['interact'], ready: true },
   { label: 'Bark', input: ['bark'], ready: false },
   { label: 'Sniff', input: ['sniff'], ready: false },
   { label: 'Pause · free the mouse', input: ['pause'], ready: true },

@@ -1,8 +1,8 @@
-import type { Ball, World } from '@dimforge/rapier3d-compat';
+import type { Ball, Ray, World } from '@dimforge/rapier3d-compat';
 import { TIMING } from '../config/engine';
 import { MOVEMENT } from '../config/movement';
 import type { Vec3Like } from './CharacterBody';
-import { CAMERA_QUERY_GROUPS, interactionGroups, LAYER } from './collisionGroups';
+import { CAMERA_QUERY_GROUPS, interactionGroups, LAYER, WORLD_QUERY_GROUPS } from './collisionGroups';
 
 export type Rapier = typeof import('@dimforge/rapier3d-compat');
 
@@ -28,6 +28,7 @@ const IDENTITY_ROTATION = { x: 0, y: 0, z: 0, w: 1 };
 export class PhysicsWorld {
   readonly world: World;
   private sweepBall: Ball | null = null;
+  private ray: Ray | null = null;
 
   static async create(gravity: number = MOVEMENT.gravity, timestep: number = TIMING.fixedStep): Promise<PhysicsWorld> {
     const rapier = await import('@dimforge/rapier3d-compat');
@@ -68,7 +69,7 @@ export class PhysicsWorld {
 
   /**
    * How far a sphere can travel from `origin` along the unit `direction` before touching solid world
-   * geometry, up to `maxDistance`. Ignores Moke, thin props and (later) toys. Used by the camera.
+   * geometry, up to `maxDistance`. Ignores Moke, thin props and toys. Used by the camera.
    */
   sweepSphere(origin: Vec3Like, direction: Vec3Like, radius: number, maxDistance: number): number {
     if (this.sweepBall?.radius !== radius) this.sweepBall = new this.rapier.Ball(radius);
@@ -84,6 +85,22 @@ export class PhysicsWorld {
       CAMERA_QUERY_GROUPS,
     );
     return hit ? hit.time_of_impact : maxDistance;
+  }
+
+  /**
+   * Free distance along the unit `direction` from `origin` before hitting static world geometry
+   * (walls, furniture, legs), up to `maxDistance`. Ignores Moke and toys.
+   */
+  rayDistance(origin: Vec3Like, direction: Vec3Like, maxDistance: number): number {
+    const ray = (this.ray ??= new this.rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }));
+    ray.origin.x = origin.x;
+    ray.origin.y = origin.y;
+    ray.origin.z = origin.z;
+    ray.dir.x = direction.x;
+    ray.dir.y = direction.y;
+    ray.dir.z = direction.z;
+    const hit = this.world.castRay(ray, maxDistance, true, undefined, WORLD_QUERY_GROUPS);
+    return hit ? hit.timeOfImpact : maxDistance;
   }
 
   /**

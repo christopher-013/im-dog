@@ -20,7 +20,7 @@ Humans, full house, backyard, missions/quests, economy, complex needs, mobile co
 | 3 | Third-person camera: orbit, follow, collision, pointer lock, tuning | **Done, awaiting owner review.** Collision and wall avoidance, low-ceiling handling, zoom, auto-follow, sensitivity/invert settings. Pointer lock still needs a physical-mouse check. |
 | 4 | Living room: stylized room, furniture, colliders, lighting | **Done, awaiting owner review.** Furnished room plus a short hallway, procedural textures, merged scenery, navigation-tested colliders, lamp light and soft reflections. |
 | 5 | Interaction framework and contextual prompts | **Done (overnight, branch `claude/milestones-5-9-qagq4b`), awaiting owner review.** `Interactable` + `InteractionSystem` (reach, facing cone, priority, anti-flicker), "E — …" prompt overlay, debug section. |
-| 6 | Sock: pick up, mouth attachment, carry, drop | |
+| 6 | Sock: pick up, mouth attachment, carry, drop | **Done (overnight), awaiting owner review.** Generic `PickupSystem` + `Carryable`; `PropBody` (dynamic Rapier) and `Prop` (body + interpolated view); the sock rides in `mouthSocket`, drops ahead of his mouth (kept clear of walls) and falls. |
 | 7 | Physics toys: tennis ball, dog toy | |
 | 8 | Sniff mode: scent sources, detection, stylized wisps | |
 | 9 | Rest: dog bed, lie down, stand up, camera adjustment | |

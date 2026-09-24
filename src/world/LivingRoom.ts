@@ -47,6 +47,8 @@ export class LivingRoom {
     underTable: new Vector3(0.3, 0, -1.15),
     hallwayEntrance: new Vector3(3.0, 0, 1.1),
     hallwayEnd: new Vector3(6.2, 0, 1.1),
+    /** Where the loose props start: the sock on the rug, in view from the spawn. */
+    sock: new Vector3(-0.35, 0, -0.3),
   };
 
   constructor() {

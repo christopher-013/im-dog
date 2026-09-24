@@ -24,7 +24,7 @@ Humans, full house, backyard, missions/quests, economy, complex needs, mobile co
 | 7 | Physics toys: tennis ball, dog toy | **Done (overnight), awaiting owner review.** Tennis ball (rolls when bumped, knocked ahead at a run) and a rope toy, both pushable and carryable through the same `Prop`/`PickupSystem`; a toy-only bumper collider on Moke; speed caps and escape rescue. |
 | 8 | Sniff mode: scent sources, detection, stylized wisps | **Done (overnight), awaiting owner review.** `ScentSystem`/`ScentSource` (sock, rope toy, ball, dog bed), Q sniff with fades and cooldown, soft wisps and pulses (one draw, fixed budget), nose-down pose, warm vignette. **Bark (F)** landed here too: hop + head jolt + comic "Arf!" bubble + a synthesized bark via a small `AudioManager`. |
 | 9 | Rest: dog bed, lie down, stand up, camera adjustment | **Done (overnight), awaiting owner review.** `RestSystem`: "E — Lie Down" at the bed, shuffle in and turn to face out, sphinx pose with sleepy eyes, camera lower/closer and looking into the bed, quiet HUD with "Resting…"; E or a movement key stands him up. |
-| 10 | Polish: movement, camera, visuals, audio, UI, performance | |
+| 10 | Polish: movement, camera, visuals, audio, UI, performance | **In progress** (started 2026-09-24 at the owner's request). Done: Moke's anime look (`ToonMokeVisual`: fur tufts, cel shading, outlines, big eyes, blinks, blush, smile, sleeping eyes). Remaining candidates: `docs/CURRENT_STATE.md` → Known Issues. |
 
 ## Success criteria (end of Phase 1)
 Open in Chrome → start screen → PLAY → control Moke in third person → walk, run and turn naturally → comfortable

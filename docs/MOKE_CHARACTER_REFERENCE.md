@@ -119,11 +119,21 @@ In priority order:
 8. **Close-ups** of paws/pads and ears lifted vs. at rest.
 9. Optional: **a recording of his real bark**, which could become the in-game bark if you want.
 
+## Owner style target (2026-09-24)
+The owner shared an anime illustration of a white fluffy puppy in a cozy living room as the look to aim for
+(shared in chat; not stored in the repo). What it shows, and what the in-game Moke (`ToonMokeVisual`) now follows:
+- **Anime cel look:** bright white fur with soft lavender-grey shading, thin dark ink outlines, a warm soft light.
+- **Fur drawn as soft pointed tufts** around the silhouette (head, ears, chest, legs, tail), smooth around the face.
+- **Big glossy brown eyes** with a dark rim, a large white catch-light and a small second one. This is bigger than
+  the "10–15% larger" suggestion below: the owner's reference wins.
+- **Pink blush** on the cheeks, a small black button nose with a highlight, and a little "w" smile.
+- A round fluffy head bigger than the neat body, long ear curtains to the jaw, and a fluffy chest bib.
+
 ## Design notes for the stylized character (suggestions, not observations)
 - **Protect the silhouette first.** A round fluffy dome for the head, a neat curly body and a high pom tail make
   him recognizable even as a shadow. Build the head as merged fur masses (topknot + ear curtains + cheek fluff).
-- **Eyes:** at most ~10–15% larger than life, kept dark and round with a single strong catch-light. Their charm
-  is how clearly they read against the white, not their size.
+- **Eyes:** ~~at most ~10–15% larger than life~~ superseded by the owner's style target above (big glossy anime
+  eyes). Keep them dark-rimmed and round; their charm is still how clearly they read against the white.
 - **Keep the muzzle short and the nose a glossy black button.** Pointing the muzzle would turn him into a generic dog.
 - **Show the texture contrast** with sculpted curl clumps rather than realistic hair. Tighter on the body,
   softer on the head, looser on the ears and tail.

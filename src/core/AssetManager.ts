@@ -43,7 +43,7 @@ function createDefaultLoaders(): Record<AssetKind, Loader> {
 /**
  * Loads runtime assets from public/ and reports progress for the loading screen.
  * A missing or broken file never throws out of preload(): it's logged and reported so the
- * game can fall back (for example: no moke.glb yet → keep the placeholder dog).
+ * game can fall back (for example: no moke.glb → keep the built-in toon Moke).
  */
 export class AssetManager {
   private readonly assets = new Map<string, { kind: AssetKind; value: unknown }>();

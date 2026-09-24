@@ -20,7 +20,7 @@ export interface MokeMotionSample {
 }
 
 /**
- * Model-independent body language. A visual renders it however it can: the placeholder
+ * Model-independent body language. A visual renders it however it can: the toon Moke
  * procedurally, a future moke.glb with animation clips plus bone tweaks.
  */
 export interface MokeAnimationState {

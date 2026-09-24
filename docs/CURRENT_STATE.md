@@ -1,14 +1,15 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main` (Milestones 5–9 merged from PR #1). Development moves to the owner's local machine. See `git log` for the latest commit, and `git status` for anything uncommitted._
+_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Milestone 10 work (Moke's anime look) is on the local branch `claude/m10-anime-moke`, not yet merged into `main`. See `git log` and `git status`._
 
 ## Current Phase
 Phase 1
 
 ## Current Milestone
-Milestones 5 → 9 were built overnight (owner decision 2026-09-24) and merged into `main` at the owner's request; **M10 is not started**.
-Milestones 5 (interaction framework), 6 (sock), 7 (physics toys), 8 (sniff mode, plus bark) and 9 (rest) are complete and awaiting owner review. The owner's hands-on playtest of
-Milestones 2–4 (movement, camera and room) is still pending.
+**Milestone 10 (polish) is in progress**, started 2026-09-24 at the owner's request. The owner played Milestones 5–9
+("the overall gameplay is incredible… I like it") and asked to start M10 with Moke's look: anime style instead of
+polygon shapes, following a reference picture they shared (see `docs/MOKE_CHARACTER_REFERENCE.md` → "Owner style
+target"). That first item is done and awaits the owner's look. The rest of M10 (Known Issues below) is not started.
 
 ## Last Developer
 Claude Code
@@ -76,6 +77,21 @@ Claude Code
 - Debug panel: "Scent" (sniff state, sources, the ranked nearby list); "Game" shows audio state and bark count.
 - No treat placeholder was added (optional in the spec); the four sources are the sock, rope toy, ball and bed.
 
+**Milestone 10 (in progress): Moke's anime look.**
+- `ToonMokeVisual` replaces `PlaceholderDogVisual` (deleted). Still generated entirely in code, no image files.
+- **Fur:** soft, slightly pointed tufts swept along the fur's flow (`toon/furGeometry.ts`) on a big round head with a
+  fluffy crown, long ear curtains to the jaw, a fluffy chest bib, fluffy legs with round paws, and a plume tail.
+  The face stays smooth. Static parts are merged: 9 fur meshes, each with an outline.
+- **Cel shading** (`toon/toonMaterials.ts`): white fur with lavender-grey shade, split by a soft character key
+  light (from the camera's upper left), a warm rim, lit as smooth forms (the anime-hair trick). The room's lights
+  and shadows still scale his brightness. **Ink outlines** by inverted hulls, even width in pixels.
+- **Face:** big glossy brown eyes (dark rim, two catch-lights) that blink every few seconds, pink blush, a black
+  button nose with a highlight, a "w" smile; open mouth + tongue when barking or panting at a run; closed ‿ eyes
+  while resting; a squint while sniffing or barking.
+- The tail tucks lower while he ducks, so the fluffier plume still clears the coffee table.
+- All look numbers are in `src/config/mokeLook.ts` (palette, key light, room-light influence, outline, blinks).
+- Gameplay untouched (D7): same `MokeVisual` interface, same `mouthSocket`, same animation state.
+
 **Milestone 9: rest.**
 - In or at the open front of his bed, "E — Lie Down". He shuffles to the centre, turns round to face out and flops
   into a sphinx pose (tummy down, front paws forward, head resting, sleepy half-closed eyes, lazy tail).
@@ -107,10 +123,18 @@ Claude Code
   - `RoomLighting` plus `applySoftEnvironment`.
 - **Tuning** is in `src/config/`: `movement.ts`, `camera.ts`, `animation.ts`, `input.ts`, `engine.ts` (including the
   lighting balance), `world.ts`, `interaction.ts` (reach, rest), `props.ts`, `senses.ts`, `audio.ts`.
-- **Temporary:** `PlaceholderDogVisual` (until `moke.glb`).
+- **Moke's look:** `ToonMokeVisual` + `player/toon/` (fur geometry, toon/outline materials, face textures), tuned in `config/mokeLook.ts`.
 - Details: `docs/ARCHITECTURE.md` (sections "Interactions", "Props and carrying", "Sniff mode", "Bark and audio").
 
 ## Current Gameplay State
+**Milestone 10, Moke's look (2026-09-24):** checked in the in-app browser (dev server) with close-up renders from
+the front ¾, side, behind and in play: standing, barking (mouth + tongue, squint), lying in the bed (shut ‿ eyes),
+sniffing (nose down, squint), and carrying the sock. Running under the coffee table and the menu view look right.
+Moke's rendering cost measured at about 0.34 ms per frame at 1280×720 (0.64 ms with him vs 0.30 ms without, a
+close camera, synchronous `gl.finish()` timing); about 90k triangles including outlines. Production preview:
+loads and plays with no console messages. **Not judged:** how he looks on the owner's display, in motion at full
+frame rate, and in the dim hallway.
+
 **Milestones 5–9 (overnight):** verified with unit and Rapier tests plus headless Chromium (SwiftShader, about
 10 FPS, so no feel or performance judgement). Screens checked: sock/rope toy in mouth, "E — …" prompts, sniff
 wisps + ranked debug list, the bark bubble animation, lying in the bed from front and back, quiet HUD. The
@@ -145,6 +169,16 @@ New in Milestone 4:
 - The window's sun patch is fairly subtle under the brighter room lighting.
 - There's no ambient occlusion (a post-processing choice), so contact areas under furniture are softer than in a film look.
 
+New in Milestone 10 (Moke's look):
+- The look is tuned by eye in the embedded browser only. Palette, outline width, tuft sizes and eye size are
+  first passes for the owner to react to (all in `config/mokeLook.ts` and the `ToonMokeVisual` layout constants).
+- From the usual follow camera (behind and above) his plume tail covers much of the back of his head. That's true
+  to the real Moke, but it could be lowered if the owner prefers to see more head.
+- The room props (sock, ball, rope toy) and furniture aren't toon-shaded or outlined, so Moke is a little more
+  "anime" than his surroundings. Matching them is a possible next M10 step.
+- The eyes are unlit decals: they don't darken in the dim hallway.
+- Legs are simple fluffy columns; there's no sit pose (the reference picture shows him sitting).
+
 New in Milestones 5–9:
 - Carried props have no collision, so they can visually poke into walls.
 - Ball kick strength and roll distance, sniff duration and wisp look, and the lie-down timing are first guesses; they need a feel check.
@@ -154,6 +188,18 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-24 after Moke's anime look (Milestone 10):
+
+| Command / check | Result |
+|---|---|
+| `npm run typecheck` | Pass |
+| `npm test` | Pass: 21 files, 142 tests (new: `furGeometry` ×5, `ToonMokeVisual` ×7, incl. clearance under the coffee table, blinking, eyes shut while resting, mouth open/closed) |
+| `npm run build` | Pass. Main bundle 750 kB (200 kB gzipped). `verify-dist`: no private photos. |
+| In-app browser, dev server | Close-ups (front ¾, side, back), poses (bark, rest, sniff, carry), play from the follow camera, a run under the coffee table |
+| In-app browser, production preview | Loads, PLAY: no console messages |
+| Not verified | The owner's eye on the look; real-GPU FPS in motion; the dim hallway; Firefox and Safari |
+
+Run on 2026-09-24 at the end of Milestone 9 (overnight):
 Run on 2026-09-24 at the end of Milestone 9 (overnight):
 
 | Command / check | Result |
@@ -182,9 +228,14 @@ Earlier, at the end of Milestone 4:
 - `src/config/`: `movement.ts`, `camera.ts`, `engine.ts` (lighting balance), `interaction.ts`, `props.ts`, `senses.ts`, `audio.ts`.
 - `src/camera/ThirdPersonCamera.ts`, `src/player/`, `src/physics/`, `src/core/Game.ts`.
 - `src/interactions/`, `src/props/`, `src/senses/`, `src/audio/`.
+- Moke's look: `src/player/ToonMokeVisual.ts`, `src/player/toon/`, `src/config/mokeLook.ts`.
 
 ## Next Recommended Task
-1. The owner playtests (locally, from `main`) Milestones 2–9 in Chrome with a
-   physical mouse and keyboard: movement, camera, sock, ball/toy, sniff, bark (listen!) and the bed.
-2. The owner answers the open questions (bark sound, walk key C, camera auto-follow strength), then we tune.
-3. Only after approval: Milestone 10 (polish). Candidates are in Known Issues above.
+1. The owner looks at the new Moke in Chrome (`npm run dev`) and says what to change: eye size, fur fluffiness,
+   shading contrast, outline weight, tail height.
+2. Tune the look from that feedback (`config/mokeLook.ts` first).
+3. Continue Milestone 10 with the owner's priorities. Candidates:
+   - matching toon shading/outlines on the props;
+   - a sit pose when idle;
+   - Known Issues above (loading-overlay ghosting, carried props poking walls, drop vs. lie-down priority);
+   - the open questions: final bark sound, walk key C, camera auto-follow strength.

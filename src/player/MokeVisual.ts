@@ -1,10 +1,10 @@
 import type { Object3D } from 'three';
 import type { MokeAnimationState } from './MokeAnimationController';
-import { PlaceholderDogVisual } from './PlaceholderDogVisual';
+import { ToonMokeVisual } from './ToonMokeVisual';
 
 /**
  * Everything a Moke visual must provide. Only `Moke` drives it; movement, camera, physics and
- * (later) interactions never touch it, so the placeholder can be swapped for moke.glb freely.
+ * (later) interactions never touch it, so the toon Moke can be swapped for moke.glb freely.
  */
 export interface MokeVisual {
   /** Root object. `Moke` places it at the feet position and facing; local +z is forward. */
@@ -20,5 +20,5 @@ export interface MokeVisual {
  * manager here and return a glTF-based visual, keeping the placeholder as the fallback.
  */
 export function createMokeVisual(): MokeVisual {
-  return new PlaceholderDogVisual();
+  return new ToonMokeVisual();
 }

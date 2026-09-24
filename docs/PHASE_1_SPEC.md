@@ -40,7 +40,7 @@ Scope rules, tone and constraints are in `AGENTS.md`, `docs/GAME_DESIGN.md` and 
 
 ## Milestone 9 — Rest
 - Near the dog bed: "E — Lie Down". E enters a resting state:
-  - Moke stops moving and takes a lying pose (in the placeholder visual, via `MokeAnimationState`).
+  - Moke stops moving and takes a lying pose (in the procedural visual, via `MokeAnimationState`).
   - The camera adjusts slightly.
   - The UI goes quieter, with optional subtle "Resting…" text.
 - A movement key or E stands him back up. **Don't build the full nap mini-game.**

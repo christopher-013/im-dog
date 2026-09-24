@@ -13,7 +13,7 @@ const BLOCKED_STEPS = 2;
 
 /**
  * Moke's gameplay body: position, facing, speed and collision. It doesn't know what Moke looks
- * like. The visual (placeholder today, moke.glb later) only ever reads from it.
+ * like. The visual (the toon Moke today, maybe moke.glb later) only ever reads from it.
  *
  * Runs in the fixed step and keeps the previous step's state, so visuals and the camera can
  * interpolate smoothly on high-refresh displays.

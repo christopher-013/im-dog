@@ -27,6 +27,7 @@ src/
     props.ts              prop definitions (shape, mass, damping, carry pose) + pickup/drop tuning
     senses.ts             sniff timing, wisp look, scent colours per category
     audio.ts              sound levels
+    mokeLook.ts           Moke's anime look: cel palette, key light, outline width, blink timing
     assets.ts             asset manifest (preloaded behind the loading screen)
   core/
     Game.ts               state machine + frame orchestration
@@ -41,7 +42,8 @@ src/
     MokeController.ts     gameplay body: locomotion + collision + interpolation (tested with real Rapier)
     MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking (tested)
     MokeVisual.ts         the visual interface + createMokeVisual() factory
-    PlaceholderDogVisual.ts  TEMPORARY stand-in dog, animated procedurally
+    ToonMokeVisual.ts     anime-style Moke built in code (fur tufts, cel shading, outlines, face), animated procedurally (tested)
+    toon/                 furGeometry.ts (tufted fur clumps, tested), toonMaterials.ts (cel shading + ink outline), faceTextures.ts (eye, blush)
     Moke.ts               composite: controller + animation + visual (+ carrying/sniffing flags from gameplay)
     Bark.ts               bark cooldown (tested)
   physics/
@@ -114,8 +116,8 @@ The key rule: **gameplay never touches the mesh.** The data flows one way:
 
 ```
 input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─► MokeVisual
-          (world dir)    (Locomotion +      (lean, head, tail,         (placeholder today,
-                          CharacterBody)     ducking: plain numbers)    moke.glb later)
+          (world dir)    (Locomotion +      (lean, head, tail,         (ToonMokeVisual today,
+                          CharacterBody)     ducking: plain numbers)    moke.glb possible)
 ```
 - `Locomotion` is the feel model. Moke always travels the way he faces:
   - He turns at a limited rate: quick pivots when slow, wider arcs at a run.
@@ -128,9 +130,21 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - `MokeAnimationController` turns motion into model-independent body language. It's the same for any visual.
 - `MokeVisual` is the only interface a visual implements: `object`, a `mouthSocket` for carried items (Milestone 6),
   `update(dt, animationState)` and `dispose()`. `createMokeVisual()` is the single place that picks one.
-  - Today it returns `PlaceholderDogVisual`, which is procedural.
-  - When `moke.glb` exists: load it as an `optional` asset and return a glTF-based visual from the factory
-    (not built yet), keeping the placeholder as the fallback.
+  - Today it returns `ToonMokeVisual` (Milestone 10): an anime-film Moke generated in code, with no image files.
+    - **Fur:** `furClump` grows soft, slightly pointed tufts (tips swept along a flow direction) from dense
+      ellipsoids; static parts are merged, so Moke has 9 fur meshes (each with an outline). Each clump also stores the smooth
+      ellipsoid's normal (`smoothNormal`), and the toon shader lights mostly by it, so each clump shades as one
+      clean form (the anime-hair trick) while the tufts shape the silhouette.
+    - **Cel shading** (`createToonMaterial`, a patched `MeshToonMaterial`): a lit/shade palette split by a
+      character-only key light fixed in view space, plus a warm rim. The room's real lights (and shadow maps) only
+      scale overall brightness, so he stays white under the warm room light but still dims in shade. The
+      materials skip tone mapping so the palette in `config/mokeLook.ts` is what reaches the screen.
+    - **Outlines:** inverted hulls (back faces pushed out in screen space, one shared `ShaderMaterial`), so line
+      width is even in pixels and thins a little with distance.
+    - **Face:** canvas-drawn eye and blush textures on domed discs placed on the smooth face; eyes blink, shut into
+      ink curves while resting; nose, "w" smile, open mouth and tongue are small meshes.
+  - A future `moke.glb` would still plug in here (load it as an `optional` asset and return a glTF-based visual),
+    keeping the toon visual as the fallback.
 - Camera, interactions, pickup, scent and physics must talk to `Moke.controller` (and later the mouth socket),
   never to the visual.
 
@@ -196,7 +210,7 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
   - rising lasts 0.45 s so the stand-up reads before he can run off.
 - E (the "Get Up" interactable) or any fresh movement key press stands him up.
 - Presentation reads plain numbers: `Moke.resting` → `MokeAnimationState.rest` (slow flop, quick rise) →
-  the placeholder's sphinx pose; `CameraTarget.rest` (from the animation state) lowers the pivot, brings the camera
+  the toon visual's sphinx pose (eyes shut); `CameraTarget.rest` (from the animation state) lowers the pivot, brings the camera
   in by 15% and enforces a minimum downward pitch (`CAMERA.rest`); `UIManager.setResting` quiets the HUD.
 
 ## Third-person camera (`camera/ThirdPersonCamera.ts`, tuning in `config/camera.ts`)

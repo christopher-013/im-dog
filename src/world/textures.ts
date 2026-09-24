@@ -1,18 +1,7 @@
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from 'three';
+import { mulberry32 } from '../utils/random';
 
 type Draw = (ctx: CanvasRenderingContext2D, width: number, height: number, rand: () => number) => void;
-
-/** Small deterministic PRNG, so every generated texture looks the same on every load. */
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 /**
  * Draws an original texture into a canvas. Returns null where there's no DOM (unit tests),

@@ -15,7 +15,8 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - Milestones 5–9 (interactions, sock, physics toys, sniff + bark, rest), built overnight and merged into
     `main` at the owner's request (PR #1).
   - Milestones 2–9 still await the owner's hands-on playtest.
-- **Next:** the owner's review of Milestones 5–9, then Milestone 10 (polish). Only start it when the owner says to.
+- **In progress:** Milestone 10 (polish), started 2026-09-24 at the owner's request. First item done: Moke's
+  anime-style look (`ToonMokeVisual`). The owner liked the Milestones 5–9 gameplay.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES
@@ -41,7 +42,7 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - Prefer simple, maintainable solutions. Avoid unnecessary dependencies.
 - Don't silently change architectural decisions. Check `docs/DECISIONS.md`, propose any change, and record it once the owner approves.
 - Keep Moke's visual model separate from controller and gameplay logic. Gameplay, camera, interactions and
-  physics must never depend on the mesh, so a future `moke.glb` can replace the placeholder without rewrites.
+  physics must never depend on the mesh, so a future `moke.glb` can replace the toon visual without rewrites.
 - Gameplay reads input *actions* from `src/config/input.ts`, never raw keys. Tunable numbers belong in `src/config/`.
 - Never claim something was tested unless it actually was. Say what wasn't verified.
 - Fix failures caused by the requested work before declaring completion.

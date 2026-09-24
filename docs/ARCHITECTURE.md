@@ -297,6 +297,8 @@ with a fake. Cost: about 5–7 µs per frame.
 - Vite's hashed JS/CSS/fonts go to `dist/app/`; runtime assets stay in `dist/assets/`.
 - Production builds emit `dist/THIRD_PARTY_NOTICES.txt` with the distributed font and runtime-library licenses.
 - `base: './'` means the build works from any static host path (GitHub Pages project sites, etc.).
+- **Hosting (D13):** `.github/workflows/deploy-pages.yml` runs `npm ci`, `npm test` and `npm run build` on every push
+  to `main` and publishes `dist/` to GitHub Pages at https://christopher-013.github.io/im-dog/.
 
 ## Rendering
 WebGL 2 (`WebGLRenderer`), sRGB output, **Neutral** tone mapping (keeps chosen colours honest; ACES shifts warm

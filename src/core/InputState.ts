@@ -47,6 +47,22 @@ export class InputState {
 
   /** Returns true if the key is bound to something (so the caller can suppress browser defaults). */
   keyDown(key: string): boolean {
+    return this.hold(key, true);
+  }
+
+  /**
+   * Marks a key held again without counting a new press: for a controller button that's still held after
+   * releaseAll() (pause, focus loss). Keyboards get this for free from OS key repeat; controllers don't.
+   */
+  keyHeld(key: string): void {
+    this.hold(key, false);
+  }
+
+  isKeyDown(key: string): boolean {
+    return this.keysDown.has(key);
+  }
+
+  private hold(key: string, isPress: boolean): boolean {
     const actions = this.actionsByKey.get(key);
     if (!actions) return false;
     if (this.keysDown.has(key)) return true; // OS auto-repeat
@@ -54,7 +70,7 @@ export class InputState {
     for (const action of actions) {
       const count = this.heldCount.get(action) ?? 0;
       this.heldCount.set(action, count + 1);
-      if (count === 0) this.pendingPressed.add(action);
+      if (count === 0 && isPress) this.pendingPressed.add(action);
     }
     return true;
   }

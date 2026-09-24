@@ -9,6 +9,9 @@ duck under, TV console, lamp, plant, and his bed in the window's sun, plus a sho
 carry his sock and toys, and nap in his bed. A low dog-height camera follows him and avoids walls and furniture.
 See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
+**Play it:** https://christopher-013.github.io/im-dog/ (desktop Chrome or Edge; keyboard + mouse or a standard controller). Every push to `main`
+rebuilds and republishes it through GitHub Actions (`.github/workflows/deploy-pages.yml`).
+
 ## Requirements
 - Node.js **22.12+** (tested with Node 24) and npm
 - A desktop browser with WebGL 2: Chrome or Edge first; Firefox and Safari should work

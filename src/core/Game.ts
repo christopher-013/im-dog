@@ -32,6 +32,7 @@ import { AssetManager } from './AssetManager';
 import { FixedStep, GameLoop } from './GameLoop';
 import { GameRenderer } from './GameRenderer';
 import { InputManager } from './InputManager';
+import { menuCommand } from './MenuInput';
 import type { Vec2Like } from './InputState';
 import { applySettings, loadSettings, saveSettings } from './PlayerSettings';
 
@@ -229,20 +230,13 @@ export class Game {
     const input = this.input.state;
     if (input.wasPressed('toggleDebug')) this.debug.toggle();
     // With pointer lock, the browser eats Esc and we pause via onPointerLockChange instead.
-    if (input.wasPressed('pause')) {
-      if (this.state === 'playing') this.pause();
-      else if (this.state === 'paused') this.resume(false);
-    }
-    let enteredPlay = false;
-    if (input.wasPressed('menuConfirm')) {
-      if (this.state === 'menu') {
-        this.play(false);
-        enteredPlay = true;
-      } else if (this.state === 'paused') {
-        this.resume(false);
-        enteredPlay = true;
-      }
-    }
+    const command = menuCommand(this.state, (action) => input.wasPressed(action), this.ui.controlsOpen);
+    if (command === 'pause') this.pause();
+    else if (command === 'resume') this.resume(false);
+    else if (command === 'play') this.play(false);
+    else if (command === 'closeControls') this.ui.closeControls();
+    // The press that started or resumed play mustn't also count as an in-game action (A is also "interact").
+    const enteredPlay = command === 'resume' || command === 'play';
 
     const playing = this.state === 'playing';
     // Discrete actions are read once per rendered frame, so a tap is never missed or doubled.

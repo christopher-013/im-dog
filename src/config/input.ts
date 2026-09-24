@@ -13,6 +13,7 @@ export const ACTIONS = [
   'sniff',
   'jump',
   'pause',
+  'resume',
   'toggleDebug',
   'menuConfirm',
 ] as const;
@@ -41,8 +42,10 @@ export const KEY_BINDINGS: Readonly<Record<Action, readonly string[]>> = {
   sniff: ['KeyR', 'Gamepad:Button11'],
   jump: ['Space'],
   pause: ['Escape', 'Gamepad:Button9'],
+  // Controller-only: keyboard menus use the focused button (Enter/Space), and Esc can't resume (see MenuInput.ts).
+  resume: ['Gamepad:Button9'],
   toggleDebug: ['Backquote', 'Gamepad:Button8'],
-  menuConfirm: ['Enter', 'Space', 'Gamepad:Button0'],
+  menuConfirm: ['Gamepad:Button0'],
 };
 
 export interface GamepadSettings {

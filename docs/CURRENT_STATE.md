@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Moke's real-dog look, collar and tag, the title-screen fixes, Codex's Phase 1 audit and gamepad support are committed locally on `main`. So are Moke's new tail, the deeper growl and the trick button, with sniff moved to R (Claude). Nothing of Claude's is pushed. See `git log` and `git status`._
+_Last updated: 2026-09-24. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. Moke's real-dog look, collar and tag, the title-screen fixes, Codex's Phase 1 audit and gamepad support are committed locally on `main`. So are Moke's new tail, the deeper growl and the trick button, with sniff moved to R (Claude). Nothing of Claude's is pushed. See `git log` and `git status`._
 
 ## Current Phase
 Phase 1
@@ -15,7 +15,7 @@ in line with D and G). Then a tail attached to his body and shaped like the real
 and awaiting the owner's look. The rest of M10 (Known Issues below) is not started.
 
 ## Last Developer
-Claude Code (the trick button; before that Moke's tail and a deeper growl). Before that, OpenAI Codex committed its
+Claude Code (a review of Codex's commits, three fixes from it, and GitHub Pages hosting; before that the trick button, Moke's tail and a deeper growl). Before that, OpenAI Codex committed its
 Phase 1 audit, gamepad support, the cute growl and a collar refit.
 
 ## Completed
@@ -123,6 +123,22 @@ Phase 1 audit, gamepad support, the cute growl and a collar refit.
 - **Sniff moved** (owner's choice) from Q to **R**, and from X to **pressing the right stick** on a controller.
 - Code: `player/Tricks.ts`, `MokeAnimationController.trick/cancelTrick`, `TrickPose` in `ToonMokeVisual`, lengths in
   `MOKE_ANIMATION.tricks`.
+
+**Milestone 10 (in progress): review fixes and hosting.**
+- Code review of Codex's commits (`6804ffd`, `3a2d761`); fixed:
+  - Enter/Space on any focused menu control (CONTROLS, the invert-Y box…) also started or resumed the game. Menu
+    confirm/resume are now controller-only (A, Start); keyboard menus use the focused button natively.
+  - Esc on the pause screen resumed the game, so closing the Controls dialog with Esc resumed play (and Esc that
+    released the mouse could un-pause at once). Esc now only pauses.
+  - Controller buttons still held after a pause or focus loss were dropped until re-pressed. They're now held
+    again without counting a new press (so holding Start can't re-trigger a resume).
+  - Menu decisions moved into `core/MenuInput.ts` (tested); A or Start closes the Controls dialog when it's open.
+- Not fixed yet (from the same review): the toast and "E — …" prompt aren't announced by screen readers (their
+  text changes while still `aria-hidden`); Codex recoloured the sock charcoal without updating the docs (the M6 notes
+  below still say coral); two small controller-code allocations per frame.
+- **Hosting:** GitHub Pages at https://christopher-013.github.io/im-dog/ via `.github/workflows/deploy-pages.yml` (tests + build on every push to
+  `main`). The owner chose to make the repo public; the git history was audited first (only the photo folder's
+  README was ever committed; no images, secrets or private files).
 
 **Milestone 10 (in progress): title screen.**
 - The title and loading stacks are no longer scroll containers (that produced a horizontal scrollbar and clipped
@@ -257,6 +273,17 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-24 after the review fixes and adding hosting:
+
+| Command / check | Result |
+|---|---|
+| `npm run typecheck` | Pass |
+| `npm test` | Pass: 27 files, 179 tests (new: menu input ×5, a controller button held through a pause ×1) |
+| `npm run build` | Pass. `verify-dist`: no private photos. |
+| In-app browser, dev server | Enter on CONTROLS opens the dialog and stays on the menu; Space in the dialog doesn't start; Esc pauses; Esc closing the dialog on the pause screen stays paused; plain Esc on the pause screen stays paused |
+| GitHub Pages | See the deploy run on GitHub (Actions → Deploy to GitHub Pages) |
+| Not verified | A physical controller; Firefox and Safari |
+
 Run on 2026-09-24 after adding tricks:
 
 | Command / check | Result |
@@ -341,8 +368,8 @@ Earlier, at the end of Milestone 4:
 - Moke's look: `src/player/ToonMokeVisual.ts`, `src/player/toon/`, `src/config/mokeLook.ts`.
 
 ## Next Recommended Task
-1. The owner looks at Moke (coat, ears, collar and tag, tail), listens to the growl (G), and checks the title
-   screen in Chrome (`npm run dev`), and says what to change. Tune from that (`config/mokeLook.ts` first).
+1. The owner playtests on real machines (https://christopher-013.github.io/im-dog/): mouse capture, audio by ear, a controller, real-GPU frame rate,
+   and the feel of movement, camera and tricks. Then says what to change. Tune from that (`config/mokeLook.ts` first).
 2. Continue Milestone 10 with the owner's priorities. Candidates:
    - redraw the logo "O" face to match the real Moke;
    - a sit pose when idle;

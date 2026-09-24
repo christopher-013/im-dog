@@ -40,11 +40,13 @@ export class GamepadInput {
     this.mapping = pad.mapping;
 
     for (let i = 0; i < pad.buttons.length; i++) {
-      const button = pad.buttons[i];
-      const down = button.pressed || button.value >= GAMEPAD.buttonThreshold;
+      const down = this.isDown(pad, i);
       if (down && !this.buttonsDown.has(i)) {
         this.buttonsDown.add(i);
         input.keyDown(buttonId(i));
+      } else if (down && !input.isKeyDown(buttonId(i))) {
+        // Still held, but the input state was reset (pause, focus loss): hold it again, without a new press.
+        input.keyHeld(buttonId(i));
       } else if (!down && this.buttonsDown.delete(i)) {
         input.keyUp(buttonId(i));
       }

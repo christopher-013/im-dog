@@ -16,7 +16,8 @@ Desktop keyboard + mouse. Bindings live in `src/config/input.ts`, the single sou
 | R | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed). Was Q until the owner swapped Q for tricks. |
 | Space | Jump (optional, undecided) | Not planned yet |
 | W A S D while resting | Get up out of the bed | Working |
-| Esc | Pause and release the mouse | Working |
+| Esc | Pause and release the mouse | Working. Esc never resumes (it also closes the Controls dialog); resume with RESUME, Enter/Space on it, or a click. |
+| Enter / Space on a menu button | Press that button (PLAY, CONTROLS, RESUME…) | Working: plain browser buttons, so they never start the game from the wrong one |
 | ` (Backquote) | Toggle debug panel | Working |
 
 **Mouse capture:** clicking PLAY or RESUME captures the mouse (pointer lock). Esc releases it and pauses.
@@ -52,7 +53,7 @@ Standard-layout USB and Bluetooth controllers are detected automatically through
 | Left shoulder or left trigger | Walk / sneak (hold) |
 | Right shoulder or right trigger | Run (hold) |
 | Right stick press | Sniff (all four face buttons are taken) |
-| Menu / Start | Pause or resume |
+| Menu / Start | Pause or resume; closes the Controls dialog if it's open |
 | View / Back | Toggle debug panel |
 
 Keyboard and mouse remain active while a controller is connected. Controller names and whether the browser reports a standard mapping are shown in the debug panel.

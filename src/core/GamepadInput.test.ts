@@ -63,6 +63,21 @@ describe('GamepadInput', () => {
     expect(Math.hypot(look.x, look.y)).toBeLessThanOrEqual(GAMEPAD.lookPixelsPerSecond * 0.25 + 0.001);
   });
 
+  it('keeps a button that is still held after a pause or focus loss, without a new press', () => {
+    const input = new InputState(KEY_BINDINGS);
+    const gamepad = new GamepadInput();
+    gamepad.update([pad(undefined, [5, 9])], input, 1 / 60); // holding RB (run) and Start
+    input.beginFrame();
+    input.releaseAll(); // e.g. the game paused, or the window lost focus
+    input.beginFrame();
+    gamepad.update([pad(undefined, [5, 9])], input, 1 / 60); // both still held
+    input.beginFrame();
+    expect(input.isDown('run')).toBe(true);
+    // No fresh press: holding Start through the pause mustn't count as pressing it again (that would resume).
+    expect(input.wasPressed('pause')).toBe(false);
+    expect(input.wasPressed('resume')).toBe(false);
+  });
+
   it('releases held controls when the controller disconnects', () => {
     const input = new InputState(KEY_BINDINGS);
     const gamepad = new GamepadInput();

@@ -196,6 +196,14 @@ export class UIManager {
     if (!this.controlsDialog.open) this.controlsDialog.showModal();
   }
 
+  get controlsOpen(): boolean {
+    return this.controlsDialog.open;
+  }
+
+  closeControls(): void {
+    if (this.controlsDialog.open) this.controlsDialog.close();
+  }
+
   showFatalError(message: string): void {
     this.errorDetail.textContent = message;
     this.showScreen('error');

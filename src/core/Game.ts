@@ -5,6 +5,7 @@ import { ASSET_MANIFEST } from '../config/assets';
 import { CAMERA } from '../config/camera';
 import { CAMERA_LENS, RENDER } from '../config/engine';
 import { MOKE_BODY } from '../config/movement';
+import { InteractionSystem } from '../interactions/InteractionSystem';
 import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { MoveIntent } from '../player/Locomotion';
@@ -44,6 +45,7 @@ export class Game {
   private readonly room = new LivingRoom();
   private readonly followCamera: ThirdPersonCamera;
   private readonly moveBasis = new MoveBasis();
+  private readonly interactions = new InteractionSystem();
   private physics: PhysicsWorld | null = null;
   private moke: Moke | null = null;
 
@@ -165,11 +167,15 @@ export class Game {
     // With pointer lock, the browser eats Esc and we pause via onPointerLockChange instead.
     if (input.wasPressed('pause') && this.state === 'playing') this.pause();
 
-    // The world only advances while playing; menus and pause freeze it.
-    const alpha = this.fixedStep.advance(this.state === 'playing' ? dt : 0, this.fixedUpdate);
-    this.moke?.update(dt, alpha);
-
     const playing = this.state === 'playing';
+    // Discrete actions are read once per rendered frame, so a tap is never missed or doubled.
+    if (playing && input.wasPressed('interact')) this.interactions.interact();
+
+    // The world only advances while playing; menus and pause freeze it.
+    const alpha = this.fixedStep.advance(playing ? dt : 0, this.fixedUpdate);
+    this.moke?.update(dt, alpha);
+    this.updateInteractionPrompt(playing);
+
     input.getLookDelta(this.lookDelta);
     this.cameraInput.lookX = playing ? this.lookDelta.x : 0;
     this.cameraInput.lookY = playing ? this.lookDelta.y : 0;
@@ -206,6 +212,12 @@ export class Game {
     this.moveIntent.z = -cos * axis.y - sin * axis.x;
     this.moveIntent.walk = input.isDown('walk');
     this.moveIntent.run = input.isDown('run');
+  }
+
+  /** Chooses what E would do now and shows it as "E — …" (hidden outside play). */
+  private updateInteractionPrompt(playing: boolean): void {
+    const current = playing && this.moke ? this.interactions.update(this.moke.controller) : null;
+    this.ui.setPrompt(current ? 'interact' : null, current?.label ?? null);
   }
 
   /** What the camera follows: Moke as rendered this frame (or the spawn point before he exists). */
@@ -256,6 +268,15 @@ export class Game {
         grounded: c.grounded,
         headroom: `${c.headroom.toFixed(2)} m (duck ${this.moke.animation.state.crouch.toFixed(2)})`,
       };
+    });
+    this.debug.addSection('Interaction', (): DebugValues => {
+      const current = this.interactions.current;
+      const values: DebugValues = { registered: this.interactions.count, current: current ? `${current.type} "${current.label}"` : '—' };
+      if (current && this.moke) {
+        const p = this.moke.controller.position;
+        values.distance = `${Math.hypot(current.position.x - p.x, current.position.z - p.z).toFixed(2)} m (id ${current.id})`;
+      }
+      return values;
     });
     this.debug.addSection('Physics', (): DebugValues => {
       if (!this.physics) return { status: 'loading' };

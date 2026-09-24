@@ -23,6 +23,7 @@ src/
     camera.ts             third-person camera feel (distance, zoom, smoothing, collision, whiskers, auto-follow)
     animation.ts          body-language tuning (lean, idle looks, tail, ducking)
     world.ts              world scale: Moke's size, furniture heights
+    interaction.ts        interaction reach/facing tuning
     assets.ts             asset manifest (preloaded behind the loading screen)
   core/
     Game.ts               state machine + frame orchestration
@@ -53,13 +54,16 @@ src/
     textures.ts           original procedural canvas textures (floorboards, rug, pillows, art, garden)
     StaticSceneBuilder.ts places parts in nested frames, derives colliders, merges by material (tested)
     RoomLighting.ts       hemisphere fill + window sun with soft shadows; soft image-based environment
+  interactions/
+    Interactable.ts       the Interactable contract (id, type, label, distance, enabled, position, callback) + INTERACTION_TYPES
+    InteractionSystem.ts  registry + "what would E do now?" selection (tested; DOM/three-free)
   ui/
-    UIManager.ts          screens, controls dialog, toast, hints
+    UIManager.ts          screens, controls dialog, toast, hints, contextual prompt
     DebugPanel.ts         ` overlay + FrameStats
   styles/main.css
   utils/math.ts           clamp, damp, lerp, smoothstep, moveToward, angle helpers
 ```
-Planned additions follow the brief: `interactions/`, `senses/`, `audio/`.
+Planned additions follow the brief: `senses/`, `audio/`.
 
 ## Game states and the frame
 `loading → menu → playing ⇄ paused` (in `Game.ts`). Each rendered frame:
@@ -111,6 +115,18 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
     (not built yet), keeping the placeholder as the fallback.
 - Camera, interactions, pickup, scent and physics must talk to `Moke.controller` (and later the mouth socket),
   never to the visual.
+
+## Interactions (`interactions/`, Milestone 5)
+- An `Interactable` is plain data plus a callback: `id`, `type` (PICKUP, DROP, REST, SNIFF, PLAY, EAT, DRINK,
+  INVESTIGATE), `label` ("Pick Up Sock"), `interactionDistance`, `enabled`, `position`, optional `requiresFacing`
+  (default true) and `priority` (default 0), and `interact()`. Fields are read every frame, so getters work.
+- `InteractionSystem` holds the registry. Once per rendered frame `Game` calls `update(moke.controller)`, which picks
+  the current target: in reach (horizontal distance from Moke's feet), inside the facing cone unless it's right under
+  his nose, highest priority first, then best distance/angle score. The current target keeps a small bonus, so the
+  prompt doesn't flicker between two close things.
+- `Game` reads `wasPressed('interact')` once per rendered frame and calls `interactions.interact()`; the UI shows
+  the current target as "E — label" (`UIManager.setPrompt`, which only touches the DOM when the text changes).
+- Systems register their own interactables (pickup, rest). `MokeController` knows nothing about interactions.
 
 ## Third-person camera (`camera/ThirdPersonCamera.ts`, tuning in `config/camera.ts`)
 It's never parented to Moke. Each frame:

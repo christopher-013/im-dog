@@ -19,7 +19,7 @@ Humans, full house, backyard, missions/quests, economy, complex needs, mobile co
 | 2 | Moke movement: placeholder visual, controller, walk/trot/run, accel/decel, turning, collision | **Done.** Rapier physics, placeholder Moke, trot/run/walk, collision. The owner's hands-on feel playtest is still pending. |
 | 3 | Third-person camera: orbit, follow, collision, pointer lock, tuning | **Done, awaiting owner review.** Collision and wall avoidance, low-ceiling handling, zoom, auto-follow, sensitivity/invert settings. Pointer lock still needs a physical-mouse check. |
 | 4 | Living room: stylized room, furniture, colliders, lighting | **Done, awaiting owner review.** Furnished room plus a short hallway, procedural textures, merged scenery, navigation-tested colliders, lamp light and soft reflections. |
-| 5 | Interaction framework and contextual prompts | |
+| 5 | Interaction framework and contextual prompts | **Done (overnight, branch `claude/milestones-5-9-qagq4b`), awaiting owner review.** `Interactable` + `InteractionSystem` (reach, facing cone, priority, anti-flicker), "E — …" prompt overlay, debug section. |
 | 6 | Sock: pick up, mouth attachment, carry, drop | |
 | 7 | Physics toys: tennis ball, dog toy | |
 | 8 | Sniff mode: scent sources, detection, stylized wisps | |

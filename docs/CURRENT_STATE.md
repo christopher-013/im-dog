@@ -1,13 +1,14 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. See `git log` for the latest commit, and `git status` for anything uncommitted._
+_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, overnight branch `claude/milestones-5-9-qagq4b` (draft PR against `main`). See `git log` for the latest commit, and `git status` for anything uncommitted._
 
 ## Current Phase
 Phase 1
 
 ## Current Milestone
-Milestone 4 (living room) is complete and awaiting owner review. The owner's hands-on playtest of
-Milestones 2–4 (movement, camera and room) is still pending. Milestone 5 has not started.
+Overnight run (owner decision 2026-09-24): Milestones 5 → 9 in order on the branch above; M10 is not started.
+Milestone 5 (interaction framework) is complete and awaiting owner review. The owner's hands-on playtest of
+Milestones 2–4 (movement, camera and room) is still pending.
 
 ## Last Developer
 Claude Code
@@ -42,6 +43,13 @@ Claude Code
 - **Lighting:** hemisphere fill + window sun (shadows now cover the hallway too), soft image-based reflections
   (`RoomEnvironment`), a lamp point light and a hallway point light. The balance is in `config/engine.ts`.
 - `LivingRoom.landmarks` names key spots (bed, bed front, under the table, hallway) for tests and later milestones.
+
+**Milestone 5: interaction framework.**
+- `Interactable` (id, type, label, distance, enabled, position, facing/priority, callback) and `InteractionSystem`
+  (registry; picks the target Moke is near and facing; priority; no flicker between close rivals).
+- Contextual prompt overlay ("E — Pick Up Sock" style), hidden outside play. E triggers the current target.
+- Debug panel section "Interaction" (registered count, current target and distance).
+- No interactable is registered yet in M5 itself; the sock (M6) is the first.
 
 ## Current Architecture
 - `Game` owns the scene, renderer, input, physics, UI and state machine. Frame order:

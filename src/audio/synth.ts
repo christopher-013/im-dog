@@ -57,37 +57,97 @@ export const bark: Synth = (ctx, out, t0, pitch, noise) => {
   voice.stop(t0 + 0.22);
 };
 
-/** A small, rumbly "grrr" with a gentle wobble: determined, but more adorable than scary. */
+/** Gain that swells in, holds, then fades out (exponential ramps, so it never clicks). */
+function swell(ctx: AudioContext, t0: number, attack: number, hold: number, release: number, peak: number): GainNode {
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(peak, t0 + attack);
+  g.gain.setValueAtTime(peak, t0 + attack + hold);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + hold + release);
+  return g;
+}
+
+let gritCurve: Float32Array<ArrayBuffer> | null = null;
+/** A soft-clipping curve: rounds off the loudest part of the wave, adding throaty harmonics. */
+function grit(): Float32Array<ArrayBuffer> {
+  if (!gritCurve) {
+    gritCurve = new Float32Array(1024);
+    for (let i = 0; i < gritCurve.length; i++) {
+      const x = (i / (gritCurve.length - 1)) * 2 - 1;
+      gritCurve[i] = Math.tanh(3 * x) / Math.tanh(3);
+    }
+  }
+  return gritCurve;
+}
+
+/**
+ * A deep, throaty "grrrr": a low buzzing voice (about 80 Hz) with a fast rattle (about 25 pulses a second, the
+ * "rrr"), a little grit, dark chest and mouth resonances and rough breath underneath. Low and rumbly, but still
+ * a small dog's growl rather than a scary one.
+ */
 export const growl: Synth = (ctx, out, t0, pitch, noise) => {
+  const duration = 0.9;
+  const f0 = 82 * pitch;
   const voice = ctx.createOscillator();
   voice.type = 'sawtooth';
-  voice.frequency.setValueAtTime(135 * pitch, t0);
-  voice.frequency.linearRampToValueAtTime(118 * pitch, t0 + 0.65);
+  voice.frequency.setValueAtTime(f0 * 1.08, t0);
+  voice.frequency.linearRampToValueAtTime(f0, t0 + 0.2);
+  voice.frequency.linearRampToValueAtTime(f0 * 0.9, t0 + duration);
 
-  const wobble = ctx.createOscillator();
-  wobble.type = 'sine';
-  wobble.frequency.value = 13;
-  const wobbleDepth = ctx.createGain();
-  wobbleDepth.gain.value = 9;
-  wobble.connect(wobbleDepth).connect(voice.frequency);
+  // An uneven throat: the pitch wanders a little.
+  const wander = ctx.createOscillator();
+  wander.frequency.value = 5.5;
+  const wanderDepth = ctx.createGain();
+  wanderDepth.gain.value = 4;
+  wander.connect(wanderDepth).connect(voice.frequency);
 
-  const warm = ctx.createBiquadFilter();
-  warm.type = 'lowpass';
-  warm.frequency.value = 650;
-  warm.Q.value = 1.5;
-  voice.connect(warm).connect(envelope(ctx, t0, 0.025, 0.7, 0.68)).connect(out);
+  // The "rrr": the voice pulses on and off quickly, speeding up slightly.
+  const rattle = ctx.createOscillator();
+  rattle.type = 'triangle';
+  rattle.frequency.setValueAtTime(24, t0);
+  rattle.frequency.linearRampToValueAtTime(28, t0 + duration);
+  const rattleDepth = ctx.createGain();
+  rattleDepth.gain.value = 0.45;
+  rattle.connect(rattleDepth);
+  const pulsing = (): GainNode => {
+    const g = ctx.createGain();
+    g.gain.value = 0.55;
+    rattleDepth.connect(g.gain);
+    return g;
+  };
 
-  const rasp = noiseSource(ctx, noise, t0, 0.68);
-  const raspFilter = ctx.createBiquadFilter();
-  raspFilter.type = 'bandpass';
-  raspFilter.frequency.value = 430;
-  raspFilter.Q.value = 2.2;
-  rasp.connect(raspFilter).connect(envelope(ctx, t0, 0.02, 0.16, 0.66)).connect(out);
+  const shaper = ctx.createWaveShaper();
+  shaper.curve = grit();
+  const throat = pulsing();
+  const amp = swell(ctx, t0, 0.07, duration - 0.27, 0.2, 0.55);
+  voice.connect(shaper).connect(throat);
+  // Dark resonances: the chest, and two low mouth formants.
+  for (const [type, freq, q, gain] of [
+    ['lowpass', 190, 0.7, 0.9],
+    ['bandpass', 320 * pitch, 1.3, 1.0],
+    ['bandpass', 720 * pitch, 2.2, 0.4],
+  ] as const) {
+    const filter = ctx.createBiquadFilter();
+    filter.type = type;
+    filter.frequency.value = freq;
+    filter.Q.value = q;
+    const level = ctx.createGain();
+    level.gain.value = gain;
+    throat.connect(filter).connect(level).connect(amp);
+  }
+  amp.connect(out);
 
-  voice.start(t0);
-  wobble.start(t0);
-  voice.stop(t0 + 0.72);
-  wobble.stop(t0 + 0.72);
+  // Rough breath, pulsing with the voice.
+  const breath = noiseSource(ctx, noise, t0, duration);
+  const breathFilter = ctx.createBiquadFilter();
+  breathFilter.type = 'lowpass';
+  breathFilter.frequency.value = 650;
+  breath.connect(breathFilter).connect(pulsing()).connect(swell(ctx, t0, 0.06, duration - 0.26, 0.2, 0.14)).connect(out);
+
+  for (const osc of [voice, wander, rattle]) {
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
 };
 
 /** Three quick, soft nose snuffles. */

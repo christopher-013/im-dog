@@ -1,4 +1,4 @@
-import { Box3, Mesh, Vector3, type Object3D } from 'three';
+import { Box3, Mesh, Raycaster, Vector3, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { MOKE_ANIMATION } from '../config/animation';
 import { MokeAnimationController, type MokeAnimationState } from './MokeAnimationController';
@@ -118,6 +118,28 @@ describe('ToonMokeVisual', () => {
     visual.object.updateMatrixWorld(true);
     const hanging = new Box3().setFromObject(meshes(visual.object, 'tag')[0]!, true);
     expect(hanging.max.y - hanging.min.y).toBeGreaterThan(0.012);
+    visual.dispose();
+  });
+
+  it('keeps his tail rooted in his body, whatever he is doing', () => {
+    const visual = new ToonMokeVisual();
+    const [body] = meshes(visual.object, 'body');
+    const [tail] = meshes(visual.object, 'tail');
+    const down = new Vector3(0, -1, 0);
+    const raycaster = new Raycaster();
+    raycaster.far = 0.5;
+    /** Is this tail-space point under the surface of his body fur (a ray coming straight down meets his body first)? */
+    const underFur = (x: number, y: number, z: number): boolean => {
+      const p = tail!.parent!.localToWorld(new Vector3(x, y, z));
+      raycaster.set(p.add(new Vector3(0, 0.5, 0)), down);
+      return raycaster.intersectObject(body!, false).length > 0;
+    };
+    for (const over of [{}, { tailWag: 1, time: 0.1 }, { tailWag: 1, time: 0.3 }, { runBlend: 1, speed: 4 }, { crouch: 1 }]) {
+      visual.update(DT, pose(over));
+      visual.object.updateMatrixWorld(true);
+      expect(underFur(0, 0, 0)).toBe(true);
+      expect(underFur(0, 0.012, -0.004)).toBe(true); // a little way up the root, too
+    }
     visual.dispose();
   });
 

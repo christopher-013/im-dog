@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Committed locally on `main` (not pushed): Moke's look modelled on the real dog, his collar and tag, and the title-screen fixes. See `git log` and `git status`._
+_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Moke's real-dog look, collar and tag, the title-screen fixes, Codex's Phase 1 audit and gamepad support are committed locally on `main`. So are Moke's new tail and the deeper growl (Claude). Nothing is pushed. See `git log` and `git status`._
 
 ## Current Phase
 Phase 1
@@ -11,12 +11,12 @@ Phase 1
 polygon shapes, following a reference picture they shared (see `docs/MOKE_CHARACTER_REFERENCE.md` → "Owner style
 target"). After seeing it, the owner asked for Moke to look **less jagged and more like the real dog** (their photos), then
 for shorter ears and a collar with a name tag, and for two title-screen fixes (no scrollbar/cut-off; the dog-face "O"
-in line with D and G). All done and awaiting the owner's look. The rest of M10 (Known Issues below) is not started.
+in line with D and G). Then a tail attached to his body and shaped like the real one, and a deeper growl. All done
+and awaiting the owner's look. The rest of M10 (Known Issues below) is not started.
 
 ## Last Developer
-Claude Code (Moke's look, collar and tag, title screen). OpenAI Codex's independent Phase 1 audit (accessibility,
-interaction reach, drop clearance, frame timing, license notices) was left uncommitted in the working tree for its own
-review and commit.
+Claude Code (Moke's tail and a deeper growl sound). Before that, OpenAI Codex committed its Phase 1 audit, gamepad
+support, the cute growl and a collar refit.
 
 ## Completed
 **Milestone 1: foundation.**
@@ -89,7 +89,7 @@ review and commit.
   the real dog", so it now follows the photos in `reference/moke/`:
   - **Coat:** soft rounded clumps covered in a layer of small curls (`furClump` `curls`), with a soft shadow in the
     creases between curls (`furCavity` vertex attribute). No pointed tufts. A round cotton-ball head, wavy
-    cream-tinted ears that widen his head at ear level, a fluffy chest, trimmed curly legs, a pom-pom tail.
+    cream-tinted ears that widen his head at ear level, a fluffy chest, trimmed curly legs.
   - **Face:** round, very dark glossy eyes (not big anime eyes), a bigger glossy black button nose on a short,
     broad muzzle with a fluffy mustache and beard. No blush, no drawn smile: the mouth only shows (dark lips, pink
     tongue) when he barks or pants. Closed eyes are a short dark lash line.
@@ -101,6 +101,11 @@ review and commit.
     his neck immediately beneath the round head, ending under the chin before the muzzle and hidden by fur at the
     sides and back; a navy bone-shaped tag attached to the strap by a silver ring, hanging straight down and
     jingling a little as he trots. Colours and the name are in `MOKE_LOOK.collar`.
+  - **Tail** (owner, from a photo of Moke from the side): one long, curly plume that rises out of the top of his
+    rump, arches and curls forward over his back. It's a single fur clump bent along a curve
+    (`bendAlongCurve`), rooted inside the rump so it stays attached while it wags, sweeps back at a run or tucks
+    down. Shape and root are `TAIL` in `ToonMokeVisual.ts`. (Before, a round pom-pom floated above his back on a
+    thin stem hidden in the fur, so it looked detached.)
 - Static parts are merged: 9 fur meshes, each with a silhouette line; about 110k triangles including the lines.
 - The tail tucks lower while he ducks, so the plume still clears the coffee table.
 - All look numbers are in `src/config/mokeLook.ts` (palette, key light, crease shading, outline, collar, blinks).
@@ -154,6 +159,14 @@ right stick looks, A/bottom interacts and confirms, B/right barks, X/left sniffs
 Menu/Start pauses/resumes, and View/Back toggles debug. The Controls screen and `docs/CONTROLS.md` show the mapping.
 Automated mapping/deadzone/disconnect coverage passes; final feel and physical-button confirmation require the owner's
 connected controller because the embedded automation session cannot actuate USB hardware.
+
+**Moke's tail + deeper growl (2026-09-24):** the new tail was checked in the browser from the side, from behind at
+full wag, and by tests (its root stays under his body fur idle, mid-wag, running and ducking; he still clears the
+coffee table). The growl synth is now deeper and throatier: a ~80 Hz buzzing voice with a ~26 Hz "rrr" rattle, a
+little grit, dark chest/mouth resonances and rough breath. Rendered offline and measured: strongest pitch 127 → 81
+Hz, spectral centroid 473 → 352 Hz, energy below 300 Hz 78% → 96%; it peaks lower than a bark and its loudness while
+sounding is ~1.4× the bark's (lows read quieter). It played through `AudioManager` in the game without errors.
+**Not heard by Claude**: the owner should listen.
 
 **Cute growl + collar fit (2026-09-24):** G / controller Y triggers a short mock-tough growl: lower planted stance,
 forward chest, pinned ears, squint, head tremble, four tiny visible teeth, an original soft growl synth and a comic
@@ -230,6 +243,16 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-24 after Moke's tail and the deeper growl:
+
+| Command / check | Result |
+|---|---|
+| `npm run typecheck` | Pass |
+| `npm test` | Pass: 25 files, 165 tests (new: `bendAlongCurve` ×2, tail stays rooted in his body ×1) |
+| `npm run build` | Pass. `verify-dist`: no private photos. |
+| In-app browser, dev server | Tail from the side and from behind at full wag; growl played via `AudioManager` (no errors); growl rendered offline and measured (see above) |
+| Not verified | Hearing the growl; the tail in motion at full frame rate; real-GPU FPS; Firefox and Safari |
+
 Run on 2026-09-24 for this commit (Moke's real-dog look, ears, collar and tag, title screen):
 
 | Command / check | Result |
@@ -294,10 +317,9 @@ Earlier, at the end of Milestone 4:
 - Moke's look: `src/player/ToonMokeVisual.ts`, `src/player/toon/`, `src/config/mokeLook.ts`.
 
 ## Next Recommended Task
-1. The owner looks at Moke (coat, ears, collar and tag) and the title screen in Chrome (`npm run dev`) and says
-   what to change. Tune from that (`config/mokeLook.ts` first).
-2. Review and commit (or drop) OpenAI Codex's uncommitted Phase 1 audit batch, if it's still in the working tree.
-3. Continue Milestone 10 with the owner's priorities. Candidates:
+1. The owner looks at Moke (coat, ears, collar and tag, tail), listens to the growl (G), and checks the title
+   screen in Chrome (`npm run dev`), and says what to change. Tune from that (`config/mokeLook.ts` first).
+2. Continue Milestone 10 with the owner's priorities. Candidates:
    - redraw the logo "O" face to match the real Moke;
    - a sit pose when idle;
    - Known Issues above (loading-overlay ghosting, carried props poking walls, drop vs. lie-down priority);

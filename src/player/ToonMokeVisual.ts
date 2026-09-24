@@ -1,7 +1,6 @@
 import {
   BufferAttribute,
   BufferGeometry,
-  CapsuleGeometry,
   CatmullRomCurve3,
   CircleGeometry,
   ConeGeometry,
@@ -33,11 +32,30 @@ import type { MokeAnimationState } from './MokeAnimationController';
 import type { MokeVisual } from './MokeVisual';
 import { eyeTexture } from './toon/faceTextures';
 import { tagNameTexture } from './toon/tagTexture';
-import { ellipsoidSurface, FUR_CAVITY, furClump, SMOOTH_NORMAL, type Vec3Tuple } from './toon/furGeometry';
+import { bendAlongCurve, ellipsoidSurface, FUR_CAVITY, furClump, SMOOTH_NORMAL, type Vec3Tuple } from './toon/furGeometry';
 import { createOutlineMaterial, createToonMaterial, trackOutlineResolution } from './toon/toonMaterials';
 
 const HIP_HEIGHT = 0.172;
 const NECK_HEIGHT = 0.26;
+/**
+ * Tail, in torso space: rooted inside the top of his rump, it rises, arches and curls forward over his back.
+ * The curve is in tail space; `thickness` scales the plume along it (0 = root, 1 = tip).
+ */
+const TAIL = {
+  root: [0, 0.25, -0.118] as Vec3Tuple,
+  curve: [
+    [0, -0.012, 0.01],
+    [0, 0.04, -0.026],
+    [0, 0.088, -0.03],
+    [0, 0.118, -0.006],
+    [0, 0.126, 0.03],
+    [0, 0.112, 0.06],
+  ] as const,
+  radius: 0.034,
+  halfLength: 0.09,
+  thickness: (t: number) => 0.62 + 0.48 * smoothstep(0, 0.45, t) - 0.12 * smoothstep(0.8, 1, t),
+};
+
 /** Legs: side (+1 = Moke's left), position, and gait phase offsets (trot pairs diagonals, run bounds). */
 const LEGS = [
   { x: 0.055, z: 0.1, trot: 0, run: 0 },
@@ -277,6 +295,7 @@ export class ToonMokeVisual implements MokeVisual {
       ]),
       fur,
     );
+    this.body.name = 'body';
 
     // Legs pivot at the hip so they can swing: curly columns ending in round, fur-covered paws.
     const legGeometry = merged([
@@ -494,31 +513,26 @@ export class ToonMokeVisual implements MokeVisual {
       name.renderOrder = 1;
     }
 
-    // Tail: a curly pom-pom plume carried high, curving forward over his back.
-    this.tail.position.set(0, 0.28, -0.155);
+    // Tail: one long, curly plume rooted inside his rump, rising and curling forward over his back like the real
+    // Moke's. A single bent mesh, so it can't come apart from his body.
+    this.tail.position.set(...TAIL.root);
     this.torso.add(this.tail);
-    this.fur(
-      this.tail,
-      merged([
-        placed(new CapsuleGeometry(0.018, 0.045, 4, 8), [0, 0.028, -0.01], -0.5),
-        placed(
-          furClump({
-            radii: [0.046, 0.062, 0.048],
-            detail: 12,
-            seed: 11,
-            tufts: 20,
-            length: 0.26,
-            width: 0.6,
-            sharpness: 0.25,
-            flow: [0, 0.5, -1],
-            flowAmount: 0.5,
-            curls: { count: 70, length: 0.12, width: 0.32 },
-          }),
-          [0, 0.068, -0.012],
-        ),
-      ]),
-      fur,
-    );
+    const tailFur = furClump({
+      radii: [TAIL.radius, TAIL.halfLength, TAIL.radius],
+      detail: 12,
+      seed: 11,
+      tufts: 26,
+      length: 0.3,
+      width: 0.55,
+      sharpness: 0.15,
+      // Fur grows toward the tip.
+      flow: [0, 1, 0],
+      flowAmount: 0.35,
+      // Neater at the root, fullest along the arch.
+      shape: (_x, y) => 0.45 + 0.55 * smoothstep(-0.9, 0.1, y),
+      curls: { count: 110, length: 0.14, width: 0.28 },
+    });
+    this.fur(this.tail, bendAlongCurve(tailFur, TAIL.halfLength, TAIL.curve, TAIL.thickness), fur).name = 'tail';
   }
 
   update(dt: number, s: Readonly<MokeAnimationState>): void {
@@ -571,7 +585,7 @@ export class ToonMokeVisual implements MokeVisual {
     const wag = (0.15 + 0.4 * s.tailWag) * Math.sin(s.time * lerp(9, 16, s.tailWag));
     this.tail.rotation.z = wag;
     // Swept back at a run, lying flat in bed, and tucked lower while ducking under furniture.
-    this.tail.rotation.x = 0.35 - s.runBlend * 0.9 - s.rest * 1.1 - s.crouch * 1.2;
+    this.tail.rotation.x = -s.runBlend * 0.9 - s.rest * 1.1 - s.crouch * 1.2;
 
     // Eyes: idle blinks; closed while resting, a little squint while sniffing or barking.
     const eyeOpen = (1 - this.blink(dt)) * (1 - 0.9 * s.rest) * (1 - 0.35 * s.sniff) * (1 - 0.4 * s.bark) * (1 - 0.5 * s.growl);

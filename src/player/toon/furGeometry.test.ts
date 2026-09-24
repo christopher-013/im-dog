@@ -1,6 +1,6 @@
 import { Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { ellipsoidSurface, FUR_CAVITY, furClump, SMOOTH_NORMAL, type FurClumpOptions } from './furGeometry';
+import { bendAlongCurve, ellipsoidSurface, FUR_CAVITY, furClump, SMOOTH_NORMAL, type FurClumpOptions } from './furGeometry';
 
 const HEAD: FurClumpOptions = {
   radii: [0.12, 0.1, 0.1],
@@ -80,6 +80,32 @@ describe('furClump curls', () => {
       if (c > 0.3) creased++;
     }
     expect(creased).toBeGreaterThan(0);
+  });
+});
+
+describe('bendAlongCurve', () => {
+  const TAIL: FurClumpOptions = { radii: [0.03, 0.09, 0.03], detail: 8, seed: 3, tufts: 12, length: 0.2, width: 0.6 };
+
+  it('leaves a clump unchanged on a straight curve of the same length', () => {
+    const straight = furClump(TAIL);
+    const before = Float32Array.from(straight.getAttribute('position').array);
+    const after = bendAlongCurve(straight, 0.09, [[0, -0.09, 0], [0, 0, 0], [0, 0.09, 0]], () => 1).getAttribute('position').array;
+    for (let i = 0; i < before.length; i++) expect(after[i]).toBeCloseTo(before[i]!, 4);
+  });
+
+  it('runs the clump from the first point of the curve to the last', () => {
+    const curve = [[0, 0, 0], [0, 0.08, -0.03], [0, 0.12, 0.04]] as const;
+    const pos = bendAlongCurve(furClump(TAIL), 0.09, curve, () => 1).getAttribute('position');
+    const p = new Vector3();
+    let nearStart = Infinity;
+    let nearEnd = Infinity;
+    for (let i = 0; i < pos.count; i++) {
+      p.fromBufferAttribute(pos, i);
+      nearStart = Math.min(nearStart, p.distanceTo(new Vector3(...curve[0])));
+      nearEnd = Math.min(nearEnd, p.distanceTo(new Vector3(...curve[2])));
+    }
+    expect(nearStart).toBeLessThan(0.02);
+    expect(nearEnd).toBeLessThan(0.02);
   });
 });
 

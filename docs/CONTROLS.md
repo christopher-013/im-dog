@@ -11,7 +11,7 @@ Desktop keyboard + mouse. Bindings live in `src/config/input.ts`, the single sou
 | C (hold) | Walk / sneak | Working. Not Ctrl, because Ctrl+W closes the browser tab. |
 | E | Interact: pick up · drop · lie down in the bed · get up | Working: the prompt shows what E will do |
 | F | Bark | Working: a little hop, "Arf!" and a synthesized bark (placeholder sound) |
-| G | Cute growl | Working: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a soft synthesized "grrr" |
+| G | Cute growl | Working: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a deep, rumbly synthesized "grrrr" |
 | Q | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed) |
 | Space | Jump (optional, undecided) | Not planned yet |
 | W A S D while resting | Get up out of the bed | Working |

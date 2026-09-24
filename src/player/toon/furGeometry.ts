@@ -1,4 +1,4 @@
-import { BufferAttribute, IcosahedronGeometry, Vector3, type BufferGeometry } from 'three';
+import { BufferAttribute, CatmullRomCurve3, IcosahedronGeometry, Vector3, type BufferGeometry } from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mulberry32 } from '../../utils/random';
 
@@ -176,4 +176,54 @@ export function ellipsoidSurface(
   point.set(d.x * radii[0], d.y * radii[1], d.z * radii[2]);
   normal.set(point.x / (radii[0] * radii[0]), point.y / (radii[1] * radii[1]), point.z / (radii[2] * radii[2])).normalize();
   return { point, normal };
+}
+
+/**
+ * Bends a fur clump built along the y axis (radii [r, halfLength, r]) onto a curve in the YZ plane: local y runs
+ * along the curve from its first point to its last, and x/z become the cross-section, scaled by `thickness(t)`
+ * (t = 0 at the start, 1 at the end). One continuous mesh, so a tail can't come apart. Fur that sticks out past
+ * either end carries on along the end tangent. Smooth normals are bent too.
+ */
+export function bendAlongCurve(
+  geometry: BufferGeometry,
+  halfLength: number,
+  points: readonly Vec3Tuple[],
+  thickness: (t: number) => number,
+): BufferGeometry {
+  const curve = new CatmullRomCurve3(points.map((p) => new Vector3(...p)));
+  const length = curve.getLength();
+  const binormal = new Vector3(1, 0, 0);
+  const point = new Vector3();
+  const tangent = new Vector3();
+  const normal = new Vector3();
+  const frame = (t: number) => {
+    const u = Math.min(1, Math.max(0, t));
+    curve.getPointAt(u, point);
+    curve.getTangentAt(u, tangent);
+    if (t !== u) point.addScaledVector(tangent, (t - u) * length);
+    normal.crossVectors(binormal, tangent).normalize();
+    return thickness(u);
+  };
+
+  const positions = geometry.getAttribute('position');
+  const smooth = geometry.getAttribute(SMOOTH_NORMAL);
+  const v = new Vector3();
+  for (let i = 0; i < positions.count; i++) {
+    v.fromBufferAttribute(positions, i);
+    const scale = frame((v.y + halfLength) / (2 * halfLength));
+    positions.setXYZ(
+      i,
+      point.x + binormal.x * v.x * scale + normal.x * v.z * scale,
+      point.y + binormal.y * v.x * scale + normal.y * v.z * scale,
+      point.z + binormal.z * v.x * scale + normal.z * v.z * scale,
+    );
+    if (smooth) {
+      v.fromBufferAttribute(smooth, i);
+      const n = new Vector3().addScaledVector(binormal, v.x).addScaledVector(tangent, v.y).addScaledVector(normal, v.z).normalize();
+      smooth.setXYZ(i, n.x, n.y, n.z);
+    }
+  }
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
 }

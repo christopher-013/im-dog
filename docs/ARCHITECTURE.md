@@ -142,7 +142,8 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
       from dense ellipsoids, plus an optional finer layer of rounded `curls`. Static parts are merged, so Moke has 9
       fur meshes (each with a silhouette line). Each clump also stores the smooth ellipsoid's normal (`smoothNormal`),
       which the shader lights by (mixed with a little of the real normal, `tuftDetail`), and a `furCavity` value
-      (deep in a crease between curls) that darkens the creases slightly.
+      (deep in a crease between curls) that darkens the creases slightly. The tail is one clump bent along a curve
+      (`bendAlongCurve`), rooted inside his rump so it can't come apart from his body.
     - **Soft toon shading** (`createToonMaterial`, a patched `MeshToonMaterial`): a lit/shade palette split by a
       wide, soft transition from a character-only key light fixed in view space, plus a warm rim. The room's real lights (and shadow maps) only
       scale overall brightness, so he stays white under the warm room light but still dims in shade. The

@@ -25,6 +25,8 @@ src/
     world.ts              world scale: Moke's size, furniture heights
     interaction.ts        interaction reach/facing tuning
     props.ts              prop definitions (shape, mass, damping, carry pose) + pickup/drop tuning
+    senses.ts             sniff timing, wisp look, scent colours per category
+    audio.ts              sound levels
     assets.ts             asset manifest (preloaded behind the loading screen)
   core/
     Game.ts               state machine + frame orchestration
@@ -40,7 +42,8 @@ src/
     MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking (tested)
     MokeVisual.ts         the visual interface + createMokeVisual() factory
     PlaceholderDogVisual.ts  TEMPORARY stand-in dog, animated procedurally
-    Moke.ts               composite: controller + animation + visual
+    Moke.ts               composite: controller + animation + visual (+ carrying/sniffing flags from gameplay)
+    Bark.ts               bark cooldown (tested)
   physics/
     PhysicsWorld.ts       Rapier world (lazy WASM load), static box colliders, camera sphere sweep
     CharacterBody.ts      kinematic capsule driven by Rapier's character controller
@@ -64,13 +67,20 @@ src/
     Prop.ts               a loose prop: PropBody + view, interpolated; implements Carryable; escape rescue
     propVisuals.ts        original code-built prop models (sock, tennis ball, rope toy)
     roomProps.ts          creates the living room's props at their landmarks (Rapier-tested in props.test.ts)
+  senses/
+    ScentSystem.ts        sniff mode + scent sources + ranked hits (tested; DOM/three-free, no per-frame allocation)
+    ScentWisps.ts         the stylized look: soft wisps and pulses, one Points draw, fixed budget
+    roomScents.ts         the living room's sources (props while not carried, the dog bed)
+  audio/
+    AudioManager.ts       Web Audio context (unlocked by PLAY/RESUME), plays named sounds, never throws
+    synth.ts              original synthesized placeholder sounds: bark, sniff, pickup, drop
   ui/
-    UIManager.ts          screens, controls dialog, toast, hints, contextual prompt
+    UIManager.ts          screens, controls dialog, toast, hints, contextual prompt, bark bubble, sniff haze
     DebugPanel.ts         ` overlay + FrameStats
   styles/main.css
   utils/math.ts           clamp, damp, lerp, smoothstep, moveToward, angle helpers
 ```
-Planned additions follow the brief: `senses/`, `audio/`.
+
 
 ## Game states and the frame
 `loading → menu → playing ⇄ paused` (in `Game.ts`). Each rendered frame:
@@ -155,6 +165,26 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
   a run; the bumper's vertical face knocks it ahead instead (trot: the ball rolls at about his speed; run: about
   3.3 m/s, capped at `maxSpeed`). Kinematic contacts do the pushing, so no impulse tuning is needed.
 - Dropped items land turned by their `carry.turn` (crosswise, the way they were held).
+
+## Sniff mode (`senses/`, Milestone 8)
+- A `ScentSource` has an id, category (FOOD, TREAT, OWNER, FAMILY, SOCK, TOY, OUTSIDE, INTERESTING), label, position,
+  strength, radius and `enabled` (getters: a carried sock isn't a source).
+- `ScentSystem.start()` (Q) runs sniff mode for `SNIFF.duration` with a fade in/out and a short cooldown. Each frame,
+  `update(dt, nose)` ranks the enabled sources in range by `strength × √closeness × fade` into a fixed pool (the top
+  `maxSources`). The pool is reused, so there's no per-frame allocation.
+- `ScentWisps` draws them as **one `Points` object** with a fixed budget (6 sources × 23 particles). Each particle's
+  position is a pure function of time and its index (curling up from the source, leaning toward the nose, fading),
+  written into preallocated arrays. A bigger soft dot "breathes" at each source. Depth-tested, so wisps never paint over Moke;
+  near-lens particles fade out.
+- Body language: `Moke.sniffing` → `MokeAnimationState.sniff` (nose down, quick twitches). UI: a warm vignette.
+
+## Bark and audio (with Milestone 8)
+- F → `BarkTimer.tryBark()` (cooldown) → `MokeAnimationController.bark()` (a short envelope in
+  `MokeAnimationState.bark`: little hop, head up, ears back, mouth open) + `AudioManager.play('bark')` + a comic
+  "Arf!" bubble projected above his head.
+- `AudioManager` creates/resumes its `AudioContext` inside the PLAY/RESUME clicks (browsers require a gesture). If
+  Web Audio is missing or still locked, `play()` does nothing. All sounds are synthesized at play time (`synth.ts`), with
+  a little random pitch variation; there are no audio files.
 
 ## Third-person camera (`camera/ThirdPersonCamera.ts`, tuning in `config/camera.ts`)
 It's never parented to Moke. Each frame:

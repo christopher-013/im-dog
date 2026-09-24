@@ -14,6 +14,8 @@ export class Moke {
   readonly renderPosition = new Vector3();
   /** Set by gameplay (the pickup system) so body language can react. */
   carrying = false;
+  /** Set by gameplay (sniff mode). */
+  sniffing = false;
 
   constructor(
     readonly controller: MokeController,
@@ -39,6 +41,7 @@ export class Moke {
       turnRate: c.locomotion.turnRate,
       headroom: c.headroom,
       carrying: this.carrying,
+      sniffing: this.sniffing,
     });
     this.visual.update(dt, this.animation.state);
   }

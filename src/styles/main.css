@@ -601,6 +601,58 @@ kbd {
   color: var(--ink-soft);
 }
 
+/* Sniff mode: the edges of the view soften into a warm haze, so the scents stand out. */
+.sniff-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 55%, transparent 40%, rgba(255, 205, 160, 0.4) 78%, rgba(230, 160, 120, 0.6) 100%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.sniff-vignette.is-visible {
+  opacity: 1;
+}
+
+/* Bark: a little comic "Arf!" that pops up by Moke's head and floats away. */
+.bark-bubble {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  padding: 0.2em 0.6em;
+  border-radius: 1em;
+  background: var(--paper);
+  color: var(--coral-deep);
+  box-shadow: 0 3px 0 var(--shadow);
+  font-size: 1.25rem;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -100%);
+}
+
+.bark-bubble.is-popping {
+  animation: bark-pop 0.85s ease-out forwards;
+}
+
+@keyframes bark-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -80%) scale(0.5) rotate(-6deg);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -110%) scale(1.12) rotate(4deg);
+  }
+  30% {
+    transform: translate(-50%, -115%) scale(1) rotate(-2deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -190%) scale(0.95) rotate(0deg);
+  }
+}
+
 /* ---------- Debug panel ---------- */
 
 #debug-panel {
@@ -637,12 +689,16 @@ kbd {
   .logo-q {
     animation: none;
   }
+  .bark-bubble.is-popping {
+    animation-duration: 0.6s;
+  }
   .screen,
   .toast,
   .btn,
   .loading-fill,
   .pointer-hint,
-  .interact-prompt {
+  .interact-prompt,
+  .sniff-vignette {
     transition-duration: 0.01s;
   }
 }

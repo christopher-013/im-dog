@@ -7,7 +7,7 @@ Phase 1
 
 ## Current Milestone
 Overnight run (owner decision 2026-09-24): Milestones 5 → 9 in order on the branch above; M10 is not started.
-Milestones 5 (interaction framework), 6 (sock) and 7 (physics toys) are complete and awaiting owner review. The owner's hands-on playtest of
+Milestones 5 (interaction framework), 6 (sock), 7 (physics toys) and 8 (sniff mode, plus bark) are complete and awaiting owner review. The owner's hands-on playtest of
 Milestones 2–4 (movement, camera and room) is still pending.
 
 ## Last Developer
@@ -66,6 +66,15 @@ Claude Code
 - A toy-only bumper collider on Moke knocks the ball ahead (Rapier tests: he never climbs a toy; the ball stays in
   the room and settles). Speeds are capped per prop; props that escape return to their spot.
 - Debug panel → Physics → `props`: each prop's state (carried / asleep / speed).
+
+**Milestone 8: sniff mode (+ bark).**
+- Q: about 4 s of sniff mode. The nearest/strongest scents (sock = lilac, toys = mint, bed = gold) send up soft
+  curling wisps that lean toward his nose, with a gentle glow pulsing at each source. Moke puts his nose down and
+  twitches; the screen edges get a warm haze. Reusable `ScentSystem` / `ScentSource` with all eight categories.
+- F: bark. A little hop and head jolt, the mouth opens, a comic "Arf!"/"Woof!" pops above his head, and a
+  synthesized bark plays. The sniff, pickup and drop sounds are synthesized too (`AudioManager`, unlocked by PLAY).
+- Debug panel: "Scent" (sniff state, sources, the ranked nearby list); "Game" shows audio state and bark count.
+- No treat placeholder was added (optional in the spec); the four sources are the sock, rope toy, ball and bed.
 
 ## Current Architecture
 - `Game` owns the scene, renderer, input, physics, UI and state machine. Frame order:

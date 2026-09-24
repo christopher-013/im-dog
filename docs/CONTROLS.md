@@ -10,8 +10,8 @@ Desktop keyboard + mouse. Bindings live in `src/config/input.ts`, the single sou
 | Shift (hold) | Run | Working |
 | C (hold) | Walk / sneak | Working. Not Ctrl, because Ctrl+W closes the browser tab. |
 | E | Interact · pick up · drop | Working (Milestones 5–6): the prompt shows what E will do |
-| F | Bark | Later milestone |
-| Q | Sniff mode | Milestone 8 |
+| F | Bark | Working: a little hop, "Arf!" and a synthesized bark (placeholder sound) |
+| Q | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed) |
 | Space | Jump (optional, undecided) | Not planned yet |
 | Esc | Pause and release the mouse | Working |
 | ` (Backquote) | Toggle debug panel | Working |

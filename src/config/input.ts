@@ -71,8 +71,8 @@ export const CONTROL_HINTS: readonly ControlHint[] = [
   { label: 'Run (hold)', input: ['run'], ready: true },
   { label: 'Walk / sneak (hold)', input: ['walk'], ready: true },
   { label: 'Interact · pick up · drop', input: ['interact'], ready: true },
-  { label: 'Bark', input: ['bark'], ready: false },
-  { label: 'Sniff', input: ['sniff'], ready: false },
+  { label: 'Bark', input: ['bark'], ready: true },
+  { label: 'Sniff', input: ['sniff'], ready: true },
   { label: 'Pause · free the mouse', input: ['pause'], ready: true },
   { label: 'Debug panel', input: ['toggleDebug'], ready: true },
 ];

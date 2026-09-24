@@ -184,25 +184,32 @@ export class PlaceholderDogVisual implements MokeVisual {
     this.body.scale.y = 0.95 * (1 + (1 - moving) * 0.02 * Math.sin(s.time * 2.6)); // breathing
 
     this.rig.rotation.z = -s.lean;
-    this.rig.position.y = -s.crouch * 0.03;
+    // A bark is a little hop from the front paws.
+    this.rig.position.y = -s.crouch * 0.03 + s.bark * 0.018;
+    this.rig.rotation.x = -s.bark * 0.08;
 
     this.neck.position.y = NECK_HEIGHT - s.crouch * 0.05 - bob * 0.5;
-    this.neck.rotation.x = s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * MOKE_ANIMATION.carryHeadLift;
-    this.head.rotation.y = s.headYaw;
+    const a = MOKE_ANIMATION;
+    // Sniffing: nose down with quick little twitches.
+    const twitch = s.sniff * 0.05 * Math.sin(s.time * 26) * (0.5 + 0.5 * Math.sin(s.time * 3.1));
+    this.neck.rotation.x =
+      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch - s.bark * 0.35;
+    this.head.rotation.y = s.headYaw * (1 - 0.5 * s.sniff) + s.sniff * 0.25 * Math.sin(s.time * 1.7);
     this.head.rotation.z = -s.headTilt;
 
     const flop = moving * 0.1 * Math.sin(2 * p + 1.2);
     for (const ear of this.ears) {
       // Drop ears: they bounce and sweep back at speed rather than sticking out sideways.
-      ear.pivot.rotation.z = ear.side * (0.18 + flop + s.runBlend * 0.15);
-      ear.pivot.rotation.x = s.runBlend * 0.6;
+      ear.pivot.rotation.z = ear.side * (0.18 + flop + s.runBlend * 0.15 - s.bark * 0.25 - s.sniff * 0.08);
+      ear.pivot.rotation.x = s.runBlend * 0.6 - s.bark * 0.3;
     }
 
     const wag = (0.15 + 0.4 * s.tailWag) * Math.sin(s.time * lerp(9, 16, s.tailWag));
     this.tail.rotation.z = wag;
     this.tail.rotation.x = 0.35 - s.runBlend * 0.9;
 
-    this.tongue.visible = s.runBlend > 0.25 && s.carry < 0.5;
+    // Mouth open for a bark (the tongue shows), or panting at a run; closed on a carried item.
+    this.tongue.visible = (s.runBlend > 0.25 || s.bark > 0.2) && s.carry < 0.5;
   }
 
   dispose(): void {

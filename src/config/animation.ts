@@ -22,6 +22,10 @@ export const MOKE_ANIMATION = {
   carryTailWag: 0.8,
   /** Head lift while carrying (radians). */
   carryHeadLift: 0.14,
+  /** Nose dip while sniffing (radians). */
+  sniffHeadDip: 0.45,
+  /** How long a bark's body language lasts (s). */
+  barkDuration: 0.38,
   /** Start ducking when the space above Moke's feet is below this (m). His fluffy head reaches ~0.42 m. */
   duckBelowHeadroom: 0.45,
   /** Headroom range over which he goes from standing to fully ducked (m). */

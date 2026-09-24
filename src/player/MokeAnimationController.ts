@@ -13,6 +13,8 @@ export interface MokeMotionSample {
   headroom: number;
   /** Something in his mouth. Default false. */
   carrying?: boolean;
+  /** Sniff mode is on. Default false. */
+  sniffing?: boolean;
 }
 
 /**
@@ -37,6 +39,10 @@ export interface MokeAnimationState {
   crouch: number;
   /** 0..1: something in his mouth (head carried proudly, mouth closed on it). */
   carry: number;
+  /** 0..1: nose down, sniffing. */
+  sniff: number;
+  /** 0..1: a bark in progress (a quick jolt up that settles). */
+  bark: number;
   /** Seconds since creation, for cyclic motion. */
   time: number;
 }
@@ -52,6 +58,8 @@ export class MokeAnimationController {
     tailWag: MOKE_ANIMATION.idleTailWag,
     crouch: 0,
     carry: 0,
+    sniff: 0,
+    bark: 0,
     time: 0,
   };
 
@@ -60,6 +68,7 @@ export class MokeAnimationController {
   private lookTarget = 0;
   private tiltTarget = 0;
   private tiltTimeLeft = 0;
+  private sinceBark = Infinity;
 
   constructor(
     private readonly tuning: MovementTuning = MOVEMENT,
@@ -91,12 +100,22 @@ export class MokeAnimationController {
     s.headTilt = damp(s.headTilt, this.tiltTarget, 6, dt);
 
     s.carry = damp(s.carry, sample.carrying ? 1 : 0, 10, dt);
+    s.sniff = damp(s.sniff, sample.sniffing ? 1 : 0, 6, dt);
+    // A bark snaps in over a few frames, then eases out.
+    this.sinceBark += dt;
+    const b = this.sinceBark / a.barkDuration;
+    s.bark = b >= 1 ? 0 : Math.min(1, b * 6) * (1 - b) * (1 - b);
     const wag = s.gait === 'idle' ? a.idleTailWag : a.movingTailWag;
-    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag), 3, dt);
+    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark), 3, dt);
 
     const crouchTarget = clamp((a.duckBelowHeadroom - sample.headroom) / a.duckRange, 0, 1);
     s.crouch = damp(s.crouch, crouchTarget, 10, dt);
     return s;
+  }
+
+  /** A bark just happened (after the gameplay cooldown allowed it). */
+  bark(): void {
+    this.sinceBark = 0;
   }
 
   /** Little signs of life while standing: glance around, and now and then a curious head tilt. */

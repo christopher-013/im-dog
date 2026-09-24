@@ -49,6 +49,7 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - `docs/ARCHITECTURE.md`: system boundaries.
   - `docs/DECISIONS.md`: established decisions.
   - `docs/PHASE_1.md`: milestone scope.
+  - `docs/PHASE_1_SPEC.md`: detailed requirements for Milestones 5–10.
   - `docs/MOKE_CHARACTER_REFERENCE.md`: character work.
   - `docs/ASSETS.md`: licence log. Record every external asset here. Original, CC0 or properly licensed only; never purchase anything.
 - The title's visual identity is original. Never copy I'M DONUT? branding.

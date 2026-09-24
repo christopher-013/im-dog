@@ -72,6 +72,15 @@ export class PhysicsWorld {
    * geometry, up to `maxDistance`. Ignores Moke, thin props and toys. Used by the camera.
    */
   sweepSphere(origin: Vec3Like, direction: Vec3Like, radius: number, maxDistance: number): number {
+    return this.castSphere(origin, direction, radius, maxDistance, CAMERA_QUERY_GROUPS, false);
+  }
+
+  /** Clearance for dropped props: includes thin furniture, and stops at any initial overlap. */
+  sweepWorldSphere(origin: Vec3Like, direction: Vec3Like, radius: number, maxDistance: number): number {
+    return this.castSphere(origin, direction, radius, maxDistance, WORLD_QUERY_GROUPS, true);
+  }
+
+  private castSphere(origin: Vec3Like, direction: Vec3Like, radius: number, maxDistance: number, groups: number, stopAtPenetration: boolean): number {
     if (this.sweepBall?.radius !== radius) this.sweepBall = new this.rapier.Ball(radius);
     const hit = this.world.castShape(
       origin,
@@ -80,9 +89,9 @@ export class PhysicsWorld {
       this.sweepBall,
       0,
       maxDistance,
-      false,
+      stopAtPenetration,
       undefined,
-      CAMERA_QUERY_GROUPS,
+      groups,
     );
     return hit ? hit.time_of_impact : maxDistance;
   }

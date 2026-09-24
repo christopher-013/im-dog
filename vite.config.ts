@@ -1,10 +1,25 @@
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url));
 const referenceDir = path.join(projectRoot, 'reference');
+
+/** Ship the notices with the static site, not only inside development dependencies. */
+function runtimeLicenses(): Plugin {
+  return {
+    name: 'im-dog:runtime-licenses',
+    generateBundle() {
+      const packages = ['three', '@dimforge/rapier3d-compat', '@fontsource-variable/fredoka'];
+      const source = packages.map((name) =>
+        `${name}\n${'='.repeat(name.length)}\n${readFileSync(path.join(projectRoot, 'node_modules', name, 'LICENSE'), 'utf8')}`,
+      ).join('\n\n');
+      this.emitFile({ type: 'asset', fileName: 'THIRD_PARTY_NOTICES.txt', source });
+    },
+  };
+}
 
 function isInside(file: string, dir: string): boolean {
   const rel = path.relative(dir, file);
@@ -35,7 +50,7 @@ function blockPrivateReferencePhotos(): Plugin {
 export default defineConfig({
   // Relative base so the build works from any static host path (GitHub Pages project sites, etc.).
   base: './',
-  plugins: [blockPrivateReferencePhotos()],
+  plugins: [blockPrivateReferencePhotos(), runtimeLicenses()],
   server: {
     fs: {
       // Vite's defaults, plus the private reference photos.

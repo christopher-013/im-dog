@@ -99,7 +99,9 @@ src/
 
 **Why fixed timestep:** movement feel (acceleration, turn rate) and physics must be identical at 60/144/240 Hz.
 `advance()` returns an interpolation alpha so visuals can be smoothed between steps. Frame deltas are clamped to
-100 ms, and the backlog is dropped after 6 steps, so a tab switch never causes a jump or a death spiral.
+100 ms for simulation, and the backlog is dropped after 6 steps, so a tab switch never causes a jump or a death
+spiral. The debug `FrameStats` receives the separate, raw elapsed time (ignoring the loop's initial zero sample),
+so stalls are visible instead of being hidden by the simulation clamp.
 
 ## Input
 - Gameplay reads **actions** (`bark`, `interact`, …), never keys. Bindings use `KeyboardEvent.code`, the physical
@@ -157,11 +159,12 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 ## Interactions (`interactions/`, Milestone 5)
 - An `Interactable` is plain data plus a callback: `id`, `type` (PICKUP, DROP, REST, SNIFF, PLAY, EAT, DRINK,
   INVESTIGATE), `label` ("Pick Up Sock"), `interactionDistance`, `enabled`, `position`, optional `requiresFacing`
-  (default true) and `priority` (default 0), and `interact()`. Fields are read every frame, so getters work.
+  (default true), `requiresClearPath` (default true) and `priority` (default 0), and `interact()`. Fields are read
+  every frame, so getters work. Self-actions such as DROP and GET UP opt out of the clear-path check.
 - `InteractionSystem` holds the registry. Once per rendered frame `Game` calls `update(moke.controller)`, which picks
-  the current target: in reach (horizontal distance from Moke's feet), inside the facing cone unless it's right under
-  his nose, highest priority first, then best distance/angle score. The current target keeps a small bonus, so the
-  prompt doesn't flicker between two close things.
+  the current target: within horizontal and vertical reach, visible through a physics ray that includes solid and
+  thin world geometry, and inside the facing cone unless it's right under his nose; then highest priority and best
+  distance/angle score win. The current target keeps a small bonus, so the prompt doesn't flicker between close rivals.
 - `Game` reads `wasPressed('interact')` once per rendered frame and calls `interactions.interact()`; the UI shows
   the current target as "E — label" (`UIManager.setPrompt`, which only touches the DOM when the text changes).
 - Systems register their own interactables (pickup, rest). `MokeController` knows nothing about interactions.
@@ -175,8 +178,9 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - `PickupSystem<T extends Carryable>` registers a PICKUP interactable per item ("Pick Up Sock", disabled while his
   mouth is full) and one DROP interactable ("Drop Sock", priority 10, no facing check) while carrying.
   - Picking up switches the body off. Dropping puts it back just ahead of his mouth, computed from
-    `MokeController`'s position and heading (never the mesh), pulled back from walls with a
-    `PhysicsWorld.rayDistance` probe, and gives it half his velocity, so it falls and tumbles naturally.
+    `MokeController`'s position and heading (never the mesh), pulled back from solid and thin geometry with a
+    conservative swept-sphere probe sized for that prop, and gives it half his velocity, so it falls and tumbles
+    naturally without spawning through a wall.
   - Presentation listens through `onPickUp`/`onDrop`: `Game` parents the prop's view to `MokeVisual.mouthSocket`
     with the prop's `carry` pose, and sets `Moke.carrying` so body language reacts (head up, tail wag).
 - Frame order: `Moke.fixedUpdate` → `PhysicsWorld.step` → `Prop.afterStep` (fixed); `Prop.render(alpha)` per frame.
@@ -269,6 +273,7 @@ with a fake. Cost: about 5–7 µs per frame.
   (`src/config/assets.ts`). Dropping `moke.glb` into `public/assets/models/moke/` needs no import changes.
 - A missing or broken asset never crashes loading. It's logged and reported so the game can fall back.
 - Vite's hashed JS/CSS/fonts go to `dist/app/`; runtime assets stay in `dist/assets/`.
+- Production builds emit `dist/THIRD_PARTY_NOTICES.txt` with the distributed font and runtime-library licenses.
 - `base: './'` means the build works from any static host path (GitHub Pages project sites, etc.).
 
 ## Rendering
@@ -312,5 +317,7 @@ Vitest (node environment) covers:
 - **Pure logic:** input state, fixed timestep, asset fallbacks, math, the locomotion model and animation state.
 - **Integration with the real Rapier WASM,** in a tiny test room (`MokeController.test.ts`): floor contact, a steady
   trot with no stutter steps, walls, sliding, walking under a table and not climbing a couch seat.
+- **Gameplay regressions:** interaction height and wall occlusion, conservative prop-drop clearance (including thin
+  geometry), repeated pickup/drop and rest transitions, rescue of escaped props, and raw-vs-clamped frame timing.
 
-Rendering is verified in the browser. New gameplay logic (interactions, scent, rest) should follow the same pattern.
+Rendering, responsive UI and accessibility state are also verified in the browser.

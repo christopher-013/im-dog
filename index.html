@@ -91,13 +91,13 @@
     <div id="app">
       <div id="viewport"></div>
 
-      <div id="hud">
+      <div id="hud" aria-hidden="true">
         <div id="sniff-vignette" class="sniff-vignette"></div>
         <div id="bark-bubble" class="bark-bubble" aria-hidden="true"></div>
-        <div id="rest-note" class="rest-note">Resting…</div>
-        <div id="pointer-hint" class="pointer-hint">Click the room to look around</div>
-        <div id="toast" class="toast" role="status" aria-live="polite"></div>
-        <div id="interact-prompt" class="interact-prompt" aria-live="polite">
+        <div id="rest-note" class="rest-note" aria-hidden="true">Resting…</div>
+        <div id="pointer-hint" class="pointer-hint" aria-hidden="true">Click the room to look around</div>
+        <div id="toast" class="toast" role="status" aria-live="polite" aria-hidden="true"></div>
+        <div id="interact-prompt" class="interact-prompt" aria-live="polite" aria-hidden="true">
           <kbd id="interact-key">E</kbd><span class="interact-dash" aria-hidden="true">—</span
           ><span id="interact-label"></span>
         </div>
@@ -127,7 +127,7 @@
         </div>
       </section>
 
-      <section id="screen-menu" class="screen screen-menu" aria-label="Start menu">
+      <section id="screen-menu" class="screen screen-menu" aria-label="Start menu" aria-hidden="true" inert>
         <div class="stack">
           <p class="tag-jp" lang="ja">アイム・ドッグ？</p>
           <h1 class="logo" aria-label="I'M DOG?">
@@ -147,7 +147,7 @@
         <p class="footnote">Phase 1 prototype</p>
       </section>
 
-      <section id="screen-pause" class="screen screen-pause" aria-label="Paused">
+      <section id="screen-pause" class="screen screen-pause" aria-label="Paused" aria-hidden="true" inert>
         <div class="card stack">
           <h2 class="card-title">Paused</h2>
           <p class="card-text">Moke is waiting patiently.</p>
@@ -169,7 +169,7 @@
         </div>
       </section>
 
-      <section id="screen-error" class="screen screen-error" aria-label="Error">
+      <section id="screen-error" class="screen screen-error" aria-label="Error" aria-hidden="true" inert>
         <div class="card stack" role="alert">
           <svg class="error-face" aria-hidden="true"><use href="#moke-face" /></svg>
           <h2 class="card-title">Moke can't find the living room</h2>

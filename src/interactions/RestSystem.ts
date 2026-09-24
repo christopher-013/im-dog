@@ -55,6 +55,7 @@ export class RestSystem {
       position: spot.position,
       requiresFacing: false,
       priority: 20,
+      requiresClearPath: false,
       interact: () => this.standUp(),
     });
   }

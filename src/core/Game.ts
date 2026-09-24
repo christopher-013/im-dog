@@ -56,7 +56,9 @@ export class Game {
   private readonly room = new LivingRoom();
   private readonly followCamera: ThirdPersonCamera;
   private readonly moveBasis = new MoveBasis();
-  private readonly interactions = new InteractionSystem();
+  private readonly interactions = new InteractionSystem(undefined, (o, d, max) =>
+    this.physics?.rayDistance(o, d, max) ?? max,
+  );
   private readonly scent = new ScentSystem();
   private readonly wisps = new ScentWisps();
   private readonly barkTimer = new BarkTimer();
@@ -168,8 +170,8 @@ export class Game {
   private spawnProps(physics: PhysicsWorld, moke: Moke): void {
     this.props = createRoomProps(physics, this.room);
     for (const prop of this.props) this.scene.add(prop.view);
-    const pickup = new PickupSystem<Prop>(this.interactions, moke.controller, (origin, direction, max) =>
-      physics.rayDistance(origin, direction, max),
+    const pickup = new PickupSystem<Prop>(this.interactions, moke.controller, (origin, direction, max, radius) =>
+      physics.sweepWorldSphere(origin, direction, radius, max),
     );
     for (const prop of this.props) pickup.add(prop);
     pickup.onPickUp = (prop) => {
@@ -216,7 +218,7 @@ export class Game {
     this.input.state.releaseAll();
   }
 
-  private readonly frame = (dt: number): void => {
+  private readonly frame = (dt: number, elapsed: number): void => {
     this.input.beginFrame();
     const input = this.input.state;
     if (input.wasPressed('toggleDebug')) this.debug.toggle();
@@ -246,7 +248,7 @@ export class Game {
     if (this.barkedThisFrame) this.showBarkBubble();
 
     this.gfx.render(this.scene, this.camera);
-    this.frameStats.record(dt);
+    this.frameStats.record(elapsed);
     this.debug.update(dt);
   };
 

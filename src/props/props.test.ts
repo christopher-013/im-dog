@@ -19,8 +19,8 @@ async function setup() {
   physics.commitStaticGeometry();
   const moke = new MokeController(new CharacterBody(physics, room.spawn.position, MOKE_BODY), room.spawn.heading, { ...MOVEMENT });
   const props = createRoomProps(physics, room);
-  const interactions = new InteractionSystem();
-  const pickup = new PickupSystem<Prop>(interactions, moke, (o, d, max) => physics.rayDistance(o, d, max));
+  const interactions = new InteractionSystem(undefined, (o, d, max) => physics.rayDistance(o, d, max));
+  const pickup = new PickupSystem<Prop>(interactions, moke, (o, d, max, radius) => physics.sweepWorldSphere(o, d, radius, max));
   for (const p of props) pickup.add(p);
   const prop = (id: string) => props.find((p) => p.id === id)!;
 
@@ -48,6 +48,43 @@ async function setup() {
 }
 
 describe('room props', () => {
+  it('all props survive 30 repeated pickup/drop cycles without adding bodies or losing physics', async () => {
+    const { props, physics, moke, interactions, pickup, idle } = await setup();
+    const count = physics.bodyCount;
+    try {
+      for (const p of props) {
+        for (let cycle = 0; cycle < 30; cycle++) {
+          // Exercise the same action route as E, without depending on browser key-hold support.
+          p.drop({ x: moke.position.x, y: 0.08, z: moke.position.z - 0.25 }, Math.PI, { x: 0, y: 0, z: 0 });
+          expect(interactions.update(moke)?.id).toBe(`pickup:${p.id}`);
+          expect(interactions.interact()).toBe(true);
+          expect(pickup.carried).toBe(p);
+          expect(p.body.enabled).toBe(false);
+          expect(interactions.update(moke)?.type).toBe('DROP');
+          expect(interactions.interact()).toBe(true);
+          idle(0.2);
+          expect(p.body.enabled).toBe(true);
+          expect(p.position.y).toBeGreaterThan(-0.01);
+          expect(physics.bodyCount).toBe(count);
+        }
+        p.returnHome();
+      }
+    } finally { physics.world.free(); }
+  });
+
+  it('rescues escaped props back to their original landmarks', async () => {
+    const { props, physics, room } = await setup();
+    try {
+      for (const p of props) {
+        p.drop({ x: 30, y: -2, z: 30 }, 0, { x: 0, y: 0, z: 0 });
+        p.afterStep();
+        const home = room.landmarks[p.definition.id];
+        expect(p.position.x).toBeCloseTo(home.x);
+        expect(p.position.z).toBeCloseTo(home.z);
+        expect(p.body.enabled).toBe(true);
+      }
+    } finally { physics.world.free(); }
+  });
   it('start at rest on the floor at their spots', async () => {
     const { room, prop, idle } = await setup();
     idle(1);

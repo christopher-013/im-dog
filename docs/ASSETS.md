@@ -6,9 +6,9 @@ No ripped assets, no copyrighted characters, nothing from the I'M DONUT? brand.
 ## External assets in use
 | Asset | Purpose | Source | License | Placeholder / final | Attribution |
 |---|---|---|---|---|---|
-| Fredoka (variable, v5.3.0) | UI display font | npm `@fontsource-variable/fredoka` (Fontsource packaging of Google Fonts' Fredoka, © The Fredoka Project Authors) | SIL Open Font License 1.1 | Final candidate | Not required in-game; the license text ships in `node_modules/@fontsource-variable/fredoka/LICENSE`. Keep this entry. |
+| Fredoka (variable, v5.3.0) | UI display font | npm `@fontsource-variable/fredoka` (Fontsource packaging of Google Fonts' Fredoka, © The Fredoka Project Authors) | SIL Open Font License 1.1 | Final candidate | Not required in-game; the license text ships in production as `THIRD_PARTY_NOTICES.txt`. Keep this entry. |
 
-Libraries (not assets): three.js (MIT), Rapier `@dimforge/rapier3d-compat` (Apache-2.0).
+Libraries (not assets): three.js (MIT), Rapier `@dimforge/rapier3d-compat` (Apache-2.0). Their license texts also ship in production as `THIRD_PARTY_NOTICES.txt`.
 Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 
 ## Original assets (made in this project)

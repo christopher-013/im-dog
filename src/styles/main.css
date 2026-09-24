@@ -76,12 +76,14 @@ body {
   padding: 24px 16px;
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transition:
     opacity 0.4s ease,
     visibility 0s linear 0.4s;
 }
 
 .screen.is-active {
+  pointer-events: auto;
   opacity: 1;
   visibility: visible;
   transition: opacity 0.4s ease;
@@ -93,6 +95,19 @@ body {
   align-items: center;
   text-align: center;
   gap: 14px;
+}
+
+.stack > * {
+  flex-shrink: 0;
+}
+
+/*
+ * Cards may scroll on very short windows. The title and loading stacks never do (a scroll container
+ * would clip the logo's tilted "?" and show a scrollbar): they scale with the window instead.
+ */
+.screen > .card.stack {
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
 }
 
 /* ---------- Logo ---------- */
@@ -174,6 +189,11 @@ body {
 .screen-loading {
   z-index: 20;
   background: radial-gradient(120% 90% at 50% 40%, var(--paper) 0%, var(--cream) 55%, var(--cream-deep) 100%);
+}
+
+/* Fade only the background: never cross-fade two logos and two sets of text. */
+.screen-loading:not(.is-active) .stack {
+  visibility: hidden;
 }
 
 .logo-small {
@@ -442,10 +462,16 @@ body {
 }
 
 .controls-dialog .card {
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 18px;
   width: min(480px, calc(100vw - 32px));
+}
+
+.controls-dialog .card > * {
+  flex-shrink: 0;
 }
 
 .controls-list {
@@ -516,6 +542,10 @@ kbd {
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+
+#hud[aria-hidden='true'] {
+  visibility: hidden;
 }
 
 .toast {

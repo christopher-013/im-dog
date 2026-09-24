@@ -2,6 +2,11 @@
  * How Moke notices and uses things around him. Units: metres, radians, seconds.
  */
 export const INTERACTION = {
+  /** Maximum height above/below the feet that a world target can be reached. */
+  verticalReach: 0.4,
+  /** Probe from low chest height toward the target, just above the floor. */
+  probeHeight: 0.15,
+  targetClearance: 0.025,
   /** Things further than this off his facing are ignored (half-angle of the cone in front of him). */
   facingHalfAngle: 1.75,
   /** Closer than this, facing doesn't matter (it's right under his nose). */

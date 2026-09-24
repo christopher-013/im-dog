@@ -16,6 +16,7 @@ const ESCAPE = { belowY: -1, radius: 15 };
 export class Prop implements Carryable {
   readonly id: string;
   readonly name: string;
+  readonly dropRadius: number;
   private carriedNow = false;
   private readonly previous = new Vector3();
   private readonly current = new Vector3();
@@ -31,6 +32,10 @@ export class Prop implements Carryable {
   ) {
     this.id = definition.id;
     this.name = definition.name;
+    const shape = definition.physics.shape;
+    this.dropRadius = shape.kind === 'ball' ? shape.radius
+      : shape.kind === 'capsule' ? shape.radius + shape.halfLength
+      : Math.hypot(...shape.halfExtents);
     this.view.name = `Prop:${this.id}`;
     this.snapToBody();
   }

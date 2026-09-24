@@ -30,7 +30,7 @@ npm run preview      # serve dist/ at http://localhost:4173
 
 ## Controls
 WASD move · Mouse look · Wheel zoom · Shift run · C walk · E interact · F bark · Q sniff · Esc pause · ` debug panel.
-Interact, bark and sniff arrive in later milestones. See [docs/CONTROLS.md](docs/CONTROLS.md).
+All listed controls are implemented. See [docs/CONTROLS.md](docs/CONTROLS.md).
 
 ## Project layout
 ```

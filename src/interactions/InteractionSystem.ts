@@ -22,8 +22,13 @@ type InteractionTuning = { readonly [K in keyof typeof INTERACTION]: number };
 export class InteractionSystem {
   private readonly items: Interactable[] = [];
   private currentItem: Interactable | null = null;
+  private readonly origin: Vec3Like = { x: 0, y: 0, z: 0 };
+  private readonly direction: Vec3Like = { x: 0, y: 0, z: 0 };
 
-  constructor(private readonly tuning: InteractionTuning = INTERACTION) {}
+  constructor(
+    private readonly tuning: InteractionTuning = INTERACTION,
+    private readonly probe: ((origin: Vec3Like, direction: Vec3Like, max: number) => number) | null = null,
+  ) {}
 
   /** What E would do right now, or null. Updated by `update()`. */
   get current(): Interactable | null {
@@ -80,6 +85,26 @@ export class InteractionSystem {
     const dz = item.position.z - actor.position.z;
     const distance = Math.hypot(dx, dz);
     if (distance > item.interactionDistance) return null;
+    if (item.requiresClearPath !== false) {
+      if (Math.abs(item.position.y - actor.position.y) > t.verticalReach) return null;
+      if (this.probe) {
+        const o = this.origin;
+        o.x = actor.position.x;
+        o.y = actor.position.y + t.probeHeight;
+        o.z = actor.position.z;
+        const d = this.direction;
+        d.x = dx;
+        d.y = item.position.y + t.targetClearance - o.y;
+        d.z = dz;
+        const length = Math.hypot(d.x, d.y, d.z);
+        if (length > 1e-6) {
+          d.x /= length;
+          d.y /= length;
+          d.z /= length;
+          if (this.probe(o, d, length) < length - 1e-4) return null;
+        }
+      }
+    }
 
     let offAngle = 0;
     if (item.requiresFacing !== false && distance > t.facingFreeRadius) {

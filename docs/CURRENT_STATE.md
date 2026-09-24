@@ -105,8 +105,9 @@ review and commit.
 - Gameplay untouched (D7): same `MokeVisual` interface, same `mouthSocket`, same animation state.
 
 **Milestone 10 (in progress): title screen.**
-- The title and loading stacks never scroll: the logo scales with both width and height (`min(10.5vw, 17vh)`), so
-  nothing is cut off, and very short windows hide the Japanese tag.
+- The title and loading stacks are no longer scroll containers (that produced a horizontal scrollbar and clipped
+  the tilted "?"). The logo scales with both width and height (`min(10.5vw, 17vh)`), and very short windows hide
+  the Japanese tag. Cards (pause, error, controls) still scroll on tiny windows.
 - The dog-face "O" is now 0.76em and centred on the capitals, in line with D and G.
 
 **Milestone 9: rest.**
@@ -180,12 +181,11 @@ From Milestone 4, verified in the browser (dev server and a production-build loa
 
 ## Known Issues
 Carried over:
-- During the final "Ready!" loading frame, the start menu is faintly visible behind the loading overlay (doubled logo, ghosted buttons).
 - Pointer lock is untested with a physical mouse (the embedded test browser uses drag-to-look).
-- An automated test once reported 28–35 FPS at 1920×953. Claude's measurements (above) disagree, so recheck manually.
-- Hidden screens may need improved accessibility handling (`aria-hidden` / `inert`).
+- The embedded browser reported roughly 25–29 FPS at 1920×953, but automation/background throttling and 100 ms stalls make that unsuitable as a real-GPU benchmark; recheck manually.
 - Moke's nose and tail can poke a few centimetres into walls; the walk key C is unconfirmed; Moke's real size is still an estimate.
 - The camera turns by itself in a few situations (intentional, tunable) and needs the owner's feel check.
+- Chrome logs one non-fatal WebGL shader precision warning (`X4122`) while compiling the current Moke material; rendering continues normally.
 
 New in Milestone 4:
 - The potted plant looks a little sparse and spiky. It could be lusher in the polish milestone.
@@ -223,6 +223,18 @@ Run on 2026-09-24 for this commit (Moke's real-dog look, ears, collar and tag, t
 | Full working tree (with the other agent's uncommitted batch) | typecheck, 24 files / 153 tests, build: pass |
 | In-app browser, dev server | Moke close-ups (front, ¾, side, back), rest and bark poses, the collar and tag from every side; title screen at 1360×745, 800×450, 375×812 |
 | Not verified | The owner's eye; real-GPU FPS in motion; the dim hallway; Firefox and Safari; the production preview (not re-run) |
+
+Run on 2026-09-24 after the independent Codex Phase 1 audit, with Claude's real-Moke restyle and title-screen fixes preserved:
+
+| Command / check | Result |
+|---|---|
+| `npm run typecheck` | Pass |
+| `npm test` | Pass: 24 files, 152 tests, including real-Rapier reach/occlusion, swept drop clearance, repeated pickup/drop and rest cycles, and frame timing |
+| `npm run build` | Pass. Main bundle 751.29 kB (200.24 kB gzipped); Rapier 2853.74 kB (1094.44 kB gzipped). `verify-dist`: no private photos. `THIRD_PARTY_NOTICES.txt` emitted. |
+| `git diff --check` | Pass |
+| In-app browser, dev server | Loading/menu/play/pause/resume/controls/debug; drag orbit; Q sniff; F bark; short-viewport controls; hidden-screen accessibility state |
+| In-app browser, production preview | Loaded and played; controls dialog, Q sniff, F bark and pause worked; no console warnings or errors |
+| Not verified | Physical pointer lock and audio-by-ear; sustained keyboard feel; real-GPU FPS; Firefox and Safari; owner's approval of Moke's look |
 
 Run on 2026-09-24 after Moke's anime look (Milestone 10):
 

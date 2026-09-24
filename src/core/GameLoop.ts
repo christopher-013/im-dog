@@ -38,7 +38,7 @@ export class GameLoop {
 
   constructor(
     private readonly renderer: WebGLRenderer,
-    private readonly onFrame: (dt: number) => void,
+    private readonly onFrame: (dt: number, elapsed: number) => void,
     private readonly maxFrameDelta: number = TIMING.maxFrameDelta,
   ) {}
 
@@ -52,8 +52,9 @@ export class GameLoop {
   }
 
   private readonly tick = (time: number): void => {
-    const dt = this.lastTime < 0 ? 0 : Math.min((time - this.lastTime) / 1000, this.maxFrameDelta);
+    const elapsed = this.lastTime < 0 ? 0 : Math.max(0, (time - this.lastTime) / 1000);
+    const dt = Math.min(elapsed, this.maxFrameDelta);
     this.lastTime = time;
-    this.onFrame(dt);
+    this.onFrame(dt, elapsed);
   };
 }

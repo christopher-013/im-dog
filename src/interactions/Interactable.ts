@@ -23,6 +23,8 @@ export interface Interactable {
   readonly position: Vec3Like;
   /** Must Moke be facing it? Default true. False for things he's holding or standing in. */
   readonly requiresFacing?: boolean;
+  /** False for actions on oneself (drop/get up); world targets must have an unobstructed path. */
+  readonly requiresClearPath?: boolean;
   /** Higher priority wins over nearer. Default 0. */
   readonly priority?: number;
   /** Do it. Called by InteractionSystem.interact() when this is the current target. */

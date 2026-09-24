@@ -12,6 +12,17 @@ const DT = 1 / 60;
 const SPOT = { id: 'bed', position: { x: 0, y: 0, z: 0 }, facing: Math.PI / 2 };
 
 describe('RestSystem (state machine)', () => {
+  it('can cancel settling repeatedly without becoming stuck in a rest transition', () => {
+    const rest = new RestSystem(new InteractionSystem(), SPOT);
+    for (let i = 0; i < 50; i++) {
+      expect(rest.lieDown()).toBe(true);
+      expect(rest.lieDown()).toBe(false);
+      expect(rest.standUp()).toBe(true);
+      expect(rest.standUp()).toBe(false);
+      rest.update(REST.riseTime + 0.01, { position: SPOT.position, heading: 0 });
+      expect(rest.holdsMoke).toBe(false);
+    }
+  });
   it('offers "Lie Down" only within reach, then "Get Up" while resting', () => {
     const interactions = new InteractionSystem();
     const rest = new RestSystem(interactions, SPOT);
@@ -56,7 +67,7 @@ describe('RestSystem in the living room (Rapier)', () => {
     physics.commitStaticGeometry();
     const moke = new MokeController(new CharacterBody(physics, room.spawn.position, MOKE_BODY), room.spawn.heading, { ...MOVEMENT });
     const { dogBed, dogBedFront } = room.landmarks;
-    const interactions = new InteractionSystem();
+    const interactions = new InteractionSystem(undefined, (o, d, max) => physics.rayDistance(o, d, max));
     const rest = new RestSystem(interactions, { id: 'dogBed', position: dogBed, facing: Math.atan2(dogBedFront.x - dogBed.x, dogBedFront.z - dogBed.z) });
 
     const still = { x: 0, z: 0, walk: false, run: false };

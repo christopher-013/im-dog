@@ -70,6 +70,7 @@ export class FrameStats {
   private worst = 0;
 
   record(dt: number): void {
+    if (dt <= 0) return;
     this.frames++;
     this.elapsed += dt;
     this.worst = Math.max(this.worst, dt);

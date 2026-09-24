@@ -103,10 +103,21 @@ export class UIManager {
 
   /** Shows one full-screen overlay, or none (null) during play. */
   showScreen(screen: Screen | null): void {
-    for (const [name, element] of Object.entries(this.screens)) {
-      element.classList.toggle('is-active', name === screen);
-    }
     if (screen !== 'menu' && screen !== 'paused' && this.controlsDialog.open) this.controlsDialog.close();
+    // Move focus before making the departing screen inert, including during its visual fade.
+    for (const [name, element] of Object.entries(this.screens)) {
+      if (name !== screen && element.contains(this.doc.activeElement)) {
+        this.doc.querySelector<HTMLElement>('#viewport canvas')?.focus({ preventScroll: true });
+      }
+    }
+    for (const [name, element] of Object.entries(this.screens)) {
+      const active = name === screen;
+      element.classList.toggle('is-active', active);
+      element.inert = !active;
+      element.setAttribute('aria-hidden', String(!active));
+    }
+    this.hud.setAttribute('aria-hidden', String(screen !== null));
+    if (screen) this.screens[screen].querySelector<HTMLElement>('button')?.focus({ preventScroll: true });
     if (screen !== null) {
       this.setPointerHint(false);
       this.setPrompt(null, null);
@@ -125,13 +136,18 @@ export class UIManager {
   showToast(text: string, durationMs = 4000): void {
     this.toast.textContent = text;
     this.toast.classList.add('is-visible');
+    this.toast.setAttribute('aria-hidden', 'false');
     window.clearTimeout(this.toastTimer);
-    this.toastTimer = window.setTimeout(() => this.toast.classList.remove('is-visible'), durationMs);
+    this.toastTimer = window.setTimeout(() => {
+      this.toast.classList.remove('is-visible');
+      this.toast.setAttribute('aria-hidden', 'true');
+    }, durationMs);
   }
 
   /** "Click to look around" — shown when play is running but the mouse isn't captured. */
   setPointerHint(visible: boolean): void {
     this.pointerHint.classList.toggle('is-visible', visible);
+    this.pointerHint.setAttribute('aria-hidden', String(!visible));
   }
 
   /**
@@ -147,6 +163,7 @@ export class UIManager {
       this.promptLabel.textContent = label;
     }
     this.prompt.classList.toggle('is-visible', text !== null);
+    this.prompt.setAttribute('aria-hidden', String(text === null));
   }
 
   /** The soft warm haze at the edges of the view during sniff mode. */
@@ -161,6 +178,7 @@ export class UIManager {
     if (active === this.resting) return;
     this.resting = active;
     this.hud.classList.toggle('is-resting', active);
+    this.el('rest-note').setAttribute('aria-hidden', String(!active));
   }
 
   /** Pops a comic bark ("Arf!") at a screen position (CSS pixels), e.g. above Moke's head. */

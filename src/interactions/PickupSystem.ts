@@ -9,6 +9,8 @@ export interface Carryable {
   readonly name: string;
   /** World position now. */
   readonly position: Vec3Like;
+  /** Conservative physics radius used to keep the entire dropped object clear of scenery. */
+  readonly dropRadius?: number;
   /** Leaves the physics world (it now rides in his mouth). */
   pickUp(): void;
   /** Back into the physics world at `at`, facing `heading`, moving with `velocity`. */
@@ -24,7 +26,7 @@ export interface Carrier {
 }
 
 /** Free distance ahead from `origin` along unit `direction`, up to `max` (walls, furniture). */
-export type WallProbe = (origin: Vec3Like, direction: Vec3Like, max: number) => number;
+export type WallProbe = (origin: Vec3Like, direction: Vec3Like, max: number, radius: number) => number;
 
 type PickupTuning = { readonly [K in keyof typeof PICKUP]: number };
 
@@ -63,6 +65,7 @@ export class PickupSystem<T extends Carryable = Carryable> {
       },
       position: carrier.position,
       requiresFacing: false,
+      requiresClearPath: false,
       priority: 10,
       interact: () => this.drop(),
     });
@@ -119,7 +122,7 @@ export class PickupSystem<T extends Carryable = Carryable> {
     if (this.probe) {
       at.x = c.position.x;
       at.z = c.position.z;
-      ahead = Math.max(0, Math.min(ahead, this.probe(at, f, ahead + t.dropWallGap) - t.dropWallGap));
+      ahead = Math.max(0, Math.min(ahead, this.probe(at, f, ahead + t.dropWallGap, item.dropRadius ?? 0) - t.dropWallGap));
     }
     at.x = c.position.x + f.x * ahead;
     at.z = c.position.z + f.z * ahead;

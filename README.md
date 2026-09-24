@@ -3,9 +3,10 @@
 *A Day in the Life of Moke.* A cozy, funny third-person browser game about an ordinary day as Moke,
 a small white Maltipoo. No combat, no death: just socks, smells, naps and a very big living room.
 
-**Status:** Phase 1, Milestone 3 (third-person camera). A placeholder Moke trots, runs and sneaks around a
-true-scale greybox room, with Rapier collision (he fits under the coffee table). A low dog-height camera follows
-him, avoids walls and furniture, and ducks under the table with him. See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
+**Status:** Phase 1, Milestone 4 (living room). A placeholder Moke trots, runs and sneaks around a cozy,
+true-scale living room: linen couch, rug, coffee table he can duck under, TV console, lamp, plant, and his bed in
+the window's sun, plus a short hallway. A low dog-height camera follows him and avoids walls and furniture.
+See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
 ## Requirements
 - Node.js **22.12+** (tested with Node 24) and npm

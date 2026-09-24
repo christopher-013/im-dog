@@ -16,7 +16,8 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 |---|---|---|
 | Logo lettering + Moke-face "O", paw icon | `index.html` (inline SVG) | Original vector art |
 | Favicon | `public/favicon.svg` | Simplified Moke face |
-| Greybox room, furniture, lighting | `src/world/` | Generated in code (temporary) |
+| Living room, hallway, furniture, lighting | `src/world/` | Built in code from simple shapes |
+| Floorboard, rug, pillow, wall-art and garden textures | `src/world/textures.ts` | Original canvas drawings generated at startup (no image files) |
 | Placeholder Moke | `src/player/PlaceholderDogVisual.ts` | Generated in code from simple shapes (temporary until `moke.glb`) |
 
 ## Private references (never distributed)
@@ -29,5 +30,4 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 |---|---|---|
 | Final `moke.glb` (rigged, animated) | Later | Separate modeling/rigging workflow from the reference photos |
 | Bark, footsteps (carpet/wood), pickup, drop, room ambience | 10 (bark possibly earlier) | CC0 sources (e.g. Freesound CC0 only, Kenney) or recorded; ideally Moke's real bark if you record one |
-| Furniture/prop models | 4 | Start with in-code stylized geometry; optionally CC0 packs (Kenney, Poly Pizza CC0) |
-| Fabric/wood textures | 4/10 | Small CC0 textures (ambientCG, Poly Haven) if needed |
+| Nicer furniture/prop models (optional) | 10 | In-code geometry is in place; optionally CC0 packs (Kenney, Poly Pizza CC0) later |

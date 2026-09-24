@@ -13,8 +13,8 @@ import { MokeController } from '../player/MokeController';
 import { createMokeVisual } from '../player/MokeVisual';
 import { DebugPanel, FrameStats, type DebugValues } from '../ui/DebugPanel';
 import type { UIManager } from '../ui/UIManager';
-import { FoundationStage } from '../world/FoundationStage';
-import { RoomLighting } from '../world/RoomLighting';
+import { LivingRoom } from '../world/LivingRoom';
+import { applySoftEnvironment, RoomLighting } from '../world/RoomLighting';
 import { AssetManager } from './AssetManager';
 import { FixedStep, GameLoop } from './GameLoop';
 import { GameRenderer } from './GameRenderer';
@@ -41,7 +41,7 @@ export class Game {
   private readonly loop: GameLoop;
   private readonly fixedStep = new FixedStep();
   private readonly frameStats = new FrameStats();
-  private readonly stage = new FoundationStage();
+  private readonly room = new LivingRoom();
   private readonly followCamera: ThirdPersonCamera;
   private readonly moveBasis = new MoveBasis();
   private physics: PhysicsWorld | null = null;
@@ -63,7 +63,8 @@ export class Game {
     this.loop = new GameLoop(this.gfx.renderer, this.frame);
 
     this.scene.background = new Color(RENDER.background);
-    this.scene.add(new RoomLighting().object, this.stage.object);
+    this.scene.add(new RoomLighting().object, this.room.object);
+    applySoftEnvironment(this.gfx.renderer, this.scene);
     this.followCamera = new ThirdPersonCamera(this.camera, this.updateCameraTarget());
 
     ui.bind({ onPlay: () => this.play(), onResume: () => this.resume() });
@@ -97,7 +98,7 @@ export class Game {
 
     this.ui.setLoadingProgress(0.45, 'Waking up the zoomies…');
     const physics = await PhysicsWorld.create();
-    physics.addStaticBoxes(this.stage.colliders);
+    physics.addStaticBoxes(this.room.colliders);
     physics.commitStaticGeometry();
     this.physics = physics;
     this.moke = this.spawnMoke(physics);
@@ -122,7 +123,7 @@ export class Game {
   }
 
   private spawnMoke(physics: PhysicsWorld): Moke {
-    const { position, heading } = this.stage.spawn;
+    const { position, heading } = this.room.spawn;
     const body = new CharacterBody(physics, position, MOKE_BODY);
     const moke = new Moke(new MokeController(body, heading), createMokeVisual());
     this.scene.add(moke.visual.object);
@@ -217,8 +218,8 @@ export class Game {
       target.speed = c.actualSpeed;
       target.headroom = c.headroom;
     } else {
-      target.position.copy(this.stage.spawn.position);
-      target.heading = this.stage.spawn.heading;
+      target.position.copy(this.room.spawn.position);
+      target.heading = this.room.spawn.heading;
     }
     return target;
   }

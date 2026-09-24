@@ -47,8 +47,12 @@ src/
     ThirdPersonCamera.ts  orbit, follow, collision, tight-space handling, zoom, FOV (tested with a fake collider)
     MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
   world/
-    RoomLighting.ts       hemisphere fill + window sun with soft shadows
-    FoundationStage.ts    TEMPORARY: true-scale greybox + its colliders. Replaced by LivingRoom in M4
+    LivingRoom.ts         the room + hallway: shell, layout, spawn, landmarks (navigation-tested with Rapier)
+    furniture.ts          couch, coffee table, rug, TV console, lamp, plant, dog bed, curtains, art, door
+    materials.ts          the room palette (shared materials)
+    textures.ts           original procedural canvas textures (floorboards, rug, pillows, art, garden)
+    StaticSceneBuilder.ts places parts in nested frames, derives colliders, merges by material (tested)
+    RoomLighting.ts       hemisphere fill + window sun with soft shadows; soft image-based environment
   ui/
     UIManager.ts          screens, controls dialog, toast, hints
     DebugPanel.ts         ` overlay + FrameStats
@@ -133,6 +137,26 @@ steered. Holding D runs Moke straight right while the camera swings behind him.
 The camera talks to physics only through a `CameraCollider` interface (`sweepSphere`), which makes it unit-testable
 with a fake. Cost: about 5–7 µs per frame.
 
+## The living room (`world/`)
+- **Layout:** a 7 × 6 m room at true human scale, plus a 3 m hallway through a doorway in the right wall.
+  - Window with curtains and a garden view on the left; its sun falls on Moke's bed.
+  - Couch, side table and floor lamp along the back wall; rug and coffee table in the middle; TV console on the
+    front wall; plant in the corner.
+  - `LivingRoom.landmarks` names key spots (bed, bed front, under the table, hallway) for tests and later milestones.
+- **Furniture functions** build around their own origin, facing +z. The layout places them with `builder.at(position, rotationY, …)`.
+- **Draw calls:** `StaticSceneBuilder` merges all static parts that share a material and shadow flags into one mesh,
+  so the furnished room is 44 meshes. The whole frame, with shadows and Moke, is about 100 draw calls (about
+  2.2 ms at 1280×720 on a GTX 1660 SUPER).
+- **Textures** are original canvas drawings generated at startup from a seeded random generator, so they're the
+  same every time. Where there's no DOM (unit tests), they're null and the materials use plain colours.
+  - Floors use world-space UVs (`worldUV`), so boards line up between the room and the hallway.
+- **Lighting:**
+  - Hemisphere fill, plus the window sun, whose shadow map covers the room and hallway.
+  - Soft image-based reflections (`RoomEnvironment`, prefiltered once).
+  - A warm point light in the floor lamp and one in the hallway (no shadows, to stay cheap).
+  - The balance is set in `config/engine.ts` (`hemisphereIntensity`, `sunIntensity`, `environmentIntensity`).
+- **Moke's bed** is open at the front, and its bolster colliders block the other sides. This sets up lying down in Milestone 9.
+
 ## Assets
 - Runtime assets live in `public/assets/{models,textures,audio}` and are loaded **by URL from a manifest**
   (`src/config/assets.ts`). Dropping `moke.glb` into `public/assets/models/moke/` needs no import changes.
@@ -151,7 +175,8 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
   ~1.1 MB gzipped WASM chunk loads behind the loading screen and never blocks the first paint. It's stepped once
   per fixed step (60 Hz).
 - **Static geometry:** world code describes colliders as plain `StaticBox` data (no Rapier import).
-  `FoundationStage` derives them from its own meshes (`solid: true`), so visuals and collision can't drift apart.
+  `StaticSceneBuilder` derives them from the parts themselves (`solid`/`thin`) or takes simple explicit boxes
+  (`addCollider`, e.g. one box for the couch body), so visuals and collision stay together.
   Call `commitStaticGeometry()` after adding them: Rapier's scene queries only see colliders after a step.
 - **Moke's body:** `CharacterBody` is an upright kinematic capsule (radius 0.17 m, 0.36 m tall; `MOKE_BODY` in
   `config/movement.ts`) moved by Rapier's kinematic character controller: slide on, snap-to-ground, 45° slope limit.

@@ -11,6 +11,10 @@ export const RENDER = {
   shadowMapSize: 2048,
   /** PCF blur radius, in shadow-map texels. */
   shadowSoftness: 3,
+  /** Room lighting balance: sky/floor fill, window sun, and soft image-based reflections. */
+  hemisphereIntensity: 1.9,
+  sunIntensity: 4.0,
+  environmentIntensity: 0.35,
   background: '#f3e3cf',
 } as const;
 

@@ -10,8 +10,10 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - **Completed:**
   - Milestone 1, project foundation and architecture.
   - Milestone 2, the basic Moke character.
-  - Milestone 3, the third-person camera. Milestones 2 and 3 still await the owner's hands-on playtest.
-- **Next:** Milestone 4, the living room. Only start it when the owner says to.
+  - Milestone 3, the third-person camera.
+  - Milestone 4, the living room (plus a short hallway).
+  - Milestones 2–4 still await the owner's hands-on playtest.
+- **Next:** Milestone 5, the interaction framework and contextual prompts. Only start it when the owner says to.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES

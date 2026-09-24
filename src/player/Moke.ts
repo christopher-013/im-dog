@@ -16,6 +16,8 @@ export class Moke {
   carrying = false;
   /** Set by gameplay (sniff mode). */
   sniffing = false;
+  /** Set by gameplay (lying in his bed). */
+  resting = false;
 
   constructor(
     readonly controller: MokeController,
@@ -42,6 +44,7 @@ export class Moke {
       headroom: c.headroom,
       carrying: this.carrying,
       sniffing: this.sniffing,
+      resting: this.resting,
     });
     this.visual.update(dt, this.animation.state);
   }

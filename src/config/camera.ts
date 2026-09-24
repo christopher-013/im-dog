@@ -77,6 +77,12 @@ export interface CameraTuning {
 
   /** Slow orbit behind the start menu. */
   attract: { distance: number; pitch: number; spinSpeed: number };
+
+  /**
+   * While Moke lies in his bed: the pivot drops with him (m), the camera settles a little closer (× distance)
+   * and looks down into the bed at least this steeply (rad), so the bolster never fills the view.
+   */
+  rest: { pivotDrop: number; distanceScale: number; minPitch: number };
 }
 
 export const CAMERA: CameraTuning = {
@@ -117,4 +123,6 @@ export const CAMERA: CameraTuning = {
   autoFollow: { strength: 0.35, delayAfterMouse: 1.5, minSpeed: 0.5, maxAngle: 1.9 },
 
   attract: { distance: 1.9, pitch: 0.2, spinSpeed: 0.07 },
+
+  rest: { pivotDrop: 0.08, distanceScale: 0.85, minPitch: 0.42 },
 };

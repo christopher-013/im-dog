@@ -26,6 +26,9 @@ export const MOKE_ANIMATION = {
   sniffHeadDip: 0.45,
   /** How long a bark's body language lasts (s). */
   barkDuration: 0.38,
+  /** Responsiveness of lying down / getting up (per second). */
+  lieDownRate: 4,
+  getUpRate: 9,
   /** Start ducking when the space above Moke's feet is below this (m). His fluffy head reaches ~0.42 m. */
   duckBelowHeadroom: 0.45,
   /** Headroom range over which he goes from standing to fully ducked (m). */

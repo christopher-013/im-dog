@@ -30,6 +30,8 @@ export class UIManager {
   private readonly sniffVignette: HTMLElement;
   private readonly barkBubble: HTMLElement;
   private sniffing = false;
+  private readonly hud: HTMLElement;
+  private resting = false;
   private handlers: UIHandlers | null = null;
   private toastTimer: number | undefined;
 
@@ -52,6 +54,7 @@ export class UIManager {
     this.promptLabel = this.el('interact-label');
     this.sniffVignette = this.el('sniff-vignette');
     this.barkBubble = this.el('bark-bubble');
+    this.hud = this.el('hud');
 
     this.el('btn-play').addEventListener('click', () => this.handlers?.onPlay());
     this.el('btn-resume').addEventListener('click', () => this.handlers?.onResume());
@@ -108,6 +111,7 @@ export class UIManager {
       this.setPointerHint(false);
       this.setPrompt(null, null);
       this.setSniffing(false);
+      this.setResting(false);
     }
   }
 
@@ -150,6 +154,13 @@ export class UIManager {
     if (active === this.sniffing) return;
     this.sniffing = active;
     this.sniffVignette.classList.toggle('is-visible', active);
+  }
+
+  /** Lying in his bed: a quieter HUD with a soft "Resting…" note. */
+  setResting(active: boolean): void {
+    if (active === this.resting) return;
+    this.resting = active;
+    this.hud.classList.toggle('is-resting', active);
   }
 
   /** Pops a comic bark ("Arf!") at a screen position (CSS pixels), e.g. above Moke's head. */

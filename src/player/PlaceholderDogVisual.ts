@@ -38,6 +38,9 @@ interface Leg {
   pivot: Group;
   trot: number;
   run: number;
+  /** +1 = Moke's left. */
+  side: number;
+  front: boolean;
 }
 
 /**
@@ -88,6 +91,7 @@ export class PlaceholderDogVisual implements MokeVisual {
   private readonly tongue: Mesh;
   private readonly ears: { pivot: Group; side: number }[] = [];
   private readonly legs: Leg[] = [];
+  private readonly eyes: Mesh[] = [];
   private readonly geometries: BufferGeometry[] = [];
   private readonly materials: Material[] = [];
   private phase = 0;
@@ -125,7 +129,7 @@ export class PlaceholderDogVisual implements MokeVisual {
       this.part(pivot, legGeometry, fur, [0, -0.085, 0]);
       this.part(pivot, pawGeometry, fur, [0, -0.148, 0.012], [1, 0.72, 1.2]);
       this.rig.add(pivot);
-      this.legs.push({ pivot, trot: def.trot, run: def.run });
+      this.legs.push({ pivot, trot: def.trot, run: def.run, side: Math.sign(def.x), front: def.z > 0 });
     }
 
     // Head: the round cotton-ball dome, topknot, fluffy cheeks, short muzzle, black button nose.
@@ -141,7 +145,9 @@ export class PlaceholderDogVisual implements MokeVisual {
     const eyeGeometry = this.geometry(new SphereGeometry(0.0165, 16, 12));
     const sparkleGeometry = this.geometry(new SphereGeometry(0.0048, 8, 6));
     for (const side of [1, -1]) {
-      this.part(this.head, eyeGeometry, eye, [side * 0.041, 0.072, 0.108]).castShadow = false;
+      const eyeMesh = this.part(this.head, eyeGeometry, eye, [side * 0.041, 0.072, 0.108]);
+      eyeMesh.castShadow = false;
+      this.eyes.push(eyeMesh);
       this.part(this.head, sparkleGeometry, sparkle, [side * 0.041 + 0.004, 0.078, 0.1215]).castShadow = false;
 
       const pivot = new Group();
@@ -170,10 +176,12 @@ export class PlaceholderDogVisual implements MokeVisual {
     const stride = lerp(0.2, 0.55, clamp(s.speed / 4, 0, 1));
     this.phase = (this.phase + (s.speed / stride) * dt) % 1;
     const p = this.phase * TAU;
-    const swing = clamp(s.speed * 0.3, 0, 0.7);
+    const swing = clamp(s.speed * 0.3, 0, 0.7) * (1 - s.rest);
     for (const leg of this.legs) {
       const a = p + lerp(leg.trot, leg.run, s.runBlend);
-      leg.pivot.rotation.x = swing * Math.sin(a);
+      // Lying: a sphinx pose, front paws stretched forward, hind legs tucked alongside.
+      leg.pivot.rotation.x = swing * Math.sin(a) - s.rest * (leg.front ? 1.35 : 1.15);
+      leg.pivot.rotation.z = s.rest * (leg.front ? 0 : leg.side * 0.35);
       // Lift the paw while it swings forward, so feet step instead of sliding.
       leg.pivot.position.y = HIP_HEIGHT + Math.max(0, -Math.cos(a)) * 0.022 * moving;
     }
@@ -184,16 +192,16 @@ export class PlaceholderDogVisual implements MokeVisual {
     this.body.scale.y = 0.95 * (1 + (1 - moving) * 0.02 * Math.sin(s.time * 2.6)); // breathing
 
     this.rig.rotation.z = -s.lean;
-    // A bark is a little hop from the front paws.
-    this.rig.position.y = -s.crouch * 0.03 + s.bark * 0.018;
+    // A bark is a little hop from the front paws; lying lowers him onto his tummy.
+    this.rig.position.y = -s.crouch * 0.03 + s.bark * 0.018 - s.rest * 0.105;
     this.rig.rotation.x = -s.bark * 0.08;
 
-    this.neck.position.y = NECK_HEIGHT - s.crouch * 0.05 - bob * 0.5;
+    this.neck.position.y = NECK_HEIGHT - s.crouch * 0.05 - bob * 0.5 - s.rest * 0.03;
     const a = MOKE_ANIMATION;
     // Sniffing: nose down with quick little twitches.
     const twitch = s.sniff * 0.05 * Math.sin(s.time * 26) * (0.5 + 0.5 * Math.sin(s.time * 3.1));
     this.neck.rotation.x =
-      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch - s.bark * 0.35;
+      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch - s.bark * 0.35 + s.rest * 0.22;
     this.head.rotation.y = s.headYaw * (1 - 0.5 * s.sniff) + s.sniff * 0.25 * Math.sin(s.time * 1.7);
     this.head.rotation.z = -s.headTilt;
 
@@ -206,7 +214,9 @@ export class PlaceholderDogVisual implements MokeVisual {
 
     const wag = (0.15 + 0.4 * s.tailWag) * Math.sin(s.time * lerp(9, 16, s.tailWag));
     this.tail.rotation.z = wag;
-    this.tail.rotation.x = 0.35 - s.runBlend * 0.9;
+    this.tail.rotation.x = 0.35 - s.runBlend * 0.9 - s.rest * 1.1;
+    // Sleepy, contented half-closed eyes while resting.
+    for (const e of this.eyes) e.scale.y = 1 - 0.65 * s.rest;
 
     // Mouth open for a bark (the tongue shows), or panting at a run; closed on a carried item.
     this.tongue.visible = (s.runBlend > 0.25 || s.bark > 0.2) && s.carry < 0.5;

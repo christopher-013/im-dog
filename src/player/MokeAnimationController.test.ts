@@ -68,4 +68,12 @@ describe('MokeAnimationController', () => {
     expect(proud.carry).toBeGreaterThan(0.99);
     expect(proud.tailWag).toBeGreaterThan(plain.tailWag);
   });
+
+  it('lies down slowly and gets up quickly', () => {
+    const anim = new MokeAnimationController(MOVEMENT);
+    const lying = { speed: 0, turnRate: 0, headroom: OPEN_SKY, resting: true };
+    expect(simulate(anim, lying, 0.25).rest).toBeLessThan(0.7);
+    expect(simulate(anim, lying, 1.5).rest).toBeGreaterThan(0.99);
+    expect(simulate(anim, { ...lying, resting: false }, 0.35).rest).toBeLessThan(0.05);
+  });
 });

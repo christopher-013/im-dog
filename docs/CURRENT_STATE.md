@@ -6,8 +6,8 @@ _Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, overnight bra
 Phase 1
 
 ## Current Milestone
-Overnight run (owner decision 2026-09-24): Milestones 5 → 9 in order on the branch above; M10 is not started.
-Milestones 5 (interaction framework), 6 (sock), 7 (physics toys) and 8 (sniff mode, plus bark) are complete and awaiting owner review. The owner's hands-on playtest of
+Overnight run (owner decision 2026-09-24): Milestones 5 → 9 in order on the branch above, all done; **M10 is not started** (by instruction).
+Milestones 5 (interaction framework), 6 (sock), 7 (physics toys), 8 (sniff mode, plus bark) and 9 (rest) are complete and awaiting owner review. The owner's hands-on playtest of
 Milestones 2–4 (movement, camera and room) is still pending.
 
 ## Last Developer
@@ -76,27 +76,49 @@ Claude Code
 - Debug panel: "Scent" (sniff state, sources, the ranked nearby list); "Game" shows audio state and bark count.
 - No treat placeholder was added (optional in the spec); the four sources are the sock, rope toy, ball and bed.
 
+**Milestone 9: rest.**
+- In or at the open front of his bed, "E — Lie Down". He shuffles to the centre, turns round to face out and flops
+  into a sphinx pose (tummy down, front paws forward, head resting, sleepy half-closed eyes, lazy tail).
+- The camera drops and settles a little closer, and looks down into the bed so the bolster never blocks the view.
+- The HUD goes quiet: a soft breathing "Resting…" note, the toast hidden, the "E — Get Up" prompt dimmed.
+- E or any fresh movement key stands him up (0.45 s), then he's free. No nap mini-game.
+- `RestSystem` (state machine: standing → settling → resting → rising), `MokeController.glideTo` for the shuffle,
+  `MokeAnimationState.rest`, `CameraTarget.rest`. Debug panel: Moke → `rest` phase and pose.
+
 ## Current Architecture
 - `Game` owns the scene, renderer, input, physics, UI and state machine. Frame order:
   1. input
   2. global keys
-  3. fixed steps: `MoveBasis` → `MoveIntent` → `Moke.fixedUpdate` → `PhysicsWorld.step`
-  4. `Moke.update`
-  5. `ThirdPersonCamera.update`
-  6. render
-  7. debug
+  3. discrete actions (while playing): E → `InteractionSystem.interact()`, F → bark, Q → sniff, move keys → get up
+  4. fixed steps: `MoveBasis` → `MoveIntent` → `Moke.fixedUpdate` (or `glideTo` / held still by `RestSystem`)
+     → `RestSystem.update` → `PhysicsWorld.step` → `Prop.afterStep`
+  5. `Moke.update`, `Prop.render`, interaction prompt, `ScentSystem` + `ScentWisps`, resting HUD
+  6. `ThirdPersonCamera.update` (bark bubble placed after it)
+  7. render
+  8. debug
 - **Moke:** `MokeController` → `MokeAnimationController` → `MokeVisual` (placeholder). Gameplay never touches meshes.
-- **Physics:** `PhysicsWorld` (static boxes with collision layers, `sweepSphere`) and `CharacterBody` (kinematic capsule).
+- **Physics:** `PhysicsWorld` (static boxes with collision layers, `sweepSphere`, `rayDistance`), `CharacterBody`
+  (kinematic capsule + toy bumper) and `PropBody` (dynamic props on the `toy` layer).
+- **Gameplay systems:** `interactions/` (`InteractionSystem`, `PickupSystem`, `RestSystem`), `props/` (`Prop`),
+  `senses/` (`ScentSystem`, `ScentWisps`), `audio/` (`AudioManager`, synthesized sounds), `player/Bark.ts`.
 - **World:**
   - `LivingRoom` (shell, layout, spawn, landmarks) is built from `furniture.ts` pieces via `StaticSceneBuilder`.
   - Palette in `materials.ts`, textures in `textures.ts`.
   - `RoomLighting` plus `applySoftEnvironment`.
-- **Tuning** is in `src/config/`: `movement.ts`, `camera.ts`, `animation.ts`, `input.ts`, `engine.ts` (including the lighting balance), `world.ts`.
+- **Tuning** is in `src/config/`: `movement.ts`, `camera.ts`, `animation.ts`, `input.ts`, `engine.ts` (including the
+  lighting balance), `world.ts`, `interaction.ts` (reach, rest), `props.ts`, `senses.ts`, `audio.ts`.
 - **Temporary:** `PlaceholderDogVisual` (until `moke.glb`).
-- Details: `docs/ARCHITECTURE.md` ("The living room" section).
+- Details: `docs/ARCHITECTURE.md` (sections "Interactions", "Props and carrying", "Sniff mode", "Bark and audio").
 
 ## Current Gameplay State
-Verified in the browser (dev server and a production-build load):
+**Milestones 5–9 (overnight):** verified with unit and Rapier tests plus headless Chromium (SwiftShader, about
+10 FPS, so no feel or performance judgement). Screens checked: sock/rope toy in mouth, "E — …" prompts, sniff
+wisps + ranked debug list, the bark bubble animation, lying in the bed from front and back, quiet HUD. The
+production preview loads and plays (Q, F, W) with no console errors apart from SwiftShader's
+`KHR_parallel_shader_compile` capability warning. Not heard: any audio. Not done: keyboard-steered pickup in a
+browser (it was driven through the dev `imdog` hook), hands-on feel, real-GPU performance.
+
+From Milestone 4, verified in the browser (dev server and a production-build load):
 - The menu shows the furnished room behind the logo.
 - **In play:** the view behind Moke shows the couch, pillows, coffee table, lamp glow, art, plant, side table and rug.
 - **Window:** the garden shows through the window, framed by curtains, and Moke's bed sits beside it.
@@ -122,10 +144,28 @@ New in Milestone 4:
 - The potted plant looks a little sparse and spiky. It could be lusher in the polish milestone.
 - The window's sun patch is fairly subtle under the brighter room lighting.
 - There's no ambient occlusion (a post-processing choice), so contact areas under furniture are softer than in a film look.
+
+New in Milestones 5–9:
 - Carried props have no collision, so they can visually poke into walls.
+- Ball kick strength and roll distance, sniff duration and wisp look, and the lie-down timing are first guesses; they need a feel check.
+- The bark sound is a synthesized placeholder, unheard by Claude. The owner decides the final bark.
+- Getting up while carrying: the drop prompt (priority 10) outranks "Lie Down", so E near the bed drops the item first.
+- In headless tests the bark bubble fades within 0.85 s; its placement over his head is projected from his
+  position and hasn't been judged on a real display.
 
 ## Verification Status
-Run on 2026-09-24 at the end of Milestone 4:
+Run on 2026-09-24 at the end of Milestone 9 (overnight):
+
+| Command / check | Result |
+|---|---|
+| `npm run typecheck` | Pass |
+| `npm test` | Pass: 19 files, 130 tests (new: interaction, pickup, rest (incl. Rapier bed test), props (Rapier), scent, bark, animation) |
+| `npm run build` | Pass. Main bundle 737 kB (195 kB gzipped). `verify-dist`: no private photos. |
+| Headless Chromium (SwiftShader), dev server | Carry/drop, toys, sniff, bark and rest, as above (screenshots, DOM and debug values) |
+| Headless Chromium, production preview | Loads, PLAY, Q/F/W: no console errors (only the SwiftShader capability warning) |
+| Not verified | Hands-on feel; audio by ear; pointer lock; real-GPU FPS; Firefox and Safari |
+
+Earlier, at the end of Milestone 4:
 
 | Command / check | Result |
 |---|---|
@@ -139,10 +179,12 @@ Run on 2026-09-24 at the end of Milestone 4:
 ## Important Files
 - `AGENTS.md`, `CLAUDE.md`, and in `docs/`: `PHASE_1.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `CONTROLS.md`.
 - `src/world/LivingRoom.ts` (layout, landmarks), `furniture.ts`, `materials.ts`, `textures.ts`, `StaticSceneBuilder.ts`, `RoomLighting.ts`.
-- `src/config/`: `movement.ts`, `camera.ts` and `engine.ts` (lighting balance).
+- `src/config/`: `movement.ts`, `camera.ts`, `engine.ts` (lighting balance), `interaction.ts`, `props.ts`, `senses.ts`, `audio.ts`.
 - `src/camera/ThirdPersonCamera.ts`, `src/player/`, `src/physics/`, `src/core/Game.ts`.
+- `src/interactions/`, `src/props/`, `src/senses/`, `src/audio/`.
 
 ## Next Recommended Task
-1. The owner playtests Milestones 2–4 in Chrome with a physical mouse and keyboard, including pointer lock. We tune feel and look together.
-2. After approval, Milestone 5: a reusable interaction framework (`Interactable`, `InteractionSystem`) with
-   contextual prompts ("E — Pick Up Sock").
+1. The owner reviews the draft PR "Milestones 5–9 (overnight)" and playtests Milestones 2–9 in Chrome with a
+   physical mouse and keyboard: movement, camera, sock, ball/toy, sniff, bark (listen!) and the bed.
+2. The owner answers the open questions (bark sound, walk key C, camera auto-follow strength), then we tune.
+3. Only after approval: Milestone 10 (polish). Candidates are in Known Issues above.

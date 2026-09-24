@@ -15,6 +15,8 @@ export interface MokeMotionSample {
   carrying?: boolean;
   /** Sniff mode is on. Default false. */
   sniffing?: boolean;
+  /** Lying in his bed. Default false. */
+  resting?: boolean;
 }
 
 /**
@@ -43,6 +45,8 @@ export interface MokeAnimationState {
   sniff: number;
   /** 0..1: a bark in progress (a quick jolt up that settles). */
   bark: number;
+  /** 0..1: lying down (sphinx pose, head resting, sleepy eyes). */
+  rest: number;
   /** Seconds since creation, for cyclic motion. */
   time: number;
 }
@@ -60,6 +64,7 @@ export class MokeAnimationController {
     carry: 0,
     sniff: 0,
     bark: 0,
+    rest: 0,
     time: 0,
   };
 
@@ -101,6 +106,8 @@ export class MokeAnimationController {
 
     s.carry = damp(s.carry, sample.carrying ? 1 : 0, 10, dt);
     s.sniff = damp(s.sniff, sample.sniffing ? 1 : 0, 6, dt);
+    // Lying down is a slow, contented flop; getting up is quicker.
+    s.rest = damp(s.rest, sample.resting ? 1 : 0, sample.resting ? a.lieDownRate : a.getUpRate, dt);
     // A bark snaps in over a few frames, then eases out.
     this.sinceBark += dt;
     const b = this.sinceBark / a.barkDuration;

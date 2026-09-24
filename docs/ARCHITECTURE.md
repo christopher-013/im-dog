@@ -63,6 +63,7 @@ src/
     Interactable.ts       the Interactable contract (id, type, label, distance, enabled, position, callback) + INTERACTION_TYPES
     InteractionSystem.ts  registry + "what would E do now?" selection (tested; DOM/three-free)
     PickupSystem.ts       pick up / carry / drop for any Carryable (tested; DOM/three-free)
+    RestSystem.ts         lie down / get up at a rest spot: state machine + REST interactables (tested, incl. Rapier)
   props/
     Prop.ts               a loose prop: PropBody + view, interpolated; implements Carryable; escape rescue
     propVisuals.ts        original code-built prop models (sock, tennis ball, rope toy)
@@ -185,6 +186,18 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - `AudioManager` creates/resumes its `AudioContext` inside the PLAY/RESUME clicks (browsers require a gesture). If
   Web Audio is missing or still locked, `play()` does nothing. All sounds are synthesized at play time (`synth.ts`), with
   a little random pitch variation; there are no audio files.
+
+## Rest (Milestone 9)
+- `RestSystem` registers "Lie Down" (REST, reach 0.62 m from the bed centre, which is only reachable through the
+  bed's open front) and, while settling/resting, "Get Up" (priority 20).
+- Phases: `standing → settling → resting → rising → standing`. While not standing, `Game` ignores movement input:
+  - settling: `MokeController.glideTo` shuffles him to the centre (still colliding), facing where he's going, then
+    turns him to face out (`glideHeading`); he lies down on arrival or after a 2 s timeout;
+  - rising lasts 0.45 s so the stand-up reads before he can run off.
+- E (the "Get Up" interactable) or any fresh movement key press stands him up.
+- Presentation reads plain numbers: `Moke.resting` → `MokeAnimationState.rest` (slow flop, quick rise) →
+  the placeholder's sphinx pose; `CameraTarget.rest` (from the animation state) lowers the pivot, brings the camera
+  in by 15% and enforces a minimum downward pitch (`CAMERA.rest`); `UIManager.setResting` quiets the HUD.
 
 ## Third-person camera (`camera/ThirdPersonCamera.ts`, tuning in `config/camera.ts`)
 It's never parented to Moke. Each frame:

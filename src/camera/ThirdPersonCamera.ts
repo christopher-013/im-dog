@@ -13,6 +13,8 @@ export interface CameraTarget {
   speed: number;
   /** Free space above the feet (m); Infinity when nothing low is overhead. */
   headroom: number;
+  /** 0..1: lying down in his bed (the camera settles lower and a little closer). Default 0. */
+  rest?: number;
 }
 
 /** Player input for this frame: mouse movement in pixels, wheel notches (positive = zoom out). */
@@ -123,13 +125,14 @@ export class ThirdPersonCamera {
         t.maxDistance,
       );
       this.swingBehind(dt, target);
-      wantedDistance = this.desiredDistance;
+      wantedDistance = this.desiredDistance * (1 - (target.rest ?? 0) * (1 - t.rest.distanceScale));
     }
     this.currentYaw = damp(this.currentYaw, this.yawTarget, t.rotationSmoothing, dt);
     this.currentPitch = damp(this.currentPitch, this.pitchTarget, t.rotationSmoothing, dt);
 
     // 2. Follow Moke's head, but keep the pivot under low ceilings (the coffee table).
-    const pivotHeight = clamp(target.headroom - t.collisionRadius - t.ceilingClearance, t.minPivotHeight, t.pivotHeight);
+    const standingPivot = t.pivotHeight - (target.rest ?? 0) * t.rest.pivotDrop;
+    const pivotHeight = clamp(target.headroom - t.collisionRadius - t.ceilingClearance, t.minPivotHeight, standingPivot);
     const p = target.position;
     this.pivot.x = damp(this.pivot.x, p.x, t.followSmoothing, dt);
     this.pivot.y = damp(this.pivot.y, p.y + pivotHeight, t.followSmoothingVertical, dt);
@@ -144,13 +147,15 @@ export class ThirdPersonCamera {
 
     // 4. Squeezed from behind (Moke backed into something): lift up and over him. The lift is based on
     //    the room at the *natural* angle, not on the result, so it can't feed back into itself and wobble.
-    const naturalPitch = Math.min(this.currentPitch, this.ceilingPitchLimit);
+    //    In his bed, look down into it at least a little, so the bolster never fills the view.
+    const restPitch = (target.rest ?? 0) * t.rest.minPitch;
+    const naturalPitch = Math.min(Math.max(this.currentPitch, restPitch), this.ceilingPitchLimit);
     const naturalFree = this.sweep(naturalPitch, wantedDistance);
     this.avoidWalls(dt, naturalPitch, wantedDistance, naturalFree);
     const squeeze = clamp((t.closeDistance - naturalFree) / t.closeDistance, 0, 1);
     const raiseTarget = squeeze * Math.max(0, t.squeezeMaxPitch - this.currentPitch);
     this.raise = dt === 0 ? raiseTarget : damp(this.raise, raiseTarget, t.raiseSmoothing, dt);
-    const pitch = Math.min(this.currentPitch + this.raise, this.ceilingPitchLimit);
+    const pitch = Math.min(Math.max(this.currentPitch, restPitch) + this.raise, this.ceilingPitchLimit);
 
     // 5. Collision: the final spot is wherever a small sphere swept from the pivot first touches something.
     this.freeDistance = this.raise > 1e-3 ? this.sweep(pitch, wantedDistance) : naturalFree;

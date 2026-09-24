@@ -9,6 +9,8 @@ import { MOKE_BODY } from '../config/movement';
 import { SNIFF } from '../config/senses';
 import { InteractionSystem } from '../interactions/InteractionSystem';
 import { PickupSystem } from '../interactions/PickupSystem';
+import { RestSystem } from '../interactions/RestSystem';
+import { REST } from '../config/interaction';
 import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { BarkTimer } from '../player/Bark';
@@ -66,12 +68,14 @@ export class Game {
   private moke: Moke | null = null;
   private props: Prop[] = [];
   private pickup: PickupSystem<Prop> | null = null;
+  private readonly rest: RestSystem;
 
   private readonly lookDelta: Vec2Like = { x: 0, y: 0 };
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
   private readonly moveIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
+  private readonly stillIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
   private readonly cameraInput: CameraInput = { lookX: 0, lookY: 0, zoom: 0 };
-  private readonly cameraTarget: CameraTarget = { position: new Vector3(), heading: 0, speed: 0, headroom: Infinity };
+  private readonly cameraTarget: CameraTarget = { position: new Vector3(), heading: 0, speed: 0, headroom: Infinity, rest: 0 };
 
   constructor(
     viewport: HTMLElement,
@@ -81,6 +85,13 @@ export class Game {
     this.input = new InputManager(this.gfx.canvas);
     this.debug = new DebugPanel(viewport.parentElement ?? document.body);
     this.loop = new GameLoop(this.gfx.renderer, this.frame);
+
+    const { dogBed, dogBedFront } = this.room.landmarks;
+    this.rest = new RestSystem(this.interactions, {
+      id: 'dogBed',
+      position: dogBed,
+      facing: Math.atan2(dogBedFront.x - dogBed.x, dogBedFront.z - dogBed.z),
+    });
 
     this.scene.background = new Color(RENDER.background);
     this.scene.add(new RoomLighting().object, this.room.object, this.wisps.object);
@@ -223,6 +234,7 @@ export class Game {
     for (const prop of this.props) prop.render(alpha);
     this.updateInteractionPrompt(playing);
     this.updateSniff(playing ? dt : 0, playing);
+    this.ui.setResting(playing && this.rest.lying);
 
     input.getLookDelta(this.lookDelta);
     this.cameraInput.lookX = playing ? this.lookDelta.x : 0;
@@ -240,8 +252,16 @@ export class Game {
 
   private readonly fixedUpdate = (step: number): void => {
     if (!this.moke || !this.physics) return;
+    const c = this.moke.controller;
     this.updateMoveIntent();
-    this.moke.fixedUpdate(step, this.moveIntent);
+    const glideTarget = this.rest.glideTarget;
+    if (glideTarget) {
+      c.glideTo(step, glideTarget, this.rest.glideHeading(c), REST.settleSpeed, REST.settleTurnRate);
+    } else {
+      this.moke.fixedUpdate(step, this.rest.holdsMoke ? this.stillIntent : this.moveIntent);
+    }
+    this.rest.update(step, c);
+    this.moke.resting = this.rest.lying;
     this.physics.step();
     for (const prop of this.props) prop.afterStep();
   };
@@ -268,6 +288,9 @@ export class Game {
   private handleActions(): void {
     const input = this.input.state;
     if (input.wasPressed('interact')) this.interactions.interact();
+    // Any fresh movement key gets him up out of his bed.
+    const moved = ['moveForward', 'moveBackward', 'moveLeft', 'moveRight'] as const;
+    if (this.rest.holdsMoke && moved.some((a) => input.wasPressed(a))) this.rest.standUp();
     if (input.wasPressed('bark') && this.moke && this.barkTimer.tryBark()) {
       this.moke.animation.bark();
       this.audio.play('bark');
@@ -315,6 +338,7 @@ export class Game {
       target.heading = c.heading;
       target.speed = c.actualSpeed;
       target.headroom = c.headroom;
+      target.rest = this.moke.animation.state.rest;
     } else {
       target.position.copy(this.room.spawn.position);
       target.heading = this.room.spawn.heading;
@@ -355,6 +379,7 @@ export class Game {
         'turn rate': `${deg(c.locomotion.turnRate)}/s`,
         grounded: c.grounded,
         headroom: `${c.headroom.toFixed(2)} m (duck ${this.moke.animation.state.crouch.toFixed(2)})`,
+        rest: `${this.rest.phase} (pose ${this.moke.animation.state.rest.toFixed(2)})`,
       };
     });
     this.debug.addSection('Interaction', (): DebugValues => {

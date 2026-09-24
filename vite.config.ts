@@ -53,8 +53,9 @@ export default defineConfig({
   build: {
     // Hashed JS/CSS/fonts go to dist/app/, leaving dist/assets/ for runtime game assets from public/assets/.
     assetsDir: 'app',
-    // three.js core alone is ~600 kB minified; one chunk is fine for a game this size.
-    chunkSizeWarningLimit: 1000,
+    // Main bundle (mostly three.js) is ~660 kB. The lazy-loaded Rapier chunk is ~2.9 MB raw / ~1.1 MB gzipped
+    // because its WASM is embedded; that's inherent, so warn only above it.
+    chunkSizeWarningLimit: 3000,
   },
   test: {
     environment: 'node',

@@ -488,17 +488,18 @@ kbd {
   transform: translate(-50%, 0);
 }
 
+/* Near the top, so it never covers Moke in the middle of the screen. */
 .pointer-hint {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: 14%;
   padding: 0.7em 1.3em;
   border-radius: var(--pill);
   background: rgba(255, 250, 243, 0.92);
   box-shadow: 0 5px 0 var(--shadow);
   font-weight: 600;
   opacity: 0;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   transition: opacity 0.25s ease;
 }
 

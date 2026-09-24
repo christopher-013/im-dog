@@ -4,9 +4,10 @@ Desktop keyboard + mouse. Bindings live in `src/config/input.ts`, the single sou
 
 | Input | Action | Status |
 |---|---|---|
-| W A S D (or arrow keys) | Move | Milestone 2 |
-| Mouse | Look around / orbit camera | Working (preview camera) |
-| Shift (hold) | Run | Milestone 2 |
+| W A S D (or arrow keys) | Move (trot), relative to the camera: W = away from the camera | Working |
+| Mouse | Look around / orbit the camera around Moke | Working (temporary preview camera, no collision) |
+| Shift (hold) | Run | Working |
+| C (hold) | Walk / sneak | Working. Not Ctrl, because Ctrl+W closes the browser tab. |
 | E | Interact · pick up · drop | Milestones 5–6 |
 | F | Bark | Later milestone |
 | Q | Sniff mode | Milestone 8 |
@@ -19,5 +20,9 @@ Chrome needs about a second after Esc before it will capture again; if resume do
 Where pointer lock isn't available, click and drag to look.
 
 **Debug at startup:** add `?debug` to the URL.
+
+**Live feel tuning (dev server only):** in the browser console, change values on `tuning.movement`
+(e.g. `tuning.movement.runSpeed = 5`) or `tuning.mouse.sensitivity`. The changes apply immediately. Copy good values
+into `src/config/movement.ts` / `src/config/input.ts` to keep them.
 
 Gamepad support is planned for later; the input system is action-based so it can be added without touching gameplay code.

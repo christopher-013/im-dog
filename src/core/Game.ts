@@ -1,8 +1,16 @@
-import { Color, PerspectiveCamera, Scene } from 'three';
+import { Color, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { PreviewOrbitCamera } from '../camera/PreviewOrbitCamera';
 import { ASSET_MANIFEST } from '../config/assets';
 import { CAMERA_LENS, RENDER } from '../config/engine';
-import { DebugPanel, FrameStats } from '../ui/DebugPanel';
+import { MOKE_BODY } from '../config/movement';
+import { MOKE_SIZE } from '../config/world';
+import { CharacterBody } from '../physics/CharacterBody';
+import { PhysicsWorld } from '../physics/PhysicsWorld';
+import type { MoveIntent } from '../player/Locomotion';
+import { Moke } from '../player/Moke';
+import { MokeController } from '../player/MokeController';
+import { createMokeVisual } from '../player/MokeVisual';
+import { DebugPanel, FrameStats, type DebugValues } from '../ui/DebugPanel';
 import type { UIManager } from '../ui/UIManager';
 import { FoundationStage } from '../world/FoundationStage';
 import { RoomLighting } from '../world/RoomLighting';
@@ -15,10 +23,10 @@ import type { Vec2Like } from './InputState';
 export type GameState = 'loading' | 'menu' | 'playing' | 'paused';
 
 /**
- * Top-level orchestrator: owns the renderer, scene, input, UI and the game state machine
- * (loading → menu → playing ⇄ paused), and runs the frame:
+ * Top-level orchestrator: owns the renderer, scene, input, physics, UI and the game state
+ * machine (loading → menu → playing ⇄ paused), and runs the frame:
  *
- *   input.beginFrame → global keys → fixed-step simulation → camera → render → debug
+ *   input.beginFrame → global keys → fixed steps (Moke + physics) → Moke visuals → camera → render → debug
  */
 export class Game {
   private state: GameState = 'loading';
@@ -33,8 +41,13 @@ export class Game {
   private readonly frameStats = new FrameStats();
   private readonly stage = new FoundationStage();
   private readonly previewCamera: PreviewOrbitCamera;
+  private physics: PhysicsWorld | null = null;
+  private moke: Moke | null = null;
+
   private readonly lookDelta: Vec2Like = { x: 0, y: 0 };
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
+  private readonly moveIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
+  private readonly cameraTarget = new Vector3();
 
   constructor(
     viewport: HTMLElement,
@@ -47,7 +60,7 @@ export class Game {
 
     this.scene.background = new Color(RENDER.background);
     this.scene.add(new RoomLighting().object, this.stage.object);
-    this.previewCamera = new PreviewOrbitCamera(this.camera, this.stage.spawnPoint);
+    this.previewCamera = new PreviewOrbitCamera(this.camera, this.computeCameraTarget());
 
     ui.bind({ onPlay: () => this.play(), onResume: () => this.resume() });
     this.input.onPointerLockChange = (locked) => {
@@ -70,7 +83,14 @@ export class Game {
   async start(): Promise<void> {
     this.setState('loading');
     this.ui.setLoadingProgress(0, 'Sniffing around for assets…');
-    await this.assets.preload(ASSET_MANIFEST, (fraction) => this.ui.setLoadingProgress(fraction * 0.7));
+    await this.assets.preload(ASSET_MANIFEST, (fraction) => this.ui.setLoadingProgress(fraction * 0.4));
+
+    this.ui.setLoadingProgress(0.45, 'Waking up the zoomies…');
+    const physics = await PhysicsWorld.create();
+    physics.addStaticBoxes(this.stage.colliders);
+    physics.commitStaticGeometry();
+    this.physics = physics;
+    this.moke = this.spawnMoke(physics);
 
     // Compile shaders up front so the first frames don't hitch.
     this.ui.setLoadingProgress(0.75, 'Fluffing the cushions…');
@@ -85,7 +105,16 @@ export class Game {
   dispose(): void {
     this.loop.stop();
     this.input.dispose();
+    this.moke?.visual.dispose();
     this.gfx.dispose();
+  }
+
+  private spawnMoke(physics: PhysicsWorld): Moke {
+    const { position, heading } = this.stage.spawn;
+    const body = new CharacterBody(physics, position, MOKE_BODY);
+    const moke = new Moke(new MokeController(body, heading), createMokeVisual());
+    this.scene.add(moke.visual.object);
+    return moke;
   }
 
   private setState(next: GameState): void {
@@ -99,7 +128,7 @@ export class Game {
     if (this.state !== 'menu') return;
     this.setState('playing');
     void this.input.requestPointerLock();
-    this.ui.showToast('Move the mouse to look around. Walking arrives in Milestone 2.');
+    this.ui.showToast('WASD to trot · hold Shift to run · hold C to walk · mouse to look', 5000);
   }
 
   private resume(): void {
@@ -123,26 +152,51 @@ export class Game {
     if (input.wasPressed('pause') && this.state === 'playing') this.pause();
 
     // The world only advances while playing; menus and pause freeze it.
-    this.fixedStep.advance(this.state === 'playing' ? dt : 0, this.fixedUpdate);
+    const alpha = this.fixedStep.advance(this.state === 'playing' ? dt : 0, this.fixedUpdate);
+    this.moke?.update(dt, alpha);
 
     input.getLookDelta(this.lookDelta);
     if (this.state !== 'playing') {
       this.lookDelta.x = 0;
       this.lookDelta.y = 0;
     }
-    this.previewCamera.update(dt, this.lookDelta);
+    this.previewCamera.update(dt, this.lookDelta, this.computeCameraTarget());
 
     this.gfx.render(this.scene, this.camera);
     this.frameStats.record(dt);
     this.debug.update(dt);
   };
 
-  private readonly fixedUpdate = (_step: number): void => {
-    // Milestone 2+: Moke's controller, physics, interactions and scent tick here.
+  private readonly fixedUpdate = (step: number): void => {
+    if (!this.moke || !this.physics) return;
+    this.updateMoveIntent();
+    this.moke.fixedUpdate(step, this.moveIntent);
+    this.physics.step();
   };
+
+  /** WASD relative to where the camera looks: W = away from the camera. */
+  private updateMoveIntent(): void {
+    const input = this.input.state;
+    const axis = input.getMoveAxis(this.moveAxis);
+    const yaw = this.previewCamera.yaw;
+    const sin = Math.sin(yaw);
+    const cos = Math.cos(yaw);
+    // Camera forward is (-sin, -cos); camera right is (cos, -sin).
+    this.moveIntent.x = -sin * axis.y + cos * axis.x;
+    this.moveIntent.z = -cos * axis.y - sin * axis.x;
+    this.moveIntent.walk = input.isDown('walk');
+    this.moveIntent.run = input.isDown('run');
+  }
+
+  /** The camera orbits Moke's eyes (or the spawn point before he exists). */
+  private computeCameraTarget(): Vector3 {
+    const feet = this.moke ? this.moke.renderPosition : this.stage.spawn.position;
+    return this.cameraTarget.set(feet.x, feet.y + MOKE_SIZE.eyeHeight, feet.z);
+  }
 
   private registerDebugSections(): void {
     const info = this.gfx.renderer.info;
+    const deg = (rad: number) => `${((rad * 180) / Math.PI).toFixed(0)}°`;
     this.debug.addSection('Frame', () => {
       const { width, height } = this.gfx.drawingBufferSize;
       return {
@@ -159,6 +213,28 @@ export class Game {
       'pointer lock': this.input.pointerLockSupported ? (this.input.isPointerLocked ? 'locked' : 'free') : 'unsupported',
       'fixed step': `${(this.fixedStep.step * 1000).toFixed(2)} ms`,
     }));
+    this.debug.addSection('Moke', (): DebugValues => {
+      if (!this.moke) return { status: 'not spawned' };
+      const c = this.moke.controller;
+      const p = c.position;
+      return {
+        position: `${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}`,
+        speed: `${c.actualSpeed.toFixed(2)} m/s (aim ${c.locomotion.targetSpeed.toFixed(2)})`,
+        gait: c.gait,
+        heading: deg(c.heading),
+        'turn rate': `${deg(c.locomotion.turnRate)}/s`,
+        grounded: c.grounded,
+        headroom: `${c.headroom.toFixed(2)} m (duck ${this.moke.animation.state.crouch.toFixed(2)})`,
+      };
+    });
+    this.debug.addSection('Physics', (): DebugValues => {
+      if (!this.physics) return { status: 'loading' };
+      return {
+        status: `Rapier ${this.physics.version}`,
+        colliders: this.physics.colliderCount,
+        bodies: this.physics.bodyCount,
+      };
+    });
     this.debug.addSection('Input', () => {
       const move = this.input.state.getMoveAxis(this.moveAxis);
       return {

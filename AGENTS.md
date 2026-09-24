@@ -7,8 +7,10 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - **I'M DOG?** (keep the exact capitalization, apostrophe and question mark): a browser-based, stylized 3D
   third-person game about **Moke**, a real white Maltipoo. Cozy, funny, family friendly. No combat, no death.
 - **Current phase:** Phase 1, the first playable prototype (one living room). Scope: `docs/PHASE_1.md`.
-- **Completed:** Milestone 1, project foundation and architecture.
-- **Next:** Milestone 2, the basic Moke character. Only start it when the owner says to.
+- **Completed:**
+  - Milestone 1, project foundation and architecture.
+  - Milestone 2, the basic Moke character. It still awaits owner review and a hands-on playtest.
+- **Next:** Milestone 3, the third-person camera. Only start it when the owner says to.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES
@@ -19,7 +21,8 @@ Shared, tool-independent instructions for every coding agent working in this rep
 
 ## Technology (what exists today)
 - TypeScript (strict), three.js (WebGL 2), Vite, and HTML/CSS/DOM overlays for all UI. No UI framework.
-- Vitest for unit tests. Runtime dependencies are only `three` and the self-hosted Fredoka font. Node 22.12+.
+- Rapier (`@dimforge/rapier3d-compat`) for physics and collision, lazy-loaded.
+- Vitest for unit tests. Runtime dependencies are only `three`, Rapier and the self-hosted Fredoka font. Node 22.12+.
 - No backend, database or accounts. The build is a static site with relative paths.
 - Do not migrate to React, React Three Fiber, Unity, Unreal, Godot or any other framework or engine without explicit owner approval.
 

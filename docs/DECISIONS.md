@@ -16,4 +16,4 @@ lives in [`ARCHITECTURE.md`](ARCHITECTURE.md).
 | D8 | **Private Moke photographs are development-only** | `reference/moke/` is git-ignored and never bundled, served, uploaded, modified or deleted. | 2026-09-23 |
 | D9 | **Claude Code and Codex work sequentially** | Never simultaneously on overlapping files. Each session starts from Git and `docs/CURRENT_STATE.md`. | 2026-09-23 |
 | D10 | **The repository and its documentation are the source of truth** | Not either agent's chat history. Status, decisions and handoff notes live in `docs/`. | 2026-09-23 |
-| D11 | **Rapier for physics, starting in Milestone 2** | Owner approved it. **Not installed yet.** Intended as one collision world for Moke and, later, the toys. | 2026-09-23 |
+| D11 | **Rapier for physics, starting in Milestone 2** | Owner approved it. In use since Milestone 2 (`@dimforge/rapier3d-compat` 0.20, lazy-loaded). One collision world for Moke now and, later, the toys. | 2026-09-23 |

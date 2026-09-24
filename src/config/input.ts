@@ -4,6 +4,7 @@ export const ACTIONS = [
   'moveBackward',
   'moveLeft',
   'moveRight',
+  'walk',
   'run',
   'interact',
   'bark',
@@ -25,6 +26,8 @@ export const KEY_BINDINGS: Readonly<Record<Action, readonly string[]>> = {
   moveBackward: ['KeyS', 'ArrowDown'],
   moveLeft: ['KeyA', 'ArrowLeft'],
   moveRight: ['KeyD', 'ArrowRight'],
+  // Not Ctrl: Ctrl+W closes the browser tab. Not Alt: it focuses the browser menu on Windows.
+  walk: ['KeyC'],
   run: ['ShiftLeft', 'ShiftRight'],
   interact: ['KeyE'],
   bark: ['KeyF'],
@@ -59,9 +62,10 @@ export interface ControlHint {
 
 /** What the Controls screen shows. Flip `ready` as each milestone lands. */
 export const CONTROL_HINTS: readonly ControlHint[] = [
-  { label: 'Move', input: ['moveForward', 'moveLeft', 'moveBackward', 'moveRight'], ready: false },
+  { label: 'Move (trot)', input: ['moveForward', 'moveLeft', 'moveBackward', 'moveRight'], ready: true },
   { label: 'Look around', input: 'Mouse', ready: true },
-  { label: 'Run (hold)', input: ['run'], ready: false },
+  { label: 'Run (hold)', input: ['run'], ready: true },
+  { label: 'Walk / sneak (hold)', input: ['walk'], ready: true },
   { label: 'Interact · pick up · drop', input: ['interact'], ready: false },
   { label: 'Bark', input: ['bark'], ready: false },
   { label: 'Sniff', input: ['sniff'], ready: false },

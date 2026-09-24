@@ -18,7 +18,7 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 | Favicon | `public/favicon.svg` | Simplified Moke face |
 | Living room, hallway, furniture, lighting | `src/world/` | Built in code from simple shapes |
 | Floorboard, rug, pillow, wall-art and garden textures | `src/world/textures.ts` | Original canvas drawings generated at startup (no image files) |
-| Moke (anime-style) | `src/player/ToonMokeVisual.ts`, `src/player/toon/` | Generated in code: procedural fur geometry, original toon/outline shaders, and eye/blush textures drawn on a canvas at startup (no image files). Styled after an anime reference picture the owner supplied in chat on 2026-09-24; nothing from that picture is copied or bundled. |
+| Moke (incl. collar and tag) | `src/player/ToonMokeVisual.ts`, `src/player/toon/` | Generated in code: procedural curly fur geometry, original toon/outline shaders, an eye texture and the tag's "Moke" lettering (Fredoka font, OFL) drawn on a canvas at startup (no image files). Modelled on the private photos of the real Moke (looked at, never copied or bundled); an earlier pass followed an anime illustration the owner shared in chat. |
 | Sock, tennis ball, rope toy | `src/props/propVisuals.ts` | Built in code from simple shapes |
 | Scent wisps | `src/senses/ScentWisps.ts` | Procedural particles, a small original shader |
 | Bark, sniff, pickup and drop sounds | `src/audio/synth.ts` | **Original, synthesized with Web Audio at play time** (oscillators, formant filters and generated noise). No recordings or sample files. Placeholder until the owner picks a final bark (see below). |

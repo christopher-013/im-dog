@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Milestone 10 work (Moke's anime look) is committed on `main` (local, not pushed). See `git log` and `git status`._
+_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Committed locally on `main` (not pushed): Moke's look modelled on the real dog, his collar and tag, and the title-screen fixes. See `git log` and `git status`._
 
 ## Current Phase
 Phase 1
@@ -9,10 +9,14 @@ Phase 1
 **Milestone 10 (polish) is in progress**, started 2026-09-24 at the owner's request. The owner played Milestones 5–9
 ("the overall gameplay is incredible… I like it") and asked to start M10 with Moke's look: anime style instead of
 polygon shapes, following a reference picture they shared (see `docs/MOKE_CHARACTER_REFERENCE.md` → "Owner style
-target"). That first item is done and awaits the owner's look. The rest of M10 (Known Issues below) is not started.
+target"). After seeing it, the owner asked for Moke to look **less jagged and more like the real dog** (their photos), then
+for shorter ears and a collar with a name tag, and for two title-screen fixes (no scrollbar/cut-off; the dog-face "O"
+in line with D and G). All done and awaiting the owner's look. The rest of M10 (Known Issues below) is not started.
 
 ## Last Developer
-Claude Code
+Claude Code (Moke's look, collar and tag, title screen). OpenAI Codex's independent Phase 1 audit (accessibility,
+interaction reach, drop clearance, frame timing, license notices) was left uncommitted in the working tree for its own
+review and commit.
 
 ## Completed
 **Milestone 1: foundation.**
@@ -77,20 +81,33 @@ Claude Code
 - Debug panel: "Scent" (sniff state, sources, the ranked nearby list); "Game" shows audio state and bark count.
 - No treat placeholder was added (optional in the spec); the four sources are the sock, rope toy, ball and bed.
 
-**Milestone 10 (in progress): Moke's anime look.**
-- `ToonMokeVisual` replaces `PlaceholderDogVisual` (deleted). Still generated entirely in code, no image files.
-- **Fur:** soft, slightly pointed tufts swept along the fur's flow (`toon/furGeometry.ts`) on a big round head with a
-  fluffy crown, long ear curtains to the jaw, a fluffy chest bib, fluffy legs with round paws, and a plume tail.
-  The face stays smooth. Static parts are merged: 9 fur meshes, each with an outline.
-- **Cel shading** (`toon/toonMaterials.ts`): white fur with lavender-grey shade, split by a soft character key
-  light (from the camera's upper left), a warm rim, lit as smooth forms (the anime-hair trick). The room's lights
-  and shadows still scale his brightness. **Ink outlines** by inverted hulls, even width in pixels.
-- **Face:** big glossy brown eyes (dark rim, two catch-lights) that blink every few seconds, pink blush, a black
-  button nose with a highlight, a "w" smile; open mouth + tongue when barking or panting at a run; closed ‿ eyes
-  while resting; a squint while sniffing or barking.
-- The tail tucks lower while he ducks, so the fluffier plume still clears the coffee table.
-- All look numbers are in `src/config/mokeLook.ts` (palette, key light, room-light influence, outline, blinks).
+**Milestone 10 (in progress): Moke's look, modelled on the real Moke.**
+- `ToonMokeVisual` replaces `PlaceholderDogVisual` (deleted). Generated entirely in code, no image files.
+- First pass: an anime look from the owner's illustration. Current pass: the owner asked for "less jagged, more like
+  the real dog", so it now follows the photos in `reference/moke/`:
+  - **Coat:** soft rounded clumps covered in a layer of small curls (`furClump` `curls`), with a soft shadow in the
+    creases between curls (`furCavity` vertex attribute). No pointed tufts. A round cotton-ball head, wavy
+    cream-tinted ears that widen his head at ear level, a fluffy chest, trimmed curly legs, a pom-pom tail.
+  - **Face:** round, very dark glossy eyes (not big anime eyes), a bigger glossy black button nose on a short,
+    broad muzzle with a fluffy mustache and beard. No blush, no drawn smile: the mouth only shows (dark lips, pink
+    tongue) when he barks or pants. Closed eyes are a short dark lash line.
+  - **Shading:** soft (wide lit/shade transition) with neutral grey shade, and a thin soft grey silhouette line
+    (`MOKE_LOOK.outline.enabled` switches it off).
+  - **Ears shortened** (owner, comparing with the "Relax" bandana photo): they end at about mouth level instead
+    of below the jaw. Only their length changed.
+  - **Collar and tag** (owner request, then refined against a photo of Moke wearing his): a blue strap snug round
+    his neck just under his head, sitting in the fluff (measured from the fur, drawn through the curl tips) and
+    moving with his head; a navy bone-shaped tag on a silver ring with "Moke" on it, hanging straight down and
+    jingling a little as he trots. Colours and the name are in `MOKE_LOOK.collar`.
+- Static parts are merged: 9 fur meshes, each with a silhouette line; about 110k triangles including the lines.
+- The tail tucks lower while he ducks, so the plume still clears the coffee table.
+- All look numbers are in `src/config/mokeLook.ts` (palette, key light, crease shading, outline, collar, blinks).
 - Gameplay untouched (D7): same `MokeVisual` interface, same `mouthSocket`, same animation state.
+
+**Milestone 10 (in progress): title screen.**
+- The title and loading stacks never scroll: the logo scales with both width and height (`min(10.5vw, 17vh)`), so
+  nothing is cut off, and very short windows hide the Japanese tag.
+- The dog-face "O" is now 0.76em and centred on the capitals, in line with D and G.
 
 **Milestone 9: rest.**
 - In or at the open front of his bed, "E — Lie Down". He shuffles to the centre, turns round to face out and flops
@@ -123,17 +140,23 @@ Claude Code
   - `RoomLighting` plus `applySoftEnvironment`.
 - **Tuning** is in `src/config/`: `movement.ts`, `camera.ts`, `animation.ts`, `input.ts`, `engine.ts` (including the
   lighting balance), `world.ts`, `interaction.ts` (reach, rest), `props.ts`, `senses.ts`, `audio.ts`.
-- **Moke's look:** `ToonMokeVisual` + `player/toon/` (fur geometry, toon/outline materials, face textures), tuned in `config/mokeLook.ts`.
+- **Moke's look:** `ToonMokeVisual` + `player/toon/` (fur geometry with curls and creases, soft toon/outline materials, eye and tag textures), tuned in `config/mokeLook.ts`.
 - Details: `docs/ARCHITECTURE.md` (sections "Interactions", "Props and carrying", "Sniff mode", "Bark and audio").
 
 ## Current Gameplay State
-**Milestone 10, Moke's look (2026-09-24):** checked in the in-app browser (dev server) with close-up renders from
-the front ¾, side, behind and in play: standing, barking (mouth + tongue, squint), lying in the bed (shut ‿ eyes),
-sniffing (nose down, squint), and carrying the sock. Running under the coffee table and the menu view look right.
-Moke's rendering cost measured at about 0.34 ms per frame at 1280×720 (0.64 ms with him vs 0.30 ms without, a
-close camera, synchronous `gl.finish()` timing); about 90k triangles including outlines. Production preview:
-loads and plays with no console messages. **Not judged:** how he looks on the owner's display, in motion at full
-frame rate, and in the dim hallway.
+**Milestone 10, ears + collar (2026-09-24, third pass):** the shorter ears and the collar/tag were checked from the
+front, side, behind and lying in the bed ("Moke" is readable on the tag in a front close-up; lying down, the collar
+stays under his chin and the tag rests between his paws).
+
+**Milestone 10, real-Moke restyle + title screen (2026-09-24, second pass):** checked in the in-app browser (dev
+server) with close-ups from the front, front ¾, side and behind, plus lying in the bed (lash-line eyes) and barking
+(open mouth, tongue). The title screen was checked at 1360×745 (the owner's size), 800×450 and 375×812: no
+scrollbar, the page doesn't scroll, and the "O" sits in line with D and G. Render timing at 800×450 was too noisy to
+isolate Moke's share (under 1 ms per frame either way). **Not judged:** the owner's eye on the new look, in motion
+at full frame rate, the dim hallway.
+
+**Milestone 10, first anime pass (2026-09-24):** close-ups, poses and play from the follow camera; about 0.34 ms
+per frame for Moke at 1280×720; production preview loaded and played with no console messages.
 
 **Milestones 5–9 (overnight):** verified with unit and Rapier tests plus headless Chromium (SwiftShader, about
 10 FPS, so no feel or performance judgement). Screens checked: sock/rope toy in mouth, "E — …" prompts, sniff
@@ -170,14 +193,18 @@ New in Milestone 4:
 - There's no ambient occlusion (a post-processing choice), so contact areas under furniture are softer than in a film look.
 
 New in Milestone 10 (Moke's look):
-- The look is tuned by eye in the embedded browser only. Palette, outline width, tuft sizes and eye size are
-  first passes for the owner to react to (all in `config/mokeLook.ts` and the `ToonMokeVisual` layout constants).
+- Tuned by eye in the embedded browser only. Curl size, crease strength, eye size and ear width are first passes
+  for the owner to react to (`config/mokeLook.ts` and the `ToonMokeVisual` layout constants).
+- The curls are geometry, so they're coarser than his real tight ringlets; finer curl texture would need a shader
+  pattern or more triangles.
 - From the usual follow camera (behind and above) his plume tail covers much of the back of his head. That's true
-  to the real Moke, but it could be lowered if the owner prefers to see more head.
-- The room props (sock, ball, rope toy) and furniture aren't toon-shaded or outlined, so Moke is a little more
-  "anime" than his surroundings. Matching them is a possible next M10 step.
+  to the real Moke, but it could be lowered.
 - The eyes are unlit decals: they don't darken in the dim hallway.
-- Legs are simple fluffy columns; there's no sit pose (the reference picture shows him sitting).
+- There's no sit pose (several photos show him sitting).
+- The logo "O" face (inline SVG) is still the earlier cartoon face with pink cheeks; it could be redrawn to match.
+- The tag's name is small: readable in close-ups, not from the usual follow camera behind him.
+- The collar's loop is measured in the standing pose. It moves with his head, so when he sniffs or lies down it can
+  dip into his chest fur for a moment.
 
 New in Milestones 5–9:
 - Carried props have no collision, so they can visually poke into walls.
@@ -188,6 +215,15 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-24 for this commit (Moke's real-dog look, ears, collar and tag, title screen):
+
+| Command / check | Result |
+|---|---|
+| Committed files alone (exported to a clean folder) | `npm run typecheck` pass; `npm test` pass (21 files, 144 tests); `npm run build` pass, `verify-dist` pass (the private photos are git-ignored, so the full working tree covers that check) |
+| Full working tree (with the other agent's uncommitted batch) | typecheck, 24 files / 153 tests, build: pass |
+| In-app browser, dev server | Moke close-ups (front, ¾, side, back), rest and bark poses, the collar and tag from every side; title screen at 1360×745, 800×450, 375×812 |
+| Not verified | The owner's eye; real-GPU FPS in motion; the dim hallway; Firefox and Safari; the production preview (not re-run) |
+
 Run on 2026-09-24 after Moke's anime look (Milestone 10):
 
 | Command / check | Result |
@@ -199,7 +235,6 @@ Run on 2026-09-24 after Moke's anime look (Milestone 10):
 | In-app browser, production preview | Loads, PLAY: no console messages |
 | Not verified | The owner's eye on the look; real-GPU FPS in motion; the dim hallway; Firefox and Safari |
 
-Run on 2026-09-24 at the end of Milestone 9 (overnight):
 Run on 2026-09-24 at the end of Milestone 9 (overnight):
 
 | Command / check | Result |
@@ -231,11 +266,11 @@ Earlier, at the end of Milestone 4:
 - Moke's look: `src/player/ToonMokeVisual.ts`, `src/player/toon/`, `src/config/mokeLook.ts`.
 
 ## Next Recommended Task
-1. The owner looks at the new Moke in Chrome (`npm run dev`) and says what to change: eye size, fur fluffiness,
-   shading contrast, outline weight, tail height.
-2. Tune the look from that feedback (`config/mokeLook.ts` first).
+1. The owner looks at Moke (coat, ears, collar and tag) and the title screen in Chrome (`npm run dev`) and says
+   what to change. Tune from that (`config/mokeLook.ts` first).
+2. Review and commit (or drop) OpenAI Codex's uncommitted Phase 1 audit batch, if it's still in the working tree.
 3. Continue Milestone 10 with the owner's priorities. Candidates:
-   - matching toon shading/outlines on the props;
+   - redraw the logo "O" face to match the real Moke;
    - a sit pose when idle;
    - Known Issues above (loading-overlay ghosting, carried props poking walls, drop vs. lie-down priority);
    - the open questions: final bark sound, walk key C, camera auto-follow strength.

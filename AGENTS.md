@@ -15,8 +15,8 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - Milestones 5–9 (interactions, sock, physics toys, sniff + bark, rest), built overnight and merged into
     `main` at the owner's request (PR #1).
   - Milestones 2–9 still await the owner's hands-on playtest.
-- **In progress:** Milestone 10 (polish), started 2026-09-24 at the owner's request. First item done: Moke's
-  anime-style look (`ToonMokeVisual`). The owner liked the Milestones 5–9 gameplay.
+- **In progress:** Milestone 10 (polish), started 2026-09-24 at the owner's request. Done so far: Moke's
+  look, modelled on the real dog (`ToonMokeVisual`, with his collar and name tag), and title-screen fixes. The owner liked the Milestones 5–9 gameplay.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES

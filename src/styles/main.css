@@ -103,7 +103,8 @@ body {
   align-items: baseline;
   justify-content: center;
   gap: 0.26em;
-  font-size: clamp(56px, 10.5vw, 140px);
+  /* Sized by width and height, so the whole title screen fits without scrolling. */
+  font-size: clamp(48px, min(10.5vw, 17vh), 140px);
   font-weight: 700;
   line-height: 1;
   white-space: nowrap;
@@ -116,11 +117,14 @@ body {
   align-items: baseline;
 }
 
-/* The "O" is Moke's round, fluffy head. It does a little head tilt now and then. */
+/*
+ * The "O" is Moke's round, fluffy head. It does a little head tilt now and then.
+ * Sized a touch taller than the capitals (0.65em in Fredoka) and centred on them, so it sits in line with D and G.
+ */
 .logo-o {
-  width: 0.9em;
-  height: 0.9em;
-  margin: 0 0.01em -0.08em;
+  width: 0.76em;
+  height: 0.76em;
+  margin: 0 0.02em -0.055em;
   overflow: visible;
   transform-origin: 50% 85%;
   animation: head-tilt 6s ease-in-out infinite;
@@ -716,6 +720,15 @@ kbd {
   }
   .footnote {
     display: none;
+  }
+}
+
+@media (max-height: 440px) {
+  .tag-jp {
+    display: none;
+  }
+  .screen-menu .btn {
+    padding: 0.6em 1.4em;
   }
 }
 

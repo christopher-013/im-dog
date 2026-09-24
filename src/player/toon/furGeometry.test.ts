@@ -1,6 +1,6 @@
 import { Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { ellipsoidSurface, furClump, SMOOTH_NORMAL, type FurClumpOptions } from './furGeometry';
+import { ellipsoidSurface, FUR_CAVITY, furClump, SMOOTH_NORMAL, type FurClumpOptions } from './furGeometry';
 
 const HEAD: FurClumpOptions = {
   radii: [0.12, 0.1, 0.1],
@@ -60,6 +60,26 @@ describe('furClump', () => {
     expect(smooth.count).toBe(geometry.getAttribute('position').count);
     const n = new Vector3();
     for (let i = 0; i < smooth.count; i += 17) expect(n.fromBufferAttribute(smooth, i).length()).toBeCloseTo(1, 5);
+  });
+});
+
+describe('furClump curls', () => {
+  it('marks creases between curls (0..1), and none where the fur is kept short', () => {
+    const smoothFront = (_x: number, _y: number, z: number) => (z > 0.5 ? 0 : 1);
+    const geometry = furClump({ ...HEAD, shape: smoothFront, curls: { count: 120, length: 0.1, width: 0.3 } });
+    const cavity = geometry.getAttribute(FUR_CAVITY);
+    const pos = geometry.getAttribute('position');
+    const p = new Vector3();
+    let creased = 0;
+    for (let i = 0; i < cavity.count; i++) {
+      const c = cavity.getX(i);
+      expect(c).toBeGreaterThanOrEqual(0);
+      expect(c).toBeLessThanOrEqual(1);
+      p.fromBufferAttribute(pos, i);
+      if (p.z / HEAD.radii[2] > 0.9) expect(c).toBe(0); // well inside the smooth front
+      if (c > 0.3) creased++;
+    }
+    expect(creased).toBeGreaterThan(0);
   });
 });
 

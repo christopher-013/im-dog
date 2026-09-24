@@ -33,7 +33,9 @@ const SMOOTH_VERTEX_PARS = /* glsl */ `
 #include <common>
 #ifdef TOON_SMOOTH_NORMALS
   attribute vec3 smoothNormal;
+  attribute float furCavity;
   varying vec3 vSmoothNormal;
+  varying float vFurCavity;
 #endif
 `;
 
@@ -41,6 +43,7 @@ const SMOOTH_VERTEX = /* glsl */ `
 #include <defaultnormal_vertex>
 #ifdef TOON_SMOOTH_NORMALS
   vSmoothNormal = normalMatrix * smoothNormal;
+  vFurCavity = furCavity;
 #endif
 `;
 
@@ -48,7 +51,9 @@ const SMOOTH_FRAGMENT_PARS = /* glsl */ `
 #include <common>
 #ifdef TOON_SMOOTH_NORMALS
   varying vec3 vSmoothNormal;
+  varying float vFurCavity;
   uniform float uTuftDetail;
+  uniform float uCavity;
 #endif
 `;
 
@@ -60,6 +65,24 @@ const SMOOTH_FRAGMENT = /* glsl */ `
 #endif
 `;
 
+// Draw as if this far nearer the camera: a collar pressed into fluff still shows through the curl tips over it.
+const DEPTH_PULL_PARS = /* glsl */ `
+#include <clipping_planes_pars_fragment>
+#ifdef TOON_DEPTH_PULL
+  uniform mat4 projectionMatrix;
+  uniform float uDepthPull;
+#endif
+`;
+
+const DEPTH_PULL = /* glsl */ `
+#include <dithering_fragment>
+#ifdef TOON_DEPTH_PULL
+  vec3 pulled = -vViewPosition + normalize( vViewPosition ) * uDepthPull;
+  vec4 pulledClip = projectionMatrix * vec4( pulled, 1.0 );
+  gl_FragDepth = ( pulledClip.z / pulledClip.w ) * 0.5 + 0.5;
+#endif
+`;
+
 const TOON_SHADE = /* glsl */ `
   vec3 lumaW = vec3( 0.2126, 0.7152, 0.0722 );
   float albedoL = max( dot( diffuseColor.rgb, lumaW ), 1e-3 );
@@ -68,6 +91,9 @@ const TOON_SHADE = /* glsl */ `
   float key = smoothstep( uKeyEdge.x - uKeyEdge.y, uKeyEdge.x + uKeyEdge.y, dot( normal, uKeyDir ) );
   float rim = pow( 1.0 - saturate( dot( normal, normalize( vViewPosition ) ) ), uRim.x ) * uRim.y;
   vec3 toon = diffuseColor.rgb * mix( uShadeColor, uLitColor, key ) + uRimColor * rim * ( 1.0 - 0.5 * key );
+  #ifdef TOON_SMOOTH_NORMALS
+    toon *= 1.0 - uCavity * vFurCavity; // soft shadow in the creases between curls
+  #endif
   vec3 outgoingLight = toon * brightness + totalEmissiveRadiance;
 `;
 
@@ -75,20 +101,26 @@ const TOON_SHADE = /* glsl */ `
  * Anime cel shading: a two-tone lit/shade palette split by a soft character key light, plus a warm rim,
  * scaled by how much of the room's light reaches the surface (so the hallway and shadows still read).
  * Built on MeshToonMaterial so shadow maps and all room lights keep working.
- * With `smoothNormals`, geometry must carry the `smoothNormal` attribute (see `furClump`).
+ * With `smoothNormals`, geometry must carry the `smoothNormal` and `furCavity` attributes (see `furClump`).
+ * With `depthPull` (m), it wins depth tests against anything less than that far in front of it.
  */
 export function createToonMaterial(
   lit: ColorRepresentation,
   shade: ColorRepresentation,
-  { smoothNormals = false } = {},
+  { smoothNormals = false, depthPull = 0 } = {},
 ): MeshToonMaterial {
   const { keyLight, roomLight, rim } = MOKE_LOOK;
   const material = new MeshToonMaterial({ color: '#ffffff' });
   // Display colours: skip tone mapping so white fur lands on screen as white.
   material.toneMapped = false;
-  if (smoothNormals) material.defines = { TOON_SMOOTH_NORMALS: '' };
+  material.defines = {
+    ...(smoothNormals ? { TOON_SMOOTH_NORMALS: '' } : {}),
+    ...(depthPull > 0 ? { TOON_DEPTH_PULL: '' } : {}),
+  };
   const uniforms = {
+    uDepthPull: { value: depthPull },
     uTuftDetail: { value: MOKE_LOOK.tuftDetail },
+    uCavity: { value: MOKE_LOOK.cavity },
     uLitColor: { value: new Color(lit) },
     uShadeColor: { value: new Color(shade) },
     uKeyDir: { value: new Vector3(...keyLight.direction).normalize() },
@@ -110,7 +142,9 @@ export function createToonMaterial(
       .replace('#include <common>', SMOOTH_FRAGMENT_PARS)
       .replace('#include <normal_fragment_maps>', SMOOTH_FRAGMENT)
       .replace('#include <gradientmap_pars_fragment>', TOON_PARS)
-      .replace(OUTGOING_LIGHT, TOON_SHADE);
+      .replace('#include <clipping_planes_pars_fragment>', DEPTH_PULL_PARS)
+      .replace(OUTGOING_LIGHT, TOON_SHADE)
+      .replace('#include <dithering_fragment>', DEPTH_PULL);
   };
   material.customProgramCacheKey = () => 'moke-toon';
   return material;

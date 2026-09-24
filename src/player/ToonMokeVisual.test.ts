@@ -86,11 +86,27 @@ describe('ToonMokeVisual', () => {
     const visual = new ToonMokeVisual();
     visual.update(DT, pose({ bark: 1 }));
     expect(meshes(visual.object, 'mouthOpen')[0]!.visible).toBe(true);
-    expect(meshes(visual.object, 'smile')[0]!.visible).toBe(false);
 
     visual.update(DT, pose({ bark: 1, carry: 1 }));
     expect(meshes(visual.object, 'mouthOpen')[0]!.visible).toBe(false);
-    expect(meshes(visual.object, 'smile')[0]!.visible).toBe(true);
+    visual.dispose();
+  });
+
+  it('wears his collar with the name tag hanging at the front of his neck', () => {
+    const visual = new ToonMokeVisual();
+    visual.update(DT, pose());
+    visual.object.updateMatrixWorld(true);
+    expect(meshes(visual.object, 'collar')).toHaveLength(1);
+    const tag = new Box3().setFromObject(meshes(visual.object, 'tag')[0]!, true);
+    const head = visual.mouthSocket.getWorldPosition(new Vector3());
+    expect(tag.min.z).toBeGreaterThan(0.1); // out in front of his chest
+    expect(tag.max.y).toBeLessThan(head.y); // below his mouth
+    expect(tag.min.y).toBeGreaterThan(0.12); // well clear of the floor
+    // It keeps hanging down when he puts his nose to the ground.
+    visual.update(DT, pose({ sniff: 1 }));
+    visual.object.updateMatrixWorld(true);
+    const hanging = new Box3().setFromObject(meshes(visual.object, 'tag')[0]!, true);
+    expect(hanging.max.y - hanging.min.y).toBeGreaterThan(0.012);
     visual.dispose();
   });
 

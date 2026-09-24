@@ -27,7 +27,7 @@ src/
     props.ts              prop definitions (shape, mass, damping, carry pose) + pickup/drop tuning
     senses.ts             sniff timing, wisp look, scent colours per category
     audio.ts              sound levels
-    mokeLook.ts           Moke's anime look: cel palette, key light, outline width, blink timing
+    mokeLook.ts           Moke's look: palette, key light, crease shading, silhouette line, collar, blink timing
     assets.ts             asset manifest (preloaded behind the loading screen)
   core/
     Game.ts               state machine + frame orchestration
@@ -42,8 +42,8 @@ src/
     MokeController.ts     gameplay body: locomotion + collision + interpolation (tested with real Rapier)
     MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking (tested)
     MokeVisual.ts         the visual interface + createMokeVisual() factory
-    ToonMokeVisual.ts     anime-style Moke built in code (fur tufts, cel shading, outlines, face), animated procedurally (tested)
-    toon/                 furGeometry.ts (tufted fur clumps, tested), toonMaterials.ts (cel shading + ink outline), faceTextures.ts (eye, blush)
+    ToonMokeVisual.ts     Moke built in code after the real dog (curly fur, soft shading, silhouette line, face, collar), animated procedurally (tested)
+    toon/                 furGeometry.ts (fur clumps with curls and creases, tested), toonMaterials.ts (soft toon + outline), faceTextures.ts (eye), tagTexture.ts (name tag)
     Moke.ts               composite: controller + animation + visual (+ carrying/sniffing flags from gameplay)
     Bark.ts               bark cooldown (tested)
   physics/
@@ -130,19 +130,25 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - `MokeAnimationController` turns motion into model-independent body language. It's the same for any visual.
 - `MokeVisual` is the only interface a visual implements: `object`, a `mouthSocket` for carried items (Milestone 6),
   `update(dt, animationState)` and `dispose()`. `createMokeVisual()` is the single place that picks one.
-  - Today it returns `ToonMokeVisual` (Milestone 10): an anime-film Moke generated in code, with no image files.
-    - **Fur:** `furClump` grows soft, slightly pointed tufts (tips swept along a flow direction) from dense
-      ellipsoids; static parts are merged, so Moke has 9 fur meshes (each with an outline). Each clump also stores the smooth
-      ellipsoid's normal (`smoothNormal`), and the toon shader lights mostly by it, so each clump shades as one
-      clean form (the anime-hair trick) while the tufts shape the silhouette.
-    - **Cel shading** (`createToonMaterial`, a patched `MeshToonMaterial`): a lit/shade palette split by a
-      character-only key light fixed in view space, plus a warm rim. The room's real lights (and shadow maps) only
+  - Today it returns `ToonMokeVisual` (Milestone 10): Moke modelled on the real dog, generated in code, no image files.
+    - **Fur:** `furClump` grows soft tufts (rounded, or pointed with `sharpness`; tips swept along a flow direction)
+      from dense ellipsoids, plus an optional finer layer of rounded `curls`. Static parts are merged, so Moke has 9
+      fur meshes (each with a silhouette line). Each clump also stores the smooth ellipsoid's normal (`smoothNormal`),
+      which the shader lights by (mixed with a little of the real normal, `tuftDetail`), and a `furCavity` value
+      (deep in a crease between curls) that darkens the creases slightly.
+    - **Soft toon shading** (`createToonMaterial`, a patched `MeshToonMaterial`): a lit/shade palette split by a
+      wide, soft transition from a character-only key light fixed in view space, plus a warm rim. The room's real lights (and shadow maps) only
       scale overall brightness, so he stays white under the warm room light but still dims in shade. The
       materials skip tone mapping so the palette in `config/mokeLook.ts` is what reaches the screen.
-    - **Outlines:** inverted hulls (back faces pushed out in screen space, one shared `ShaderMaterial`), so line
-      width is even in pixels and thins a little with distance.
-    - **Face:** canvas-drawn eye and blush textures on domed discs placed on the smooth face; eyes blink, shut into
-      ink curves while resting; nose, "w" smile, open mouth and tongue are small meshes.
+    - **Silhouette line:** inverted hulls (back faces pushed out in screen space, one shared `ShaderMaterial`), so
+      line width is even in pixels and thins a little with distance. Thin and soft grey; can be switched off.
+    - **Collar:** a blue strap round his neck (on the neck, so it moves with his head) and a navy bone-shaped tag on
+      a silver ring with his name drawn on a canvas (`toon/tagTexture.ts`). The strap's loop is measured from the fur
+      at build time (the outermost fur vertices near the collar's plane) and sits a little inside it; its material
+      pulls its depth ~9 mm toward the camera (`createToonMaterial` `depthPull`), so it shows through the curl tips
+      like a collar pressed into the coat. The tag counter-rotates to hang straight down.
+    - **Face:** a canvas-drawn dark, glossy eye texture on domed discs placed on the face; eyes blink and close to a
+      lash line while resting; the nose, open mouth and tongue are small meshes (no drawn mouth when closed).
   - A future `moke.glb` would still plug in here (load it as an `optional` asset and return a glTF-based visual),
     keeping the toon visual as the fallback.
 - Camera, interactions, pickup, scent and physics must talk to `Moke.controller` (and later the mouth socket),

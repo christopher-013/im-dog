@@ -10,6 +10,9 @@ export type Vec3Tuple = readonly [number, number, number];
  */
 export const SMOOTH_NORMAL = 'smoothNormal';
 
+/** Per-vertex 0..1: how deep in a crease between curls/tufts. Toon shading darkens it a little (soft fur occlusion). */
+export const FUR_CAVITY = 'furCavity';
+
 export interface FurClumpOptions {
   /** Radii (x, y, z) of the smooth ellipsoid the tufts grow out of. */
   radii: Vec3Tuple;
@@ -32,6 +35,29 @@ export interface FurClumpOptions {
   flowAmount?: number;
   /** Per-direction tuft length multiplier (unit direction in), e.g. 0 to keep a face smooth. */
   shape?: (x: number, y: number, z: number) => number;
+  /**
+   * A second, finer layer of small rounded bumps on top of the tufts: the curly coat. `length` is a
+   * fraction of the mean radius, `width` an angular radius; `shape` defaults to the tufts' shape.
+   */
+  curls?: { count: number; length: number; width: number; shape?: (x: number, y: number, z: number) => number };
+}
+
+type Shape = (x: number, y: number, z: number) => number;
+
+/** Height (0..1) of the tallest bump covering unit direction `n`: 1 at a bump's centre, 0 at its edge. */
+function bumpHeight(n: Vector3, centres: Vector3[], heights: number[], width: number, sharpness: number): number {
+  const cosWidth = Math.cos(width);
+  let h = 0;
+  for (let t = 0; t < centres.length; t++) {
+    const d = n.dot(centres[t]!);
+    if (d <= cosWidth) continue;
+    const u = Math.acos(Math.min(1, d)) / width; // 0 at the tip, 1 at the base
+    const rounded = 1 - u * u;
+    const pointed = (1 - u) * (1 - u);
+    const bump = (rounded + (pointed - rounded) * sharpness) * heights[t]!;
+    if (bump > h) h = bump;
+  }
+  return h;
 }
 
 /** Tuft centres spread evenly over the unit sphere (Fibonacci), nudged about so no pattern shows. */
@@ -52,9 +78,9 @@ function tuftCentres(count: number, rand: () => number): Vector3[] {
 }
 
 /**
- * A clump of stylized fur: a smooth ellipsoid covered in soft, slightly pointed tufts whose tips
- * sweep in the flow direction, like the scalloped fur outlines of an anime dog. Built from a dense
- * icosphere so the silhouette reads as fluff rather than polygons.
+ * A clump of stylized fur: a smooth ellipsoid covered in soft tufts (rounded, or pointed with
+ * `sharpness`) whose tips sweep in the flow direction, optionally with a finer layer of curls on top.
+ * Built from a dense icosphere so the silhouette reads as fluff rather than polygons.
  */
 export function furClump(options: FurClumpOptions): BufferGeometry {
   const {
@@ -69,11 +95,14 @@ export function furClump(options: FurClumpOptions): BufferGeometry {
     flow,
     flowAmount = 0,
     shape,
+    curls,
   } = options;
   const rand = mulberry32(seed);
   const centres = tuftCentres(tufts, rand);
   const lengths = centres.map(() => 1 - jitter * rand());
-  const cosWidth = Math.cos(width);
+  const curlCentres = curls ? tuftCentres(curls.count, rand) : [];
+  const curlHeights = curlCentres.map(() => 1 - 0.4 * rand());
+  const curlShape: Shape | undefined = curls?.shape ?? shape;
   const meanRadius = (radii[0] + radii[1] + radii[2]) / 3;
   const flowDir = flow ? new Vector3(...flow).normalize() : null;
 
@@ -85,6 +114,7 @@ export function furClump(options: FurClumpOptions): BufferGeometry {
 
   const positions = geometry.getAttribute('position');
   const smoothNormals = new Float32Array(positions.count * 3);
+  const cavity = new Float32Array(positions.count);
   const n = new Vector3();
   const normal = new Vector3();
   const tangent = new Vector3();
@@ -92,24 +122,26 @@ export function furClump(options: FurClumpOptions): BufferGeometry {
     n.fromBufferAttribute(positions, i).normalize();
 
     // The tallest tuft covering this direction wins, so neighbours meet in soft creases.
-    let h = 0;
-    for (let t = 0; t < centres.length; t++) {
-      const d = n.dot(centres[t]!);
-      if (d <= cosWidth) continue;
-      const u = Math.acos(Math.min(1, d)) / width; // 0 at the tip, 1 at the base
-      const rounded = 1 - u * u;
-      const pointed = (1 - u) * (1 - u);
-      const tuft = (rounded + (pointed - rounded) * sharpness) * lengths[t]!;
-      if (tuft > h) h = tuft;
+    const tuftShape = shape ? Math.max(0, shape(n.x, n.y, n.z)) : 1;
+    const tuft = bumpHeight(n, centres, lengths, width, sharpness);
+    const h = tuft * tuftShape;
+    let c = 0;
+    // Creases: low between tufts and curls, none where the fur is kept short (e.g. the face).
+    let crease = 0.35 * (1 - tuft) * Math.min(1, tuftShape);
+    if (curls) {
+      const curlShapeHere = curlShape ? Math.max(0, curlShape(n.x, n.y, n.z)) : 1;
+      const curl = bumpHeight(n, curlCentres, curlHeights, curls.width, 0);
+      c = curl * curls.length * curlShapeHere;
+      crease += 0.65 * (1 - curl) * Math.min(1, curlShapeHere);
     }
-    if (shape) h *= Math.max(0, shape(n.x, n.y, n.z));
+    cavity[i] = Math.min(1, crease);
 
     // Surface point on the ellipsoid, pushed out along its normal; tips curl toward the flow.
     const px = n.x * radii[0];
     const py = n.y * radii[1];
     const pz = n.z * radii[2];
     normal.set(px / (radii[0] * radii[0]), py / (radii[1] * radii[1]), pz / (radii[2] * radii[2])).normalize();
-    const lift = h * length * meanRadius;
+    const lift = (h * length + c) * meanRadius;
     let fx = 0;
     let fy = 0;
     let fz = 0;
@@ -125,6 +157,7 @@ export function furClump(options: FurClumpOptions): BufferGeometry {
   }
   geometry.computeVertexNormals();
   geometry.setAttribute(SMOOTH_NORMAL, new BufferAttribute(smoothNormals, 3));
+  geometry.setAttribute(FUR_CAVITY, new BufferAttribute(cavity, 1));
   geometry.computeBoundingSphere();
   return geometry;
 }

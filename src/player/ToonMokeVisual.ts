@@ -36,6 +36,8 @@ import { bendAlongCurve, ellipsoidSurface, FUR_CAVITY, furClump, SMOOTH_NORMAL, 
 import { createOutlineMaterial, createToonMaterial, trackOutlineResolution } from './toon/toonMaterials';
 
 const HIP_HEIGHT = 0.172;
+/** The body sits a little back from his feet position, so his nose pokes less past the round collision capsule. */
+const RIG_Z = -0.04;
 const NECK_HEIGHT = 0.26;
 /**
  * Tail, in torso space: rooted inside the top of his rump, it rises, arches and curls forward over his back.
@@ -101,6 +103,130 @@ const COLLAR = {
   depthPull: 0.001,
   tag: { width: 0.036, height: 0.022, depth: 0.002, ringRadius: 0.0045 },
 };
+
+/** Extra body language for a trick, added on top of his normal pose. Legs are in `LEGS` order. */
+interface TrickPose {
+  /** Rig pitch (negative = front up) about a point (rig space y, z), e.g. his hind hips. */
+  pitch: number;
+  pitchPivot: readonly [number, number];
+  /** Rig roll onto his side/back (negative = toward his right), about his body's long axis at `rollHeight`. */
+  roll: number;
+  rollHeight: number;
+  /** Turn on the spot (radians), and how far the whole body lifts (m). */
+  spin: number;
+  lift: number;
+  legX: [number, number, number, number];
+  legZ: [number, number, number, number];
+  neckX: number;
+  neckZ: number;
+  headZ: number;
+  tailX: number;
+  /** Pretend ground speed, so his legs patter while he spins. */
+  stepSpeed: number;
+  mouthOpen: number;
+  squint: number;
+}
+
+const HIND_HIP: readonly [number, number] = [HIP_HEIGHT, LEGS[2].z];
+
+function restPose(): TrickPose {
+  return {
+    pitch: 0,
+    pitchPivot: HIND_HIP,
+    roll: 0,
+    rollHeight: 0.2,
+    spin: 0,
+    lift: 0,
+    legX: [0, 0, 0, 0],
+    legZ: [0, 0, 0, 0],
+    neckX: 0,
+    neckZ: 0,
+    headZ: 0,
+    tailX: 0,
+    stepSpeed: 0,
+    mouthOpen: 0,
+    squint: 0,
+  };
+}
+
+/**
+ * The pose for his current trick (see `Tricks.ts`). `trickBlend` eases the whole trick in and out; the
+ * timings inside a trick come from its length in `MOKE_ANIMATION.tricks`.
+ */
+/** No trick: shared, never modified. */
+const REST_POSE: Readonly<TrickPose> = restPose();
+
+function trickPose(s: Readonly<MokeAnimationState>): Readonly<TrickPose> {
+  const w = s.trickBlend;
+  const t = s.trickTime;
+  if (!s.trick || w <= 0) return REST_POSE;
+  const pose = restPose();
+  const tricks = MOKE_ANIMATION.tricks;
+
+  switch (s.trick) {
+    case 'beg': {
+      // Up on his hind legs (kept upright), front paws paddling in front of his chest, a little sway to balance.
+      pose.pitch = -1.12 * w;
+      pose.legX[2] = pose.legX[3] = 1.12 * w;
+      pose.legX[2] += 0.05 * w * Math.sin(t * 7);
+      pose.legX[3] += 0.05 * w * Math.sin(t * 7 + Math.PI);
+      pose.legX[0] = w * (0.5 + 0.28 * Math.sin(t * 9));
+      pose.legX[1] = w * (0.5 + 0.28 * Math.sin(t * 9 + Math.PI));
+      pose.lift = w * 0.01 * Math.abs(Math.sin(t * 5));
+      pose.roll = w * 0.07 * Math.sin(t * 3.3);
+      pose.neckX = 0.85 * w; // head level, looking at you
+      pose.headZ = 0.12 * w * Math.sin(t * 2);
+      pose.tailX = -0.2 * w;
+      pose.mouthOpen = 0.55 * w;
+      break;
+    }
+    case 'paw': {
+      // Sits (rump down, front legs straight), then lifts his right front paw to shake, with a head tilt.
+      pose.pitch = -0.44 * w;
+      pose.lift = -0.09 * w;
+      pose.legX[0] = pose.legX[1] = 0.44 * w;
+      pose.legX[2] = pose.legX[3] = -0.91 * w;
+      pose.legZ[2] = 0.25 * w;
+      pose.legZ[3] = -0.25 * w;
+      const d = tricks.paw;
+      const raise = w * smoothstep(0.45, 0.75, t) * (1 - smoothstep(d - 0.75, d - 0.45, t));
+      pose.legX[1] += -1.25 * raise + raise * 0.14 * Math.sin(t * 11);
+      pose.legZ[1] -= 0.12 * raise;
+      pose.neckX = -0.12 * w;
+      pose.headZ = 0.28 * raise;
+      pose.mouthOpen = 0.3 * raise;
+      break;
+    }
+    case 'bellyUp': {
+      // Down on his tummy, then over onto his back with his paws curled up, wiggling for a belly rub.
+      const over = w * smoothstep(0.3, 0.8, t);
+      const down = w * (1 - over);
+      pose.lift = -0.1 * w;
+      pose.roll = -2.25 * over + over * 0.12 * Math.sin(t * 6);
+      for (let i = 0; i < 4; i++) {
+        const front = i < 2;
+        const kick = Math.sin(t * 8 + i * 1.7);
+        pose.legX[i] = -down * (front ? 1.35 : 1.15) + over * (front ? -0.7 + 0.25 * kick : -0.3 + 0.2 * kick);
+      }
+      pose.neckX = 0.22 * down;
+      pose.neckZ = 1.9 * over; // his head stays nearly upright, looking at you from upside down
+      pose.tailX = -1.1 * w - 0.9 * over; // swept out behind him along the floor
+      pose.mouthOpen = 0.6 * over;
+      pose.squint = 0.5 * over;
+      break;
+    }
+    case 'spin': {
+      // One quick circle chasing his tail, little paws pattering. Cut short, he unwinds back to facing forward.
+      const u = clamp(t / (tricks.spin - tricks.blendOut), 0, 1);
+      pose.spin = TAU * u * u * (3 - 2 * u) * (u < 1 ? w : 1);
+      pose.stepSpeed = 1.4 * w;
+      pose.lift = w * 0.01 * Math.abs(Math.sin(t * 14));
+      pose.mouthOpen = 0.5 * w;
+      break;
+    }
+  }
+  return pose;
+}
 
 interface Leg {
   pivot: Group;
@@ -229,6 +355,9 @@ export class ToonMokeVisual implements MokeVisual {
   private readonly teeth: Mesh;
   private readonly ears: { pivot: Group; side: number }[] = [];
   private readonly legs: Leg[] = [];
+  /** A sparse sample of every fur mesh's vertices, to keep him out of the floor during tricks. */
+  private readonly support: { mesh: Mesh; points: Vector3[] }[] = [];
+  private readonly supportPoint = new Vector3();
   private readonly eyes: Mesh[] = [];
   private readonly lids: Mesh[] = [];
   private readonly outline: ShaderMaterial | null;
@@ -254,7 +383,7 @@ export class ToonMokeVisual implements MokeVisual {
     this.outline = MOKE_LOOK.outline.enabled ? this.material(createOutlineMaterial()) : null;
 
     // Shift the body back a little so the nose pokes less past the round collision capsule.
-    this.rig.position.z = -0.04;
+    this.rig.position.z = RIG_Z;
     this.object.add(this.rig);
     this.rig.add(this.torso);
 
@@ -464,7 +593,7 @@ export class ToonMokeVisual implements MokeVisual {
           [side * 0.018, -0.048, 0],
         ),
         earFur,
-      );
+      ).name = 'ear';
       this.head.add(pivot);
       this.ears.push({ pivot, side });
     }
@@ -536,18 +665,20 @@ export class ToonMokeVisual implements MokeVisual {
   }
 
   update(dt: number, s: Readonly<MokeAnimationState>): void {
-    const moving = clamp(s.speed / 0.35, 0, 1);
+    const trick = trickPose(s);
+    const speed = Math.max(s.speed, trick.stepSpeed);
+    const moving = clamp(speed / 0.35, 0, 1);
 
     // Gait cycle: stride length grows with speed, so little legs patter at a walk and reach at a run.
-    const stride = lerp(0.2, 0.55, clamp(s.speed / 4, 0, 1));
-    this.phase = (this.phase + (s.speed / stride) * dt) % 1;
+    const stride = lerp(0.2, 0.55, clamp(speed / 4, 0, 1));
+    this.phase = (this.phase + (speed / stride) * dt) % 1;
     const p = this.phase * TAU;
-    const swing = clamp(s.speed * 0.3, 0, 0.7) * (1 - s.rest);
-    for (const leg of this.legs) {
+    const swing = clamp(speed * 0.3, 0, 0.7) * (1 - s.rest);
+    for (const [i, leg] of this.legs.entries()) {
       const a = p + lerp(leg.trot, leg.run, s.runBlend);
       // Lying: a sphinx pose, front paws stretched forward, hind legs tucked alongside.
-      leg.pivot.rotation.x = swing * Math.sin(a) - s.rest * (leg.front ? 1.35 : 1.15);
-      leg.pivot.rotation.z = s.rest * (leg.front ? 0 : leg.side * 0.35);
+      leg.pivot.rotation.x = swing * Math.sin(a) - s.rest * (leg.front ? 1.35 : 1.15) + trick.legX[i]!;
+      leg.pivot.rotation.z = s.rest * (leg.front ? 0 : leg.side * 0.35) + trick.legZ[i]!;
       // Lift the paw while it swings forward, so feet step instead of sliding.
       leg.pivot.position.y = HIP_HEIGHT + Math.max(0, -Math.cos(a)) * 0.022 * moving;
     }
@@ -557,19 +688,25 @@ export class ToonMokeVisual implements MokeVisual {
     this.torso.rotation.x = s.runBlend * 0.09 * Math.sin(p + 0.8);
     this.body.scale.y = 1 + (1 - moving) * 0.02 * Math.sin(s.time * 2.6); // breathing
 
-    this.rig.rotation.z = -s.lean;
     // A bark is a little hop; a growl plants him low and pushes his chest forward.
-    this.rig.position.y = -s.crouch * 0.03 + s.bark * 0.018 - s.growl * 0.008 - s.rest * 0.105;
-    this.rig.rotation.x = -s.bark * 0.08 + s.growl * 0.045;
+    this.rig.position.set(0, -s.crouch * 0.03 + s.bark * 0.018 - s.growl * 0.008 - s.rest * 0.105 + trick.lift, RIG_Z);
+    this.rig.rotation.set(-s.bark * 0.08 + s.growl * 0.045 + trick.pitch, trick.spin, -s.lean + trick.roll);
+    // Tricks pitch him about his hind hips and roll him about his middle, not about his feet.
+    const [py, pz] = trick.pitchPivot;
+    this.rig.position.y += py - (py * Math.cos(trick.pitch) - pz * Math.sin(trick.pitch));
+    this.rig.position.z += pz - (py * Math.sin(trick.pitch) + pz * Math.cos(trick.pitch));
+    this.rig.position.x += trick.rollHeight * Math.sin(trick.roll);
+    this.rig.position.y += trick.rollHeight * (1 - Math.cos(trick.roll));
 
     this.neck.position.y = NECK_HEIGHT - s.crouch * 0.05 - bob * 0.5 - s.rest * 0.03;
     const a = MOKE_ANIMATION;
     // Sniffing: nose down with quick little twitches.
     const twitch = s.sniff * 0.05 * Math.sin(s.time * 26) * (0.5 + 0.5 * Math.sin(s.time * 3.1));
     this.neck.rotation.x =
-      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch - s.bark * 0.35 + s.growl * 0.16 + s.rest * 0.22;
+      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch - s.bark * 0.35 + s.growl * 0.16 + s.rest * 0.22 + trick.neckX;
+    this.neck.rotation.z = trick.neckZ;
     this.head.rotation.y = s.headYaw * (1 - 0.5 * s.sniff) + s.sniff * 0.25 * Math.sin(s.time * 1.7);
-    this.head.rotation.z = -s.headTilt + s.growl * 0.018 * Math.sin(s.time * 28);
+    this.head.rotation.z = -s.headTilt + s.growl * 0.018 * Math.sin(s.time * 28) + trick.headZ;
 
     const flop = moving * 0.1 * Math.sin(2 * p + 1.2);
     for (const ear of this.ears) {
@@ -579,16 +716,18 @@ export class ToonMokeVisual implements MokeVisual {
     }
 
     // The tag hangs down whatever his head does, and jingles a little as he trots.
-    this.tagPivot.rotation.x = -COLLAR.tilt - this.neck.rotation.x - this.torso.rotation.x + moving * 0.18 * Math.sin(2 * p) + s.bark * 0.4;
-    this.tagPivot.rotation.z = moving * 0.12 * Math.sin(p + 0.6);
+    this.tagPivot.rotation.x =
+      -COLLAR.tilt - this.neck.rotation.x - this.torso.rotation.x - this.rig.rotation.x + moving * 0.18 * Math.sin(2 * p) + s.bark * 0.4;
+    this.tagPivot.rotation.z = moving * 0.12 * Math.sin(p + 0.6) - this.rig.rotation.z - this.neck.rotation.z;
 
     const wag = (0.15 + 0.4 * s.tailWag) * Math.sin(s.time * lerp(9, 16, s.tailWag));
     this.tail.rotation.z = wag;
     // Swept back at a run, lying flat in bed, and tucked lower while ducking under furniture.
-    this.tail.rotation.x = -s.runBlend * 0.9 - s.rest * 1.1 - s.crouch * 1.2;
+    this.tail.rotation.x = -s.runBlend * 0.9 - s.rest * 1.1 - s.crouch * 1.2 + trick.tailX;
 
     // Eyes: idle blinks; closed while resting, a little squint while sniffing or barking.
-    const eyeOpen = (1 - this.blink(dt)) * (1 - 0.9 * s.rest) * (1 - 0.35 * s.sniff) * (1 - 0.4 * s.bark) * (1 - 0.5 * s.growl);
+    const eyeOpen =
+      (1 - this.blink(dt)) * (1 - 0.9 * s.rest) * (1 - 0.35 * s.sniff) * (1 - 0.4 * s.bark) * (1 - 0.5 * s.growl) * (1 - trick.squint);
     const shut = eyeOpen < 0.3;
     for (const eye of this.eyes) {
       eye.visible = !shut;
@@ -597,11 +736,14 @@ export class ToonMokeVisual implements MokeVisual {
     for (const lid of this.lids) lid.visible = shut;
 
     // A growl reveals four tiny teeth; bark/panting shows the tongue instead.
-    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0) : 0;
+    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0, trick.mouthOpen) : 0;
     this.mouth.visible = open > 0.05;
     this.tongue.visible = open > 0.05 && s.growl < 0.2;
     this.teeth.visible = s.carry < 0.5 && s.growl > 0.05;
     this.mouth.scale.y = 0.004 + 0.008 * open;
+
+    // Rolling over or sitting up can swing a paw, ear or tail below his feet: lift him just clear of the floor.
+    if (trick !== REST_POSE) this.rig.position.y += this.floorPenetration();
   }
 
   dispose(): void {
@@ -667,9 +809,25 @@ export class ToonMokeVisual implements MokeVisual {
     });
   }
 
+  /** How far (m) the lowest sampled bit of fur is below his feet, or 0. */
+  private floorPenetration(): number {
+    this.object.updateMatrixWorld(true);
+    const floor = this.object.getWorldPosition(this.supportPoint).y;
+    let lowest = Infinity;
+    for (const { mesh, points } of this.support) {
+      for (const point of points) lowest = Math.min(lowest, this.supportPoint.copy(point).applyMatrix4(mesh.matrixWorld).y);
+    }
+    return Math.max(0, floor - lowest);
+  }
+
   /** A fur mesh, with its silhouette line when outlines are on. */
   private fur(parent: Object3D, geometry: BufferGeometry, material: Material): Mesh {
     const mesh = this.part(parent, geometry, material, [0, 0, 0]);
+    const positions = geometry.getAttribute('position');
+    const stride = Math.max(1, Math.floor(positions.count / 160));
+    const points: Vector3[] = [];
+    for (let i = 0; i < positions.count; i += stride) points.push(new Vector3().fromBufferAttribute(positions, i));
+    this.support.push({ mesh, points });
     if (this.outline) {
       const hull = new Mesh(geometry, this.outline);
       hull.castShadow = false;

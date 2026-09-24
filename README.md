@@ -5,7 +5,7 @@ a small white Maltipoo. No combat, no death: just socks, smells, naps and a very
 
 **Status:** Phase 1, Milestone 10 (polish) in progress. A soft, stylized Moke modelled on the real dog (curly white
 coat, dark eyes, black button nose, blue collar) trots, runs and sneaks around a cozy, true-scale living room: linen couch, rug, coffee table he can
-duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can bark, sniff,
+duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can bark, growl, do tricks, sniff,
 carry his sock and toys, and nap in his bed. A low dog-height camera follows him and avoids walls and furniture.
 See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
@@ -29,7 +29,7 @@ npm run preview      # serve dist/ at http://localhost:4173
 `dist/` is a plain static site (relative paths) that can go on GitHub Pages, Cloudflare Pages, Netlify or Vercel.
 
 ## Controls
-WASD move · Mouse look · Wheel zoom · Shift run · C walk · E interact · F bark · Q sniff · Esc pause · ` debug panel.
+WASD move · Mouse look · Wheel zoom · Shift run · C walk · E interact · F bark · G growl · Q trick · R sniff · Esc pause · ` debug panel.
 All listed controls are implemented. See [docs/CONTROLS.md](docs/CONTROLS.md).
 
 ## Project layout

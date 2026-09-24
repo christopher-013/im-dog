@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Moke's real-dog look, collar and tag, the title-screen fixes, Codex's Phase 1 audit and gamepad support are committed locally on `main`. So are Moke's new tail and the deeper growl (Claude). Nothing is pushed. See `git log` and `git status`._
+_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Moke's real-dog look, collar and tag, the title-screen fixes, Codex's Phase 1 audit and gamepad support are committed locally on `main`. So are Moke's new tail, the deeper growl and the trick button, with sniff moved to R (Claude). Nothing of Claude's is pushed. See `git log` and `git status`._
 
 ## Current Phase
 Phase 1
@@ -15,8 +15,8 @@ in line with D and G). Then a tail attached to his body and shaped like the real
 and awaiting the owner's look. The rest of M10 (Known Issues below) is not started.
 
 ## Last Developer
-Claude Code (Moke's tail and a deeper growl sound). Before that, OpenAI Codex committed its Phase 1 audit, gamepad
-support, the cute growl and a collar refit.
+Claude Code (the trick button; before that Moke's tail and a deeper growl). Before that, OpenAI Codex committed its
+Phase 1 audit, gamepad support, the cute growl and a collar refit.
 
 ## Completed
 **Milestone 1: foundation.**
@@ -111,6 +111,19 @@ support, the cute growl and a collar refit.
 - All look numbers are in `src/config/mokeLook.ts` (palette, key light, crease shading, outline, collar, blinks).
 - Gameplay untouched (D7): same `MokeVisual` interface, same `mouthSocket`, same animation state.
 
+**Milestone 10 (in progress): tricks** (owner request: "replace the smell button with a trick button").
+- Q / controller X: a random trick, never the same twice in a row, all things a small dog really does:
+  - **belly up:** lies down, rolls onto his back with all four paws up and a wiggle, head turned to look at you,
+    tongue out;
+  - **beg:** up on his hind legs, front paws paddling, a little sway for balance, tail out behind;
+  - **give paw:** sits, lifts his right front paw and shakes, with a head tilt;
+  - **spin:** one quick circle chasing his tail, paws pattering.
+- He stays put for a trick (about 1.2–2.8 s); moving or E cuts it short straight away. No belly-up with something
+  in his mouth; no begging under the furniture; not in his bed, while sniffing or mid-trick.
+- **Sniff moved** (owner's choice) from Q to **R**, and from X to **pressing the right stick** on a controller.
+- Code: `player/Tricks.ts`, `MokeAnimationController.trick/cancelTrick`, `TrickPose` in `ToonMokeVisual`, lengths in
+  `MOKE_ANIMATION.tricks`.
+
 **Milestone 10 (in progress): title screen.**
 - The title and loading stacks are no longer scroll containers (that produced a horizontal scrollbar and clipped
   the tilted "?"). The logo scales with both width and height (`min(10.5vw, 17vh)`), and very short windows hide
@@ -155,7 +168,8 @@ support, the cute growl and a collar refit.
 
 ## Current Gameplay State
 **Gamepad controls (2026-09-24):** standard browser gamepads are detected automatically. Left stick/D-pad moves,
-right stick looks, A/bottom interacts and confirms, B/right barks, X/left sniffs, Y/top growls, LB/LT walks, RB/RT runs,
+right stick looks, A/bottom interacts and confirms, B/right barks, X/left does a trick, Y/top growls, right stick press
+sniffs, LB/LT walks, RB/RT runs,
 Menu/Start pauses/resumes, and View/Back toggles debug. The Controls screen and `docs/CONTROLS.md` show the mapping.
 Automated mapping/deadzone/disconnect coverage passes; final feel and physical-button confirmation require the owner's
 connected controller because the embedded automation session cannot actuate USB hardware.
@@ -243,6 +257,16 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-24 after adding tricks:
+
+| Command / check | Result |
+|---|---|
+| `npm run typecheck` | Pass |
+| `npm test` | Pass: 26 files, 173 tests (new: trick picking ×4, trick timing and cancelling ×2, every trick stays above the floor and begging fits its headroom, back to normal after a trick; gamepad test updated for X = trick, right stick press = sniff) |
+| `npm run build` | Pass. `verify-dist`: no private photos. |
+| In-app browser, dev server | Each trick posed and looked at; in play (frames stepped by hand, as the pane pauses when hidden): six Q presses gave all four tricks with no repeats, he stayed put and each trick ended on its own; W cut belly-up short and he trotted off; R started sniff mode; the Controls screen shows Q/X = trick and R/right stick = sniff; no console errors |
+| Not verified | Trick feel at full frame rate; a physical controller's right-stick press; Firefox and Safari |
+
 Run on 2026-09-24 after Moke's tail and the deeper growl:
 
 | Command / check | Result |

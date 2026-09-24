@@ -28,6 +28,21 @@ export const MOKE_ANIMATION = {
   barkDuration: 0.38,
   /** How long the mock-tough growl pose lasts (s). */
   growlDuration: 1.15,
+  /** Tricks (Q / controller X): how long each lasts (s) and how he eases into and out of it. */
+  tricks: {
+    bellyUp: 2.8,
+    beg: 2.1,
+    paw: 2.4,
+    spin: 1.2,
+    blendIn: 0.28,
+    blendOut: 0.35,
+    /** Moving cuts a trick short: he's back on his feet this fast (s). */
+    cancelOut: 0.18,
+    /** He loves doing tricks. */
+    tailWag: 0.95,
+    /** Standing on his hind legs needs this much space above his feet (m). */
+    begHeadroom: 0.62,
+  },
   /** Responsiveness of lying down / getting up (per second). */
   lieDownRate: 4,
   getUpRate: 9,

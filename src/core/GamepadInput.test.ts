@@ -39,12 +39,13 @@ describe('GamepadInput', () => {
   it('maps standard face and shoulder buttons through action bindings', () => {
     const input = new InputState(KEY_BINDINGS);
     const gamepad = new GamepadInput();
-    gamepad.update([pad(undefined, [0, 1, 2, 3, 5, 6, 7, 9])], input, 1 / 60);
+    gamepad.update([pad(undefined, [0, 1, 2, 3, 5, 6, 7, 9, 11])], input, 1 / 60);
     input.beginFrame();
     expect(input.wasPressed('interact')).toBe(true);
     expect(input.wasPressed('menuConfirm')).toBe(true);
     expect(input.isDown('bark')).toBe(true);
-    expect(input.isDown('sniff')).toBe(true);
+    expect(input.isDown('trick')).toBe(true);
+    expect(input.isDown('sniff')).toBe(true); // right stick press
     expect(input.isDown('growl')).toBe(true);
     expect(input.isDown('walk')).toBe(true);
     expect(input.isDown('run')).toBe(true);

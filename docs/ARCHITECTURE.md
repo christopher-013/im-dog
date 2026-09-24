@@ -47,6 +47,7 @@ src/
     toon/                 furGeometry.ts (fur clumps with curls and creases, tested), toonMaterials.ts (soft toon + outline), faceTextures.ts (eye), tagTexture.ts (name tag)
     Moke.ts               composite: controller + animation + visual (+ carrying/sniffing flags from gameplay)
     Bark.ts               bark cooldown (tested)
+    Tricks.ts             the tricks and how one is picked (random, no repeats, context rules) (tested)
   physics/
     PhysicsWorld.ts       Rapier world (lazy WASM load), static box colliders, camera sphere sweep
     CharacterBody.ts      kinematic capsule driven by Rapier's character controller
@@ -200,7 +201,7 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 ## Sniff mode (`senses/`, Milestone 8)
 - A `ScentSource` has an id, category (FOOD, TREAT, OWNER, FAMILY, SOCK, TOY, OUTSIDE, INTERESTING), label, position,
   strength, radius and `enabled` (getters: a carried sock isn't a source).
-- `ScentSystem.start()` (Q) runs sniff mode for `SNIFF.duration` with a fade in/out and a short cooldown. Each frame,
+- `ScentSystem.start()` (R, or the right stick press) runs sniff mode for `SNIFF.duration` with a fade in/out and a short cooldown. Each frame,
   `update(dt, nose)` ranks the enabled sources in range by `strength × √closeness × fade` into a fixed pool (the top
   `maxSources`). The pool is reused, so there's no per-frame allocation.
 - `ScentWisps` draws them as **one `Points` object** with a fixed budget (6 sources × 23 particles). Each particle's
@@ -219,6 +220,18 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - `AudioManager` creates/resumes its `AudioContext` inside the PLAY/RESUME clicks (browsers require a gesture). If
   Web Audio is missing or still locked, `play()` does nothing. All sounds are synthesized at play time (`synth.ts`), with
   a little random pitch variation; there are no audio files.
+
+## Tricks (Milestone 10, owner request)
+- Q / controller X → `Game.startTrick()` → `pickTrick()` (`player/Tricks.ts`): a random trick he can do right now
+  (`bellyUp`, `beg`, `paw`, `spin`), never the same as the last one. No belly-up while carrying, no begging when
+  the headroom is below `MOKE_ANIMATION.tricks.begHeadroom`. Not while resting in his bed, sniffing, or mid-trick.
+- `MokeAnimationController.trick(name)` puts it in `MokeAnimationState` (`trick`, `trickTime`, `trickBlend`, eased
+  in and out; lengths in `MOKE_ANIMATION.tricks`). Model-independent, so a `moke.glb` could play a clip per trick.
+- While `holdsStillForTrick`, `Game` feeds Moke a still intent. Movement input calls `cancelTrick()`: he's free
+  to move at once and eases out of the pose in `cancelOut` seconds. E also cancels it before interacting.
+- `ToonMokeVisual` turns the state into a `TrickPose` added on top of his normal pose: rig pitch about his hind hips
+  (beg, sit), roll about his middle (belly up), a spin, leg/neck/head/tail offsets, mouth and eyes. During a trick a
+  sparse sample of fur vertices lifts him just clear of the floor if a pose swings anything below his feet.
 
 ## Rest (Milestone 9)
 - `RestSystem` registers "Lie Down" (REST, reach 0.62 m from the bed centre, which is only reachable through the

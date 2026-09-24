@@ -12,7 +12,8 @@ Desktop keyboard + mouse. Bindings live in `src/config/input.ts`, the single sou
 | E | Interact: pick up · drop · lie down in the bed · get up | Working: the prompt shows what E will do |
 | F | Bark | Working: a little hop, "Arf!" and a synthesized bark (placeholder sound) |
 | G | Cute growl | Working: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a deep, rumbly synthesized "grrrr" |
-| Q | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed) |
+| Q | Do a trick | Working: a random trick, never the same twice in a row: belly up (rolls onto his back, paws up), beg (up on his hind legs), give paw (sits and shakes), or spin (chases his tail). He stays put for it; moving or E cuts it short. No belly-up with something in his mouth, no begging under the furniture. |
+| R | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed). Was Q until the owner swapped Q for tricks. |
 | Space | Jump (optional, undecided) | Not planned yet |
 | W A S D while resting | Get up out of the bed | Working |
 | Esc | Pause and release the mouse | Working |
@@ -46,10 +47,11 @@ Standard-layout USB and Bluetooth controllers are detected automatically through
 | Right stick | Look around / orbit camera |
 | A / bottom face button | Interact; start from the menu; resume from pause |
 | B / right face button | Bark |
-| X / left face button | Sniff |
+| X / left face button | Do a trick |
 | Y / top face button | Cute growl |
 | Left shoulder or left trigger | Walk / sneak (hold) |
 | Right shoulder or right trigger | Run (hold) |
+| Right stick press | Sniff (all four face buttons are taken) |
 | Menu / Start | Pause or resume |
 | View / Back | Toggle debug panel |
 

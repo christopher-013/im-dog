@@ -2,6 +2,7 @@ import { MOKE_ANIMATION } from '../config/animation';
 import { MOVEMENT, type MovementTuning } from '../config/movement';
 import { clamp, damp, smoothstep } from '../utils/math';
 import { gaitForSpeed, type Gait } from './Locomotion';
+import type { Trick } from './Tricks';
 
 /** What the controller reports each frame. */
 export interface MokeMotionSample {
@@ -49,6 +50,12 @@ export interface MokeAnimationState {
   growl: number;
   /** 0..1: lying down (sphinx pose, head resting, sleepy eyes). */
   rest: number;
+  /** The trick he's doing, or null. */
+  trick: Trick | null;
+  /** Seconds since the current trick started. */
+  trickTime: number;
+  /** 0..1: how fully he's in the trick (eases in at the start, out at the end or when cut short). */
+  trickBlend: number;
   /** Seconds since creation, for cyclic motion. */
   time: number;
 }
@@ -68,6 +75,9 @@ export class MokeAnimationController {
     bark: 0,
     growl: 0,
     rest: 0,
+    trick: null,
+    trickTime: 0,
+    trickBlend: 0,
     time: 0,
   };
 
@@ -78,6 +88,10 @@ export class MokeAnimationController {
   private tiltTimeLeft = 0;
   private sinceBark = Infinity;
   private sinceGrowl = Infinity;
+  /** When the current trick ends (s of trick time), and how long its ease-out takes. */
+  private trickEnd = 0;
+  private trickOut: number = MOKE_ANIMATION.tricks.blendOut;
+  private trickCancelled = false;
 
   constructor(
     private readonly tuning: MovementTuning = MOVEMENT,
@@ -120,8 +134,9 @@ export class MokeAnimationController {
     this.sinceGrowl += dt;
     const g = this.sinceGrowl / a.growlDuration;
     s.growl = g >= 1 ? 0 : Math.min(1, g * 9) * Math.min(1, (1 - g) * 5);
+    this.updateTrick(dt);
     const wag = s.gait === 'idle' ? a.idleTailWag : a.movingTailWag;
-    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8), 3, dt);
+    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8, s.trickBlend * a.tricks.tailWag), 3, dt);
 
     const crouchTarget = clamp((a.duckBelowHeadroom - sample.headroom) / a.duckRange, 0, 1);
     s.crouch = damp(s.crouch, crouchTarget, 10, dt);
@@ -136,6 +151,55 @@ export class MokeAnimationController {
   /** A tiny dog doing his very best to look intimidating. */
   growl(): void {
     this.sinceGrowl = 0;
+  }
+
+  /** He's in the middle of a trick (including easing out of one he cut short). */
+  get performingTrick(): boolean {
+    return this.state.trick !== null;
+  }
+
+  /** He's doing a trick and staying put for it (not one he's cut short to go somewhere). */
+  get holdsStillForTrick(): boolean {
+    return this.state.trick !== null && !this.trickCancelled;
+  }
+
+  /** Starts a trick, unless he's already doing one. */
+  trick(trick: Trick): boolean {
+    if (this.state.trick) return false;
+    const s = this.state;
+    s.trick = trick;
+    s.trickTime = 0;
+    s.trickBlend = 0;
+    this.trickEnd = MOKE_ANIMATION.tricks[trick];
+    this.trickOut = MOKE_ANIMATION.tricks.blendOut;
+    this.trickCancelled = false;
+    return true;
+  }
+
+  /** Cuts the current trick short (he wants to go somewhere): he's quickly back on his feet. */
+  cancelTrick(): void {
+    const s = this.state;
+    const { cancelOut } = MOKE_ANIMATION.tricks;
+    if (!s.trick || this.trickCancelled) return;
+    this.trickCancelled = true;
+    if (this.trickEnd - s.trickTime <= cancelOut) return;
+    this.trickEnd = s.trickTime + cancelOut;
+    this.trickOut = cancelOut;
+  }
+
+  private updateTrick(dt: number): void {
+    const s = this.state;
+    if (!s.trick) return;
+    s.trickTime += dt;
+    if (s.trickTime >= this.trickEnd) {
+      s.trick = null;
+      s.trickTime = 0;
+      s.trickBlend = 0;
+      return;
+    }
+    const easeIn = clamp(s.trickTime / MOKE_ANIMATION.tricks.blendIn, 0, 1);
+    const easeOut = clamp((this.trickEnd - s.trickTime) / this.trickOut, 0, 1);
+    s.trickBlend = smoothstep(0, 1, Math.min(easeIn, easeOut));
   }
 
   /** Little signs of life while standing: glance around, and now and then a curious head tilt. */

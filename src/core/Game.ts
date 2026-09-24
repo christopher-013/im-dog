@@ -16,6 +16,7 @@ import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { BarkTimer } from '../player/Bark';
 import type { MoveIntent } from '../player/Locomotion';
 import { Moke } from '../player/Moke';
+import { pickTrick, type Trick } from '../player/Tricks';
 import { MokeController } from '../player/MokeController';
 import { createMokeVisual } from '../player/MokeVisual';
 import type { Prop } from '../props/Prop';
@@ -67,6 +68,7 @@ export class Game {
   private readonly screenPoint = new Vector3();
   private barkedThisFrame = false;
   private growledThisFrame = false;
+  private lastTrick: Trick | null = null;
   private physics: PhysicsWorld | null = null;
   private moke: Moke | null = null;
   private props: Prop[] = [];
@@ -203,8 +205,8 @@ export class Game {
     this.followCamera.recenterBehind(this.updateCameraTarget());
     if (captureMouse) void this.input.requestPointerLock();
     const controls = this.input.gamepad.connected
-      ? 'Left stick move · Right stick look · A interact · B bark · X sniff · Y growl'
-      : 'WASD to trot · Shift to run · C to walk · F bark · G growl · Q sniff';
+      ? 'Left stick move · Right stick look · A interact · B bark · X trick · Y growl · Right stick press sniff'
+      : 'WASD to trot · Shift to run · C to walk · F bark · G growl · Q trick · R sniff';
     this.ui.showToast(controls, 5000);
   }
 
@@ -278,7 +280,11 @@ export class Game {
     if (glideTarget) {
       c.glideTo(step, glideTarget, this.rest.glideHeading(c), REST.settleSpeed, REST.settleTurnRate);
     } else {
-      this.moke.fixedUpdate(step, this.rest.holdsMoke ? this.stillIntent : this.moveIntent);
+      // A trick holds him in place; heading off somewhere cuts it short.
+      const tricking = this.moke.animation.holdsStillForTrick;
+      if (tricking && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.moke.animation.cancelTrick();
+      const stayPut = this.rest.holdsMoke || this.moke.animation.holdsStillForTrick;
+      this.moke.fixedUpdate(step, stayPut ? this.stillIntent : this.moveIntent);
     }
     this.rest.update(step, c);
     this.moke.resting = this.rest.lying;
@@ -304,10 +310,13 @@ export class Game {
     this.moveIntent.run = input.isDown('run');
   }
 
-  /** The discrete action keys, once per rendered frame while playing: E interact, F bark, Q sniff. */
+  /** The discrete action keys, once per rendered frame while playing: E interact, F bark, G growl, Q trick, R sniff. */
   private handleActions(): void {
     const input = this.input.state;
-    if (input.wasPressed('interact')) this.interactions.interact();
+    if (input.wasPressed('interact')) {
+      this.moke?.animation.cancelTrick();
+      this.interactions.interact();
+    }
     // Any fresh movement key gets him up out of his bed.
     const moved = ['moveForward', 'moveBackward', 'moveLeft', 'moveRight'] as const;
     if (this.rest.holdsMoke && (input.wasMoveStarted() || moved.some((a) => input.wasPressed(a)))) this.rest.standUp();
@@ -321,7 +330,16 @@ export class Game {
       this.audio.play('growl');
       this.growledThisFrame = true;
     }
-    if (input.wasPressed('sniff') && this.scent.start()) this.audio.play('sniff');
+    if (input.wasPressed('trick')) this.startTrick();
+    if (input.wasPressed('sniff') && !this.moke?.animation.performingTrick && this.scent.start()) this.audio.play('sniff');
+  }
+
+  /** A random trick (see Tricks.ts): not while in his bed, sniffing, or already doing one. */
+  private startTrick(): void {
+    const moke = this.moke;
+    if (!moke || this.rest.holdsMoke || this.scent.active || moke.animation.performingTrick) return;
+    const trick = pickTrick(Math.random, this.lastTrick, { carrying: moke.carrying, headroom: moke.controller.headroom });
+    if (trick && moke.animation.trick(trick)) this.lastTrick = trick;
   }
 
   /** Sniff mode: which scents are noticeable from his nose, the wisps, his nose-down pose and the haze. */
@@ -415,6 +433,7 @@ export class Game {
         grounded: c.grounded,
         headroom: `${c.headroom.toFixed(2)} m (duck ${this.moke.animation.state.crouch.toFixed(2)})`,
         rest: `${this.rest.phase} (pose ${this.moke.animation.state.rest.toFixed(2)})`,
+        trick: this.moke.animation.state.trick ?? '—',
       };
     });
     this.debug.addSection('Interaction', (): DebugValues => {

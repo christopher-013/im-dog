@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { MOKE_ANIMATION } from '../config/animation';
 import { MokeAnimationController, type MokeAnimationState } from './MokeAnimationController';
 import { ToonMokeVisual } from './ToonMokeVisual';
+import { TRICKS } from './Tricks';
 
 const DT = 1 / 60;
 
@@ -140,6 +141,42 @@ describe('ToonMokeVisual', () => {
       expect(underFur(0, 0, 0)).toBe(true);
       expect(underFur(0, 0.012, -0.004)).toBe(true); // a little way up the root, too
     }
+    visual.dispose();
+  });
+
+  it('does every trick without sinking into the floor, and begs within the headroom it asks for', () => {
+    for (const trick of TRICKS) {
+      const visual = new ToonMokeVisual();
+      const anim = new MokeAnimationController();
+      anim.trick(trick);
+      let lowest = Infinity;
+      let highest = -Infinity;
+      for (let i = 0; anim.performingTrick; i++) {
+        const state = anim.update(DT, { speed: 0, turnRate: 0, headroom: Infinity });
+        visual.update(DT, state);
+        if (i % 6 === 0) {
+          const box = new Box3().setFromObject(visual.object, true);
+          lowest = Math.min(lowest, box.min.y);
+          highest = Math.max(highest, box.max.y);
+        }
+      }
+      expect(lowest, trick).toBeGreaterThan(-0.02);
+      if (trick === 'beg') expect(highest).toBeLessThan(MOKE_ANIMATION.tricks.begHeadroom);
+      visual.dispose();
+    }
+  });
+
+  it('is back in his normal standing pose once a trick is over', () => {
+    const visual = new ToonMokeVisual();
+    visual.update(DT, pose());
+    const before = new Box3().setFromObject(visual.object, true);
+    const anim = new MokeAnimationController();
+    anim.trick('bellyUp');
+    while (anim.performingTrick) visual.update(DT, anim.update(DT, { speed: 0, turnRate: 0, headroom: Infinity }));
+    visual.update(DT, pose());
+    const after = new Box3().setFromObject(visual.object, true);
+    expect(after.min.distanceTo(before.min)).toBeLessThan(0.01);
+    expect(after.max.distanceTo(before.max)).toBeLessThan(0.01);
     visual.dispose();
   });
 

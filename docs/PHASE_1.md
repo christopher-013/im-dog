@@ -15,8 +15,8 @@ Humans, full house, backyard, missions/quests, economy, complex needs, mobile co
 ## Milestones
 | # | Milestone | Status |
 |---|---|---|
-| 1 | Foundation: Vite/TS/three, renderer, loop, resize, input, start/loading screens, docs, Moke reference | **Done, awaiting approval** |
-| 2 | Moke movement: placeholder visual, controller, walk/trot/run, accel/decel, turning, collision | Next |
+| 1 | Foundation: Vite/TS/three, renderer, loop, resize, input, start/loading screens, docs, Moke reference | **Done** |
+| 2 | Moke movement: placeholder visual, controller, walk/trot/run, accel/decel, turning, collision | Next, **not started**. Begins after the shared Claude/Codex workflow is committed and reviewed. Rapier approved (D11). |
 | 3 | Third-person camera: orbit, follow, collision, pointer lock, tuning | |
 | 4 | Living room: stylized room, furniture, colliders, lighting | |
 | 5 | Interaction framework and contextual prompts | |

@@ -40,5 +40,8 @@ scripts/        build helpers
 ```
 
 ## Docs
-[Game design](docs/GAME_DESIGN.md) · [Phase 1 scope](docs/PHASE_1.md) · [Architecture](docs/ARCHITECTURE.md) ·
-[Moke reference](docs/MOKE_CHARACTER_REFERENCE.md) · [Assets & licenses](docs/ASSETS.md) · [Controls](docs/CONTROLS.md)
+[Current state](docs/CURRENT_STATE.md) · [Game design](docs/GAME_DESIGN.md) · [Phase 1 scope](docs/PHASE_1.md) ·
+[Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Moke reference](docs/MOKE_CHARACTER_REFERENCE.md) ·
+[Assets & licenses](docs/ASSETS.md) · [Controls](docs/CONTROLS.md)
+
+**Coding agents** (Codex, Claude Code): start with [AGENTS.md](AGENTS.md). Claude Code also reads [CLAUDE.md](CLAUDE.md).

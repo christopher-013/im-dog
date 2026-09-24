@@ -64,15 +64,16 @@ Planned additions follow the brief: `player/`, `interactions/`, `senses/`, `phys
 - **Gamepad later:** add a source that feeds `InputState` button ids (e.g. `Gamepad:A` in `KEY_BINDINGS`) plus an
   analog move axis. Nothing that reads actions changes.
 
-## Character visuals vs. gameplay (from Milestone 2)
+## Character visuals vs. gameplay (planned for Milestone 2, not built yet)
+None of the classes below exist yet. This is the intended design, per decision D7 in `DECISIONS.md`.
 The key rule: **gameplay never touches the mesh.**
-- `MokeController` owns position, velocity, heading, locomotion state (idle/walk/trot/run/rest), the carried item, and collision.
-- `MokeVisual` is an interface: `object`, a `mouthSocket` for carried items, and `update(dt, visualState)`.
+- `MokeController` will own position, velocity, heading, locomotion state (idle/walk/trot/run/rest), the carried item, and collision.
+- `MokeVisual` will be an interface: `object`, a `mouthSocket` for carried items, and `update(dt, visualState)`.
   - `PlaceholderDogVisual`: simple original geometry.
   - `GltfMokeVisual`: loads `assets/models/moke/moke.glb` and maps states to animation clips.
-- Camera, interactions, pickup, scent and physics talk to the controller (and the mouth socket), never to the visual.
+- Camera, interactions, pickup, scent and physics will talk to the controller (and the mouth socket), never to the visual.
   Swapping the placeholder for `moke.glb` is then a one-line factory change, and the placeholder stays as the
-  fallback if the GLB is missing (the asset entry is `optional`).
+  fallback if the GLB is missing (the asset entry will be `optional`).
 
 ## Assets
 - Runtime assets live in `public/assets/{models,textures,audio}` and are loaded **by URL from a manifest**
@@ -87,11 +88,11 @@ hues), PCF shadows (`PCFSoftShadowMap` was removed in three r186) with `shadow.r
 Pixel ratio capped at 2. The buffer is resized via `ResizeObserver` plus a per-frame DPR check (monitor changes).
 Shaders are precompiled during loading (`compileAsync`). Static scenery uses `matrixAutoUpdate = false`.
 
-## Physics (decision needed before Milestone 2)
-Proposal: add **Rapier** (`@dimforge/rapier3d-compat`, Apache-2.0) in Milestone 2 and use it for the character
-(kinematic character controller) and later for the ball/toys/sock drops. Then there's one collision world for
-everything. Cost: roughly 1 MB gzipped of WASM. The alternative is custom circle-vs-box collision for Moke now,
-with Rapier only for toys in M7, which means two collision systems to keep in sync.
+## Physics (planned for Milestone 2, not installed yet)
+Decided: **Rapier** (`@dimforge/rapier3d-compat`, Apache-2.0), decision D11 in `DECISIONS.md`. It will serve the character
+(kinematic character controller) and later the ball, toys and sock drops, so there's one collision world for
+everything. Cost: roughly 1 MB gzipped of WASM. The alternative considered was custom circle-vs-box collision for
+Moke plus Rapier only for toys, which would mean two collision systems to keep in sync.
 
 ## Private reference photos: four layers
 1. `.gitignore`: `reference/moke/*` (the README stays tracked).

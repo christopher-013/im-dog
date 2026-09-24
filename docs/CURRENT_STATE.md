@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Milestone 10 work (Moke's anime look) is on the local branch `claude/m10-anime-moke`, not yet merged into `main`. See `git log` and `git status`._
+_Last updated: 2026-09-24. Repo: private `christopher-013/im-dog`, branch `main`. Milestone 10 work (Moke's anime look) is committed on `main` (local, not pushed). See `git log` and `git status`._
 
 ## Current Phase
 Phase 1

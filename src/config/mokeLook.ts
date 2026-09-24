@@ -16,6 +16,7 @@ export const MOKE_LOOK = {
     tongueLit: '#f59aa5',
     tongueShade: '#cf7482',
     mouth: '#3a2226',
+    teeth: '#fffaf0',
     line: '#9a8c8d',
     iris: '#3b2519',
     irisDark: '#170f0b',

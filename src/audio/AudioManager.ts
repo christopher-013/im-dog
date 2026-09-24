@@ -1,9 +1,9 @@
 import { AUDIO } from '../config/audio';
-import { bark, drop, pickup, sniff, type Synth } from './synth';
+import { bark, drop, growl, pickup, sniff, type Synth } from './synth';
 
-export type SoundName = 'bark' | 'sniff' | 'pickup' | 'drop';
+export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop';
 
-const SOUNDS: Record<SoundName, Synth> = { bark, sniff, pickup, drop };
+const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop };
 
 /**
  * Game audio. Browsers only allow sound after a user gesture, so the AudioContext is created (or

@@ -191,6 +191,10 @@ body {
   background: radial-gradient(120% 90% at 50% 40%, var(--paper) 0%, var(--cream) 55%, var(--cream-deep) 100%);
 }
 
+.screen-loading.is-active .stack {
+  visibility: visible;
+}
+
 /* Fade only the background: never cross-fade two logos and two sets of text. */
 .screen-loading:not(.is-active) .stack {
   visibility: hidden;
@@ -546,6 +550,10 @@ kbd {
 
 #hud[aria-hidden='true'] {
   visibility: hidden;
+}
+
+#hud:not([aria-hidden='true']) {
+  visibility: visible;
 }
 
 .toast {

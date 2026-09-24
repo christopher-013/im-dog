@@ -11,6 +11,7 @@ Desktop keyboard + mouse. Bindings live in `src/config/input.ts`, the single sou
 | C (hold) | Walk / sneak | Working. Not Ctrl, because Ctrl+W closes the browser tab. |
 | E | Interact: pick up · drop · lie down in the bed · get up | Working: the prompt shows what E will do |
 | F | Bark | Working: a little hop, "Arf!" and a synthesized bark (placeholder sound) |
+| G | Cute growl | Working: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a soft synthesized "grrr" |
 | Q | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed) |
 | Space | Jump (optional, undecided) | Not planned yet |
 | W A S D while resting | Get up out of the bed | Working |
@@ -35,4 +36,21 @@ turns change it. Let go and press again to re-aim from the current view.
 `tuning.mouse`. The changes apply immediately. Copy good values into `src/config/movement.ts`, `camera.ts` or
 `input.ts` to keep them.
 
-Gamepad support is planned for later; the input system is action-based so it can be added without touching gameplay code.
+## Gamepad
+
+Standard-layout USB and Bluetooth controllers are detected automatically through the browser Gamepad API. Browsers may hide a newly connected controller until one of its buttons is pressed.
+
+| Input | Action |
+|---|---|
+| Left stick or D-pad | Move (analog stick preserves speed and direction) |
+| Right stick | Look around / orbit camera |
+| A / bottom face button | Interact; start from the menu; resume from pause |
+| B / right face button | Bark |
+| X / left face button | Sniff |
+| Y / top face button | Cute growl |
+| Left shoulder or left trigger | Walk / sneak (hold) |
+| Right shoulder or right trigger | Run (hold) |
+| Menu / Start | Pause or resume |
+| View / Back | Toggle debug panel |
+
+Keyboard and mouse remain active while a controller is connected. Controller names and whether the browser reports a standard mapping are shown in the debug panel.

@@ -2,6 +2,7 @@
 export const AUDIO = {
   master: 0.8,
   bark: 0.55,
+  growl: 0.32,
   sniff: 0.35,
   pickup: 0.3,
   drop: 0.35,

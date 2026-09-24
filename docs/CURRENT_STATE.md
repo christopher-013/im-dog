@@ -22,6 +22,8 @@ review and commit.
 **Milestone 1: foundation.**
 - Vite + strict TypeScript + three.js, Vitest, static build.
 - Original I'M DOG? screens; state machine; fixed 60 Hz step; resize/DPR-aware renderer; action-based input.
+- Standard USB/Bluetooth gamepad support: automatic polling/detection, analog movement, right-stick camera, D-pad,
+  face/shoulder actions, and controller start/pause/resume. Keyboard and mouse work concurrently.
 - Asset fallbacks, debug panel, private-photo guards.
 
 **Milestone 2: basic Moke character.**
@@ -57,7 +59,7 @@ review and commit.
 - No interactable is registered yet in M5 itself; the sock (M6) is the first.
 
 **Milestone 6: sock.**
-- A coral sock with mustard stripes lies on the rug (`landmarks.sock`). "E — Pick Up Sock" → it rides crosswise in
+- A dark-grey sock with a lighter grey cuff pattern lies on the rug (`landmarks.sock`). "E — Pick Up Sock" → it rides crosswise in
   his mouth (`mouthSocket`); he can walk, turn and run with it (head up, happier tail, tongue hidden).
 - "E — Drop Sock" drops it just ahead of his mouth with some of his momentum; Rapier makes it fall and settle.
 - Generic `PickupSystem` / `Carryable` and `Prop` / `PropBody`: the ball and toy (M7) reuse them unchanged.
@@ -96,8 +98,8 @@ review and commit.
   - **Ears shortened** (owner, comparing with the "Relax" bandana photo): they end at about mouth level instead
     of below the jaw. Only their length changed.
   - **Collar and tag** (owner request, then refined against a photo of Moke wearing his): a blue strap snug round
-    his neck just under his head, sitting in the fluff (measured from the fur, drawn through the curl tips) and
-    moving with his head; a navy bone-shaped tag on a silver ring with "Moke" on it, hanging straight down and
+    his neck immediately beneath the round head, ending under the chin before the muzzle and hidden by fur at the
+    sides and back; a navy bone-shaped tag attached to the strap by a silver ring, hanging straight down and
     jingling a little as he trots. Colours and the name are in `MOKE_LOOK.collar`.
 - Static parts are merged: 9 fur meshes, each with a silhouette line; about 110k triangles including the lines.
 - The tail tucks lower while he ducks, so the plume still clears the coffee table.
@@ -108,6 +110,8 @@ review and commit.
 - The title and loading stacks are no longer scroll containers (that produced a horizontal scrollbar and clipped
   the tilted "?"). The logo scales with both width and height (`min(10.5vw, 17vh)`), and very short windows hide
   the Japanese tag. Cards (pause, error, controls) still scroll on tiny windows.
+- Critical inline styles keep the loading logo, text and HUD hidden until their full stylesheet is ready, preventing
+  an unstyled image/text flash during refresh.
 - The dog-face "O" is now 0.76em and centred on the capitals, in line with D and G.
 
 **Milestone 9: rest.**
@@ -145,6 +149,17 @@ review and commit.
 - Details: `docs/ARCHITECTURE.md` (sections "Interactions", "Props and carrying", "Sniff mode", "Bark and audio").
 
 ## Current Gameplay State
+**Gamepad controls (2026-09-24):** standard browser gamepads are detected automatically. Left stick/D-pad moves,
+right stick looks, A/bottom interacts and confirms, B/right barks, X/left sniffs, Y/top growls, LB/LT walks, RB/RT runs,
+Menu/Start pauses/resumes, and View/Back toggles debug. The Controls screen and `docs/CONTROLS.md` show the mapping.
+Automated mapping/deadzone/disconnect coverage passes; final feel and physical-button confirmation require the owner's
+connected controller because the embedded automation session cannot actuate USB hardware.
+
+**Cute growl + collar fit (2026-09-24):** G / controller Y triggers a short mock-tough growl: lower planted stance,
+forward chest, pinned ears, squint, head tremble, four tiny visible teeth, an original soft growl synth and a comic
+“grrr” bubble. It has no gameplay/combat effect. The collar loop was moved 14 mm farther back and seated 4 mm
+deeper into the neck fluff, with a slightly shorter front arc; the rest of Moke's appearance was not changed.
+
 **Milestone 10, ears + collar (2026-09-24, third pass):** the shorter ears and the collar/tag were checked from the
 front, side, behind and lying in the bed ("Moke" is readable on the tag in a front close-up; lying down, the collar
 stays under his chin and the tag rests between his paws).
@@ -275,6 +290,7 @@ Earlier, at the end of Milestone 4:
 - `src/config/`: `movement.ts`, `camera.ts`, `engine.ts` (lighting balance), `interaction.ts`, `props.ts`, `senses.ts`, `audio.ts`.
 - `src/camera/ThirdPersonCamera.ts`, `src/player/`, `src/physics/`, `src/core/Game.ts`.
 - `src/interactions/`, `src/props/`, `src/senses/`, `src/audio/`.
+- Gamepad: `src/core/GamepadInput.ts`, `src/core/InputState.ts`, and mappings/tuning in `src/config/input.ts`.
 - Moke's look: `src/player/ToonMokeVisual.ts`, `src/player/toon/`, `src/config/mokeLook.ts`.
 
 ## Next Recommended Task

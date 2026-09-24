@@ -92,6 +92,17 @@ describe('ToonMokeVisual', () => {
     visual.dispose();
   });
 
+  it('shows tiny teeth and hides his tongue for the cute growl', () => {
+    const visual = new ToonMokeVisual();
+    visual.update(DT, pose({ growl: 1 }));
+    expect(meshes(visual.object, 'mouthOpen')[0]!.visible).toBe(true);
+    expect(meshes(visual.object, 'growlTeeth')[0]!.visible).toBe(true);
+
+    visual.update(DT, pose({ growl: 0 }));
+    expect(meshes(visual.object, 'growlTeeth')[0]!.visible).toBe(false);
+    visual.dispose();
+  });
+
   it('wears his collar with the name tag hanging at the front of his neck', () => {
     const visual = new ToonMokeVisual();
     visual.update(DT, pose());

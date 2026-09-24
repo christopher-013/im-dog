@@ -17,9 +17,9 @@ import type { PropId } from '../config/props';
 // Original, code-built prop models. Each is centred on its physics body, lying the way it rests.
 
 const PALETTE = {
-  sockBody: '#ef7f63',
-  sockStripe: '#f6c453',
-  sockHeel: '#fbe7c6',
+  sockBody: '#34373d',
+  sockStripe: '#9ca3ad',
+  sockHeel: '#59606a',
   ball: '#d8ec4a',
   ballSeam: '#fbfbf2',
   ropeA: '#3f8fa8',
@@ -36,7 +36,7 @@ function mesh(parent: Group, geometry: BufferGeometry, material: Material, posit
   return m;
 }
 
-/** A coral sock with mustard cuff stripes, lying flat: the cuff toward +z, the foot bending off to the side. */
+/** A charcoal sock with a light-grey cuff pattern, lying flat: the cuff toward +z, the foot bending off to the side. */
 function sock(): Group {
   const root = new Group();
   // Flattened: a sock on the floor is a floppy, flat thing.

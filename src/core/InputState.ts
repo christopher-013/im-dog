@@ -6,8 +6,8 @@ export interface Vec2Like {
 }
 
 /**
- * DOM-free input state. Input sources (keyboard + mouse today, gamepad later) feed it raw
- * key ids and mouse deltas; gameplay reads actions, a movement axis and a look delta.
+ * DOM-free input state. Keyboard, mouse and gamepad sources feed it raw key ids, analog movement
+ * and look deltas; gameplay reads actions and device-independent axes.
  *
  * Call beginFrame() once per rendered frame. Press/release edges and the look delta then hold
  * for that whole frame, so a quick tap is never missed and never counted twice, however many
@@ -30,6 +30,10 @@ export class InputState {
   private lookY = 0;
   private pendingZoom = 0;
   private zoom = 0;
+  private analogMoveX = 0;
+  private analogMoveY = 0;
+  private pendingMoveStarted = false;
+  private frameMoveStarted = false;
 
   constructor(bindings: Readonly<Record<Action, readonly string[]>>) {
     for (const [action, keys] of Object.entries(bindings) as [Action, readonly string[]][]) {
@@ -73,6 +77,15 @@ export class InputState {
     this.pendingLookY += dy;
   }
 
+  /** Sets the current analog movement axis (x = right, y = forward). */
+  setAnalogMove(x: number, y: number): void {
+    const wasMoving = Math.hypot(this.analogMoveX, this.analogMoveY) > 0.001;
+    const moving = Math.hypot(x, y) > 0.001;
+    this.analogMoveX = x;
+    this.analogMoveY = y;
+    if (!wasMoving && moving) this.pendingMoveStarted = true;
+  }
+
   /** Mouse-wheel zoom in notches (positive = zoom out). */
   addZoom(steps: number): void {
     this.pendingZoom += steps;
@@ -84,6 +97,9 @@ export class InputState {
     this.pendingLookX = 0;
     this.pendingLookY = 0;
     this.pendingZoom = 0;
+    this.analogMoveX = 0;
+    this.analogMoveY = 0;
+    this.pendingMoveStarted = false;
   }
 
   beginFrame(): void {
@@ -98,6 +114,8 @@ export class InputState {
     this.pendingLookY = 0;
     this.zoom = this.pendingZoom;
     this.pendingZoom = 0;
+    this.frameMoveStarted = this.pendingMoveStarted;
+    this.pendingMoveStarted = false;
   }
 
   isDown(action: Action): boolean {
@@ -115,13 +133,18 @@ export class InputState {
 
   /** Movement intent: x = right, y = forward. Diagonals are normalized so they aren't faster. */
   getMoveAxis(out: Vec2Like): Vec2Like {
-    const x = (this.isDown('moveRight') ? 1 : 0) - (this.isDown('moveLeft') ? 1 : 0);
-    const y = (this.isDown('moveForward') ? 1 : 0) - (this.isDown('moveBackward') ? 1 : 0);
+    const x = this.analogMoveX + (this.isDown('moveRight') ? 1 : 0) - (this.isDown('moveLeft') ? 1 : 0);
+    const y = this.analogMoveY + (this.isDown('moveForward') ? 1 : 0) - (this.isDown('moveBackward') ? 1 : 0);
     const length = Math.hypot(x, y);
     const scale = length > 1 ? 1 / length : 1;
     out.x = x * scale;
     out.y = y * scale;
     return out;
+  }
+
+  /** True once when an analog movement control leaves its deadzone. */
+  wasMoveStarted(): boolean {
+    return this.frameMoveStarted;
   }
 
   /** Mouse movement this frame, in pixels (x = right, y = down). */

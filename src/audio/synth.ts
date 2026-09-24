@@ -57,6 +57,39 @@ export const bark: Synth = (ctx, out, t0, pitch, noise) => {
   voice.stop(t0 + 0.22);
 };
 
+/** A small, rumbly "grrr" with a gentle wobble: determined, but more adorable than scary. */
+export const growl: Synth = (ctx, out, t0, pitch, noise) => {
+  const voice = ctx.createOscillator();
+  voice.type = 'sawtooth';
+  voice.frequency.setValueAtTime(135 * pitch, t0);
+  voice.frequency.linearRampToValueAtTime(118 * pitch, t0 + 0.65);
+
+  const wobble = ctx.createOscillator();
+  wobble.type = 'sine';
+  wobble.frequency.value = 13;
+  const wobbleDepth = ctx.createGain();
+  wobbleDepth.gain.value = 9;
+  wobble.connect(wobbleDepth).connect(voice.frequency);
+
+  const warm = ctx.createBiquadFilter();
+  warm.type = 'lowpass';
+  warm.frequency.value = 650;
+  warm.Q.value = 1.5;
+  voice.connect(warm).connect(envelope(ctx, t0, 0.025, 0.7, 0.68)).connect(out);
+
+  const rasp = noiseSource(ctx, noise, t0, 0.68);
+  const raspFilter = ctx.createBiquadFilter();
+  raspFilter.type = 'bandpass';
+  raspFilter.frequency.value = 430;
+  raspFilter.Q.value = 2.2;
+  rasp.connect(raspFilter).connect(envelope(ctx, t0, 0.02, 0.16, 0.66)).connect(out);
+
+  voice.start(t0);
+  wobble.start(t0);
+  voice.stop(t0 + 0.72);
+  wobble.stop(t0 + 0.72);
+};
+
 /** Three quick, soft nose snuffles. */
 export const sniff: Synth = (ctx, out, t0, pitch, noise) => {
   for (let i = 0; i < 3; i++) {

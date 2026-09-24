@@ -76,4 +76,12 @@ describe('MokeAnimationController', () => {
     expect(simulate(anim, lying, 1.5).rest).toBeGreaterThan(0.99);
     expect(simulate(anim, { ...lying, resting: false }, 0.35).rest).toBeLessThan(0.05);
   });
+
+  it('holds a playful growl pose briefly and then releases it', () => {
+    const anim = new MokeAnimationController(MOVEMENT);
+    const idle = { speed: 0, turnRate: 0, headroom: OPEN_SKY };
+    anim.growl();
+    expect(simulate(anim, idle, 0.15).growl).toBeGreaterThan(0.7);
+    expect(simulate(anim, idle, 1.2).growl).toBe(0);
+  });
 });

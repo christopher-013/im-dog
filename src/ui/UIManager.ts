@@ -1,4 +1,4 @@
-import { CONTROL_HINTS, KEY_BINDINGS, type Action } from '../config/input';
+import { CONTROL_HINTS, GAMEPAD_CONTROL_HINTS, KEY_BINDINGS, type Action } from '../config/input';
 import { keyLabel } from '../core/InputState';
 import { SENSITIVITY_RANGE, type PlayerSettings } from '../core/PlayerSettings';
 
@@ -228,6 +228,21 @@ export class UIManager {
         soon.textContent = 'soon';
         row.appendChild(soon);
       }
+      list.appendChild(row);
+    }
+
+    for (const hint of GAMEPAD_CONTROL_HINTS) {
+      const row = this.doc.createElement('li');
+      row.className = 'control-row';
+      const keys = this.doc.createElement('span');
+      keys.className = 'control-keys';
+      const kbd = this.doc.createElement('kbd');
+      kbd.textContent = hint.input;
+      keys.appendChild(kbd);
+      const label = this.doc.createElement('span');
+      label.className = 'control-label';
+      label.textContent = hint.label;
+      row.append(keys, label);
       list.appendChild(row);
     }
   }

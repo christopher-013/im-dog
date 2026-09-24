@@ -74,6 +74,30 @@ describe('InputState', () => {
     expect(input.getMoveAxis({ x: 9, y: 9 })).toEqual({ x: 0, y: 1 });
   });
 
+  it('combines analog and keyboard movement and normalizes the result', () => {
+    const input = new InputState(KEY_BINDINGS);
+    input.setAnalogMove(0.5, 0.5);
+    expect(input.getMoveAxis({ x: 0, y: 0 })).toEqual({ x: 0.5, y: 0.5 });
+    input.keyDown('KeyD');
+    const move = input.getMoveAxis({ x: 0, y: 0 });
+    expect(Math.hypot(move.x, move.y)).toBeCloseTo(1);
+    expect(move.x).toBeGreaterThan(move.y);
+  });
+
+  it('reports an analog movement start only when the axis leaves rest', () => {
+    const input = new InputState(KEY_BINDINGS);
+    input.setAnalogMove(0.4, 0);
+    frame(input);
+    expect(input.wasMoveStarted()).toBe(true);
+    input.setAnalogMove(0.6, 0);
+    frame(input);
+    expect(input.wasMoveStarted()).toBe(false);
+    input.setAnalogMove(0, 0);
+    input.setAnalogMove(0, 0.4);
+    frame(input);
+    expect(input.wasMoveStarted()).toBe(true);
+  });
+
   it('accumulates mouse movement per frame', () => {
     const input = new InputState(KEY_BINDINGS);
     input.addLook(3, -2);

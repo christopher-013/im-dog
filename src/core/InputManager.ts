@@ -1,5 +1,6 @@
 import { KEY_BINDINGS, MOUSE } from '../config/input';
 import { clamp } from '../utils/math';
+import { GamepadInput } from './GamepadInput';
 import { codeFromKey, InputState } from './InputState';
 
 const keyCode = (e: KeyboardEvent): string => e.code || codeFromKey(e.key);
@@ -10,6 +11,7 @@ const keyCode = (e: KeyboardEvent): string => e.code || codeFromKey(e.key);
  */
 export class InputManager {
   readonly state = new InputState(KEY_BINDINGS);
+  readonly gamepad = new GamepadInput();
 
   /**
    * True while the player is actually playing. Bound keys then stop triggering browser defaults
@@ -52,7 +54,9 @@ export class InputManager {
     return typeof this.surface.requestPointerLock === 'function';
   }
 
-  beginFrame(): void {
+  beginFrame(dt: number): void {
+    const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
+    this.gamepad.update(pads, this.state, dt);
     this.state.beginFrame();
   }
 
@@ -83,6 +87,7 @@ export class InputManager {
 
   dispose(): void {
     this.exitPointerLock();
+    this.gamepad.reset(this.state);
     this.listeners.abort();
   }
 

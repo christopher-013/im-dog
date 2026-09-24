@@ -18,7 +18,7 @@ src/
   main.ts                 entry: creates UIManager, then Game; shows a friendly error if startup fails
   config/                 ALL tunable numbers live here
     engine.ts             renderer, lens, fixed timestep
-    input.ts              actions, key bindings, mouse sensitivity, control hints
+    input.ts              actions, keyboard/gamepad bindings, stick + mouse tuning, control hints
     movement.ts           Moke's movement feel (speeds, acceleration, turning) + collision capsule
     camera.ts             third-person camera feel (distance, zoom, smoothing, collision, whiskers, auto-follow)
     animation.ts          body-language tuning (lean, idle looks, tail, ducking)
@@ -34,7 +34,8 @@ src/
     GameLoop.ts           FixedStep accumulator + rAF loop
     GameRenderer.ts       WebGLRenderer, resize/DPR handling, context loss
     InputState.ts         DOM-free input logic (tested)
-    InputManager.ts       DOM wiring: keyboard, mouse, wheel, pointer lock
+    GamepadInput.ts       Gamepad API polling, standard-layout mapping and stick deadzones (tested)
+    InputManager.ts       DOM wiring: keyboard, mouse, wheel, pointer lock; gamepad polling
     AssetManager.ts       runtime asset loading with graceful fallbacks (tested)
     PlayerSettings.ts     mouse sensitivity / invert-Y, saved in localStorage with safe fallbacks (tested)
   player/
@@ -76,7 +77,7 @@ src/
     roomScents.ts         the living room's sources (props while not carried, the dog bed)
   audio/
     AudioManager.ts       Web Audio context (unlocked by PLAY/RESUME), plays named sounds, never throws
-    synth.ts              original synthesized placeholder sounds: bark, sniff, pickup, drop
+    synth.ts              original synthesized placeholder sounds: bark, growl, sniff, pickup, drop
   ui/
     UIManager.ts          screens, controls dialog, toast, hints, contextual prompt, bark bubble, sniff haze
     DebugPanel.ts         ` overlay + FrameStats
@@ -88,7 +89,7 @@ src/
 ## Game states and the frame
 `loading → menu → playing ⇄ paused` (in `Game.ts`). Each rendered frame:
 
-1. `input.beginFrame()` latches key presses/releases and mouse delta for the frame.
+1. `input.beginFrame(dt)` polls gamepads, then latches button/key presses, analog movement and look delta for the frame.
 2. Global keys: debug toggle, pause.
 3. `FixedStep.advance(dt)` runs gameplay/physics at **60 Hz fixed** (0 steps while not playing). Each step:
    build a camera-relative move intent (via `MoveBasis`) → `Moke.fixedUpdate` → `PhysicsWorld.step`.
@@ -110,8 +111,12 @@ so stalls are visible instead of being hidden by the simulation clamp.
 - Pointer lock requests raw (`unadjustedMovement`) input, falling back to normal lock. If lock is unavailable
   (embedded browsers, Chrome's ~1 s cooldown after Esc), play continues with a "click to look" hint and drag-to-look.
 - Keys release on window blur/tab hide (no stuck movement). Bound keys only `preventDefault` during play.
-- **Gamepad later:** add a source that feeds `InputState` button ids (e.g. `Gamepad:A` in `KEY_BINDINGS`) plus an
-  analog move axis. Nothing that reads actions changes.
+- `GamepadInput` polls `navigator.getGamepads()` every frame. The first connected pad stays active until it
+  disconnects; disconnect releases held actions and clears analog movement. Standard-layout mappings use the left
+  stick/D-pad for movement, right stick for camera, face/shoulder buttons for actions, and Menu/Start for pause.
+- A radial 0.18 stick deadzone is removed and the remaining range is rescaled, so drift is suppressed without losing
+  the full analog range. Gamepad look is converted to time-based mouse-equivalent deltas before entering the same
+  camera path. Keyboard and mouse remain usable at the same time.
 
 ## Moke: gameplay vs. visuals (decision D7)
 The key rule: **gameplay never touches the mesh.** The data flows one way:
@@ -145,10 +150,10 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
     - **Silhouette line:** inverted hulls (back faces pushed out in screen space, one shared `ShaderMaterial`), so
       line width is even in pixels and thins a little with distance. Thin and soft grey; can be switched off.
     - **Collar:** a blue strap round his neck (on the neck, so it moves with his head) and a navy bone-shaped tag on
-      a silver ring with his name drawn on a canvas (`toon/tagTexture.ts`). The strap's loop is measured from the fur
-      at build time (the outermost fur vertices near the collar's plane) and sits a little inside it; its material
-      pulls its depth ~9 mm toward the camera (`createToonMaterial` `depthPull`), so it shows through the curl tips
-      like a collar pressed into the coat. The tag counter-rotates to hang straight down.
+      a silver ring with his name drawn on a canvas (`toon/tagTexture.ts`). The nearly level loop is measured from
+      the head fur at build time, inset into the coat, and shortened at the front so it stops under the chin before
+      the muzzle. Fur naturally hides its sides and back. The ring is anchored to the strap's front face, and the
+      tag counter-rotates to hang straight down.
     - **Face:** a canvas-drawn dark, glossy eye texture on domed discs placed on the face; eyes blink and close to a
       lash line while resting; the nose, open mouth and tongue are small meshes (no drawn mouth when closed).
   - A future `moke.glb` would still plug in here (load it as an `optional` asset and return a glTF-based visual),
@@ -207,6 +212,9 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - F → `BarkTimer.tryBark()` (cooldown) → `MokeAnimationController.bark()` (a short envelope in
   `MokeAnimationState.bark`: little hop, head up, ears back, mouth open) + `AudioManager.play('bark')` + a comic
   "Arf!" bubble projected above his head.
+- G / controller Y → `MokeAnimationController.growl()` → a brief mock-tough pose (lowered body, forward chest,
+  pinned ears, squint, head tremble and visible teeth) + `AudioManager.play('growl')` + a small “grrr” bubble.
+  The growl is presentation-only and has no combat effect.
 - `AudioManager` creates/resumes its `AudioContext` inside the PLAY/RESUME clicks (browsers require a gesture). If
   Web Audio is missing or still locked, `play()` does nothing. All sounds are synthesized at play time (`synth.ts`), with
   a little random pitch variation; there are no audio files.

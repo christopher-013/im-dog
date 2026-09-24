@@ -66,6 +66,7 @@ export class Game {
   private readonly nose = new Vector3();
   private readonly screenPoint = new Vector3();
   private barkedThisFrame = false;
+  private growledThisFrame = false;
   private physics: PhysicsWorld | null = null;
   private moke: Moke | null = null;
   private props: Prop[] = [];
@@ -195,20 +196,23 @@ export class Game {
     this.ui.showScreen(next === 'playing' ? null : next);
   }
 
-  private play(): void {
+  private play(captureMouse = true): void {
     if (this.state !== 'menu') return;
     this.audio.unlock(); // inside the PLAY click: browsers only allow sound after a gesture
     this.setState('playing');
     this.followCamera.recenterBehind(this.updateCameraTarget());
-    void this.input.requestPointerLock();
-    this.ui.showToast('WASD to trot · Shift to run · C to walk · F to bark · Q to sniff', 5000);
+    if (captureMouse) void this.input.requestPointerLock();
+    const controls = this.input.gamepad.connected
+      ? 'Left stick move · Right stick look · A interact · B bark · X sniff · Y growl'
+      : 'WASD to trot · Shift to run · C to walk · F bark · G growl · Q sniff';
+    this.ui.showToast(controls, 5000);
   }
 
-  private resume(): void {
+  private resume(captureMouse = true): void {
     if (this.state !== 'paused') return;
     this.audio.unlock();
     this.setState('playing');
-    void this.input.requestPointerLock();
+    if (captureMouse) void this.input.requestPointerLock();
   }
 
   private pause(): void {
@@ -219,15 +223,28 @@ export class Game {
   }
 
   private readonly frame = (dt: number, elapsed: number): void => {
-    this.input.beginFrame();
+    this.input.beginFrame(dt);
     const input = this.input.state;
     if (input.wasPressed('toggleDebug')) this.debug.toggle();
     // With pointer lock, the browser eats Esc and we pause via onPointerLockChange instead.
-    if (input.wasPressed('pause') && this.state === 'playing') this.pause();
+    if (input.wasPressed('pause')) {
+      if (this.state === 'playing') this.pause();
+      else if (this.state === 'paused') this.resume(false);
+    }
+    let enteredPlay = false;
+    if (input.wasPressed('menuConfirm')) {
+      if (this.state === 'menu') {
+        this.play(false);
+        enteredPlay = true;
+      } else if (this.state === 'paused') {
+        this.resume(false);
+        enteredPlay = true;
+      }
+    }
 
     const playing = this.state === 'playing';
     // Discrete actions are read once per rendered frame, so a tap is never missed or doubled.
-    if (playing) this.handleActions();
+    if (playing && !enteredPlay) this.handleActions();
     this.barkTimer.update(playing ? dt : 0);
 
     // The world only advances while playing; menus and pause freeze it.
@@ -246,6 +263,7 @@ export class Game {
     // Walls can force the camera right up against Moke; hide him then rather than render his insides.
     if (this.moke) this.moke.visual.object.visible = !this.followCamera.isInsideTarget;
     if (this.barkedThisFrame) this.showBarkBubble();
+    if (this.growledThisFrame) this.showGrowlBubble();
 
     this.gfx.render(this.scene, this.camera);
     this.frameStats.record(elapsed);
@@ -292,11 +310,16 @@ export class Game {
     if (input.wasPressed('interact')) this.interactions.interact();
     // Any fresh movement key gets him up out of his bed.
     const moved = ['moveForward', 'moveBackward', 'moveLeft', 'moveRight'] as const;
-    if (this.rest.holdsMoke && moved.some((a) => input.wasPressed(a))) this.rest.standUp();
+    if (this.rest.holdsMoke && (input.wasMoveStarted() || moved.some((a) => input.wasPressed(a)))) this.rest.standUp();
     if (input.wasPressed('bark') && this.moke && this.barkTimer.tryBark()) {
       this.moke.animation.bark();
       this.audio.play('bark');
       this.barkedThisFrame = true;
+    }
+    if (input.wasPressed('growl') && this.moke) {
+      this.moke.animation.growl();
+      this.audio.play('growl');
+      this.growledThisFrame = true;
     }
     if (input.wasPressed('sniff') && this.scent.start()) this.audio.play('sniff');
   }
@@ -315,14 +338,24 @@ export class Game {
 
   private showBarkBubble(): void {
     this.barkedThisFrame = false;
-    if (!this.moke) return;
     const words = ['Arf!', 'Woof!', 'Arf!', 'Yip!'];
+    this.showVoiceBubble(words[Math.floor(Math.random() * words.length)]!);
+  }
+
+  private showGrowlBubble(): void {
+    this.growledThisFrame = false;
+    const words = ['grrr…', 'grr!', 'tiny grrr…'];
+    this.showVoiceBubble(words[Math.floor(Math.random() * words.length)]!);
+  }
+
+  private showVoiceBubble(text: string): void {
+    if (!this.moke) return;
     const v = this.screenPoint.copy(this.moke.renderPosition);
     v.y += 0.5;
     v.project(this.camera);
     if (v.z > 1) return; // behind the camera
     const canvas = this.gfx.canvas;
-    this.ui.showBark(((v.x + 1) / 2) * canvas.clientWidth, ((1 - v.y) / 2) * canvas.clientHeight, words[Math.floor(Math.random() * words.length)]!);
+    this.ui.showBark(((v.x + 1) / 2) * canvas.clientWidth, ((1 - v.y) / 2) * canvas.clientHeight, text);
   }
 
   /** Chooses what E would do now and shows it as "E — …" (hidden outside play). */
@@ -423,6 +456,8 @@ export class Game {
       return {
         held: this.input.state.heldActions().join(' ') || '—',
         move: `${move.x.toFixed(2)}, ${move.y.toFixed(2)}`,
+        gamepad: this.input.gamepad.connected ? this.input.gamepad.name : '—',
+        mapping: this.input.gamepad.mapping || '—',
       };
     });
     this.debug.addSection('Camera', () => this.followCamera.debugInfo());

@@ -24,6 +24,11 @@
       .screen.is-active {
         visibility: visible;
       }
+      /* Prevent unstyled loading/HUD content flashing while the module stylesheet downloads. */
+      .screen-loading .stack,
+      #hud {
+        visibility: hidden;
+      }
     </style>
   </head>
   <body>
@@ -182,6 +187,7 @@
         <div class="card">
           <h2 id="controls-title" class="card-title">Controls</h2>
           <ul id="controls-list" class="controls-list"></ul>
+          <p class="controls-note">Controller support uses the standard browser gamepad layout. Press a controller button after connecting it so the browser can detect it.</p>
           <p class="controls-note">Items marked <span class="soon">soon</span> arrive in later milestones.</p>
           <button id="btn-controls-close" class="btn btn-secondary" type="button">GOT IT</button>
         </div>

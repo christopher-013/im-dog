@@ -45,6 +45,8 @@ export interface MokeAnimationState {
   sniff: number;
   /** 0..1: a bark in progress (a quick jolt up that settles). */
   bark: number;
+  /** 0..1: a playful growl pose in progress. */
+  growl: number;
   /** 0..1: lying down (sphinx pose, head resting, sleepy eyes). */
   rest: number;
   /** Seconds since creation, for cyclic motion. */
@@ -64,6 +66,7 @@ export class MokeAnimationController {
     carry: 0,
     sniff: 0,
     bark: 0,
+    growl: 0,
     rest: 0,
     time: 0,
   };
@@ -74,6 +77,7 @@ export class MokeAnimationController {
   private tiltTarget = 0;
   private tiltTimeLeft = 0;
   private sinceBark = Infinity;
+  private sinceGrowl = Infinity;
 
   constructor(
     private readonly tuning: MovementTuning = MOVEMENT,
@@ -112,8 +116,12 @@ export class MokeAnimationController {
     this.sinceBark += dt;
     const b = this.sinceBark / a.barkDuration;
     s.bark = b >= 1 ? 0 : Math.min(1, b * 6) * (1 - b) * (1 - b);
+    // A growl holds longer than a bark: quick mock-ferocious snap in, then a soft release.
+    this.sinceGrowl += dt;
+    const g = this.sinceGrowl / a.growlDuration;
+    s.growl = g >= 1 ? 0 : Math.min(1, g * 9) * Math.min(1, (1 - g) * 5);
     const wag = s.gait === 'idle' ? a.idleTailWag : a.movingTailWag;
-    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark), 3, dt);
+    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8), 3, dt);
 
     const crouchTarget = clamp((a.duckBelowHeadroom - sample.headroom) / a.duckRange, 0, 1);
     s.crouch = damp(s.crouch, crouchTarget, 10, dt);
@@ -123,6 +131,11 @@ export class MokeAnimationController {
   /** A bark just happened (after the gameplay cooldown allowed it). */
   bark(): void {
     this.sinceBark = 0;
+  }
+
+  /** A tiny dog doing his very best to look intimidating. */
+  growl(): void {
+    this.sinceGrowl = 0;
   }
 
   /** Little signs of life while standing: glance around, and now and then a curious head tilt. */

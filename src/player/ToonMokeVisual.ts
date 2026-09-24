@@ -4,6 +4,7 @@ import {
   CapsuleGeometry,
   CatmullRomCurve3,
   CircleGeometry,
+  ConeGeometry,
   DoubleSide,
   ExtrudeGeometry,
   Float32BufferAttribute,
@@ -58,23 +59,28 @@ const FACE = {
 const FACE_CONE = { direction: new Vector3(0, -0.1, 1).normalize(), smooth: 0.62, fade: 0.95 };
 const NOSE_DIR = new Vector3(...FACE.nose).normalize();
 /**
- * Collar, in neck space (so it moves with his head): a flat loop round his neck just under his head, from under his chin at the front to the
- * base of his skull at the back (so it's tilted, lower at the front), with his ears hanging over its sides. It's
- * snug: the fur's outer surface is measured round the loop at build time and the strap sits `sink` inside it,
- * drawn `depthPull` nearer so it shows through the curl tips the way a real collar presses into the fluff.
+ * Collar, in neck space (so it moves with his head): a nearly level loop round his neck immediately beneath the
+ * round head, with his ears and side fur hanging over it. It's snug: the head fur's outer surface is measured round
+ * the loop at build time and the strap sits `sink` inside it. A slight `depthPull` keeps the front edge readable
+ * without drawing the side or back of the strap over the head fur.
  * The bone-shaped tag hangs from a ring at the front.
  */
 const COLLAR = {
-  center: [0, 0.002, -0.012] as Vec3Tuple,
-  tilt: 0.42,
+  // Follow the underside of the round head instead of rising across the back of it.
+  center: [0, -0.045, -0.02] as Vec3Tuple,
+  tilt: 0.08,
   /** Fur within this distance of the collar's plane is measured. */
   slab: 0.005,
   directions: 48,
   halfHeight: 0.0075,
   /** Radial half-thickness of the strap. */
   thickness: 0.003,
-  sink: 0.007,
-  depthPull: 0.009,
+  /** Pull only the front arc back so it ends beneath the chin, before the muzzle begins. */
+  frontInset: 0.01,
+  // Sit down in the coat against the neck instead of following the outer curl tips.
+  sink: 0.024,
+  // Let the head fur naturally hide the side/back of the strap.
+  depthPull: 0.001,
   tag: { width: 0.036, height: 0.022, depth: 0.002, ringRadius: 0.0045 },
 };
 
@@ -202,6 +208,7 @@ export class ToonMokeVisual implements MokeVisual {
   private readonly tagPivot = new Group();
   private readonly mouth: Mesh;
   private readonly tongue: Mesh;
+  private readonly teeth: Mesh;
   private readonly ears: { pivot: Group; side: number }[] = [];
   private readonly legs: Leg[] = [];
   private readonly eyes: Mesh[] = [];
@@ -224,6 +231,7 @@ export class ToonMokeVisual implements MokeVisual {
     const tongue = this.material(createToonMaterial(p.tongueLit, p.tongueShade));
     const lash = this.material(new MeshBasicMaterial({ color: p.eyeRim, toneMapped: false }));
     const mouth = this.material(new MeshBasicMaterial({ color: p.mouth, toneMapped: false }));
+    const teeth = this.material(new MeshBasicMaterial({ color: p.teeth, toneMapped: false }));
     const sparkle = this.material(new MeshBasicMaterial({ color: '#ffffff', toneMapped: false }));
     this.outline = MOKE_LOOK.outline.enabled ? this.material(createOutlineMaterial()) : null;
 
@@ -391,6 +399,25 @@ export class ToonMokeVisual implements MokeVisual {
     this.mouth.visible = false;
     this.tongue = this.part(this.head, this.geometry(new SphereGeometry(1, 16, 10)), tongue, [0, mouthY - 0.007, mouthZ + 0.003], [0.009, 0.004, 0.012]);
     this.tongue.visible = false;
+    const tooth = (x: number, y: number, upsideDown: boolean): BufferGeometry => {
+      const geometry = new ConeGeometry(0.0027, 0.007, 8);
+      if (upsideDown) geometry.rotateZ(Math.PI);
+      return placed(geometry, [x, y, mouthZ + 0.009]);
+    };
+    this.teeth = this.part(
+      this.head,
+      this.geometry(merged([
+        tooth(-0.006, mouthY + 0.004, true),
+        tooth(0.006, mouthY + 0.004, true),
+        tooth(-0.004, mouthY - 0.004, false),
+        tooth(0.004, mouthY - 0.004, false),
+      ])),
+      teeth,
+      [0, 0, 0],
+    );
+    this.teeth.name = 'growlTeeth';
+    this.teeth.castShadow = false;
+    this.teeth.visible = false;
     this.mouthSocket.position.set(0, mouthY, 0.15);
     this.head.add(this.mouthSocket);
 
@@ -432,14 +459,14 @@ export class ToonMokeVisual implements MokeVisual {
     this.collar.position.set(...COLLAR.center);
     this.collar.rotation.x = COLLAR.tilt;
     this.neck.add(this.collar);
-    const loop = this.measureNeck([headFur, this.body]);
+    const loop = this.measureNeck([headFur]);
     const { geometry: strapShape, outward } = strapGeometry(loop, COLLAR.halfHeight, COLLAR.thickness);
     const band = this.part(this.collar, this.geometry(strapShape), strap, [0, 0, 0]);
     band.name = 'collar';
     band.castShadow = false;
     const { width: tagW, height: tagH, depth: tagD, ringRadius } = COLLAR.tag;
-    // The ring and tag sit on the fur, not in it.
-    const front = loop[0]!.clone().addScaledVector(outward[0]!, COLLAR.thickness + COLLAR.sink);
+    // Attach the ring to the outside face of the strap; do not push it beyond the collar loop.
+    const front = loop[0]!.clone().addScaledVector(outward[0]!, COLLAR.thickness);
     this.tagPivot.position.set(front.x, front.y - COLLAR.halfHeight * 0.5, front.z);
     this.collar.add(this.tagPivot);
     // A small D-ring on the strap and the split ring the tag hangs from.
@@ -517,24 +544,24 @@ export class ToonMokeVisual implements MokeVisual {
     this.body.scale.y = 1 + (1 - moving) * 0.02 * Math.sin(s.time * 2.6); // breathing
 
     this.rig.rotation.z = -s.lean;
-    // A bark is a little hop from the front paws; lying lowers him onto his tummy.
-    this.rig.position.y = -s.crouch * 0.03 + s.bark * 0.018 - s.rest * 0.105;
-    this.rig.rotation.x = -s.bark * 0.08;
+    // A bark is a little hop; a growl plants him low and pushes his chest forward.
+    this.rig.position.y = -s.crouch * 0.03 + s.bark * 0.018 - s.growl * 0.008 - s.rest * 0.105;
+    this.rig.rotation.x = -s.bark * 0.08 + s.growl * 0.045;
 
     this.neck.position.y = NECK_HEIGHT - s.crouch * 0.05 - bob * 0.5 - s.rest * 0.03;
     const a = MOKE_ANIMATION;
     // Sniffing: nose down with quick little twitches.
     const twitch = s.sniff * 0.05 * Math.sin(s.time * 26) * (0.5 + 0.5 * Math.sin(s.time * 3.1));
     this.neck.rotation.x =
-      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch - s.bark * 0.35 + s.rest * 0.22;
+      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch - s.bark * 0.35 + s.growl * 0.16 + s.rest * 0.22;
     this.head.rotation.y = s.headYaw * (1 - 0.5 * s.sniff) + s.sniff * 0.25 * Math.sin(s.time * 1.7);
-    this.head.rotation.z = -s.headTilt;
+    this.head.rotation.z = -s.headTilt + s.growl * 0.018 * Math.sin(s.time * 28);
 
     const flop = moving * 0.1 * Math.sin(2 * p + 1.2);
     for (const ear of this.ears) {
       // Drop ears: they bounce and sweep back at speed rather than sticking out sideways.
-      ear.pivot.rotation.z = ear.side * (0.12 + flop + s.runBlend * 0.15 - s.bark * 0.25 - s.sniff * 0.08);
-      ear.pivot.rotation.x = s.runBlend * 0.6 - s.bark * 0.3;
+      ear.pivot.rotation.z = ear.side * (0.12 + flop + s.runBlend * 0.15 - s.bark * 0.25 - s.sniff * 0.08 - s.growl * 0.16);
+      ear.pivot.rotation.x = s.runBlend * 0.6 - s.bark * 0.3 - s.growl * 0.38;
     }
 
     // The tag hangs down whatever his head does, and jingles a little as he trots.
@@ -547,7 +574,7 @@ export class ToonMokeVisual implements MokeVisual {
     this.tail.rotation.x = 0.35 - s.runBlend * 0.9 - s.rest * 1.1 - s.crouch * 1.2;
 
     // Eyes: idle blinks; closed while resting, a little squint while sniffing or barking.
-    const eyeOpen = (1 - this.blink(dt)) * (1 - 0.9 * s.rest) * (1 - 0.35 * s.sniff) * (1 - 0.4 * s.bark);
+    const eyeOpen = (1 - this.blink(dt)) * (1 - 0.9 * s.rest) * (1 - 0.35 * s.sniff) * (1 - 0.4 * s.bark) * (1 - 0.5 * s.growl);
     const shut = eyeOpen < 0.3;
     for (const eye of this.eyes) {
       eye.visible = !shut;
@@ -555,9 +582,11 @@ export class ToonMokeVisual implements MokeVisual {
     }
     for (const lid of this.lids) lid.visible = shut;
 
-    // Mouth open for a bark (tongue out), or panting at a run; closed on a carried item.
-    const open = s.carry < 0.5 ? Math.max(s.bark, s.runBlend > 0.25 ? 0.7 : 0) : 0;
-    this.mouth.visible = this.tongue.visible = open > 0.05;
+    // A growl reveals four tiny teeth; bark/panting shows the tongue instead.
+    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0) : 0;
+    this.mouth.visible = open > 0.05;
+    this.tongue.visible = open > 0.05 && s.growl < 0.2;
+    this.teeth.visible = s.carry < 0.5 && s.growl > 0.05;
     this.mouth.scale.y = 0.004 + 0.008 * open;
   }
 
@@ -582,14 +611,14 @@ export class ToonMokeVisual implements MokeVisual {
   }
 
   /**
-   * The fur's outer surface round the collar, measured in the build pose: every fur vertex of his head and body
+   * The head fur's outer surface round the collar, measured in the build pose: every nearby fur vertex
    * near the collar's plane is binned by direction, keeping the outermost per direction (and its neighbours, so
    * sparse bins don't mislead). Smoothed round the loop, then the strap sits `sink` inside it.
    * Points are in collar space, starting straight ahead (+z) and going round.
    */
   private measureNeck(fur: Mesh[]): Vector3[] {
     this.object.updateMatrixWorld(true);
-    const { directions, slab, sink, thickness } = COLLAR;
+    const { directions, slab, sink, thickness, frontInset } = COLLAR;
     const outer = new Float32Array(directions);
     const toCollar = new Matrix4();
     const fromWorld = this.collar.matrixWorld.clone().invert();
@@ -618,7 +647,8 @@ export class ToonMokeVisual implements MokeVisual {
         }
       }
       const angle = (i / directions) * TAU;
-      const r = (count ? sum / count : 0.08) - sink + thickness;
+      const towardFront = Math.max(0, Math.cos(angle));
+      const r = (count ? sum / count : 0.08) - sink + thickness - frontInset * towardFront * towardFront;
       return new Vector3(Math.sin(angle) * r, 0, Math.cos(angle) * r);
     });
   }

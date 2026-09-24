@@ -26,6 +26,8 @@ export const MOKE_ANIMATION = {
   sniffHeadDip: 0.45,
   /** How long a bark's body language lasts (s). */
   barkDuration: 0.38,
+  /** How long the mock-tough growl pose lasts (s). */
+  growlDuration: 1.15,
   /** Responsiveness of lying down / getting up (per second). */
   lieDownRate: 4,
   getUpRate: 9,

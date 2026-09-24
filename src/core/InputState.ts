@@ -1,0 +1,176 @@
+import type { Action } from '../config/input';
+
+export interface Vec2Like {
+  x: number;
+  y: number;
+}
+
+/**
+ * DOM-free input state. Input sources (keyboard + mouse today, gamepad later) feed it raw
+ * key ids and mouse deltas; gameplay reads actions, a movement axis and a look delta.
+ *
+ * Call beginFrame() once per rendered frame. Press/release edges and the look delta then hold
+ * for that whole frame, so a quick tap is never missed and never counted twice, however many
+ * fixed simulation steps the frame runs.
+ */
+export class InputState {
+  private readonly actionsByKey = new Map<string, Action[]>();
+  private readonly keysDown = new Set<string>();
+  /** How many held keys currently drive each action (two Shift keys, W + ArrowUp, ...). */
+  private readonly heldCount = new Map<Action, number>();
+
+  private pendingPressed = new Set<Action>();
+  private framePressed = new Set<Action>();
+  private pendingReleased = new Set<Action>();
+  private frameReleased = new Set<Action>();
+
+  private pendingLookX = 0;
+  private pendingLookY = 0;
+  private lookX = 0;
+  private lookY = 0;
+
+  constructor(bindings: Readonly<Record<Action, readonly string[]>>) {
+    for (const [action, keys] of Object.entries(bindings) as [Action, readonly string[]][]) {
+      for (const key of keys) {
+        const actions = this.actionsByKey.get(key) ?? [];
+        actions.push(action);
+        this.actionsByKey.set(key, actions);
+      }
+    }
+  }
+
+  /** Returns true if the key is bound to something (so the caller can suppress browser defaults). */
+  keyDown(key: string): boolean {
+    const actions = this.actionsByKey.get(key);
+    if (!actions) return false;
+    if (this.keysDown.has(key)) return true; // OS auto-repeat
+    this.keysDown.add(key);
+    for (const action of actions) {
+      const count = this.heldCount.get(action) ?? 0;
+      this.heldCount.set(action, count + 1);
+      if (count === 0) this.pendingPressed.add(action);
+    }
+    return true;
+  }
+
+  keyUp(key: string): void {
+    if (!this.keysDown.delete(key)) return;
+    for (const action of this.actionsByKey.get(key) ?? []) {
+      const count = (this.heldCount.get(action) ?? 1) - 1;
+      if (count > 0) {
+        this.heldCount.set(action, count);
+      } else {
+        this.heldCount.delete(action);
+        this.pendingReleased.add(action);
+      }
+    }
+  }
+
+  addLook(dx: number, dy: number): void {
+    this.pendingLookX += dx;
+    this.pendingLookY += dy;
+  }
+
+  /** Releases everything, e.g. when the window loses focus and keyup events would be lost. */
+  releaseAll(): void {
+    for (const key of [...this.keysDown]) this.keyUp(key);
+    this.pendingLookX = 0;
+    this.pendingLookY = 0;
+  }
+
+  beginFrame(): void {
+    [this.framePressed, this.pendingPressed] = [this.pendingPressed, this.framePressed];
+    this.pendingPressed.clear();
+    [this.frameReleased, this.pendingReleased] = [this.pendingReleased, this.frameReleased];
+    this.pendingReleased.clear();
+
+    this.lookX = this.pendingLookX;
+    this.lookY = this.pendingLookY;
+    this.pendingLookX = 0;
+    this.pendingLookY = 0;
+  }
+
+  isDown(action: Action): boolean {
+    return this.heldCount.has(action);
+  }
+
+  /** True during the frame in which the action went from up to down. */
+  wasPressed(action: Action): boolean {
+    return this.framePressed.has(action);
+  }
+
+  wasReleased(action: Action): boolean {
+    return this.frameReleased.has(action);
+  }
+
+  /** Movement intent: x = right, y = forward. Diagonals are normalized so they aren't faster. */
+  getMoveAxis(out: Vec2Like): Vec2Like {
+    const x = (this.isDown('moveRight') ? 1 : 0) - (this.isDown('moveLeft') ? 1 : 0);
+    const y = (this.isDown('moveForward') ? 1 : 0) - (this.isDown('moveBackward') ? 1 : 0);
+    const length = Math.hypot(x, y);
+    const scale = length > 1 ? 1 / length : 1;
+    out.x = x * scale;
+    out.y = y * scale;
+    return out;
+  }
+
+  /** Mouse movement this frame, in pixels (x = right, y = down). */
+  getLookDelta(out: Vec2Like): Vec2Like {
+    out.x = this.lookX;
+    out.y = this.lookY;
+    return out;
+  }
+
+  heldActions(): Action[] {
+    return [...this.heldCount.keys()];
+  }
+}
+
+const KEY_NAMES: Readonly<Record<string, string>> = {
+  ShiftLeft: 'Shift',
+  ShiftRight: 'Shift',
+  ControlLeft: 'Ctrl',
+  ControlRight: 'Ctrl',
+  AltLeft: 'Alt',
+  AltRight: 'Alt',
+  Space: 'Space',
+  Escape: 'Esc',
+  Backquote: '`',
+  Enter: 'Enter',
+  Tab: 'Tab',
+  ArrowUp: '↑',
+  ArrowDown: '↓',
+  ArrowLeft: '←',
+  ArrowRight: '→',
+};
+
+/** Human label for a KeyboardEvent.code, e.g. 'KeyW' → 'W'. */
+export function keyLabel(code: string): string {
+  if (code.startsWith('Key')) return code.slice(3);
+  if (code.startsWith('Digit')) return code.slice(5);
+  return KEY_NAMES[code] ?? code;
+}
+
+const CODE_FOR_KEY: Readonly<Record<string, string>> = {
+  '`': 'Backquote',
+  '~': 'Backquote',
+  ' ': 'Space',
+  Shift: 'ShiftLeft',
+  Escape: 'Escape',
+  Enter: 'Enter',
+  Tab: 'Tab',
+  ArrowUp: 'ArrowUp',
+  ArrowDown: 'ArrowDown',
+  ArrowLeft: 'ArrowLeft',
+  ArrowRight: 'ArrowRight',
+};
+
+/**
+ * Some synthetic, remote-desktop or assistive-tech key events arrive with an empty
+ * KeyboardEvent.code. Recover a best-guess code from KeyboardEvent.key instead.
+ */
+export function codeFromKey(key: string): string {
+  if (/^[a-z]$/i.test(key)) return `Key${key.toUpperCase()}`;
+  if (/^[0-9]$/.test(key)) return `Digit${key}`;
+  return CODE_FOR_KEY[key] ?? '';
+}

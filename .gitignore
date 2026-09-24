@@ -1,0 +1,37 @@
+# Dependencies & build output
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+coverage/
+
+# Private Moke reference photos stay local (see reference/moke/README.md)
+reference/moke/*
+!reference/moke/README.md
+
+# Logs & temp files
+*.log
+npm-debug.log*
+*.tmp
+*.temp
+*.swp
+*~
+
+# Env files
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# Editors / IDEs
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.sublime-workspace
+
+# Local Claude Code settings
+.claude/settings.local.json

@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="I'M DOG? A Day in the Life of Moke. A cozy third-person browser game about being a small, curious dog."
+    />
+    <meta name="theme-color" content="#fbf1e4" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>I'M DOG?</title>
+    <style>
+      /* Critical styles: paint the loading screen before the JS/CSS bundle arrives. */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #fbf1e4;
+      }
+      .screen {
+        visibility: hidden;
+      }
+      .screen.is-active {
+        visibility: visible;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Shared vector art: Moke's face (the "O" in the logo) and a paw. -->
+    <svg class="sprite" aria-hidden="true" width="0" height="0">
+      <defs>
+        <g id="moke-fluff">
+          <circle cx="50" cy="52" r="33" />
+          <circle cx="50" cy="18" r="14" />
+          <circle cx="32" cy="23" r="13" />
+          <circle cx="68" cy="23" r="13" />
+          <circle cx="21" cy="36" r="12" />
+          <circle cx="79" cy="36" r="12" />
+          <circle cx="16" cy="56" r="15" />
+          <circle cx="84" cy="56" r="15" />
+          <circle cx="20" cy="73" r="13" />
+          <circle cx="80" cy="73" r="13" />
+          <circle cx="34" cy="82" r="12" />
+          <circle cx="50" cy="86" r="12" />
+          <circle cx="66" cy="82" r="12" />
+        </g>
+        <symbol id="moke-face" viewBox="-4 -4 108 108">
+          <use href="#moke-fluff" fill="#2b2530" stroke="#2b2530" stroke-width="7" />
+          <use href="#moke-fluff" fill="#ffffff" />
+          <g fill="#f4e6d3">
+            <circle cx="16" cy="56" r="15" />
+            <circle cx="84" cy="56" r="15" />
+            <circle cx="20" cy="73" r="13" />
+            <circle cx="80" cy="73" r="13" />
+          </g>
+          <circle cx="50" cy="52" r="31" fill="#ffffff" />
+          <g fill="#f3a594" opacity="0.5">
+            <circle cx="28" cy="66" r="5.5" />
+            <circle cx="72" cy="66" r="5.5" />
+          </g>
+          <g fill="#2a1b17">
+            <circle cx="37" cy="53" r="6.2" />
+            <circle cx="63" cy="53" r="6.2" />
+          </g>
+          <g fill="#ffffff">
+            <circle cx="39.3" cy="50.8" r="2.1" />
+            <circle cx="65.3" cy="50.8" r="2.1" />
+          </g>
+          <ellipse cx="50" cy="65" rx="7" ry="5.2" fill="#1d1614" />
+          <ellipse cx="47.6" cy="63.3" rx="2.2" ry="1.3" fill="#ffffff" opacity="0.55" />
+          <path
+            d="M50 70v3.5M42.5 73q4 4.5 7.5 0.5q3.5 4 7.5-0.5"
+            fill="none"
+            stroke="#2b2530"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </symbol>
+        <symbol id="paw" viewBox="0 0 24 24">
+          <ellipse cx="12" cy="16" rx="5.2" ry="4.3" />
+          <ellipse cx="5.4" cy="10.4" rx="2.2" ry="2.8" transform="rotate(-20 5.4 10.4)" />
+          <ellipse cx="9.6" cy="6.2" rx="2.3" ry="3" />
+          <ellipse cx="14.4" cy="6.2" rx="2.3" ry="3" />
+          <ellipse cx="18.6" cy="10.4" rx="2.2" ry="2.8" transform="rotate(20 18.6 10.4)" />
+        </symbol>
+      </defs>
+    </svg>
+
+    <div id="app">
+      <div id="viewport"></div>
+
+      <div id="hud">
+        <div id="pointer-hint" class="pointer-hint">Click the room to look around</div>
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      </div>
+
+      <section id="screen-loading" class="screen screen-loading is-active" aria-label="Loading">
+        <div class="stack">
+          <p class="logo logo-small" aria-label="I'M DOG?">
+            <span class="logo-word" aria-hidden="true">I'M</span>
+            <span class="logo-word" aria-hidden="true"
+              >D<svg class="logo-o"><use href="#moke-face" /></svg>G<span class="logo-q">?</span></span
+            >
+          </p>
+          <p class="loading-title">Loading…</p>
+          <div
+            id="loading-track"
+            class="loading-track"
+            role="progressbar"
+            aria-label="Loading progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div id="loading-fill" class="loading-fill"></div>
+          </div>
+          <p id="loading-detail" class="loading-detail"></p>
+        </div>
+      </section>
+
+      <section id="screen-menu" class="screen screen-menu" aria-label="Start menu">
+        <div class="stack">
+          <p class="tag-jp" lang="ja">アイム・ドッグ？</p>
+          <h1 class="logo" aria-label="I'M DOG?">
+            <span class="logo-word" aria-hidden="true">I'M</span>
+            <span class="logo-word" aria-hidden="true"
+              >D<svg class="logo-o"><use href="#moke-face" /></svg>G<span class="logo-q">?</span></span
+            >
+          </h1>
+          <p class="subtitle">A Day in the Life of Moke</p>
+          <div class="menu-buttons">
+            <button id="btn-play" class="btn btn-primary" type="button">
+              <svg class="btn-icon" aria-hidden="true"><use href="#paw" /></svg>PLAY
+            </button>
+            <button class="btn btn-secondary" type="button" data-open-controls>CONTROLS</button>
+          </div>
+        </div>
+        <p class="footnote">Phase 1 prototype</p>
+      </section>
+
+      <section id="screen-pause" class="screen screen-pause" aria-label="Paused">
+        <div class="card stack">
+          <h2 class="card-title">Paused</h2>
+          <p class="card-text">Moke is waiting patiently.</p>
+          <div class="menu-buttons">
+            <button id="btn-resume" class="btn btn-primary" type="button">RESUME</button>
+            <button class="btn btn-secondary" type="button" data-open-controls>CONTROLS</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-error" class="screen screen-error" aria-label="Error">
+        <div class="card stack" role="alert">
+          <svg class="error-face" aria-hidden="true"><use href="#moke-face" /></svg>
+          <h2 class="card-title">Moke can't find the living room</h2>
+          <p id="error-detail" class="card-text"></p>
+          <button id="btn-retry" class="btn btn-secondary" type="button">TRY AGAIN</button>
+        </div>
+      </section>
+
+      <dialog id="controls-dialog" class="controls-dialog" aria-labelledby="controls-title">
+        <div class="card">
+          <h2 id="controls-title" class="card-title">Controls</h2>
+          <ul id="controls-list" class="controls-list"></ul>
+          <p class="controls-note">Items marked <span class="soon">soon</span> arrive in later milestones.</p>
+          <button id="btn-controls-close" class="btn btn-secondary" type="button">GOT IT</button>
+        </div>
+      </dialog>
+    </div>
+
+    <noscript>I'M DOG? needs JavaScript to run.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

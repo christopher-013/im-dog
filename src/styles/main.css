@@ -1,0 +1,552 @@
+/* I'M DOG? — UI overlay styles. Palette: warm cream, cocoa ink, coral, and leaf green. */
+
+:root {
+  --cream: #fbf1e4;
+  --cream-deep: #f1dfc7;
+  --paper: #fffaf3;
+  --ink: #2b2530;
+  --ink-soft: #76645c;
+  --coral: #ef7459;
+  --coral-deep: #c9573f;
+  --leaf: #3f8c67;
+  --leaf-soft: #dcebdc;
+  --shadow: rgba(43, 37, 48, 0.16);
+  --font-display: 'Fredoka Variable', 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', 'Segoe UI', system-ui,
+    sans-serif;
+  --font-jp: 'Hiragino Maru Gothic ProN', 'Yu Gothic UI', 'Yu Gothic', Meiryo, sans-serif;
+  --pill: 999px;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-display);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sprite {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+#viewport {
+  position: absolute;
+  inset: 0;
+}
+
+#viewport canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+}
+
+/* ---------- Screens ---------- */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.4s ease,
+    visibility 0s linear 0.4s;
+}
+
+.screen.is-active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.4s ease;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+/* ---------- Logo ---------- */
+
+.logo {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.26em;
+  font-size: clamp(56px, 10.5vw, 140px);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink);
+  filter: drop-shadow(0 0.045em 0 var(--shadow));
+}
+
+.logo-word {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+/* The "O" is Moke's round, fluffy head. It does a little head tilt now and then. */
+.logo-o {
+  width: 0.9em;
+  height: 0.9em;
+  margin: 0 0.01em -0.08em;
+  overflow: visible;
+  transform-origin: 50% 85%;
+  animation: head-tilt 6s ease-in-out infinite;
+}
+
+.logo-q {
+  display: inline-block;
+  margin-left: -0.02em;
+  color: var(--coral);
+  transform-origin: 40% 90%;
+  rotate: 12deg;
+  animation: question-tilt 6s ease-in-out infinite;
+}
+
+@keyframes head-tilt {
+  0%,
+  70%,
+  100% {
+    rotate: 0deg;
+  }
+  76%,
+  86% {
+    rotate: -10deg;
+  }
+  92% {
+    rotate: 2deg;
+  }
+}
+
+@keyframes question-tilt {
+  0%,
+  70%,
+  100% {
+    rotate: 12deg;
+  }
+  76%,
+  86% {
+    rotate: 22deg;
+  }
+  92% {
+    rotate: 10deg;
+  }
+}
+
+/* ---------- Loading ---------- */
+
+.screen-loading {
+  z-index: 20;
+  background: radial-gradient(120% 90% at 50% 40%, var(--paper) 0%, var(--cream) 55%, var(--cream-deep) 100%);
+}
+
+.logo-small {
+  font-size: clamp(44px, 7vw, 84px);
+}
+
+.loading-title {
+  margin: 10px 0 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.loading-track {
+  width: min(320px, 70vw);
+  height: 12px;
+  overflow: hidden;
+  border-radius: var(--pill);
+  background: var(--cream-deep);
+  box-shadow: inset 0 2px 0 var(--shadow);
+}
+
+.loading-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--coral);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.35s ease;
+}
+
+.loading-detail {
+  margin: 0;
+  min-height: 1.4em;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- Start menu ---------- */
+
+.screen-menu {
+  background: radial-gradient(
+    60% 65% at 50% 48%,
+    rgba(255, 249, 240, 0.92) 0%,
+    rgba(255, 249, 240, 0.78) 45%,
+    rgba(255, 249, 240, 0.12) 100%
+  );
+}
+
+.tag-jp {
+  margin: 0;
+  padding: 0.4em 0.7em 0.4em 1.1em;
+  border-radius: var(--pill);
+  background: var(--leaf-soft);
+  color: var(--leaf);
+  font-family: var(--font-jp);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.4em;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: clamp(18px, 2.2vw, 26px);
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(280px, 78vw);
+  margin-top: 20px;
+}
+
+.footnote {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0.85em 1.6em;
+  border: 0;
+  border-radius: var(--pill);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--leaf);
+  outline-offset: 4px;
+}
+
+.btn-icon {
+  width: 1.1em;
+  height: 1.1em;
+  fill: currentColor;
+  rotate: -12deg;
+}
+
+.btn-primary {
+  background: var(--coral);
+  color: #fff;
+  box-shadow: 0 6px 0 var(--coral-deep);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 0 var(--coral-deep);
+}
+
+.btn-primary:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--coral-deep);
+}
+
+.btn-secondary {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow:
+    inset 0 0 0 2.5px var(--ink),
+    0 5px 0 var(--shadow);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 0 0 2.5px var(--ink),
+    0 7px 0 var(--shadow);
+}
+
+.btn-secondary:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 0 0 2.5px var(--ink),
+    0 2px 0 var(--shadow);
+}
+
+/* ---------- Cards: pause, error, controls ---------- */
+
+.card {
+  max-width: calc(100vw - 32px);
+  padding: 30px 34px;
+  border-radius: 28px;
+  background: var(--paper);
+  box-shadow:
+    0 8px 0 var(--shadow),
+    0 24px 60px rgba(43, 37, 48, 0.18);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.card-text {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+.screen-pause {
+  background: rgba(251, 241, 228, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.screen-error {
+  z-index: 30;
+  background: var(--cream);
+}
+
+.error-face {
+  width: 96px;
+  height: 96px;
+  rotate: -10deg;
+}
+
+.controls-dialog {
+  max-width: none;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-display);
+}
+
+.controls-dialog::backdrop {
+  background: rgba(43, 37, 48, 0.35);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+
+.controls-dialog .card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(480px, calc(100vw - 32px));
+}
+
+.controls-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.control-row {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.control-keys {
+  display: flex;
+  gap: 5px;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.9em;
+  padding: 0.18em 0.5em;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 2px var(--ink),
+    0 3px 0 var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.control-label {
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.control-row.is-soon kbd,
+.control-row.is-soon .control-label {
+  opacity: 0.5;
+}
+
+.soon {
+  padding: 0.25em 0.65em;
+  border-radius: var(--pill);
+  background: var(--cream-deep);
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.controls-note {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+/* ---------- In-game HUD ---------- */
+
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  bottom: 36px;
+  max-width: calc(100vw - 32px);
+  padding: 0.65em 1.25em;
+  border-radius: var(--pill);
+  background: rgba(43, 37, 48, 0.8);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.pointer-hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  padding: 0.7em 1.3em;
+  border-radius: var(--pill);
+  background: rgba(255, 250, 243, 0.92);
+  box-shadow: 0 5px 0 var(--shadow);
+  font-weight: 600;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.25s ease;
+}
+
+.pointer-hint.is-visible {
+  opacity: 1;
+}
+
+/* ---------- Debug panel ---------- */
+
+#debug-panel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 50;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(24, 20, 28, 0.8);
+  color: #eaf6ec;
+  font: 12px/1.45 ui-monospace, 'Cascadia Mono', Consolas, Menlo, monospace;
+  white-space: pre;
+  pointer-events: none;
+}
+
+/* ---------- Small / short windows & reduced motion ---------- */
+
+@media (max-height: 560px) {
+  .stack {
+    gap: 8px;
+  }
+  .menu-buttons {
+    margin-top: 8px;
+  }
+  .footnote {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-o,
+  .logo-q {
+    animation: none;
+  }
+  .screen,
+  .toast,
+  .btn,
+  .loading-fill,
+  .pointer-hint {
+    transition-duration: 0.01s;
+  }
+}

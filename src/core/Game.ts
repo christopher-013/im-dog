@@ -1,16 +1,28 @@
 import { Color, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { MoveBasis } from '../camera/MoveBasis';
 import { ThirdPersonCamera, type CameraInput, type CameraTarget } from '../camera/ThirdPersonCamera';
+import { AudioManager } from '../audio/AudioManager';
 import { ASSET_MANIFEST } from '../config/assets';
 import { CAMERA } from '../config/camera';
 import { CAMERA_LENS, RENDER } from '../config/engine';
 import { MOKE_BODY } from '../config/movement';
+import { SNIFF } from '../config/senses';
+import { InteractionSystem } from '../interactions/InteractionSystem';
+import { PickupSystem } from '../interactions/PickupSystem';
+import { RestSystem } from '../interactions/RestSystem';
+import { REST } from '../config/interaction';
 import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
+import { BarkTimer } from '../player/Bark';
 import type { MoveIntent } from '../player/Locomotion';
 import { Moke } from '../player/Moke';
 import { MokeController } from '../player/MokeController';
 import { createMokeVisual } from '../player/MokeVisual';
+import type { Prop } from '../props/Prop';
+import { createRoomProps } from '../props/roomProps';
+import { createRoomScents } from '../senses/roomScents';
+import { ScentSystem } from '../senses/ScentSystem';
+import { ScentWisps } from '../senses/ScentWisps';
 import { DebugPanel, FrameStats, type DebugValues } from '../ui/DebugPanel';
 import type { UIManager } from '../ui/UIManager';
 import { LivingRoom } from '../world/LivingRoom';
@@ -44,14 +56,26 @@ export class Game {
   private readonly room = new LivingRoom();
   private readonly followCamera: ThirdPersonCamera;
   private readonly moveBasis = new MoveBasis();
+  private readonly interactions = new InteractionSystem();
+  private readonly scent = new ScentSystem();
+  private readonly wisps = new ScentWisps();
+  private readonly barkTimer = new BarkTimer();
+  private readonly audio = new AudioManager();
+  private readonly nose = new Vector3();
+  private readonly screenPoint = new Vector3();
+  private barkedThisFrame = false;
   private physics: PhysicsWorld | null = null;
   private moke: Moke | null = null;
+  private props: Prop[] = [];
+  private pickup: PickupSystem<Prop> | null = null;
+  private readonly rest: RestSystem;
 
   private readonly lookDelta: Vec2Like = { x: 0, y: 0 };
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
   private readonly moveIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
+  private readonly stillIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
   private readonly cameraInput: CameraInput = { lookX: 0, lookY: 0, zoom: 0 };
-  private readonly cameraTarget: CameraTarget = { position: new Vector3(), heading: 0, speed: 0, headroom: Infinity };
+  private readonly cameraTarget: CameraTarget = { position: new Vector3(), heading: 0, speed: 0, headroom: Infinity, rest: 0 };
 
   constructor(
     viewport: HTMLElement,
@@ -62,8 +86,15 @@ export class Game {
     this.debug = new DebugPanel(viewport.parentElement ?? document.body);
     this.loop = new GameLoop(this.gfx.renderer, this.frame);
 
+    const { dogBed, dogBedFront } = this.room.landmarks;
+    this.rest = new RestSystem(this.interactions, {
+      id: 'dogBed',
+      position: dogBed,
+      facing: Math.atan2(dogBedFront.x - dogBed.x, dogBedFront.z - dogBed.z),
+    });
+
     this.scene.background = new Color(RENDER.background);
-    this.scene.add(new RoomLighting().object, this.room.object);
+    this.scene.add(new RoomLighting().object, this.room.object, this.wisps.object);
     applySoftEnvironment(this.gfx.renderer, this.scene);
     this.followCamera = new ThirdPersonCamera(this.camera, this.updateCameraTarget());
 
@@ -101,7 +132,8 @@ export class Game {
     physics.addStaticBoxes(this.room.colliders);
     physics.commitStaticGeometry();
     this.physics = physics;
-    this.moke = this.spawnMoke(physics);
+    const moke = (this.moke = this.spawnMoke(physics));
+    this.spawnProps(physics, moke);
     this.followCamera.collider = physics;
     this.followCamera.snapBehind(this.updateCameraTarget());
 
@@ -118,6 +150,8 @@ export class Game {
   dispose(): void {
     this.loop.stop();
     this.input.dispose();
+    this.audio.dispose();
+    this.wisps.dispose();
     this.moke?.visual.dispose();
     this.gfx.dispose();
   }
@@ -130,6 +164,28 @@ export class Game {
     return moke;
   }
 
+  /** The loose props, and carrying them: the view rides in the mouth socket, physics stays out of it. */
+  private spawnProps(physics: PhysicsWorld, moke: Moke): void {
+    this.props = createRoomProps(physics, this.room);
+    for (const prop of this.props) this.scene.add(prop.view);
+    const pickup = new PickupSystem<Prop>(this.interactions, moke.controller, (origin, direction, max) =>
+      physics.rayDistance(origin, direction, max),
+    );
+    for (const prop of this.props) pickup.add(prop);
+    pickup.onPickUp = (prop) => {
+      prop.holdIn(moke.visual.mouthSocket);
+      moke.carrying = true;
+      this.audio.play('pickup');
+    };
+    pickup.onDrop = (prop) => {
+      prop.release(this.scene);
+      moke.carrying = false;
+      this.audio.play('drop');
+    };
+    this.pickup = pickup;
+    for (const source of createRoomScents(this.room, this.props)) this.scent.register(source);
+  }
+
   private setState(next: GameState): void {
     this.state = next;
     this.input.gameplayFocus = next === 'playing';
@@ -139,14 +195,16 @@ export class Game {
 
   private play(): void {
     if (this.state !== 'menu') return;
+    this.audio.unlock(); // inside the PLAY click: browsers only allow sound after a gesture
     this.setState('playing');
     this.followCamera.recenterBehind(this.updateCameraTarget());
     void this.input.requestPointerLock();
-    this.ui.showToast('WASD to trot · hold Shift to run · hold C to walk · mouse to look', 5000);
+    this.ui.showToast('WASD to trot · Shift to run · C to walk · F to bark · Q to sniff', 5000);
   }
 
   private resume(): void {
     if (this.state !== 'paused') return;
+    this.audio.unlock();
     this.setState('playing');
     void this.input.requestPointerLock();
   }
@@ -165,11 +223,19 @@ export class Game {
     // With pointer lock, the browser eats Esc and we pause via onPointerLockChange instead.
     if (input.wasPressed('pause') && this.state === 'playing') this.pause();
 
-    // The world only advances while playing; menus and pause freeze it.
-    const alpha = this.fixedStep.advance(this.state === 'playing' ? dt : 0, this.fixedUpdate);
-    this.moke?.update(dt, alpha);
-
     const playing = this.state === 'playing';
+    // Discrete actions are read once per rendered frame, so a tap is never missed or doubled.
+    if (playing) this.handleActions();
+    this.barkTimer.update(playing ? dt : 0);
+
+    // The world only advances while playing; menus and pause freeze it.
+    const alpha = this.fixedStep.advance(playing ? dt : 0, this.fixedUpdate);
+    this.moke?.update(dt, alpha);
+    for (const prop of this.props) prop.render(alpha);
+    this.updateInteractionPrompt(playing);
+    this.updateSniff(playing ? dt : 0, playing);
+    this.ui.setResting(playing && this.rest.lying);
+
     input.getLookDelta(this.lookDelta);
     this.cameraInput.lookX = playing ? this.lookDelta.x : 0;
     this.cameraInput.lookY = playing ? this.lookDelta.y : 0;
@@ -177,6 +243,7 @@ export class Game {
     this.followCamera.update(dt, this.cameraInput, this.updateCameraTarget());
     // Walls can force the camera right up against Moke; hide him then rather than render his insides.
     if (this.moke) this.moke.visual.object.visible = !this.followCamera.isInsideTarget;
+    if (this.barkedThisFrame) this.showBarkBubble();
 
     this.gfx.render(this.scene, this.camera);
     this.frameStats.record(dt);
@@ -185,9 +252,18 @@ export class Game {
 
   private readonly fixedUpdate = (step: number): void => {
     if (!this.moke || !this.physics) return;
+    const c = this.moke.controller;
     this.updateMoveIntent();
-    this.moke.fixedUpdate(step, this.moveIntent);
+    const glideTarget = this.rest.glideTarget;
+    if (glideTarget) {
+      c.glideTo(step, glideTarget, this.rest.glideHeading(c), REST.settleSpeed, REST.settleTurnRate);
+    } else {
+      this.moke.fixedUpdate(step, this.rest.holdsMoke ? this.stillIntent : this.moveIntent);
+    }
+    this.rest.update(step, c);
+    this.moke.resting = this.rest.lying;
     this.physics.step();
+    for (const prop of this.props) prop.afterStep();
   };
 
   /**
@@ -208,6 +284,51 @@ export class Game {
     this.moveIntent.run = input.isDown('run');
   }
 
+  /** The discrete action keys, once per rendered frame while playing: E interact, F bark, Q sniff. */
+  private handleActions(): void {
+    const input = this.input.state;
+    if (input.wasPressed('interact')) this.interactions.interact();
+    // Any fresh movement key gets him up out of his bed.
+    const moved = ['moveForward', 'moveBackward', 'moveLeft', 'moveRight'] as const;
+    if (this.rest.holdsMoke && moved.some((a) => input.wasPressed(a))) this.rest.standUp();
+    if (input.wasPressed('bark') && this.moke && this.barkTimer.tryBark()) {
+      this.moke.animation.bark();
+      this.audio.play('bark');
+      this.barkedThisFrame = true;
+    }
+    if (input.wasPressed('sniff') && this.scent.start()) this.audio.play('sniff');
+  }
+
+  /** Sniff mode: which scents are noticeable from his nose, the wisps, his nose-down pose and the haze. */
+  private updateSniff(dt: number, playing: boolean): void {
+    if (!this.moke) return;
+    const c = this.moke.controller;
+    const p = this.moke.renderPosition;
+    this.nose.set(p.x + Math.sin(c.heading) * SNIFF.noseForward, p.y + SNIFF.noseHeight, p.z + Math.cos(c.heading) * SNIFF.noseForward);
+    this.scent.update(dt, this.nose);
+    this.moke.sniffing = this.scent.active;
+    this.wisps.update(dt, this.scent, this.nose, this.camera, this.gfx.drawingBufferSize.height);
+    this.ui.setSniffing(playing && this.scent.active);
+  }
+
+  private showBarkBubble(): void {
+    this.barkedThisFrame = false;
+    if (!this.moke) return;
+    const words = ['Arf!', 'Woof!', 'Arf!', 'Yip!'];
+    const v = this.screenPoint.copy(this.moke.renderPosition);
+    v.y += 0.5;
+    v.project(this.camera);
+    if (v.z > 1) return; // behind the camera
+    const canvas = this.gfx.canvas;
+    this.ui.showBark(((v.x + 1) / 2) * canvas.clientWidth, ((1 - v.y) / 2) * canvas.clientHeight, words[Math.floor(Math.random() * words.length)]!);
+  }
+
+  /** Chooses what E would do now and shows it as "E — …" (hidden outside play). */
+  private updateInteractionPrompt(playing: boolean): void {
+    const current = playing && this.moke ? this.interactions.update(this.moke.controller) : null;
+    this.ui.setPrompt(current ? 'interact' : null, current?.label ?? null);
+  }
+
   /** What the camera follows: Moke as rendered this frame (or the spawn point before he exists). */
   private updateCameraTarget(): CameraTarget {
     const target = this.cameraTarget;
@@ -217,6 +338,7 @@ export class Game {
       target.heading = c.heading;
       target.speed = c.actualSpeed;
       target.headroom = c.headroom;
+      target.rest = this.moke.animation.state.rest;
     } else {
       target.position.copy(this.room.spawn.position);
       target.heading = this.room.spawn.heading;
@@ -242,6 +364,8 @@ export class Game {
       state: this.state,
       'pointer lock': this.input.pointerLockSupported ? (this.input.isPointerLocked ? 'locked' : 'free') : 'unsupported',
       'fixed step': `${(this.fixedStep.step * 1000).toFixed(2)} ms`,
+      audio: this.audio.status,
+      barks: this.barkTimer.count,
     }));
     this.debug.addSection('Moke', (): DebugValues => {
       if (!this.moke) return { status: 'not spawned' };
@@ -255,7 +379,31 @@ export class Game {
         'turn rate': `${deg(c.locomotion.turnRate)}/s`,
         grounded: c.grounded,
         headroom: `${c.headroom.toFixed(2)} m (duck ${this.moke.animation.state.crouch.toFixed(2)})`,
+        rest: `${this.rest.phase} (pose ${this.moke.animation.state.rest.toFixed(2)})`,
       };
+    });
+    this.debug.addSection('Interaction', (): DebugValues => {
+      const current = this.interactions.current;
+      const values: DebugValues = {
+        registered: this.interactions.count,
+        current: current ? `${current.type} "${current.label}"` : '—',
+        carrying: this.pickup?.carried?.name ?? '—',
+      };
+      if (current && this.moke) {
+        const p = this.moke.controller.position;
+        values.distance = `${Math.hypot(current.position.x - p.x, current.position.z - p.z).toFixed(2)} m (id ${current.id})`;
+      }
+      return values;
+    });
+    this.debug.addSection('Scent', (): DebugValues => {
+      const values: DebugValues = {
+        sniff: this.scent.active ? `on (${this.scent.intensity.toFixed(2)})` : 'off',
+        sources: this.scent.sourceCount,
+      };
+      this.scent.hits.forEach((hit, i) => {
+        values[i === 0 ? 'nearby' : ' '.repeat(i)] = `${hit.source.label} (${hit.source.category}) ${hit.distance.toFixed(1)} m · ${hit.intensity.toFixed(2)}`;
+      });
+      return values;
     });
     this.debug.addSection('Physics', (): DebugValues => {
       if (!this.physics) return { status: 'loading' };
@@ -263,6 +411,9 @@ export class Game {
         status: `Rapier ${this.physics.version}`,
         colliders: this.physics.colliderCount,
         bodies: this.physics.bodyCount,
+        props: this.props
+          .map((p) => `${p.id} ${p.carried ? 'carried' : p.body.sleeping ? 'asleep' : `${p.body.speed.toFixed(1)} m/s`}`)
+          .join(' · '),
       };
     });
     this.debug.addSection('Input', () => {

@@ -12,8 +12,10 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - Milestone 2, the basic Moke character.
   - Milestone 3, the third-person camera.
   - Milestone 4, the living room (plus a short hallway).
-  - Milestones 2–4 still await the owner's hands-on playtest.
-- **Next:** Milestone 5, the interaction framework and contextual prompts. Only start it when the owner says to.
+  - Milestones 5–9 (interactions, sock, physics toys, sniff + bark, rest), built overnight and merged into
+    `main` at the owner's request (PR #1).
+  - Milestones 2–9 still await the owner's hands-on playtest.
+- **Next:** the owner's review of Milestones 5–9, then Milestone 10 (polish). Only start it when the owner says to.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES
@@ -49,6 +51,7 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - `docs/ARCHITECTURE.md`: system boundaries.
   - `docs/DECISIONS.md`: established decisions.
   - `docs/PHASE_1.md`: milestone scope.
+  - `docs/PHASE_1_SPEC.md`: detailed requirements for Milestones 5–10.
   - `docs/MOKE_CHARACTER_REFERENCE.md`: character work.
   - `docs/ASSETS.md`: licence log. Record every external asset here. Original, CC0 or properly licensed only; never purchase anything.
 - The title's visual identity is original. Never copy I'M DONUT? branding.

@@ -1,4 +1,4 @@
-import { CONTROL_HINTS, KEY_BINDINGS } from '../config/input';
+import { CONTROL_HINTS, KEY_BINDINGS, type Action } from '../config/input';
 import { keyLabel } from '../core/InputState';
 import { SENSITIVITY_RANGE, type PlayerSettings } from '../core/PlayerSettings';
 
@@ -23,6 +23,15 @@ export class UIManager {
   private readonly toast: HTMLElement;
   private readonly pointerHint: HTMLElement;
   private readonly errorDetail: HTMLElement;
+  private readonly prompt: HTMLElement;
+  private readonly promptKey: HTMLElement;
+  private readonly promptLabel: HTMLElement;
+  private promptText: string | null = null;
+  private readonly sniffVignette: HTMLElement;
+  private readonly barkBubble: HTMLElement;
+  private sniffing = false;
+  private readonly hud: HTMLElement;
+  private resting = false;
   private handlers: UIHandlers | null = null;
   private toastTimer: number | undefined;
 
@@ -40,6 +49,12 @@ export class UIManager {
     this.toast = this.el('toast');
     this.pointerHint = this.el('pointer-hint');
     this.errorDetail = this.el('error-detail');
+    this.prompt = this.el('interact-prompt');
+    this.promptKey = this.el('interact-key');
+    this.promptLabel = this.el('interact-label');
+    this.sniffVignette = this.el('sniff-vignette');
+    this.barkBubble = this.el('bark-bubble');
+    this.hud = this.el('hud');
 
     this.el('btn-play').addEventListener('click', () => this.handlers?.onPlay());
     this.el('btn-resume').addEventListener('click', () => this.handlers?.onResume());
@@ -92,7 +107,12 @@ export class UIManager {
       element.classList.toggle('is-active', name === screen);
     }
     if (screen !== 'menu' && screen !== 'paused' && this.controlsDialog.open) this.controlsDialog.close();
-    if (screen !== null) this.setPointerHint(false);
+    if (screen !== null) {
+      this.setPointerHint(false);
+      this.setPrompt(null, null);
+      this.setSniffing(false);
+      this.setResting(false);
+    }
   }
 
   setLoadingProgress(fraction: number, detail?: string): void {
@@ -112,6 +132,46 @@ export class UIManager {
   /** "Click to look around" — shown when play is running but the mouse isn't captured. */
   setPointerHint(visible: boolean): void {
     this.pointerHint.classList.toggle('is-visible', visible);
+  }
+
+  /**
+   * The contextual prompt, e.g. "E — Pick Up Sock", or null to hide it. Cheap to call every frame:
+   * the DOM is only touched when the text changes.
+   */
+  setPrompt(action: Action | null, label: string | null): void {
+    const text = action && label ? `${action}:${label}` : null;
+    if (text === this.promptText) return;
+    this.promptText = text;
+    if (action && label) {
+      this.promptKey.textContent = keyLabel(KEY_BINDINGS[action][0] ?? '?');
+      this.promptLabel.textContent = label;
+    }
+    this.prompt.classList.toggle('is-visible', text !== null);
+  }
+
+  /** The soft warm haze at the edges of the view during sniff mode. */
+  setSniffing(active: boolean): void {
+    if (active === this.sniffing) return;
+    this.sniffing = active;
+    this.sniffVignette.classList.toggle('is-visible', active);
+  }
+
+  /** Lying in his bed: a quieter HUD with a soft "Resting…" note. */
+  setResting(active: boolean): void {
+    if (active === this.resting) return;
+    this.resting = active;
+    this.hud.classList.toggle('is-resting', active);
+  }
+
+  /** Pops a comic bark ("Arf!") at a screen position (CSS pixels), e.g. above Moke's head. */
+  showBark(x: number, y: number, text: string): void {
+    const bubble = this.barkBubble;
+    bubble.textContent = text;
+    bubble.style.left = `${x}px`;
+    bubble.style.top = `${y}px`;
+    bubble.classList.remove('is-popping');
+    void bubble.offsetWidth; // restart the animation
+    bubble.classList.add('is-popping');
   }
 
   openControls(): void {

@@ -23,6 +23,10 @@ src/
     camera.ts             third-person camera feel (distance, zoom, smoothing, collision, whiskers, auto-follow)
     animation.ts          body-language tuning (lean, idle looks, tail, ducking)
     world.ts              world scale: Moke's size, furniture heights
+    interaction.ts        interaction reach/facing tuning
+    props.ts              prop definitions (shape, mass, damping, carry pose) + pickup/drop tuning
+    senses.ts             sniff timing, wisp look, scent colours per category
+    audio.ts              sound levels
     assets.ts             asset manifest (preloaded behind the loading screen)
   core/
     Game.ts               state machine + frame orchestration
@@ -38,11 +42,13 @@ src/
     MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking (tested)
     MokeVisual.ts         the visual interface + createMokeVisual() factory
     PlaceholderDogVisual.ts  TEMPORARY stand-in dog, animated procedurally
-    Moke.ts               composite: controller + animation + visual
+    Moke.ts               composite: controller + animation + visual (+ carrying/sniffing flags from gameplay)
+    Bark.ts               bark cooldown (tested)
   physics/
     PhysicsWorld.ts       Rapier world (lazy WASM load), static box colliders, camera sphere sweep
     CharacterBody.ts      kinematic capsule driven by Rapier's character controller
-    collisionGroups.ts    collision layers (world / thin world / character)
+    PropBody.ts           small dynamic body for a loose prop (ball/box/capsule), speed-capped, can be switched off
+    collisionGroups.ts    collision layers (world / thin world / character / toy)
   camera/
     ThirdPersonCamera.ts  orbit, follow, collision, tight-space handling, zoom, FOV (tested with a fake collider)
     MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
@@ -53,13 +59,29 @@ src/
     textures.ts           original procedural canvas textures (floorboards, rug, pillows, art, garden)
     StaticSceneBuilder.ts places parts in nested frames, derives colliders, merges by material (tested)
     RoomLighting.ts       hemisphere fill + window sun with soft shadows; soft image-based environment
+  interactions/
+    Interactable.ts       the Interactable contract (id, type, label, distance, enabled, position, callback) + INTERACTION_TYPES
+    InteractionSystem.ts  registry + "what would E do now?" selection (tested; DOM/three-free)
+    PickupSystem.ts       pick up / carry / drop for any Carryable (tested; DOM/three-free)
+    RestSystem.ts         lie down / get up at a rest spot: state machine + REST interactables (tested, incl. Rapier)
+  props/
+    Prop.ts               a loose prop: PropBody + view, interpolated; implements Carryable; escape rescue
+    propVisuals.ts        original code-built prop models (sock, tennis ball, rope toy)
+    roomProps.ts          creates the living room's props at their landmarks (Rapier-tested in props.test.ts)
+  senses/
+    ScentSystem.ts        sniff mode + scent sources + ranked hits (tested; DOM/three-free, no per-frame allocation)
+    ScentWisps.ts         the stylized look: soft wisps and pulses, one Points draw, fixed budget
+    roomScents.ts         the living room's sources (props while not carried, the dog bed)
+  audio/
+    AudioManager.ts       Web Audio context (unlocked by PLAY/RESUME), plays named sounds, never throws
+    synth.ts              original synthesized placeholder sounds: bark, sniff, pickup, drop
   ui/
-    UIManager.ts          screens, controls dialog, toast, hints
+    UIManager.ts          screens, controls dialog, toast, hints, contextual prompt, bark bubble, sniff haze
     DebugPanel.ts         ` overlay + FrameStats
   styles/main.css
   utils/math.ts           clamp, damp, lerp, smoothstep, moveToward, angle helpers
 ```
-Planned additions follow the brief: `interactions/`, `senses/`, `audio/`.
+
 
 ## Game states and the frame
 `loading → menu → playing ⇄ paused` (in `Game.ts`). Each rendered frame:
@@ -111,6 +133,71 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
     (not built yet), keeping the placeholder as the fallback.
 - Camera, interactions, pickup, scent and physics must talk to `Moke.controller` (and later the mouth socket),
   never to the visual.
+
+## Interactions (`interactions/`, Milestone 5)
+- An `Interactable` is plain data plus a callback: `id`, `type` (PICKUP, DROP, REST, SNIFF, PLAY, EAT, DRINK,
+  INVESTIGATE), `label` ("Pick Up Sock"), `interactionDistance`, `enabled`, `position`, optional `requiresFacing`
+  (default true) and `priority` (default 0), and `interact()`. Fields are read every frame, so getters work.
+- `InteractionSystem` holds the registry. Once per rendered frame `Game` calls `update(moke.controller)`, which picks
+  the current target: in reach (horizontal distance from Moke's feet), inside the facing cone unless it's right under
+  his nose, highest priority first, then best distance/angle score. The current target keeps a small bonus, so the
+  prompt doesn't flicker between two close things.
+- `Game` reads `wasPressed('interact')` once per rendered frame and calls `interactions.interact()`; the UI shows
+  the current target as "E — label" (`UIManager.setPrompt`, which only touches the DOM when the text changes).
+- Systems register their own interactables (pickup, rest). `MokeController` knows nothing about interactions.
+
+## Props and carrying (Milestone 6)
+- `PropBody` (physics, no three.js) is a small dynamic Rapier body with CCD, damping and a hard speed cap applied
+  after every step. Props sit on the `toy` layer, so the camera sweep ignores them. `pushable: false` props (the
+  sock) also skip the `character` layer, so Moke walks over them instead of tripping.
+- `Prop` = `PropBody` + view. The view is interpolated between fixed steps like Moke. A prop that escapes (below
+  the floor, far outside) goes back to its landmark.
+- `PickupSystem<T extends Carryable>` registers a PICKUP interactable per item ("Pick Up Sock", disabled while his
+  mouth is full) and one DROP interactable ("Drop Sock", priority 10, no facing check) while carrying.
+  - Picking up switches the body off. Dropping puts it back just ahead of his mouth, computed from
+    `MokeController`'s position and heading (never the mesh), pulled back from walls with a
+    `PhysicsWorld.rayDistance` probe, and gives it half his velocity, so it falls and tumbles naturally.
+  - Presentation listens through `onPickUp`/`onDrop`: `Game` parents the prop's view to `MokeVisual.mouthSocket`
+    with the prop's `carry` pose, and sets `Moke.carrying` so body language reacts (head up, tail wag).
+- Frame order: `Moke.fixedUpdate` → `PhysicsWorld.step` → `Prop.afterStep` (fixed); `Prop.render(alpha)` per frame.
+- **Pushing toys (Milestone 7):** Moke's capsule and the character controller ignore the `toy` layer. Instead
+  `CharacterBody` carries a low upright **toy bumper** cylinder (`MOKE_BODY.toyBumper`, just inside the capsule)
+  that only touches toys. The capsule's round bottom pressed a small ball down into the floor and rode over it at
+  a run; the bumper's vertical face knocks it ahead instead (trot: the ball rolls at about his speed; run: about
+  3.3 m/s, capped at `maxSpeed`). Kinematic contacts do the pushing, so no impulse tuning is needed.
+- Dropped items land turned by their `carry.turn` (crosswise, the way they were held).
+
+## Sniff mode (`senses/`, Milestone 8)
+- A `ScentSource` has an id, category (FOOD, TREAT, OWNER, FAMILY, SOCK, TOY, OUTSIDE, INTERESTING), label, position,
+  strength, radius and `enabled` (getters: a carried sock isn't a source).
+- `ScentSystem.start()` (Q) runs sniff mode for `SNIFF.duration` with a fade in/out and a short cooldown. Each frame,
+  `update(dt, nose)` ranks the enabled sources in range by `strength × √closeness × fade` into a fixed pool (the top
+  `maxSources`). The pool is reused, so there's no per-frame allocation.
+- `ScentWisps` draws them as **one `Points` object** with a fixed budget (6 sources × 23 particles). Each particle's
+  position is a pure function of time and its index (curling up from the source, leaning toward the nose, fading),
+  written into preallocated arrays. A bigger soft dot "breathes" at each source. Depth-tested, so wisps never paint over Moke;
+  near-lens particles fade out.
+- Body language: `Moke.sniffing` → `MokeAnimationState.sniff` (nose down, quick twitches). UI: a warm vignette.
+
+## Bark and audio (with Milestone 8)
+- F → `BarkTimer.tryBark()` (cooldown) → `MokeAnimationController.bark()` (a short envelope in
+  `MokeAnimationState.bark`: little hop, head up, ears back, mouth open) + `AudioManager.play('bark')` + a comic
+  "Arf!" bubble projected above his head.
+- `AudioManager` creates/resumes its `AudioContext` inside the PLAY/RESUME clicks (browsers require a gesture). If
+  Web Audio is missing or still locked, `play()` does nothing. All sounds are synthesized at play time (`synth.ts`), with
+  a little random pitch variation; there are no audio files.
+
+## Rest (Milestone 9)
+- `RestSystem` registers "Lie Down" (REST, reach 0.62 m from the bed centre, which is only reachable through the
+  bed's open front) and, while settling/resting, "Get Up" (priority 20).
+- Phases: `standing → settling → resting → rising → standing`. While not standing, `Game` ignores movement input:
+  - settling: `MokeController.glideTo` shuffles him to the centre (still colliding), facing where he's going, then
+    turns him to face out (`glideHeading`); he lies down on arrival or after a 2 s timeout;
+  - rising lasts 0.45 s so the stand-up reads before he can run off.
+- E (the "Get Up" interactable) or any fresh movement key press stands him up.
+- Presentation reads plain numbers: `Moke.resting` → `MokeAnimationState.rest` (slow flop, quick rise) →
+  the placeholder's sphinx pose; `CameraTarget.rest` (from the animation state) lowers the pivot, brings the camera
+  in by 15% and enforces a minimum downward pitch (`CAMERA.rest`); `UIManager.setResting` quiets the HUD.
 
 ## Third-person camera (`camera/ThirdPersonCamera.ts`, tuning in `config/camera.ts`)
 It's never parented to Moke. Each frame:
@@ -182,11 +269,13 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
   `config/movement.ts`) moved by Rapier's kinematic character controller: slide on, snap-to-ground, 45° slope limit.
   - It's short enough to fit under the 0.40 m coffee-table clearance. An upward ray measures headroom so the visual ducks.
   - The capsule is round, so the visual's nose and tail can poke a few centimetres past it into walls.
-  - Impulses to dynamic bodies are already enabled for the toys in Milestone 7.
+  - Toys are pushed by a separate toy-bumper collider on the same body (see "Props and carrying").
 - **Collision layers** (`physics/collisionGroups.ts`):
   - `world`: walls, floor, furniture.
   - `worldThin`: e.g. table legs; they block Moke but not the camera.
   - `character`: Moke.
+  - `toy`: loose props (dynamic bodies). The camera and Moke's capsule ignore them; his toy bumper pushes the
+    pushable ones (ball, rope toy). The sock ignores Moke entirely.
   - Queries filter by layer: the camera sweep sees `world` only.
 - **Gravity** applies only while airborne. On the ground, snap-to-ground keeps him planted. Also pushing down into
   the floor made Rapier's controller occasionally drop a whole step of horizontal movement, which read as a

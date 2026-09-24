@@ -19,6 +19,9 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 | Living room, hallway, furniture, lighting | `src/world/` | Built in code from simple shapes |
 | Floorboard, rug, pillow, wall-art and garden textures | `src/world/textures.ts` | Original canvas drawings generated at startup (no image files) |
 | Placeholder Moke | `src/player/PlaceholderDogVisual.ts` | Generated in code from simple shapes (temporary until `moke.glb`) |
+| Sock, tennis ball, rope toy | `src/props/propVisuals.ts` | Built in code from simple shapes |
+| Scent wisps | `src/senses/ScentWisps.ts` | Procedural particles, a small original shader |
+| Bark, sniff, pickup and drop sounds | `src/audio/synth.ts` | **Original, synthesized with Web Audio at play time** (oscillators, formant filters and generated noise). No recordings or sample files. Placeholder until the owner picks a final bark (see below). |
 
 ## Private references (never distributed)
 | Asset | Where | Notes |
@@ -29,5 +32,5 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 | Need | Milestone | Plan |
 |---|---|---|
 | Final `moke.glb` (rigged, animated) | Later | Separate modeling/rigging workflow from the reference photos |
-| Bark, footsteps (carpet/wood), pickup, drop, room ambience | 10 (bark possibly earlier) | CC0 sources (e.g. Freesound CC0 only, Kenney) or recorded; ideally Moke's real bark if you record one |
+| Final bark (owner's choice), footsteps (carpet/wood), room ambience | 10 | Synthesized placeholders exist for bark/sniff/pickup/drop. For finals: CC0 sources (e.g. Freesound CC0 only, Kenney) or recorded; ideally Moke's real bark if you record one |
 | Nicer furniture/prop models (optional) | 10 | In-code geometry is in place; optionally CC0 packs (Kenney, Poly Pizza CC0) later |

@@ -61,4 +61,6 @@ export const MOKE_BODY = {
   mass: 5,
   maxSlopeClimb: Math.PI / 4,
   snapToGround: 0.1,
+  /** Pushes the ball and toy along (see CharacterBody). Slightly inside the capsule, so it never snags on walls. */
+  toyBumper: { radius: 0.155, halfHeight: 0.06, centerAboveFeet: 0.07 },
 } as const;

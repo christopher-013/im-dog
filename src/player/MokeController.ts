@@ -1,7 +1,7 @@
 import { Vector3 } from 'three';
 import { MOVEMENT, type MovementTuning } from '../config/movement';
 import type { CharacterBody, Vec3Like } from '../physics/CharacterBody';
-import { angleDelta } from '../utils/math';
+import { angleDelta, moveToward } from '../utils/math';
 import { createLocomotionState, gaitForSpeed, stepLocomotion, type Gait, type LocomotionState, type MoveIntent } from './Locomotion';
 
 /** How far up to look for low furniture (m above the capsule centre). */
@@ -83,6 +83,34 @@ export class MokeController {
     this.blockedSteps = blocked ? this.blockedSteps + 1 : 0;
     if (this.blockedSteps >= BLOCKED_STEPS) this.locomotion.speed = this.actualSpeed;
 
+    this.syncPositionFromBody();
+    this.probeHeadroom();
+  }
+
+  /**
+   * Scripted step: shuffle toward `target` at `speed` (m/s) and turn toward `heading` at `turnRate`
+   * (rad/s), still colliding normally. Used to settle into his bed.
+   */
+  glideTo(dt: number, target: Vec3Like, heading: number, speed: number, turnRate: number): void {
+    this.previousPosition.copy(this.position);
+    this.previousHeading = this.locomotion.heading;
+
+    const dx = target.x - this.position.x;
+    const dz = target.z - this.position.z;
+    const distance = Math.hypot(dx, dz);
+    const step = Math.min(distance, speed * dt);
+    this.desired.x = distance > 1e-6 ? (dx / distance) * step : 0;
+    this.desired.y = this.body.grounded ? 0 : -this.tuning.gravity * dt * dt;
+    this.desired.z = distance > 1e-6 ? (dz / distance) * step : 0;
+    this.body.move(this.desired, this.applied);
+
+    const l = this.locomotion;
+    const before = l.heading;
+    l.heading = before + moveToward(0, angleDelta(before, heading), turnRate * dt);
+    l.turnRate = angleDelta(before, l.heading) / dt;
+    l.speed = 0;
+    l.targetSpeed = 0;
+    this.actualSpeed = Math.hypot(this.applied.x, this.applied.z) / dt;
     this.syncPositionFromBody();
     this.probeHeadroom();
   }

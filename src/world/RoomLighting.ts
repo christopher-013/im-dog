@@ -16,7 +16,8 @@ export class RoomLighting {
   readonly object = new Group();
   readonly sun: DirectionalLight;
 
-  constructor() {
+  /** `shadowMapSize` and `shadowSoftness` come from the quality preset (desktop: RENDER's). */
+  constructor(shadowQuality: { shadowMapSize: number; shadowSoftness: number } = RENDER) {
     const fill = new HemisphereLight('#fff5e8', '#c4a283', RENDER.hemisphereIntensity);
 
     this.sun = new DirectionalLight('#ffdcae', RENDER.sunIntensity);
@@ -26,8 +27,8 @@ export class RoomLighting {
     this.sun.castShadow = true;
 
     const shadow = this.sun.shadow;
-    shadow.mapSize.set(RENDER.shadowMapSize, RENDER.shadowMapSize);
-    shadow.radius = RENDER.shadowSoftness;
+    shadow.mapSize.set(shadowQuality.shadowMapSize, shadowQuality.shadowMapSize);
+    shadow.radius = shadowQuality.shadowSoftness;
     shadow.bias = -0.0004;
     shadow.normalBias = 0.03;
     const cam = shadow.camera;

@@ -21,6 +21,29 @@ function fail(err: unknown): void {
   ui.showFatalError(describe(err));
 }
 
+/**
+ * Installable web app: a service worker (dist/sw.js, generated at build time) for fast repeat loads and
+ * offline play. Production builds only, and not on localhost unless `?sw=on`, so development and
+ * `npm run preview` never fight a stale cache. `?sw=off` removes it and its caches (handy on a phone with
+ * no DevTools). See docs/MOBILE.md.
+ */
+function setUpServiceWorker(): void {
+  if (!('serviceWorker' in navigator)) return;
+  const choice = new URLSearchParams(location.search).get('sw');
+  if (choice === 'off') {
+    void navigator.serviceWorker.getRegistrations().then((all) => all.forEach((r) => void r.unregister()));
+    if ('caches' in window) void caches.keys().then((keys) => keys.filter((k) => k.startsWith('im-dog-')).forEach((k) => void caches.delete(k)));
+    return;
+  }
+  const local = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+  if (!import.meta.env.PROD || (local && choice !== 'on')) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => console.warn('[pwa] Service worker not registered:', err));
+  });
+}
+
+setUpServiceWorker();
+
 try {
   const viewport = document.getElementById('viewport');
   if (!viewport) throw new Error('#viewport is missing from index.html');

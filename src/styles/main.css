@@ -34,6 +34,13 @@ body {
   font-family: var(--font-display);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+  /* No pull-to-refresh or rubber-banding on phones. */
+  overscroll-behavior: none;
+}
+
+button {
+  /* No double-tap-to-zoom delay on taps. */
+  touch-action: manipulation;
 }
 
 body {
@@ -326,6 +333,20 @@ body {
   box-shadow: 0 6px 0 var(--coral-deep);
 }
 
+/* A quiet text button (FULLSCREEN): touch devices only, where the browser supports it. */
+.btn-link {
+  padding: 0.35em 1em;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+}
+
+.btn-link[hidden],
+html:not([data-input='touch']) .btn-link[data-fullscreen] {
+  display: none;
+}
+
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 0 var(--coral-deep);
@@ -496,6 +517,43 @@ body {
 .control-keys {
   display: flex;
   gap: 5px;
+}
+
+/* Group headings: Keyboard & mouse, Controller, Touch. The first group needs no gap above it. */
+.control-group {
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.control-group.controls-keyboard {
+  margin-top: 0;
+}
+
+html[data-input='touch'] .control-group.controls-keyboard {
+  margin-top: 8px;
+}
+
+/* Touch descriptions are sentences, not keys: give them room to wrap. */
+.control-row.controls-touch {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+}
+
+.control-row.controls-touch kbd {
+  white-space: normal;
+  line-height: 1.3;
+}
+
+/* On a phone, the touch controls come first. */
+html[data-input='touch'] .controls-touch {
+  order: -1;
+}
+
+html[data-input='touch'] .control-group.controls-touch {
+  margin-top: 0;
 }
 
 kbd {
@@ -730,6 +788,584 @@ kbd {
   }
 }
 
+/* ---------- Sock Heist: speech, objective, Dog Logic, completion ---------- */
+
+/* The human's lines: a comic bubble that follows their head (kept on screen by the game). */
+.speech-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: min(320px, 70vw);
+  padding: 0.5em 0.9em;
+  border-radius: 1.1em;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 4px 0 var(--shadow);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -100%) scale(0.85);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+  pointer-events: none;
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  border: 10px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--paper);
+  transform: translateX(-50%);
+}
+
+.speech-bubble.is-visible {
+  opacity: 1;
+  transform: translate(-50%, -100%) scale(1);
+}
+
+.speech-bubble[data-mood='surprised'] {
+  color: var(--coral-deep);
+  font-size: 1.15rem;
+}
+
+.speech-bubble[data-mood='happy'] {
+  color: var(--leaf);
+}
+
+.speech-bubble[data-mood='searching'] {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.heist-chip {
+  position: absolute;
+  left: calc(16px + env(safe-area-inset-left));
+  top: calc(14px + env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.4em 0.95em 0.4em 0.7em;
+  border-radius: var(--pill);
+  background: rgba(255, 250, 243, 0.92);
+  box-shadow: 0 4px 0 var(--shadow);
+  font-weight: 700;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+.heist-chip::before {
+  content: '';
+  width: 0.65em;
+  height: 0.65em;
+  border-radius: 50%;
+  background: var(--coral);
+  animation: chip-pulse 1.2s ease-in-out infinite;
+}
+
+.heist-chip.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes chip-pulse {
+  50% {
+    transform: scale(0.6);
+  }
+}
+
+/* The debug panel lives top-left too: step the chip down when it's open. */
+html[data-debug] .heist-chip {
+  top: auto;
+  bottom: calc(18% + env(safe-area-inset-bottom));
+}
+
+/* SOCK = TREAT: brief, big and bouncy. */
+.discovery {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 18px 30px 20px;
+  border-radius: 28px;
+  background: rgba(255, 250, 243, 0.96);
+  box-shadow:
+    0 8px 0 var(--shadow),
+    0 24px 60px rgba(43, 37, 48, 0.2);
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.6);
+  pointer-events: none;
+}
+
+.discovery.is-visible {
+  animation: discovery-pop 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+}
+
+.discovery.is-leaving {
+  opacity: 1;
+  animation: discovery-out 0.35s ease forwards;
+}
+
+@keyframes discovery-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.6) rotate(-4deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes discovery-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -60%) scale(0.95);
+  }
+}
+
+.discovery-kicker {
+  margin: 0;
+  color: var(--leaf);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.discovery-equation {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(2rem, 7vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.discovery-equals {
+  color: var(--coral);
+}
+
+.discovery-icon {
+  width: 1em;
+  height: 1em;
+}
+
+.discovery-note {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.complete-icons {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0;
+  color: var(--coral);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.complete-icon {
+  width: 1.4em;
+  height: 1.4em;
+}
+
+/* ---------- Rotate hints (touch, portrait) ---------- */
+
+.rotate-hint,
+.rotate-chip {
+  display: none;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.rotate-hint {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.rotate-hint-icon,
+.rotate-chip-icon {
+  width: 1.6em;
+  height: 1.6em;
+  flex: none;
+  color: var(--coral);
+}
+
+.rotate-chip {
+  position: absolute;
+  left: 50%;
+  /* Below the objective line and the pause button. */
+  top: calc(66px + env(safe-area-inset-top));
+  padding: 0.45em 1em;
+  border-radius: var(--pill);
+  background: rgba(255, 250, 243, 0.92);
+  box-shadow: 0 4px 0 var(--shadow);
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  opacity: 0;
+}
+
+@media (orientation: portrait) {
+  html[data-input='touch'] .rotate-hint {
+    display: flex;
+  }
+  html[data-input='touch'][data-playing] .rotate-chip {
+    display: flex;
+    animation: rotate-chip 6s ease forwards;
+  }
+}
+
+@keyframes rotate-chip {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  8%,
+  80% {
+    opacity: 1;
+  }
+}
+
+/* ---------- First-play onboarding ---------- */
+
+.onboarding {
+  position: absolute;
+  left: 50%;
+  top: calc(16px + env(safe-area-inset-top));
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: rgba(255, 250, 243, 0.94);
+  box-shadow: 0 5px 0 var(--shadow);
+  opacity: 0;
+  transform: translate(-50%, -6px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.onboarding.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.onboarding-list {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.onboarding-list kbd {
+  display: inline-block;
+  min-width: 1.7em;
+  margin-right: 0.45em;
+  padding: 0.1em 0.45em;
+  border-radius: 0.45em;
+  background: var(--coral);
+  color: #fff;
+  font: inherit;
+  text-align: center;
+  box-shadow: 0 2px 0 var(--coral-deep);
+}
+
+/* ---------- Touch controls ---------- */
+
+.touch-controls {
+  position: absolute;
+  inset: 0;
+  display: none;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  --safe-l: env(safe-area-inset-left);
+  --safe-r: env(safe-area-inset-right);
+  --safe-b: env(safe-area-inset-bottom);
+  --safe-t: env(safe-area-inset-top);
+  /* Where the interact button's centre sits (from the bottom-right corner). */
+  --act-r: calc(64px + var(--safe-r));
+  --act-b: calc(60px + var(--safe-b));
+}
+
+html[data-input='touch'][data-playing] .touch-controls {
+  display: block;
+}
+
+/* The canvas itself must not scroll or zoom under a thumb either. */
+html[data-input='touch'] #viewport canvas {
+  touch-action: none;
+}
+
+/* Touch play: no keyboard prompts or mouse hints; the toast moves up out of the thumbs' way. */
+html[data-input='touch'] .interact-prompt,
+html[data-input='touch'] .pointer-hint {
+  display: none;
+}
+
+html[data-input='touch'] .toast {
+  top: calc(64px + env(safe-area-inset-top));
+  bottom: auto;
+  max-width: min(560px, calc(100vw - 128px));
+  font-size: 0.95rem;
+}
+
+.touch-hint {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  color: rgba(255, 250, 243, 0.95);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 4px rgba(43, 37, 48, 0.5);
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.touch-stick-rest,
+.touch-stick {
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  margin: -56px 0 0 -56px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Where the stick waits until a thumb lands on the left side. */
+.touch-stick-rest {
+  left: calc(96px + var(--safe-l));
+  top: calc(100% - 96px - var(--safe-b));
+  border: 2px solid rgba(255, 250, 243, 0.45);
+  background: rgba(43, 37, 48, 0.12);
+  transition: opacity 0.2s ease;
+}
+
+.touch-stick-rest-knob,
+.touch-stick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 50px;
+  height: 50px;
+  margin: -25px 0 0 -25px;
+  border-radius: 50%;
+  background: rgba(255, 250, 243, 0.85);
+  box-shadow: 0 3px 0 var(--shadow);
+}
+
+.touch-stick-rest-knob {
+  opacity: 0.6;
+}
+
+.touch-stick {
+  left: 0;
+  top: 0;
+  display: none;
+  border: 2px solid rgba(255, 250, 243, 0.7);
+  background: rgba(43, 37, 48, 0.18);
+  /* The run ring, just outside the rim. */
+  box-shadow: 0 0 0 20px rgba(255, 250, 243, 0.1);
+}
+
+.touch-stick.is-active {
+  display: block;
+}
+
+.touch-stick.is-active ~ .touch-stick-rest,
+.touch-controls:has(.touch-stick.is-active) .touch-stick-rest {
+  opacity: 0;
+}
+
+.touch-stick.is-sprinting {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 20px rgba(239, 116, 89, 0.35);
+}
+
+.touch-stick.is-sprinting .touch-stick-knob {
+  background: var(--coral);
+}
+
+.touch-look-hint {
+  position: absolute;
+  right: calc(34% + var(--safe-r));
+  top: 38%;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+html[data-onboarding] .touch-look-hint {
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+.touch-btn {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 250, 243, 0.86);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 0 var(--shadow);
+  touch-action: none;
+  cursor: pointer;
+  transition:
+    transform 0.08s ease,
+    background 0.15s ease,
+    opacity 0.2s ease;
+}
+
+.touch-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.touch-btn.is-pressed {
+  transform: translateY(2px) scale(0.94);
+  box-shadow: 0 2px 0 var(--shadow);
+}
+
+.touch-small {
+  width: 58px;
+  height: 58px;
+  right: calc(var(--act-r) - 29px + var(--dx, 0px));
+  bottom: calc(var(--act-b) - 29px + var(--dy, 0px));
+}
+
+/* An arc (radius 124 px, 30° apart) around the interact button, within easy reach of the right thumb. */
+.touch-bark {
+  --dx: 0px;
+  --dy: 124px;
+}
+.touch-sniff {
+  --dx: 62px;
+  --dy: 107px;
+}
+.touch-trick {
+  --dx: 107px;
+  --dy: 62px;
+}
+.touch-run {
+  --dx: 124px;
+  --dy: 0px;
+}
+
+.touch-run.is-on {
+  background: var(--coral);
+  color: #fff;
+}
+
+.touch-interact {
+  width: 86px;
+  height: 86px;
+  right: calc(var(--act-r) - 43px);
+  bottom: calc(var(--act-b) - 43px);
+  background: rgba(255, 250, 243, 0.55);
+  color: var(--ink-soft);
+}
+
+.touch-interact svg {
+  width: 38px;
+  height: 38px;
+}
+
+/* Something to interact with: the button lights up and says what it will do. */
+.touch-actions.has-target .touch-interact {
+  background: var(--coral);
+  color: #fff;
+  box-shadow: 0 5px 0 var(--coral-deep);
+  animation: touch-ready 1.4s ease-in-out infinite;
+}
+
+@keyframes touch-ready {
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.touch-interact-label {
+  position: absolute;
+  right: calc(var(--act-r) + 52px + 124px);
+  bottom: calc(var(--act-b) - 1em);
+  padding: 0.45em 0.9em;
+  border-radius: var(--pill);
+  background: rgba(255, 250, 243, 0.94);
+  box-shadow: 0 4px 0 var(--shadow);
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(6px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+  pointer-events: none;
+}
+
+.touch-actions.has-target .touch-interact-label {
+  opacity: 1;
+  transform: none;
+}
+
+.touch-pause {
+  width: 48px;
+  height: 48px;
+  right: calc(14px + var(--safe-r));
+  top: calc(14px + var(--safe-t));
+  background: rgba(255, 250, 243, 0.75);
+}
+
+/* Portrait phones: the same layout, a little tighter, and the label goes above the button arc. */
+@media (orientation: portrait) {
+  .touch-controls {
+    --act-r: calc(58px + var(--safe-r));
+    --act-b: calc(74px + var(--safe-b));
+  }
+  .touch-stick-rest {
+    left: calc(80px + var(--safe-l));
+    top: calc(100% - 110px - var(--safe-b));
+  }
+  .touch-interact-label {
+    right: max(12px, calc(var(--act-r) - 60px));
+    bottom: calc(var(--act-b) + 150px);
+  }
+}
+
 /* ---------- Debug panel ---------- */
 
 #debug-panel {
@@ -770,6 +1406,58 @@ kbd {
   }
 }
 
+/* Landscape phones: the pause card goes side by side (settings | buttons) so nothing needs scrolling. */
+@media (max-height: 460px) and (orientation: landscape) {
+  .screen-complete .card.stack {
+    gap: 6px;
+    padding: 16px 24px;
+  }
+  .screen-complete .card-title {
+    font-size: 1.5rem;
+  }
+  .screen-complete .menu-buttons {
+    margin-top: 4px;
+    gap: 10px;
+  }
+  .screen-complete .btn {
+    padding: 0.55em 1.2em;
+    font-size: 1.05rem;
+  }
+  .discovery {
+    top: 45%;
+    padding: 12px 22px 14px;
+  }
+  .screen-pause .card.stack {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 22px;
+    row-gap: 8px;
+    width: min(640px, calc(100vw - 32px));
+    padding: 16px 22px;
+  }
+  .screen-pause .card-title,
+  .screen-pause .card-text {
+    grid-column: 1 / -1;
+  }
+  .screen-pause .card-title {
+    font-size: 1.5rem;
+  }
+  .screen-pause .settings {
+    width: 100%;
+    margin-top: 0;
+  }
+  .screen-pause .menu-buttons {
+    width: 100%;
+    margin-top: 0;
+    gap: 10px;
+  }
+  .screen-pause .btn {
+    padding: 0.55em 1.2em;
+    font-size: 1.05rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .logo-o,
   .logo-q {
@@ -787,7 +1475,16 @@ kbd {
   .loading-fill,
   .pointer-hint,
   .interact-prompt,
-  .sniff-vignette {
+  .sniff-vignette,
+  .onboarding,
+  .touch-btn {
     transition-duration: 0.01s;
+  }
+  .touch-actions.has-target .touch-interact,
+  .heist-chip::before {
+    animation: none;
+  }
+  .discovery.is-visible {
+    animation-duration: 0.01s;
   }
 }

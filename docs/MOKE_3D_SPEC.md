@@ -190,6 +190,7 @@ matches:
 | `pickup` | once | recommended | ~0.45 s | A quick dip and grab. The item is attached to `socket_mouth` right away, so grip early. |
 | `drop` | once | recommended | ~0.45 s | A small dip, mouth opening. |
 | `growl` | once | recommended | ~1 s | Mock-tough and cute: front lowered and planted, head forward, ears back, tiny tremble. |
+| `eat` | once | recommended | **1.4 s** | Nose down to a treat on the floor, a few happy chews, tail wagging (Sock Heist, Phase 3). |
 | `stretch` | once | recommended | ~1.5 s | A play bow before he sits (sometimes, when idle). |
 | `duck` | once, **additive** | recommended | ~0.3 s | First frame = the neutral standing pose; last frame = low-slung: legs bent, chest and head lowered so the head top drops ~8 cm, tail down. Layered on top of any gait while he's under the coffee table (at about 60% weight there). |
 | `trick_belly_up` | once | recommended | **2.8 s** | Rolls onto his back, paws curled, wiggles, rolls back. |

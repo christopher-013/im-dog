@@ -1,8 +1,8 @@
 import type { Action } from '../config/input';
 
 /** The screens the game can be on (mirrors `Game`'s state). */
-export type MenuState = 'loading' | 'menu' | 'playing' | 'paused';
-export type MenuCommand = 'pause' | 'resume' | 'play' | 'closeControls' | null;
+export type MenuState = 'loading' | 'menu' | 'playing' | 'paused' | 'complete';
+export type MenuCommand = 'pause' | 'resume' | 'play' | 'closeControls' | 'playAgain' | null;
 
 /**
  * What this frame's pause/confirm presses mean. Only the controller drives menus through here (Start, A):
@@ -15,5 +15,7 @@ export function menuCommand(state: MenuState, pressed: (action: Action) => boole
   if (state === 'playing') return pressed('pause') ? 'pause' : null;
   if (state === 'paused') return pressed('resume') || pressed('menuConfirm') ? 'resume' : null;
   if (state === 'menu') return pressed('menuConfirm') ? 'play' : null;
+  // Sock Heist complete: A plays again (keyboard and touch use the buttons).
+  if (state === 'complete') return pressed('menuConfirm') ? 'playAgain' : null;
   return null;
 }

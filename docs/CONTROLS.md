@@ -1,6 +1,10 @@
 # Controls
 
-Desktop keyboard + mouse. Bindings live in `src/config/input.ts`, the single source of truth for the in-game Controls screen.
+Bindings live in `src/config/input.ts`, the single source of truth for the in-game Controls screen. Every device
+feeds the same gameplay actions (see `docs/ARCHITECTURE.md` → Input). Prompts show the right key for what you're
+using: "E — Pick Up Sock" on a keyboard, "A — …" on a controller, a lit-up button on touch.
+
+## Desktop: keyboard + mouse
 
 | Input | Action | Status |
 |---|---|---|
@@ -9,44 +13,37 @@ Desktop keyboard + mouse. Bindings live in `src/config/input.ts`, the single sou
 | Mouse wheel | Zoom the camera in/out (0.7–2.6 m) | Working |
 | Shift (hold) | Run | Working |
 | C (hold) | Walk / sneak | Working. Not Ctrl, because Ctrl+W closes the browser tab. |
-| E | Interact: pick up · drop · lie down in the bed · get up | Working: the prompt shows what E will do |
-| F | Bark | Working: a little hop, "Arf!" and a synthesized bark (placeholder sound) |
-| G | Cute growl | Working: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a deep, rumbly synthesized "grrrr" |
-| Q | Do a trick | Working: a random trick, never the same twice in a row: belly up (rolls onto his back, paws up), beg (up on his hind legs), give paw (sits and shakes), or spin (chases his tail). He stays put for it; moving or E cuts it short. No belly-up with something in his mouth, no begging under the furniture. |
-| R | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed). Was Q until the owner swapped Q for tricks. |
+| E | Interact: pick up · drop · **give** (the sock, for a treat) · **eat** (the treat) · lie down in the bed · get up | Working: the prompt shows what E will do |
+| F | Bark | Working: a little hop, "Arf!" and a synthesized bark. The human can hear it. |
+| G | Cute growl | Working: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a deep, rumbly "grrrr" |
+| Q | Do a trick | Working: a random trick, never the same twice in a row: belly up, beg, give paw, or spin. He stays put for it; moving or E cuts it short. No belly-up with something in his mouth, no begging under the furniture. |
+| R | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed, a treat) |
 | Space | Jump (optional, undecided) | Not planned yet |
 | W A S D while resting | Get up out of the bed | Working |
 | Esc | Pause and release the mouse | Working. Esc never resumes (it also closes the Controls dialog); resume with RESUME, Enter/Space on it, or a click. |
-| Enter / Space on a menu button | Press that button (PLAY, CONTROLS, RESUME…) | Working: plain browser buttons, so they never start the game from the wrong one |
-| ` (Backquote) | Toggle debug panel | Working |
+| Enter / Space on a menu button | Press that button (PLAY, CONTROLS, RESUME, PLAY AGAIN…) | Working |
+| ` (Backquote) | Toggle the debug panel | Working |
 
-**Mouse capture:** clicking PLAY or RESUME captures the mouse (pointer lock). Esc releases it and pauses.
-Chrome needs about a second after Esc before it will capture again; if resume doesn't capture, click the room.
-Where pointer lock isn't available, click and drag to look.
+**Mouse capture:** clicking PLAY, RESUME or PLAY AGAIN captures the mouse (pointer lock). Esc releases it and
+pauses. Chrome needs about a second after Esc before it will capture again; if resume doesn't capture, click the
+room. Where pointer lock isn't available, click and drag to look.
 
-**Camera settings:** the pause screen has a mouse-sensitivity slider (0.25–3×) and an invert-vertical-look option.
-They're remembered in this browser only.
+**Camera settings:** the pause screen has a Look sensitivity slider (0.25–3×, for the mouse and touch look) and
+an invert-vertical-look option. They're remembered in this browser only.
 
 **How WASD relates to the camera:** W moves away from the camera. While you keep a movement key held, the
 direction stays put even if the camera swings by itself (behind Moke, or away from a wall). Only your own mouse
 turns change it. Let go and press again to re-aim from the current view.
 
-**Debug at startup:** add `?debug` to the URL.
-
-**Live feel tuning (dev server only):** in the browser console, change values on `tuning.movement`
-(e.g. `tuning.movement.runSpeed = 5`), `tuning.camera` (e.g. `tuning.camera.defaultDistance = 1.8`) or
-`tuning.mouse`. The changes apply immediately. Copy good values into `src/config/movement.ts`, `camera.ts` or
-`input.ts` to keep them.
-
-## Gamepad
-
-Standard-layout USB and Bluetooth controllers are detected automatically through the browser Gamepad API. Browsers may hide a newly connected controller until one of its buttons is pressed.
+## Controller
+Standard-layout USB and Bluetooth controllers are detected automatically through the browser Gamepad API. Browsers
+may hide a newly connected controller until one of its buttons is pressed.
 
 | Input | Action |
 |---|---|
 | Left stick or D-pad | Move (analog stick preserves speed and direction) |
 | Right stick | Look around / orbit camera |
-| A / bottom face button | Interact; start from the menu; resume from pause |
+| A / bottom face button | Interact (pick up, drop, give, eat, lie down); start from the menu; resume from pause; PLAY AGAIN after Sock Heist |
 | B / right face button | Bark |
 | X / left face button | Do a trick |
 | Y / top face button | Cute growl |
@@ -54,6 +51,40 @@ Standard-layout USB and Bluetooth controllers are detected automatically through
 | Right shoulder or right trigger | Run (hold) |
 | Right stick press | Sniff (all four face buttons are taken) |
 | Menu / Start | Pause or resume; closes the Controls dialog if it's open |
-| View / Back | Toggle debug panel |
+| View / Back | Toggle the debug panel |
 
-Keyboard and mouse remain active while a controller is connected. Controller names and whether the browser reports a standard mapping are shown in the debug panel.
+Keyboard and mouse remain active while a controller is connected; prompts switch to whichever you last used.
+
+## Touch: phones and tablets
+Shown automatically on phones and tablets (when a finger is the primary pointer), or as soon as you touch the
+screen. Using a mouse or keyboard again switches back. **Landscape is best**; portrait works.
+
+| Input | Action |
+|---|---|
+| Left thumb, anywhere on the left of the screen | Move. A stick appears under your thumb: push a little to walk, further to trot. |
+| Push the stick past its ring (it turns coral) | Run, one-handed |
+| RUN button | Run toggle: stays on until you tap it again |
+| Right thumb, drag anywhere on the right | Look around |
+| Big round button | Interact: it lights up and says what it will do ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…) |
+| Bark · Sniff · Trick buttons | Bark, sniff mode, a trick |
+| II (top-right) | Pause |
+| FULLSCREEN (menu and pause, where supported) | Fullscreen; on Android it also asks for landscape |
+
+No growl or walk button on touch (to keep the screen clear); a partly pushed stick walks slowly anyway. Details and
+tested sizes: `docs/MOBILE.md`.
+
+## First play
+The first time on each kind of controls, a few seconds of how-to:
+- keyboard or controller: a small card with Move, Look, Interact, Run, Sniff, Bark;
+- touch: "Move" under the stick's resting place and "Drag to look" on the right.
+
+After that, a one-line reminder when play starts.
+
+## Handy URL options
+- `?debug`: the debug panel at startup (useful on phones).
+- `?input=touch|keyboard|gamepad`: force the controls layout.
+- `?quality=low|medium|high`: force a graphics preset.
+- `?sw=off`: remove the offline cache (service worker).
+
+**Live feel tuning (dev server only):** in the browser console, change values on `tuning.movement`
+(e.g. `tuning.movement.runSpeed = 5`), `tuning.camera` or `tuning.mouse`. Copy good values into `src/config/`.

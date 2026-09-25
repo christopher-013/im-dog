@@ -9,19 +9,27 @@ to be made. Until then, a soft, stylized stand-in Moke modelled on the real dog 
 coat, dark eyes, black button nose, blue collar) trots, runs and sneaks around a cozy, true-scale living room: linen couch, rug, coffee table he can
 duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can bark, growl, do tricks, sniff,
 carry his sock and toys, and nap in his bed. A low dog-height camera follows him and avoids walls and furniture.
+
+**Phase 3 (built, awaiting review and a real-phone test, [docs/PHASE_3.md](docs/PHASE_3.md)):** **Sock Heist**, the
+first complete loop. Steal the sock, get noticed ("Hey! That's my sock!"), dodge a very un-scary chase round the
+furniture, hide, then trade the sock for a treat and discover SOCK = TREAT. Plus **touch controls** for phones and
+tablets in the same web game (landscape first), phone quality presets, and Add to Home Screen.
 See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
 **Play it:** https://christopher-013.github.io/im-dog/ (desktop Chrome or Edge; keyboard + mouse or a standard controller). Every push to `main`
-rebuilds and republishes it through GitHub Actions (`.github/workflows/deploy-pages.yml`).
+rebuilds and republishes it through GitHub Actions (`.github/workflows/deploy-pages.yml`). Since Phase 3 it
+also runs in phone and tablet browsers (touch controls, landscape first).
 
 ## Requirements
 - Node.js **22.12+** (tested with Node 24) and npm
-- A desktop browser with WebGL 2: Chrome or Edge first; Firefox and Safari should work
+- A desktop browser with WebGL 2: Chrome or Edge first; Firefox and Safari should work. Phones and tablets: iPhone
+  Safari and Android Chrome are the targets, not yet tested on a physical device ([docs/MOBILE.md](docs/MOBILE.md)).
 
 ## Install & run
 ```bash
 npm install
 npm run dev          # http://localhost:5173
+npm run dev:lan      # the same, reachable from a phone on your Wi-Fi (trusted networks only)
 ```
 
 ## Build & check
@@ -35,7 +43,8 @@ npm run preview      # serve dist/ at http://localhost:4173
 
 ## Controls
 WASD move · Mouse look · Wheel zoom · Shift run · C walk · E interact · F bark · G growl · Q trick · R sniff · Esc pause · ` debug panel.
-All listed controls are implemented. See [docs/CONTROLS.md](docs/CONTROLS.md).
+Touch: left thumb joystick (push past the ring to run) · drag the right side to look · buttons for interact, bark,
+sniff, trick, run and pause. All listed controls are implemented. See [docs/CONTROLS.md](docs/CONTROLS.md).
 
 ## Project layout
 ```
@@ -49,7 +58,8 @@ scripts/        build helpers
 
 ## Docs
 [Current state](docs/CURRENT_STATE.md) · [Game design](docs/GAME_DESIGN.md) · [Phase 1 scope](docs/PHASE_1.md) ·
-[Phase 2 scope](docs/PHASE_2.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) ·
+[Phase 2 scope](docs/PHASE_2.md) · [Phase 3 scope](docs/PHASE_3.md) · [Sock Heist](docs/SOCK_HEIST.md) ·
+[Mobile](docs/MOBILE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) ·
 [Moke reference](docs/MOKE_CHARACTER_REFERENCE.md) · [Moke 3D spec](docs/MOKE_3D_SPEC.md) ·
 [Moke integration](docs/MOKE_INTEGRATION.md) · [Assets & licenses](docs/ASSETS.md) · [Controls](docs/CONTROLS.md)
 

@@ -11,6 +11,8 @@ export interface Carryable {
   readonly position: Vec3Like;
   /** Conservative physics radius used to keep the entire dropped object clear of scenery. */
   readonly dropRadius?: number;
+  /** Held by someone else right now (a human took it back): not available to pick up. */
+  readonly carried?: boolean;
   /** Leaves the physics world (it now rides in his mouth). */
   pickUp(): void;
   /** Back into the physics world at `at`, facing `heading`, moving with `velocity`. */
@@ -39,6 +41,8 @@ type PickupTuning = { readonly [K in keyof typeof PICKUP]: number };
 export class PickupSystem<T extends Carryable = Carryable> {
   onPickUp: ((item: T) => void) | null = null;
   onDrop: ((item: T) => void) | null = null;
+  /** He let go of it into someone's hand (a trade): it didn't go back into the world. */
+  onHandOver: ((item: T) => void) | null = null;
 
   private carriedItem: T | null = null;
   private readonly items: T[] = [];
@@ -87,9 +91,9 @@ export class PickupSystem<T extends Carryable = Carryable> {
       type: 'PICKUP',
       label: `Pick Up ${item.name}`,
       interactionDistance: this.tuning.reach,
-      // Mouth's full: one thing at a time.
+      // Mouth's full: one thing at a time. And not while someone else is holding it.
       get enabled() {
-        return system.carriedItem === null;
+        return system.carriedItem === null && !item.carried;
       },
       get position() {
         return item.position;
@@ -104,6 +108,18 @@ export class PickupSystem<T extends Carryable = Carryable> {
     item.pickUp();
     this.onPickUp?.(item);
     return true;
+  }
+
+  /**
+   * Lets go of what he's carrying into someone else's hands (a trade): it stays out of the physics world, and
+   * whoever took it decides where it goes. Returns the item, or null if his mouth was empty.
+   */
+  handOver(): T | null {
+    const item = this.carriedItem;
+    if (!item) return null;
+    this.carriedItem = null;
+    this.onHandOver?.(item);
+    return item;
   }
 
   /** Drops what he's carrying just ahead of his mouth, kept clear of walls. */

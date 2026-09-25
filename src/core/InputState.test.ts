@@ -28,11 +28,36 @@ describe('InputState', () => {
 
   it('ignores OS key auto-repeat', () => {
     const input = new InputState(KEY_BINDINGS);
-    input.keyDown('KeyQ');
+    input.keyDown('KeyR');
     frame(input);
-    input.keyDown('KeyQ');
+    expect(input.wasPressed('sniff')).toBe(true);
+    input.keyDown('KeyR');
     frame(input);
     expect(input.wasPressed('sniff')).toBe(false);
+  });
+
+  it('adds up a controller stick and the touch joystick without one wiping the other', () => {
+    const input = new InputState(KEY_BINDINGS);
+    input.setAnalogMove(0, 0.6, 'touch');
+    input.setAnalogMove(0, 0); // a controller reporting "centred" every frame
+    expect(input.getMoveAxis({ x: 0, y: 0 })).toEqual({ x: 0, y: 0.6 });
+    input.setAnalogMove(0.3, 0);
+    expect(input.getMoveAxis({ x: 0, y: 0 })).toEqual({ x: 0.3, y: 0.6 });
+    input.releaseAll();
+    expect(input.getMoveAxis({ x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+  });
+
+  it('treats touch buttons as keys for the same actions', () => {
+    const input = new InputState(KEY_BINDINGS);
+    input.keyDown('Touch:interact');
+    input.keyDown('Touch:run');
+    frame(input);
+    expect(input.wasPressed('interact')).toBe(true);
+    expect(input.isDown('run')).toBe(true);
+    input.keyDown('ShiftLeft');
+    input.keyUp('Touch:run');
+    frame(input);
+    expect(input.isDown('run')).toBe(true); // Shift still holds it
   });
 
   it('keeps an action held while any of its keys is down', () => {

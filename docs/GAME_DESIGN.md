@@ -20,10 +20,12 @@ a coral "?" that tilts like a curious dog, and a small katakana tag (アイム�
 Palette: warm cream, cocoa ink, coral, leaf green.
 
 ## Core verbs
-Walk, trot, run, look, bark, sniff, pick up / carry / drop, push toys, lie down / get up.
+Walk, trot, run, look, bark, sniff, pick up / carry / drop, push toys, lie down / get up, and since Phase 3
+give (trade) and eat.
 
-## Future mini-games (architecture allows them, not built yet)
-- **Sock Heist:** steal a sock, get noticed ("Moke!"), run, hide, trade the sock for a treat.
+## Mini-games (the architecture allows them; only Sock Heist is built)
+- **Sock Heist:** steal a sock, get noticed ("Moke!"), run, hide, trade the sock for a treat. **Built in Phase 3**
+  (`SOCK_HEIST.md`).
 - **Perfect Nap:** find the best spot by comfort, warmth, noise and safety.
 - **Treat Hunt:** use Sniff Mode to find hidden treats.
 - **Doorbell:** race to the door, bark, chaos.
@@ -31,5 +33,6 @@ Walk, trot, run, look, bark, sniff, pick up / carry / drop, push toys, lie down 
 - **Backyard Patrol:** birds, squirrels, leaves, neighbour dogs.
 
 ## Out of scope for now
-Humans/NPCs, full house, backyard, other animals, weather, day/night, economy, quests, multiplayer,
-accounts, backend, mobile controls, consoles.
+More humans (Phase 3 has exactly one, for Sock Heist), the full Dog Logic system, full house, backyard, other
+animals, weather, day/night, family schedules, economy, quests, multiplayer, accounts, backend, native apps,
+consoles. (Phone and tablet browsers are in since Phase 3, as the same web game.)

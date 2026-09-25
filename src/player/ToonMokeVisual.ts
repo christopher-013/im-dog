@@ -764,12 +764,15 @@ export class ToonMokeVisual implements MokeVisual {
     this.rig.position.y += trick.rollHeight * (1 - Math.cos(trick.roll));
 
     // Sniffing lowers his front a touch too, not just his nose.
-    this.neck.position.y = NECK_HEIGHT - s.crouch * 0.05 - bob * 0.5 - lie * 0.03 - s.sniff * 0.02;
+    this.neck.position.y = NECK_HEIGHT - s.crouch * 0.05 - bob * 0.5 - lie * 0.03 - s.sniff * 0.02 - s.eat * 0.025;
     const a = MOKE_ANIMATION;
     // Sniffing: nose down with quick little twitches.
     const twitch = s.sniff * 0.05 * Math.sin(s.time * 26) * (0.5 + 0.5 * Math.sin(s.time * 3.1));
+    // Eating: nose to the floor, head bobbing with each chew.
+    const chew = Math.max(0, Math.sin(s.time * 15));
+    const eatDip = s.eat * (a.sniffHeadDip + 0.12 + 0.05 * chew);
     this.neck.rotation.x =
-      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch - s.bark * 0.35 + s.growl * 0.16 + lie * 0.22 + trick.neckX -
+      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch + eatDip - s.bark * 0.35 + s.growl * 0.16 + lie * 0.22 + trick.neckX -
       s.headPitch * 0.8; // glancing up at something, or down at a scent
     this.neck.rotation.z = trick.neckZ;
     this.head.rotation.y = s.headYaw * (1 - 0.5 * s.sniff) + s.sniff * 0.25 * Math.sin(s.time * 1.7);
@@ -795,7 +798,7 @@ export class ToonMokeVisual implements MokeVisual {
 
     // Eyes: idle blinks; closed while resting, a little squint while sniffing or barking.
     const eyeOpen =
-      (1 - this.blink(dt)) * (1 - 0.9 * s.rest) * (1 - 0.35 * s.sniff) * (1 - 0.4 * s.bark) * (1 - 0.5 * s.growl) * (1 - trick.squint);
+      (1 - this.blink(dt)) * (1 - 0.9 * s.rest) * (1 - 0.35 * s.sniff) * (1 - 0.4 * s.bark) * (1 - 0.5 * s.growl) * (1 - trick.squint) * (1 - 0.45 * s.eat);
     const shut = eyeOpen < 0.3;
     for (const eye of this.eyes) {
       eye.visible = !shut;
@@ -804,9 +807,9 @@ export class ToonMokeVisual implements MokeVisual {
     for (const lid of this.lids) lid.visible = shut;
 
     // A growl reveals four tiny teeth; bark/panting shows the tongue instead.
-    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0, trick.mouthOpen) : 0;
+    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0, trick.mouthOpen, s.eat * (0.25 + 0.45 * chew)) : 0;
     this.mouth.visible = open > 0.05;
-    this.tongue.visible = open > 0.05 && s.growl < 0.2;
+    this.tongue.visible = open > 0.05 && s.growl < 0.2 && s.eat < 0.2;
     this.teeth.visible = s.carry < 0.5 && s.growl > 0.05;
     this.mouth.scale.y = 0.004 + 0.008 * open;
 

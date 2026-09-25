@@ -18,7 +18,7 @@ src/
   main.ts                 entry: creates UIManager, then Game; shows a friendly error if startup fails
   config/                 ALL tunable numbers live here
     engine.ts             renderer, lens, fixed timestep
-    input.ts              actions, keyboard/gamepad bindings, stick + mouse tuning, control hints
+    input.ts              actions, keyboard/gamepad/touch bindings, stick + mouse + touch tuning, control hints
     movement.ts           Moke's movement feel (speeds, acceleration, turning) + collision capsule
     camera.ts             third-person camera feel (distance, zoom, smoothing, collision, whiskers, auto-follow)
     animation.ts          body-language tuning (lean, idle looks, tail, ducking, sit/stretch, looking at things, tricks)
@@ -31,13 +31,22 @@ src/
     audio.ts              sound levels
     mokeLook.ts           Moke's look: palette, key light, crease shading, silhouette line, collar, blink timing
     assets.ts             asset manifest (preloaded behind the loading screen)
+    quality.ts            graphics presets (HIGH desktop, MEDIUM/LOW phones) + dynamic-resolution tuning
+    human.ts              the Sock Heist human: body, speeds, sight, chase, treat timings
+    heist.ts              Sock Heist lines of dialogue and timings
   core/
     Game.ts               state machine + frame orchestration
     GameLoop.ts           FixedStep accumulator + rAF loop
     GameRenderer.ts       WebGLRenderer, resize/DPR handling, context loss
     InputState.ts         DOM-free input logic (tested)
     GamepadInput.ts       Gamepad API polling, standard-layout mapping and stick deadzones (tested)
-    InputManager.ts       DOM wiring: keyboard, mouse, wheel, pointer lock; gamepad polling
+    InputManager.ts       DOM wiring: keyboard, mouse, wheel, pointer lock; gamepad polling; touch; input mode
+    InputMode.ts          which controls are in use (keyboard/touch/gamepad), from capabilities + last use (tested)
+    TouchInput.ts         touch controls → InputState: joystick, camera drag, virtual Touch:* buttons (tested with a fake DOM)
+    VirtualJoystick.ts    floating joystick maths: deadzone, rim, sprint ring, follow (tested)
+    Quality.ts            picks the graphics preset; AdaptiveResolution (dynamic pixel ratio on phones) (tested)
+    GameEvents.ts         tiny typed publish/subscribe for gameplay events (tested)
+    MenuInput.ts          controller-only menu commands (pause, resume, play, play again) (tested)
     AssetManager.ts       runtime asset loading with graceful fallbacks (tested)
     PlayerSettings.ts     mouse sensitivity / invert-Y, saved in localStorage with safe fallbacks (tested)
   player/
@@ -53,6 +62,18 @@ src/
     Moke.ts               composite: controller + animation + visual (+ carrying/sniffing/lookAt from gameplay)
     Bark.ts               bark cooldown (tested)
     Tricks.ts             the tricks and how one is picked (random, no repeats, context rules) (tested)
+  human/                  the Sock Heist human (Phase 3)
+    HumanBrain.ts         behaviour: explicit state machine, one handler per state (tested; pure logic)
+    HumanAwareness.ts     sight cone + line of sight + feel + hearing (tested; pure)
+    NavGrid.ts            walkability grid from the room colliders, A*, path smoothing (tested)
+    HumanController.ts    body: follows paths through a Rapier character capsule (tested with Rapier)
+    ToonHumanVisual.ts    stylized placeholder human built in code; blended poses; see-through when in the way
+    Human.ts              composite: perceive → decide → move; draw
+  heist/                  Sock Heist (Phase 3)
+    SockHeistController.ts  orchestration: phases, trade, eating, discovery, completion, reset (tested)
+    SockHeistRuntime.ts   wires the heist into the game: builds the human, feeds senses, events → UI/audio
+    Treat.ts              a reusable treat: state, smell, eye appeal, "Eat Treat"
+    DogLogic.ts           remembers discoveries (SOCK = TREAT) in localStorage
   physics/
     PhysicsWorld.ts       Rapier world (lazy WASM load), static box colliders, camera sphere sweep
     CharacterBody.ts      kinematic capsule driven by Rapier's character controller
@@ -63,7 +84,7 @@ src/
     MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
   world/
     LivingRoom.ts         the room + hallway: shell, layout, spawn, landmarks (navigation-tested with Rapier)
-    furniture.ts          couch, coffee table, rug, TV console, lamp, plant, dog bed, curtains, art, door
+    furniture.ts          couch, coffee table, rug, TV console, lamp, plant, dog bed, curtains, art, door, laundry basket, treat jar
     materials.ts          the room palette (shared materials)
     textures.ts           original procedural canvas textures (floorboards, rug, pillows, art, garden)
     StaticSceneBuilder.ts places parts in nested frames, derives colliders, merges by material (tested)
@@ -83,23 +104,29 @@ src/
     roomScents.ts         the living room's sources (props while not carried, the dog bed)
   audio/
     AudioManager.ts       Web Audio context (unlocked by PLAY/RESUME), plays named sounds, never throws
-    synth.ts              original synthesized placeholder sounds: bark, growl, sniff, pickup, drop
+    synth.ts              original synthesized sounds: bark, growl, sniff, pickup, drop; surprise, whoosh, treat bag, crunch, discovery
   ui/
-    UIManager.ts          screens, controls dialog, toast, hints, contextual prompt, bark bubble, sniff haze
+    UIManager.ts          screens (incl. Sock Heist complete), controls dialog, toast, hints, input-aware prompt, touch UI state,
+                          onboarding, speech bubble, objective chip, SOCK = TREAT card, fullscreen, bark bubble, sniff haze
+    ControlGlyphs.ts      the one place actions become "E" / "A" / a touch button, and the controls reminders (tested)
     DebugPanel.ts         ` overlay + FrameStats
   styles/main.css
   utils/math.ts           clamp, damp, lerp, smoothstep, moveToward, angle helpers
   env.d.ts                build-time constants from vite.config.ts (__MOKE_MODEL_AVAILABLE__)
+public/manifest.webmanifest, public/icons/  home-screen web app (icons from scripts/make-icons.mjs)
+scripts/sw-template.js    the service worker; vite.config.ts fills in the precache list and cache name at build time
 ```
 
 
 ## Game states and the frame
-`loading → menu → playing ⇄ paused` (in `Game.ts`). Each rendered frame:
+`loading → menu → playing ⇄ paused`, and `playing → complete` when a Sock Heist ends (PLAY AGAIN / KEEP EXPLORING
+return to `playing`). Hiding the page (phone locked, app or tab switched) pauses. Each rendered frame:
 
 1. `input.beginFrame(dt)` polls gamepads, then latches button/key presses, analog movement and look delta for the frame.
 2. Global keys: debug toggle, pause.
 3. `FixedStep.advance(dt)` runs gameplay/physics at **60 Hz fixed** (0 steps while not playing). Each step:
-   build a camera-relative move intent (via `MoveBasis`) → `Moke.fixedUpdate` → `PhysicsWorld.step`.
+   build a camera-relative move intent (via `MoveBasis`) → `Moke.fixedUpdate` → `RestSystem` → Sock Heist (the
+   human perceives, decides and moves; the heist's timers) → `PhysicsWorld.step`.
 4. `Moke.update(dt, alpha)`: place the visual between the last two steps (interpolation) and animate it.
 5. `ThirdPersonCamera.update` at display rate (follows Moke's interpolated position; hides him if walls
    force the camera inside him).
@@ -124,6 +151,20 @@ so stalls are visible instead of being hidden by the simulation clamp.
 - A radial 0.18 stick deadzone is removed and the remaining range is rescaled, so drift is suppressed without losing
   the full analog range. Gamepad look is converted to time-based mouse-equivalent deltas before entering the same
   camera path. Keyboard and mouse remain usable at the same time.
+- **Touch (Phase 3, `TouchInput`):**
+  - a floating joystick on the left part of the screen feeds a separate analog source (InputState adds the
+    controller and touch axes);
+  - pushing past its ring holds `run`;
+  - dragging elsewhere adds a look delta (× `TOUCH.lookScale`);
+  - buttons are virtual `Touch:*` keys in `KEY_BINDINGS`.
+
+  Pointers are tracked by id. `reset()` on lift, cancel, lost capture, blur, pause and rotation. `update()` each
+  frame re-holds keys that a `releaseAll()` dropped under a still-held finger.
+- **Input mode (`InputMode`):**
+  - It starts from capabilities (`(pointer: coarse)` + touch points, not the user-agent), then follows the device
+    last used.
+  - It drives `html[data-input]` (CSS shows the touch controls) and every prompt, via `ControlGlyphs`.
+  - `?input=` forces it. Touch mode never requests pointer lock.
 
 ## Moke: gameplay vs. visuals (decision D7)
 The key rule: **gameplay never touches the mesh.** The data flows one way:
@@ -370,7 +411,7 @@ with a fake. Cost: about 5–7 µs per frame.
 ## Rendering
 WebGL 2 (`WebGLRenderer`), sRGB output, **Neutral** tone mapping (keeps chosen colours honest; ACES shifts warm
 hues), PCF shadows (`PCFSoftShadowMap` was removed in three r186) with `shadow.radius` for softness.
-Pixel ratio capped at 2. The buffer is resized via `ResizeObserver` plus a per-frame DPR check (monitor changes).
+Pixel ratio capped by the quality preset (2 on desktop, 1.5 or 1 on phones, lowered further by dynamic resolution). The buffer is resized via `ResizeObserver` plus a per-frame DPR check (monitor changes).
 Shaders are precompiled during loading (`compileAsync`). Static scenery uses `matrixAutoUpdate = false`.
 
 ## Physics (decision D11: Rapier)
@@ -403,6 +444,63 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
 3. Dev server `server.fs.deny` includes `**/reference/**` (403 on direct URLs).
 4. `scripts/verify-dist.mjs` runs after every build and fails if any file in `dist/` is byte-identical to a reference photo.
 
+## Mobile: quality, lifecycle, PWA (Phase 3; details in `docs/MOBILE.md`)
+- **Quality presets** (`config/quality.ts`, chosen by `pickQuality` before the renderer exists):
+  - HIGH (desktop): pixel ratio up to 2, MSAA, 2048 shadows; exactly the Phase 2 look;
+  - MEDIUM (phones and tablets): up to 1.5, 1024 shadows;
+  - LOW (modest phones): up to 1, no MSAA, 512 shadows.
+
+  `GameRenderer` takes the antialias and pixel-ratio cap; `RoomLighting` takes the shadow size and softness.
+  `?quality=` forces a preset.
+- **Dynamic resolution** (`AdaptiveResolution`, MEDIUM/LOW only): sustained slow frames lower
+  `GameRenderer.pixelRatioCap` a step; sustained headroom raises it, within the preset's range.
+- **Lifecycle:** when `visibilitychange` hides the page, Game pauses, suspends audio and releases input. When
+  it's shown again, `GameLoop.resetClock()` stops the first frame from counting the whole time away. Audio
+  resumes on the next RESUME tap.
+- **Layout:** `viewport-fit=cover` + `env(safe-area-inset-*)`. The canvas and touch layer use
+  `touch-action: none`, with `overscroll-behavior: none`. Portrait widens the vertical field of view
+  (`fitVerticalFov`, `CAMERA.minHorizontalFov/maxVerticalFov`).
+- **PWA:** `public/manifest.webmanifest` + icons. `dist/sw.js` is generated after each build (plugin
+  `im-dog:service-worker`) from the full file list:
+  - it precaches everything, under a cache name hashed from the files' contents, and deletes old caches on
+    activate;
+  - navigations are network-first, other requests cache-first.
+
+  `main.ts` registers it in production builds only, not on localhost unless `?sw=on`; `?sw=off` removes it.
+
+## Sock Heist (Phase 3; details in `docs/SOCK_HEIST.md`)
+```
+GameEvents ◄──────────── publish ─────────────┐
+   │ listen                                   │
+   ▼                                          │
+SockHeistController (phases, trade, eat,  ◄── HumanBrain (state machine) ── intent ──► HumanController ──► CharacterBody
+ discovery, completion, reset;               ▲ senses (built from Moke's       (NavGrid paths)            (Rapier)
+ implements HumanHands)                      │  controller, the sock, physics lineOfSight)
+   │ owns Treat, "Give Sock"                 │
+   ▼                                  SockHeistRuntime (wiring, per-step senses, UI/audio listeners)
+UIManager (speech, objective, SOCK = TREAT, complete screen) · AudioManager (surprise, whoosh, treat bag, crunch, chime)
+```
+- **Behaviour, body and look are separate**, like Moke's (D7): the brain never touches meshes, and the visual reads
+  only plain state (speed, crouch, pose, head yaw). The human can be replaced by a modelled character.
+- **The brain** is pure and tested. Each state is one handler returning the next state:
+  - Transitions have side effects in `go()` (lines, events).
+  - "Arrived" only counts once the body has walked the current goal, since the body's flag is a step behind after
+    a state change.
+  - Awareness uses the physics `lineOfSight` (solid scenery only) through an injected function.
+- **Navigation:** `NavGrid` is built once from `LivingRoom.colliders`:
+  - obstacles in the 0.08–1.7 m height band, widened by the human's radius (0.24 m), in 0.1 m cells;
+  - A* with no corner-cutting, then string-pulled into a few straight legs.
+
+  The body re-plans when the goal moves more than 0.3 m, or every 0.45 s, and skips ahead when stuck. No
+  navigation library.
+- **Items:** the sock is still a `Prop` handled by `PickupSystem`. Moke can't pick it up while the human holds it
+  (`Carryable.carried`). The trade uses `PickupSystem.handOver()`: out of his mouth, into their hand, never
+  through the physics world. `Prop.reset()` puts it back for a replay.
+- **Moke:** a new `eat` animation action (holds him still; `eat` clip for a `moke.glb`). The treat and the human
+  are attention targets, and the treat is a scent source.
+- **Camera:** it still ignores characters (no jitter). `SockHeistRuntime` fades the human to see-through while
+  they're between the camera and Moke.
+
 ## Testing
 Vitest (node environment) covers:
 - **Pure logic:** input state, fixed timestep, asset fallbacks, math, the locomotion model and animation state.
@@ -410,6 +508,14 @@ Vitest (node environment) covers:
   trot with no stutter steps, walls, sliding, walking under a table and not climbing a couch seat.
 - **Gameplay regressions:** interaction height and wall occlusion, conservative prop-drop clearance (including thin
   geometry), repeated pickup/drop and rest transitions, rescue of escaped props, and raw-vs-clamped frame timing.
+- **Phase 3:**
+  - input: analog sources, touch buttons, joystick maths, touch-state cleanup with a fake DOM, input modes and
+    glyphs;
+  - camera: the portrait field of view;
+  - quality presets and dynamic resolution; events;
+  - Sock Heist: the human brain's states (a simulated room: noticing, chasing, fumbling, standoff, losing him,
+    treat, trade, fetch, no soft-lock, replay), awareness, NavGrid (including the real living room), the human
+    body with real Rapier, and the heist controller (phases, trade, eating, discovery, reset).
 - **The final-model path without a model file:**
   - `syntheticMoke()` builds a tiny spec-shaped model in code;
   - tests cover clip selection and blending, crossfades, missing clips, bones and sockets, the head turn in model

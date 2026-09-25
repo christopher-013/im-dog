@@ -56,7 +56,7 @@ frame. `GltfMokeVisual` eases every clip's weight toward its target (a crossfade
 | Speed | 1D blend of the two nearest of `idle` / `walk` / `trot` / `run`, playback scaled by real ÷ authored speed (0.3–2.5×). A missing gait falls back to the nearest one present. |
 | Lying down in the bed / resting / getting up | `lie_down` → `rest` → `stand_up` (without the transitions, `rest` covers both ways) |
 | Sitting (idle 8 s) / play-bow stretch | `sit` / `stretch` |
-| Sniff mode, bark, growl | `sniff`, `bark`, `growl` |
+| Sniff mode, bark, growl, eating a treat (Sock Heist) | `sniff`, `bark`, `growl`, `eat` |
 | Trick (Q / controller X) | `trick_belly_up`, `trick_beg`, `trick_paw`, `trick_spin` |
 | Picking up / dropping | `pickup` / `drop`, played once when the carry state flips |
 | Ducking under low furniture | `duck`, **additive**, on top of any of the above |

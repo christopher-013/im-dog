@@ -113,6 +113,26 @@ export class PhysicsWorld {
   }
 
   /**
+   * Is there a clear line of sight from `from` to `to`? Only solid scenery blocks it (walls, the couch, the
+   * coffee table's top): thin legs, props and characters don't. Used for the human's eyes.
+   */
+  lineOfSight(from: Vec3Like, to: Vec3Like): boolean {
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const dz = to.z - from.z;
+    const length = Math.hypot(dx, dy, dz);
+    if (length < 1e-6) return true;
+    const ray = (this.ray ??= new this.rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }));
+    ray.origin.x = from.x;
+    ray.origin.y = from.y;
+    ray.origin.z = from.z;
+    ray.dir.x = dx / length;
+    ray.dir.y = dy / length;
+    ray.dir.z = dz / length;
+    return this.world.castRay(ray, length, true, undefined, CAMERA_QUERY_GROUPS) === null;
+  }
+
+  /**
    * Scene queries (ray casts, the character controller) only see colliders after a step.
    * Call once after adding static geometry and before the first query.
    */

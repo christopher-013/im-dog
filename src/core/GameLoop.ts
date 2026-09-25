@@ -51,6 +51,14 @@ export class GameLoop {
     this.renderer.setAnimationLoop(null);
   }
 
+  /**
+   * Forget the last frame time, e.g. when the page comes back after being hidden: the first frame then
+   * counts as zero rather than as the whole time away.
+   */
+  resetClock(): void {
+    this.lastTime = -1;
+  }
+
   private readonly tick = (time: number): void => {
     const elapsed = this.lastTime < 0 ? 0 : Math.max(0, (time - this.lastTime) / 1000);
     const dt = Math.min(elapsed, this.maxFrameDelta);

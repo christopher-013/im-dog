@@ -227,3 +227,38 @@ export function door(b: StaticSceneBuilder, m: RoomMaterials, width: number, hei
   b.add(new SphereGeometry(0.03, 12, 8), m.brass, [width / 2 - 0.09, height * 0.48, 0.05]);
 }
 
+
+/**
+ * A woven laundry basket of folded clothes (Sock Heist: the human folds laundry here, and a sock has
+ * escaped). Solid: Moke can't walk through it.
+ */
+export function laundryBasket(b: StaticSceneBuilder, m: RoomMaterials): void {
+  const W = 0.56;
+  const D = 0.4;
+  const H = 0.32;
+  const wall = 0.035;
+  b.add(rbox(W, 0.03, D, 0.012), m.wicker, [0, 0.015, 0]);
+  b.add(rbox(W, H, wall, 0.012), m.wicker, [0, H / 2, D / 2 - wall / 2]);
+  b.add(rbox(W, H, wall, 0.012), m.wicker, [0, H / 2, -D / 2 + wall / 2]);
+  b.add(rbox(wall, H, D, 0.012), m.wicker, [W / 2 - wall / 2, H / 2, 0]);
+  b.add(rbox(wall, H, D, 0.012), m.wicker, [-W / 2 + wall / 2, H / 2, 0]);
+  // A rim, and the folded pile peeking over it.
+  b.add(rbox(W + 0.03, 0.03, D + 0.03, 0.012), m.wickerDark, [0, H, 0]);
+  const pile: [RoomMaterials['coral'], number, number, number][] = [
+    [m.linenLight, 0.24, -0.08, 0.02],
+    [m.coral, 0.27, 0.07, -0.03],
+    [m.navy, 0.3, -0.05, -0.04],
+    [m.leaf, 0.33, 0.06, 0.05],
+  ];
+  for (const [material, y, x, z] of pile) b.add(rbox(0.3, 0.035, 0.24, 0.012), material, [x, y, z], { rotation: [0, x * 1.5, 0] });
+  b.addCollider([0, H / 2, 0], [W, H, D]);
+}
+
+/** A ceramic treat jar with a coral lid, up on the TV console where Moke can only dream of it. */
+export function treatJar(b: StaticSceneBuilder, m: RoomMaterials): void {
+  b.add(new CylinderGeometry(0.07, 0.065, 0.16, 24), m.ceramic, [0, 0.08, 0]);
+  b.add(new CylinderGeometry(0.078, 0.078, 0.025, 24), m.coral, [0, 0.172, 0]);
+  b.add(new CylinderGeometry(0.018, 0.022, 0.03, 12), m.coral, [0, 0.198, 0]);
+  // A little bone on the label.
+  b.add(rbox(0.06, 0.018, 0.01, 0.006), m.mustard, [0, 0.085, 0.07]);
+}

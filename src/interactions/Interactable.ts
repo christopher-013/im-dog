@@ -1,7 +1,7 @@
 import type { Vec3Like } from '../physics/CharacterBody';
 
-/** Every kind of interaction the game knows about. Phase 1 uses PICKUP, DROP and REST. */
-export const INTERACTION_TYPES = ['PICKUP', 'DROP', 'REST', 'SNIFF', 'PLAY', 'EAT', 'DRINK', 'INVESTIGATE'] as const;
+/** Every kind of interaction the game knows about. Phase 1 uses PICKUP, DROP and REST; Sock Heist adds GIVE and EAT. */
+export const INTERACTION_TYPES = ['PICKUP', 'DROP', 'REST', 'SNIFF', 'PLAY', 'EAT', 'DRINK', 'INVESTIGATE', 'GIVE'] as const;
 
 export type InteractionType = (typeof INTERACTION_TYPES)[number];
 

@@ -9,10 +9,12 @@ import {
   door,
   floorLamp,
   framedArt,
+  laundryBasket,
   pottedPlant,
   rug,
   sideTable,
   smallFrame,
+  treatJar,
   tvConsole,
 } from './furniture';
 import { createRoomMaterials, FLOOR_TILE, type RoomMaterials } from './materials';
@@ -51,6 +53,12 @@ export class LivingRoom {
     sock: new Vector3(-0.35, 0, -0.3),
     ball: new Vector3(1.55, 0, 0.35),
     toy: new Vector3(-1.05, 0, 1.55),
+    /** Sock Heist: where the human folds laundry, facing the basket; where they toss a sock back; the treat jar. */
+    laundry: new Vector3(-1.35, 0, -1.45),
+    laundryBasket: new Vector3(-2.0, 0, -1.85),
+    sockReturn: new Vector3(-2.35, 0, -1.3),
+    treatStand: new Vector3(0.95, 0, 2.2),
+    treatJar: new Vector3(0.95, 0.56, 2.77),
   };
 
   constructor() {
@@ -178,6 +186,9 @@ export class LivingRoom {
     b.at([3.05, 0, -2.6], 0, () => pottedPlant(b, m));
     // Moke's bed sits in the window's pool of afternoon sun, open side facing the room (+x).
     b.at([-2.25, 0, 0.05], Math.PI / 2, () => dogBed(b, m));
+    // Sock Heist: the laundry basket the sock escaped from, and the treat jar, out of reach on the TV console.
+    b.at([-2.0, 0, -1.85], 0.55, () => laundryBasket(b, m));
+    b.at([0.95, 0.56, 2.77], Math.PI, () => treatJar(b, m));
 
     b.at([0.3, 1.55, -hd + 0.02], 0, () => framedArt(b, m, 1.0, 0.7));
     const prints = ['coral', 'leaf', 'mustard'] as const;

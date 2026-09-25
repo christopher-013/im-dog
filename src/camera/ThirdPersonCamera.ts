@@ -33,6 +33,17 @@ export interface CameraCollider {
 export type CameraMode = 'attract' | 'follow';
 
 /**
+ * The vertical field of view (degrees) that shows at least `minHorizontal` degrees across a screen of this
+ * aspect ratio, capped at `maxVertical`. Wide screens keep `vertical` as it is; only tall portrait ones widen.
+ */
+export function fitVerticalFov(vertical: number, minHorizontal: number, aspect: number, maxVertical: number): number {
+  if (!(aspect > 0)) return vertical;
+  const halfH = (minHorizontal * Math.PI) / 360;
+  const needed = (2 * Math.atan(Math.tan(halfH) / aspect) * 180) / Math.PI;
+  return Math.min(Math.max(vertical, needed), Math.max(vertical, maxVertical));
+}
+
+/**
  * Moke's third-person camera: a low, close orbit around his head that the mouse controls.
  * - Follows smoothly, never rigidly parented, and drifts behind him while he runs and the mouse is idle.
  * - A swept sphere keeps it out of walls and furniture: it pulls in instantly and eases back out.
@@ -171,8 +182,9 @@ export class ThirdPersonCamera {
     this.lookTarget.y += t.lookAbove;
     this.camera.lookAt(this.lookTarget);
 
-    // 7. A touch wider at speed.
-    const fovTarget = t.fov + t.runFovBoost * clamp(target.speed / t.fovFullSpeed, 0, 1);
+    // 7. A touch wider at speed, and wider still on a tall portrait screen so Moke's surroundings fit.
+    const baseFov = fitVerticalFov(t.fov, t.minHorizontalFov, this.camera.aspect, t.maxVerticalFov);
+    const fovTarget = baseFov + t.runFovBoost * clamp(target.speed / t.fovFullSpeed, 0, 1);
     this.fov = dt === 0 ? fovTarget : damp(this.fov, fovTarget, 4, dt);
     if (Math.abs(this.camera.fov - this.fov) > 0.01) {
       this.camera.fov = this.fov;

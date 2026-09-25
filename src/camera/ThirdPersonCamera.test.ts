@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CAMERA, type CameraTuning } from '../config/camera';
 import { MOUSE } from '../config/input';
 import { angleDelta } from '../utils/math';
-import { ThirdPersonCamera, type CameraCollider, type CameraInput, type CameraTarget } from './ThirdPersonCamera';
+import { fitVerticalFov, ThirdPersonCamera, type CameraCollider, type CameraInput, type CameraTarget } from './ThirdPersonCamera';
 
 const DT = 1 / 60;
 // A snapshot, so live tweaks to CAMERA can't change test results.
@@ -236,5 +236,20 @@ describe('ThirdPersonCamera: menu and speed', () => {
     const { camera, run } = setup(target());
     run(2, NO_INPUT, t);
     expect(camera.fov).toBeCloseTo(tuning.fov + tuning.runFovBoost, 1);
+  });
+});
+
+describe('fitVerticalFov (portrait phones)', () => {
+  it('leaves desktop and landscape screens alone', () => {
+    expect(fitVerticalFov(55, 60, 16 / 9, 80)).toBe(55);
+    expect(fitVerticalFov(55, 60, 2.16, 80)).toBe(55); // a landscape phone
+  });
+
+  it('widens a tall portrait screen so more fits side to side, within a cap', () => {
+    const portrait = fitVerticalFov(55, 60, 390 / 844, 80);
+    expect(portrait).toBeGreaterThan(55);
+    expect(portrait).toBeLessThanOrEqual(80);
+    const square = fitVerticalFov(55, 60, 1, 80);
+    expect(square).toBeCloseTo(60);
   });
 });

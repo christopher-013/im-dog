@@ -6,8 +6,16 @@
  * "Smoothing" values are responsiveness per second: ~4 is lazy, ~15 is snappy.
  */
 import { MOKE_CHARACTER } from './mokeCharacter';
+
 export interface CameraTuning {
+  /** Vertical field of view (degrees). */
   fov: number;
+  /**
+   * Narrow (portrait phone) screens widen the vertical field of view so at least this much shows side to
+   * side (degrees), up to `maxVerticalFov`. Landscape and desktop screens are unaffected.
+   */
+  minHorizontalFov: number;
+  maxVerticalFov: number;
   /** Extra field of view at full speed, for a sense of speed (degrees). */
   runFovBoost: number;
   /** Speed at which the full boost applies (m/s). */
@@ -88,6 +96,8 @@ export interface CameraTuning {
 
 export const CAMERA: CameraTuning = {
   fov: 55,
+  minHorizontalFov: 60,
+  maxVerticalFov: 80,
   runFovBoost: 6,
   fovFullSpeed: 4,
 

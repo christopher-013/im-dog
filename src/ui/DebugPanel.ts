@@ -36,6 +36,8 @@ export class DebugPanel {
   setVisible(visible: boolean): void {
     this.visible = visible;
     this.element.hidden = !visible;
+    // Lets the HUD keep clear of it (html[data-debug]).
+    document.documentElement.toggleAttribute('data-debug', visible);
     this.sinceRefresh = Infinity; // refresh on the next update
   }
 

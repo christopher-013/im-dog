@@ -69,6 +69,8 @@ export function createRoomMaterials() {
     leaf: mat('leaf', '#3f8c67', 0.8),
     mustard: mat('mustard', '#e3b45f', 0.8),
     mug: mat('mug', '#f3efe8', 0.4),
+    wicker: mat('wicker', '#c9a26a', 0.95),
+    wickerDark: mat('wickerDark', '#a7824f', 0.95),
     door: mat('door', '#f6f1ea', 0.6),
     garden: (() => {
       const map = gardenTexture();

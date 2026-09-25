@@ -1,9 +1,9 @@
 import { AUDIO } from '../config/audio';
-import { bark, drop, growl, pickup, sniff, type Synth } from './synth';
+import { bark, crunch, discovery, drop, growl, pickup, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
 
-export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop';
+export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'discovery';
 
-const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop };
+const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop, surprise, whoosh, treatBag, crunch, discovery };
 
 /**
  * Game audio. Browsers only allow sound after a user gesture, so the AudioContext is created (or
@@ -38,6 +38,14 @@ export class AudioManager {
       this.failed = true;
       console.warn('Audio is unavailable:', err);
     }
+  }
+
+  /**
+   * Silence everything while the page is hidden (phone locked, app switched). The next PLAY/RESUME tap
+   * calls unlock(), which resumes it; iOS may also have "interrupted" it, which resume() handles too.
+   */
+  suspend(): void {
+    if (this.ctx?.state === 'running') void this.ctx.suspend();
   }
 
   play(name: SoundName): void {

@@ -5,9 +5,12 @@ export interface Vec2Like {
   y: number;
 }
 
+/** Analog movement sources that can be in use at the same time (a controller stick and the touch joystick). */
+export type AnalogSource = 'gamepad' | 'touch';
+
 /**
- * DOM-free input state. Keyboard, mouse and gamepad sources feed it raw key ids, analog movement
- * and look deltas; gameplay reads actions and device-independent axes.
+ * DOM-free input state. Keyboard, mouse, gamepad and touch sources feed it raw key ids (touch buttons are
+ * virtual `Touch:…` keys), analog movement and look deltas; gameplay reads actions and device-independent axes.
  *
  * Call beginFrame() once per rendered frame. Press/release edges and the look delta then hold
  * for that whole frame, so a quick tap is never missed and never counted twice, however many
@@ -30,8 +33,7 @@ export class InputState {
   private lookY = 0;
   private pendingZoom = 0;
   private zoom = 0;
-  private analogMoveX = 0;
-  private analogMoveY = 0;
+  private readonly analog: Record<AnalogSource, Vec2Like> = { gamepad: { x: 0, y: 0 }, touch: { x: 0, y: 0 } };
   private pendingMoveStarted = false;
   private frameMoveStarted = false;
 
@@ -93,12 +95,13 @@ export class InputState {
     this.pendingLookY += dy;
   }
 
-  /** Sets the current analog movement axis (x = right, y = forward). */
-  setAnalogMove(x: number, y: number): void {
-    const wasMoving = Math.hypot(this.analogMoveX, this.analogMoveY) > 0.001;
+  /** Sets one source's analog movement axis (x = right, y = forward). Sources add up, like keys do. */
+  setAnalogMove(x: number, y: number, source: AnalogSource = 'gamepad'): void {
+    const axis = this.analog[source];
+    const wasMoving = Math.hypot(axis.x, axis.y) > 0.001;
     const moving = Math.hypot(x, y) > 0.001;
-    this.analogMoveX = x;
-    this.analogMoveY = y;
+    axis.x = x;
+    axis.y = y;
     if (!wasMoving && moving) this.pendingMoveStarted = true;
   }
 
@@ -113,8 +116,10 @@ export class InputState {
     this.pendingLookX = 0;
     this.pendingLookY = 0;
     this.pendingZoom = 0;
-    this.analogMoveX = 0;
-    this.analogMoveY = 0;
+    for (const axis of Object.values(this.analog)) {
+      axis.x = 0;
+      axis.y = 0;
+    }
     this.pendingMoveStarted = false;
   }
 
@@ -149,8 +154,9 @@ export class InputState {
 
   /** Movement intent: x = right, y = forward. Diagonals are normalized so they aren't faster. */
   getMoveAxis(out: Vec2Like): Vec2Like {
-    const x = this.analogMoveX + (this.isDown('moveRight') ? 1 : 0) - (this.isDown('moveLeft') ? 1 : 0);
-    const y = this.analogMoveY + (this.isDown('moveForward') ? 1 : 0) - (this.isDown('moveBackward') ? 1 : 0);
+    const { gamepad, touch } = this.analog;
+    const x = gamepad.x + touch.x + (this.isDown('moveRight') ? 1 : 0) - (this.isDown('moveLeft') ? 1 : 0);
+    const y = gamepad.y + touch.y + (this.isDown('moveForward') ? 1 : 0) - (this.isDown('moveBackward') ? 1 : 0);
     const length = Math.hypot(x, y);
     const scale = length > 1 ? 1 / length : 1;
     out.x = x * scale;

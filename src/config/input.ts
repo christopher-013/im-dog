@@ -25,6 +25,8 @@ export type Action = (typeof ACTIONS)[number];
  * The first key of each action is the one shown in the UI.
  * Gamepad buttons use the standard Gamepad API layout. Analog sticks and the D-pad feed the
  * movement/look axes directly; buttons still pass through the same action layer as the keyboard.
+ * Touch buttons are virtual `Touch:…` keys (see core/TouchInput.ts); the touch joystick and camera drag
+ * feed the movement/look axes, exactly like a controller.
  */
 export const KEY_BINDINGS: Readonly<Record<Action, readonly string[]>> = {
   moveForward: ['KeyW', 'ArrowUp'],
@@ -33,15 +35,16 @@ export const KEY_BINDINGS: Readonly<Record<Action, readonly string[]>> = {
   moveRight: ['KeyD', 'ArrowRight'],
   // Not Ctrl: Ctrl+W closes the browser tab. Not Alt: it focuses the browser menu on Windows.
   walk: ['KeyC', 'Gamepad:Button4', 'Gamepad:Button6'],
-  run: ['ShiftLeft', 'ShiftRight', 'Gamepad:Button5', 'Gamepad:Button7'],
-  interact: ['KeyE', 'Gamepad:Button0'],
-  bark: ['KeyF', 'Gamepad:Button1'],
-  growl: ['KeyG', 'Gamepad:Button3'],
-  trick: ['KeyQ', 'Gamepad:Button2'],
+  // Touch: the Run toggle button, or the joystick pushed past its rim.
+  run: ['ShiftLeft', 'ShiftRight', 'Gamepad:Button5', 'Gamepad:Button7', 'Touch:run', 'Touch:sprint'],
+  interact: ['KeyE', 'Gamepad:Button0', 'Touch:interact'],
+  bark: ['KeyF', 'Gamepad:Button1', 'Touch:bark'],
+  growl: ['KeyG', 'Gamepad:Button3', 'Touch:growl'],
+  trick: ['KeyQ', 'Gamepad:Button2', 'Touch:trick'],
   // Right stick press: all four face buttons are taken.
-  sniff: ['KeyR', 'Gamepad:Button11'],
+  sniff: ['KeyR', 'Gamepad:Button11', 'Touch:sniff'],
   jump: ['Space'],
-  pause: ['Escape', 'Gamepad:Button9'],
+  pause: ['Escape', 'Gamepad:Button9', 'Touch:pause'],
   // Controller-only: keyboard menus use the focused button (Enter/Space), and Esc can't resume (see MenuInput.ts).
   resume: ['Gamepad:Button9'],
   toggleDebug: ['Backquote', 'Gamepad:Button8'],
@@ -62,6 +65,22 @@ export const GAMEPAD: GamepadSettings = {
   lookPixelsPerSecond: 720,
   buttonThreshold: 0.5,
 };
+
+/** Touch controls (phones and tablets). Distances are CSS pixels. */
+export const TOUCH = {
+  /** A touch that starts in this left fraction of the screen drives the joystick; the rest looks around. */
+  joystickZone: 0.42,
+  /** How far the knob travels from where the thumb landed. */
+  joystickRadius: 56,
+  /** Joystick deadzone (fraction of the radius); the rest is rescaled to 0..1, like a controller stick. */
+  deadzone: 0.14,
+  /** Pushing the thumb this far past the rim (× radius) makes Moke run, with no second finger needed. */
+  sprintBeyond: 1.35,
+  /** Camera drag speed, in mouse-equivalent pixels per touch pixel (phone screens are small). */
+  lookScale: 1.9,
+  /** A single touch move larger than this (px) is clamped, like a mouse spike. */
+  maxLookPerEvent: 90,
+} as const;
 
 export interface MouseSettings {
   /** Radians of camera rotation per pixel of mouse movement, at 1× scale. */
@@ -101,13 +120,23 @@ export const CONTROL_HINTS: readonly ControlHint[] = [
   { label: 'Zoom camera', input: 'Wheel', ready: true },
   { label: 'Run (hold)', input: ['run'], ready: true },
   { label: 'Walk / sneak (hold)', input: ['walk'], ready: true },
-  { label: 'Interact · pick up · drop', input: ['interact'], ready: true },
+  { label: 'Interact · pick up · drop · give · eat', input: ['interact'], ready: true },
   { label: 'Bark', input: ['bark'], ready: true },
   { label: 'Cute growl', input: ['growl'], ready: true },
   { label: 'Do a trick', input: ['trick'], ready: true },
   { label: 'Sniff', input: ['sniff'], ready: true },
   { label: 'Pause · free the mouse', input: ['pause'], ready: true },
   { label: 'Debug panel', input: ['toggleDebug'], ready: true },
+];
+
+/** What the Controls screen shows for touch play. */
+export const TOUCH_CONTROL_HINTS: readonly GamepadControlHint[] = [
+  { label: 'Move (trot)', input: 'Left thumb: drag anywhere on the left' },
+  { label: 'Run', input: 'Push the stick past its ring, or tap RUN' },
+  { label: 'Look around', input: 'Right thumb: drag anywhere on the right' },
+  { label: 'Interact · pick up · drop · give · eat', input: 'The big round button (it says what it will do)' },
+  { label: 'Bark · sniff · trick', input: 'The small buttons' },
+  { label: 'Pause', input: 'II, top corner' },
 ];
 
 /** Standard-layout controller labels (Xbox names first; position makes other pads unambiguous). */

@@ -57,6 +57,8 @@ export interface MokeAnimationState {
   bark: number;
   /** 0..1: a playful growl pose in progress. */
   growl: number;
+  /** 0..1: eating something off the floor (a treat): nose down, chewing. */
+  eat: number;
   /** 0..1: lying down (sphinx pose, head resting, sleepy eyes). */
   rest: number;
   /** 0..1: sitting, because he's been standing still a while. */
@@ -89,6 +91,7 @@ export class MokeAnimationController {
     sniff: 0,
     bark: 0,
     growl: 0,
+    eat: 0,
     rest: 0,
     sit: 0,
     stretch: 0,
@@ -110,6 +113,7 @@ export class MokeAnimationController {
   private tiltTimeLeft = 0;
   private sinceBark = Infinity;
   private sinceGrowl = Infinity;
+  private sinceEat = Infinity;
   /** When the current trick ends (s of trick time), and how long its ease-out takes. */
   private trickEnd = 0;
   private trickOut: number = MOKE_ANIMATION.tricks.blendOut;
@@ -159,10 +163,14 @@ export class MokeAnimationController {
     this.sinceGrowl += dt;
     const g = this.sinceGrowl / a.growlDuration;
     s.growl = g >= 1 ? 0 : Math.min(1, g * 9) * Math.min(1, (1 - g) * 5);
+    // Eating: straight down to it, a good chew, and back up.
+    this.sinceEat += dt;
+    const e = this.sinceEat / a.eatDuration;
+    s.eat = e >= 1 ? 0 : Math.min(1, e * 7) * Math.min(1, (1 - e) * 6);
     this.updateTrick(dt);
     this.updateSitting(dt, sample);
     const wag = s.gait === 'idle' ? a.idleTailWag : a.movingTailWag;
-    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8, s.trickBlend * a.tricks.tailWag), 3, dt);
+    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8, s.trickBlend * a.tricks.tailWag, s.eat), 3, dt);
 
     const crouchTarget = clamp((a.duckBelowHeadroom - sample.headroom) / a.duckRange, 0, 1);
     s.crouch = damp(s.crouch, crouchTarget, 10, dt);
@@ -177,6 +185,15 @@ export class MokeAnimationController {
   /** A tiny dog doing his very best to look intimidating. */
   growl(): void {
     this.sinceGrowl = 0;
+  }
+
+  /** Eats something off the floor (a treat). He stays put while he chews. */
+  eat(): void {
+    this.sinceEat = 0;
+  }
+
+  get eating(): boolean {
+    return this.sinceEat < MOKE_ANIMATION.eatDuration;
   }
 
   /** He's in the middle of a trick (including easing out of one he cut short). */
@@ -254,7 +271,7 @@ export class MokeAnimationController {
   private updateSitting(dt: number, sample: MokeMotionSample): void {
     const a = MOKE_ANIMATION;
     const s = this.state;
-    const busy = s.gait !== 'idle' || s.trick !== null || sample.sniffing || sample.resting;
+    const busy = s.gait !== 'idle' || s.trick !== null || sample.sniffing || sample.resting || s.eat > 0;
     if (busy) {
       this.sitting = false;
       this.stretchLeft = 0;

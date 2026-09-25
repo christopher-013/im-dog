@@ -15,8 +15,13 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - **Carried forward, not done: the final `moke.glb`.** A rigged, animated model built to `docs/MOKE_3D_SPEC.md` and
   installed per `docs/MOKE_INTEGRATION.md`. The game still shows the procedural `ToonMokeVisual` stand-in; don't
   call it the finished Moke.
-- **Next:** Phase 3 isn't defined yet. Don't start humans, Sock Heist, more rooms or another phase without the
-  owner's approval. Also carried over: the hands-on checks and Known Issues in `docs/CURRENT_STATE.md`.
+- **Phase 3 is built but not closed:** "Sock Heist + Mobile Web Play" (`docs/PHASE_3.md`), from the owner's brief of
+  2026-09-24. Sock Heist (one placeholder human, the treat trade, SOCK = TREAT) and touch/mobile web play are
+  implemented and tested in desktop browser emulation. **Not yet played on a physical phone** and not yet judged
+  by the owner; until it is, don't call it tested on mobile hardware. Details: `docs/SOCK_HEIST.md`, `docs/MOBILE.md`.
+- **Next:** the owner's review and a real-phone test of Phase 3, then closing it. Don't start Phase 4 (the full Dog
+  Logic system), more humans, more rooms or another mini-game without the owner's approval. Also carried over: the
+  hands-on checks and Known Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES
@@ -45,7 +50,10 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - Don't silently change architectural decisions. Check `docs/DECISIONS.md`, propose any change, and record it once the owner approves.
 - Keep Moke's visual model separate from controller and gameplay logic. Gameplay, camera, interactions and
   physics must never depend on the mesh, so `moke.glb` can replace the toon visual without rewrites. Carrying
-  uses only `visual.attachments.mouth`. Moke's size lives only in `MOKE_CHARACTER.size` (D14).
+  uses only `visual.attachments.mouth`. Moke's size lives only in `MOKE_CHARACTER.size` (D14). The same goes for the
+  Sock Heist human: `HumanBrain` and `HumanController` never touch `ToonHumanVisual` (D16).
+- Every input device (keyboard/mouse, controller, touch) feeds the same `InputState` actions; gameplay never
+  branches on the device (D15). Don't detect phones by user-agent.
 - Gameplay reads input *actions* from `src/config/input.ts`, never raw keys. Tunable numbers belong in `src/config/`.
 - Never claim something was tested unless it actually was. Say what wasn't verified.
 - Fix failures caused by the requested work before declaring completion.
@@ -57,6 +65,8 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - `docs/PHASE_1.md`: milestone scope.
   - `docs/PHASE_1_SPEC.md`: detailed requirements for Milestones 5–10.
   - `docs/PHASE_2.md`: Phase 2 scope and status.
+  - `docs/PHASE_3.md`: Phase 3 scope and status; `docs/SOCK_HEIST.md` (the mini-game, the human) and
+    `docs/MOBILE.md` (touch, quality, PWA, phone testing).
   - `docs/MOKE_CHARACTER_REFERENCE.md`: character work.
   - `docs/MOKE_3D_SPEC.md` and `docs/MOKE_INTEGRATION.md`: the final `moke.glb` and how it plugs in.
   - `docs/ASSETS.md`: licence log. Record every external asset here. Original, CC0 or properly licensed only; never purchase anything.
@@ -80,9 +90,10 @@ These are the only scripts that exist (`package.json`):
 | Purpose | Command |
 |---|---|
 | Development server | `npm run dev` (http://localhost:5173) |
+| Development server on the local network (phone testing, opt-in) | `npm run dev:lan` (Vite `--host`; trusted Wi-Fi only, see `docs/MOBILE.md`) |
 | Type checking | `npm run typecheck` (strict `tsc` for the app and `vite.config.ts`) |
 | Tests | `npm test` (Vitest, `src/**/*.test.ts`; `npm run test:watch` for watch mode) |
-| Production build | `npm run build` (type check + `vite build` + private-photo leak check) |
+| Production build | `npm run build` (type check + `vite build` with the generated service worker + private-photo leak check) |
 | Serve the build | `npm run preview` (http://localhost:4173) |
 
 No linter or formatter is configured. For visual or interactive changes, also run the game in a browser and check the console.

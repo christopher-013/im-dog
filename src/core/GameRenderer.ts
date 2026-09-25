@@ -1,5 +1,6 @@
 import { PCFShadowMap, SRGBColorSpace, WebGLRenderer, type PerspectiveCamera, type Scene } from 'three';
 import { RENDER } from '../config/engine';
+import type { QualitySettings } from '../config/quality';
 
 export class WebGLUnavailableError extends Error {
   constructor(cause: unknown) {
@@ -17,14 +18,20 @@ export class GameRenderer {
   onContextLost: (() => void) | null = null;
   onContextRestored: (() => void) | null = null;
 
+  /** Highest pixel ratio to render at: the quality preset's, lowered by dynamic resolution on phones. */
+  pixelRatioCap: number;
   private sizeDirty = true;
   private currentPixelRatio = 0;
   private readonly resizeObserver: ResizeObserver;
 
-  constructor(private readonly container: HTMLElement) {
+  constructor(
+    private readonly container: HTMLElement,
+    quality: Pick<QualitySettings, 'antialias' | 'maxPixelRatio'> = { antialias: RENDER.antialias, maxPixelRatio: RENDER.maxPixelRatio },
+  ) {
+    this.pixelRatioCap = quality.maxPixelRatio;
     try {
       this.renderer = new WebGLRenderer({
-        antialias: RENDER.antialias,
+        antialias: quality.antialias,
         powerPreference: 'high-performance',
         stencil: false,
       });
@@ -71,7 +78,7 @@ export class GameRenderer {
 
   /** Cheap when nothing changed, so it's safe to call every frame. */
   syncSize(camera: PerspectiveCamera): void {
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, RENDER.maxPixelRatio);
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, this.pixelRatioCap);
     if (!this.sizeDirty && pixelRatio === this.currentPixelRatio) return;
     this.sizeDirty = false;
     this.currentPixelRatio = pixelRatio;

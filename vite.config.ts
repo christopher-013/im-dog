@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
@@ -17,6 +18,41 @@ function runtimeLicenses(): Plugin {
         `${name}\n${'='.repeat(name.length)}\n${readFileSync(path.join(projectRoot, 'node_modules', name, 'LICENSE'), 'utf8')}`,
       ).join('\n\n');
       this.emitFile({ type: 'asset', fileName: 'THIRD_PARTY_NOTICES.txt', source });
+    },
+  };
+}
+
+/** Every file under `dir`, as forward-slash paths relative to it. */
+function listFiles(dir: string, prefix = ''): string[] {
+  return readdirSync(path.join(dir, prefix), { withFileTypes: true }).flatMap((entry) => {
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    return entry.isDirectory() ? listFiles(dir, rel) : [rel];
+  });
+}
+
+/**
+ * Writes dist/sw.js (from scripts/sw-template.js) once the whole build, public/ files included, is on disk:
+ * it precaches every file, under a cache name hashed from their contents. See docs/MOBILE.md.
+ */
+function serviceWorker(): Plugin {
+  let outDir = path.join(projectRoot, 'dist');
+  return {
+    name: 'im-dog:service-worker',
+    apply: 'build',
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir);
+    },
+    closeBundle() {
+      const files = listFiles(outDir)
+        .filter((file) => file !== 'sw.js' && !file.endsWith('.map') && !path.basename(file).startsWith('.'))
+        .sort();
+      const hash = createHash('sha256');
+      for (const file of files) hash.update(file).update(readFileSync(path.join(outDir, file)));
+      const precache = ['./', ...files.filter((file) => file !== 'index.html')];
+      const source = readFileSync(path.join(projectRoot, 'scripts', 'sw-template.js'), 'utf8')
+        .replace('__VERSION__', hash.digest('hex').slice(0, 12))
+        .replace('__PRECACHE__', JSON.stringify(precache));
+      writeFileSync(path.join(outDir, 'sw.js'), source);
     },
   };
 }
@@ -55,7 +91,7 @@ export default defineConfig({
   base: './',
   // Only ask for moke.glb when it's there (restart the dev server after adding it). See docs/MOKE_INTEGRATION.md.
   define: { __MOKE_MODEL_AVAILABLE__: JSON.stringify(existsSync(MOKE_MODEL_FILE)) },
-  plugins: [blockPrivateReferencePhotos(), runtimeLicenses()],
+  plugins: [blockPrivateReferencePhotos(), runtimeLicenses(), serviceWorker()],
   server: {
     fs: {
       // Vite's defaults, plus the private reference photos.

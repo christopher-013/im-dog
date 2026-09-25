@@ -190,3 +190,66 @@ export const drop: Synth = (ctx, out, t0, pitch, noise) => {
   lp.frequency.value = 900;
   thud.connect(lp).connect(envelope(ctx, t0, 0.003, 0.4, 0.05)).connect(out);
 };
+
+// ---- Sock Heist (Phase 3)
+
+/** The human's "!" moment: a quick comic slide-whistle up. */
+export const surprise: Synth = (ctx, out, t0, pitch) => {
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(520 * pitch, t0);
+  osc.frequency.exponentialRampToValueAtTime(1350 * pitch, t0 + 0.16);
+  osc.connect(envelope(ctx, t0, 0.01, 0.7, 0.2)).connect(out);
+  osc.start(t0);
+  osc.stop(t0 + 0.24);
+};
+
+/** A grab that misses: a soft airy whoosh. */
+export const whoosh: Synth = (ctx, out, t0, pitch, noise) => {
+  const src = noiseSource(ctx, noise, t0, 0.3);
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.Q.value = 0.9;
+  filter.frequency.setValueAtTime(500 * pitch, t0);
+  filter.frequency.exponentialRampToValueAtTime(2400 * pitch, t0 + 0.22);
+  src.connect(filter).connect(envelope(ctx, t0, 0.06, 0.8, 0.22)).connect(out);
+};
+
+/** A treat bag being shaken: three crinkly rustles. Every dog knows this sound. */
+export const treatBag: Synth = (ctx, out, t0, pitch, noise) => {
+  for (let i = 0; i < 3; i++) {
+    const t = t0 + i * 0.13;
+    const src = noiseSource(ctx, noise, t, 0.09);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 3800 * pitch;
+    src.connect(filter).connect(envelope(ctx, t, 0.004, 0.9, 0.08)).connect(out);
+  }
+};
+
+/** Crunch, crunch, crunch: a small biscuit being enjoyed. */
+export const crunch: Synth = (ctx, out, t0, pitch, noise) => {
+  for (let i = 0; i < 4; i++) {
+    const t = t0 + i * (0.22 + Math.random() * 0.05);
+    const src = noiseSource(ctx, noise, t, 0.05);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = (1500 + Math.random() * 600) * pitch;
+    filter.Q.value = 1.2;
+    src.connect(filter).connect(envelope(ctx, t, 0.002, 1, 0.045)).connect(out);
+  }
+};
+
+/** Dog Logic discovered: a bright little four-note chime. */
+export const discovery: Synth = (ctx, out, t0, pitch) => {
+  const notes = [523.25, 659.25, 783.99, 1046.5];
+  notes.forEach((f, i) => {
+    const t = t0 + i * 0.09;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = f * pitch;
+    osc.connect(envelope(ctx, t, 0.01, 0.55, i === notes.length - 1 ? 0.7 : 0.25)).connect(out);
+    osc.start(t);
+    osc.stop(t + 0.8);
+  });
+};

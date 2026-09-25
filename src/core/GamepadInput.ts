@@ -35,8 +35,11 @@ export class GamepadInput {
   connected = false;
   name = '';
   mapping = '';
+  /** True if a button was pressed or a stick moved this frame (the player is using the controller). */
+  used = false;
 
   update(gamepads: readonly (GamepadLike | null)[], input: InputState, dt: number): void {
+    this.used = false;
     const pad = this.findPad(gamepads);
     if (!pad) {
       this.disconnect(input);
@@ -53,6 +56,7 @@ export class GamepadInput {
       if (down && !this.buttonsDown.has(i)) {
         this.buttonsDown.add(i);
         input.keyDown(buttonId(i));
+        this.used = true;
       } else if (down && !input.isKeyDown(buttonId(i))) {
         // Still held, but the input state was reset (pause, focus loss): hold it again, without a new press.
         input.keyHeld(buttonId(i));
@@ -70,6 +74,7 @@ export class GamepadInput {
     input.setAnalogMove((stick.x + dpadX) * moveScale, (-stick.y + dpadY) * moveScale);
 
     const look = applyStickDeadzone(pad.axes[2] ?? 0, pad.axes[3] ?? 0, GAMEPAD.deadzone, this.look);
+    if (stick.x !== 0 || stick.y !== 0 || look.x !== 0 || look.y !== 0) this.used = true;
     input.addLook(
       look.x * GAMEPAD.lookPixelsPerSecond * dt,
       look.y * GAMEPAD.lookPixelsPerSecond * dt,

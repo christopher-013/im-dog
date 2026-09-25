@@ -22,6 +22,8 @@ export const MOKE_CLIPS = {
   pickup: { loop: false, need: 'recommended' },
   drop: { loop: false, need: 'recommended' },
   growl: { loop: false, need: 'recommended' },
+  // Eating a treat off the floor (Sock Heist).
+  eat: { loop: false, need: 'recommended' },
   stretch: { loop: false, need: 'recommended' },
   // Ducking under low furniture (the coffee table): an additive pose layered on whatever else he's doing.
   duck: { loop: false, need: 'recommended' },
@@ -109,6 +111,7 @@ export function selectClips(s: Readonly<MokeAnimationState>, ctx: ClipContext, o
   add('stretch', s.stretch);
   add('sniff', s.sniff);
   add('growl', s.growl);
+  add('eat', s.eat);
   add('bark', s.bark);
   add('pickup', ctx.pickup);
   add('drop', ctx.drop);

@@ -7,7 +7,10 @@ import { MOKE_ATTENTION } from '../config/attention';
 import { CAMERA } from '../config/camera';
 import { CAMERA_LENS, RENDER } from '../config/engine';
 import { MOKE_BODY } from '../config/movement';
+import { QUALITY, type QualityLevel } from '../config/quality';
+import { HUMAN } from '../config/human';
 import { SNIFF } from '../config/senses';
+import { SockHeistRuntime } from '../heist/SockHeistRuntime';
 import { InteractionSystem } from '../interactions/InteractionSystem';
 import { PickupSystem } from '../interactions/PickupSystem';
 import { RestSystem } from '../interactions/RestSystem';
@@ -27,22 +30,25 @@ import { createRoomScents } from '../senses/roomScents';
 import { ScentSystem } from '../senses/ScentSystem';
 import { ScentWisps } from '../senses/ScentWisps';
 import { DebugPanel, FrameStats, type DebugValues } from '../ui/DebugPanel';
+import { controlsSummary } from '../ui/ControlGlyphs';
 import type { UIManager } from '../ui/UIManager';
 import { LivingRoom } from '../world/LivingRoom';
 import { applySoftEnvironment, RoomLighting } from '../world/RoomLighting';
 import { AssetManager } from './AssetManager';
+import { GameEvents } from './GameEvents';
 import { FixedStep, GameLoop } from './GameLoop';
 import { GameRenderer } from './GameRenderer';
 import { InputManager } from './InputManager';
 import { menuCommand } from './MenuInput';
+import { AdaptiveResolution, pickQuality } from './Quality';
 import type { Vec2Like } from './InputState';
 import { applySettings, loadSettings, saveSettings } from './PlayerSettings';
 
-export type GameState = 'loading' | 'menu' | 'playing' | 'paused';
+export type GameState = 'loading' | 'menu' | 'playing' | 'paused' | 'complete';
 
 /**
  * Top-level orchestrator: owns the renderer, scene, input, physics, UI and the game state
- * machine (loading → menu → playing ⇄ paused), and runs the frame:
+ * machine (loading → menu → playing ⇄ paused, and playing → complete after a Sock Heist), and runs the frame:
  *
  *   input.beginFrame → global keys → fixed steps (Moke + physics) → Moke visuals → camera → render → debug
  */
@@ -51,6 +57,9 @@ export class Game {
   private readonly scene = new Scene();
   private readonly camera = new PerspectiveCamera(CAMERA.fov, 1, CAMERA_LENS.near, CAMERA_LENS.far);
   private readonly gfx: GameRenderer;
+  /** Graphics preset: HIGH on desktop, lower on phones and tablets (see config/quality.ts). */
+  private readonly quality: QualityLevel;
+  private readonly resolution: AdaptiveResolution;
   private readonly input: InputManager;
   private readonly assets = new AssetManager();
   private readonly debug: DebugPanel;
@@ -85,6 +94,9 @@ export class Game {
   private props: Prop[] = [];
   private pickup: PickupSystem<Prop> | null = null;
   private readonly rest: RestSystem;
+  /** Gameplay events (Sock Heist publishes; UI, audio and the heist listen). */
+  private readonly events = new GameEvents();
+  private heist: SockHeistRuntime | null = null;
 
   private readonly lookDelta: Vec2Like = { x: 0, y: 0 };
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
@@ -97,8 +109,17 @@ export class Game {
     viewport: HTMLElement,
     private readonly ui: UIManager,
   ) {
-    this.gfx = new GameRenderer(viewport);
-    this.input = new InputManager(this.gfx.canvas);
+    const params = new URLSearchParams(location.search);
+    this.quality = pickQuality({
+      forced: params.get('quality'),
+      touchPrimary: matchMedia('(pointer: coarse)').matches && (navigator.maxTouchPoints ?? 0) > 0,
+      memoryGB: (navigator as Navigator & { deviceMemory?: number }).deviceMemory,
+      cores: navigator.hardwareConcurrency,
+    });
+    const quality = QUALITY[this.quality];
+    this.resolution = new AdaptiveResolution(quality);
+    this.gfx = new GameRenderer(viewport, quality);
+    this.input = new InputManager(this.gfx.canvas, ui.touchRoot);
     this.debug = new DebugPanel(viewport.parentElement ?? document.body);
     this.loop = new GameLoop(this.gfx.renderer, this.frame);
 
@@ -110,23 +131,33 @@ export class Game {
     });
 
     this.scene.background = new Color(RENDER.background);
-    this.scene.add(new RoomLighting().object, this.room.object, this.wisps.object);
+    this.scene.add(new RoomLighting(quality).object, this.room.object, this.wisps.object);
     applySoftEnvironment(this.gfx.renderer, this.scene);
     this.followCamera = new ThirdPersonCamera(this.camera, this.updateCameraTarget());
 
-    ui.bind({ onPlay: () => this.play(), onResume: () => this.resume() });
+    ui.bind({
+      onPlay: () => this.play(),
+      onResume: () => this.resume(),
+      onPlayAgain: () => this.playAgain(),
+      onKeepExploring: () => this.keepExploring(),
+    });
     const settings = loadSettings();
     applySettings(settings);
     ui.bindSettings(settings, (changed) => {
       applySettings(changed);
       saveSettings(changed);
     });
+    ui.setInputMode(this.input.mode);
+    this.input.onModeChange = (mode) => {
+      ui.setInputMode(mode);
+      if (mode !== 'keyboard') ui.setPointerHint(false);
+    };
     this.input.onPointerLockChange = (locked) => {
       if (!locked && this.state === 'playing') this.pause();
-      this.ui.setPointerHint(this.state === 'playing' && !locked);
+      this.ui.setPointerHint(this.state === 'playing' && !locked && this.input.mode === 'keyboard');
     };
     this.input.onPointerLockError = () => {
-      if (this.state === 'playing') this.ui.setPointerHint(true);
+      if (this.state === 'playing' && this.input.mode === 'keyboard') this.ui.setPointerHint(true);
     };
     this.gfx.canvas.addEventListener('click', () => {
       if (this.state === 'playing' && !this.input.isPointerLocked) void this.input.requestPointerLock();
@@ -134,8 +165,18 @@ export class Game {
     this.gfx.onContextLost = () => this.ui.showToast('Graphics hiccup. Trying to recover…', 6000);
     this.gfx.onContextRestored = () => this.ui.showToast('Back!', 2000);
 
+    // Phone locked, app switched, tab hidden: pause (never keep running unseen) and silence the audio.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.pause();
+        this.audio.suspend();
+      } else {
+        this.loop.resetClock();
+      }
+    });
+
     this.registerDebugSections();
-    if (new URLSearchParams(location.search).has('debug')) this.debug.setVisible(true);
+    if (params.has('debug')) this.debug.setVisible(true);
   }
 
   async start(): Promise<void> {
@@ -150,6 +191,7 @@ export class Game {
     this.physics = physics;
     const moke = (this.moke = this.spawnMoke(physics));
     this.spawnProps(physics, moke);
+    this.spawnHeist(physics, moke);
     this.followCamera.collider = physics;
     this.followCamera.snapBehind(this.updateCameraTarget());
 
@@ -193,15 +235,71 @@ export class Game {
       prop.holdIn(moke.visual.attachments.mouth);
       moke.carrying = true;
       this.audio.play('pickup');
+      if (prop.id === 'sock') this.events.emit('SOCK_PICKED_UP', { by: 'moke' });
     };
     pickup.onDrop = (prop) => {
       prop.release(this.scene);
+      moke.carrying = false;
+      this.audio.play('drop');
+      if (prop.id === 'sock') this.events.emit('SOCK_DROPPED', { at: prop.position });
+    };
+    // A trade: the sock goes into the human's hand, not back into the world.
+    pickup.onHandOver = () => {
       moke.carrying = false;
       this.audio.play('drop');
     };
     this.pickup = pickup;
     for (const source of createRoomScents(this.room, this.props)) this.scent.register(source);
     this.registerAttention();
+  }
+
+  /** Sock Heist: the human, the treat and the trade (see heist/SockHeistRuntime.ts and docs/SOCK_HEIST.md). */
+  private spawnHeist(physics: PhysicsWorld, moke: Moke): void {
+    const sock = this.props.find((p) => p.id === 'sock');
+    if (!sock || !this.pickup) return;
+    this.heist = new SockHeistRuntime({
+      scene: this.scene,
+      physics,
+      room: this.room,
+      events: this.events,
+      interactions: this.interactions,
+      pickup: this.pickup,
+      sock,
+      moke,
+      scent: this.scent,
+      attention: this.attention,
+      ui: this.ui,
+      audio: this.audio,
+      mokeSays: (text) => this.showVoiceBubble(text),
+    });
+    this.events.on('HEIST_COMPLETE', ({ seconds }) => this.completeHeist(seconds));
+  }
+
+  /** "Sock Heist Complete": the card with PLAY AGAIN / KEEP EXPLORING (the world waits behind it). */
+  private completeHeist(seconds: number): void {
+    if (this.state !== 'playing') return;
+    this.setState('complete');
+    this.ui.showComplete(seconds);
+    this.input.exitPointerLock();
+    this.input.releaseAll();
+  }
+
+  private playAgain(): void {
+    if (this.state !== 'complete') return;
+    this.heist?.heist.reset();
+    this.ui.clearHeist();
+    this.audio.unlock();
+    this.setState('playing');
+    void this.input.requestPointerLock();
+  }
+
+  private keepExploring(): void {
+    if (this.state !== 'complete') return;
+    this.heist?.heist.keepExploring();
+    this.ui.clearHeist();
+    this.audio.unlock();
+    this.setState('playing');
+    void this.input.requestPointerLock();
   }
 
   /** What catches Moke's eye: the loose props (not while in his mouth) and his bed. */
@@ -244,6 +342,7 @@ export class Game {
     this.input.gameplayFocus = next === 'playing';
     this.followCamera.mode = next === 'loading' || next === 'menu' ? 'attract' : 'follow';
     this.ui.showScreen(next === 'playing' ? null : next);
+    this.ui.setPlaying(next === 'playing');
   }
 
   private play(captureMouse = true): void {
@@ -252,10 +351,22 @@ export class Game {
     this.setState('playing');
     this.followCamera.recenterBehind(this.updateCameraTarget());
     if (captureMouse) void this.input.requestPointerLock();
-    const controls = this.input.gamepad.connected
-      ? 'Left stick move · Right stick look · A interact · B bark · X trick · Y growl · Right stick press sniff'
-      : 'WASD to trot · Shift to run · C to walk · F bark · G growl · Q trick · R sniff';
-    this.ui.showToast(controls, 5000);
+    this.showControlsIntro();
+  }
+
+  /** The first time on each kind of controls, a few seconds of how-to; after that, a one-line reminder. */
+  private showControlsIntro(): void {
+    const mode = this.input.mode;
+    const seenKey = `imdog.onboarded.${mode}`;
+    let seen = false;
+    try {
+      seen = localStorage.getItem(seenKey) === '1';
+      localStorage.setItem(seenKey, '1');
+    } catch {
+      // Private mode or blocked storage: just show it.
+    }
+    if (seen) this.ui.showToast(controlsSummary(mode), 5000);
+    else this.ui.showOnboarding(mode);
   }
 
   private resume(captureMouse = true): void {
@@ -269,7 +380,7 @@ export class Game {
     if (this.state !== 'playing') return;
     this.setState('paused');
     this.input.exitPointerLock();
-    this.input.state.releaseAll();
+    this.input.releaseAll();
   }
 
   private readonly frame = (dt: number, elapsed: number): void => {
@@ -282,8 +393,9 @@ export class Game {
     else if (command === 'resume') this.resume(false);
     else if (command === 'play') this.play(false);
     else if (command === 'closeControls') this.ui.closeControls();
+    else if (command === 'playAgain') this.playAgain();
     // The press that started or resumed play mustn't also count as an in-game action (A is also "interact").
-    const enteredPlay = command === 'resume' || command === 'play';
+    const enteredPlay = command === 'resume' || command === 'play' || command === 'playAgain';
 
     const playing = this.state === 'playing';
     // Discrete actions are read once per rendered frame, so a tap is never missed or doubled.
@@ -294,6 +406,7 @@ export class Game {
     const alpha = this.fixedStep.advance(playing ? dt : 0, this.fixedUpdate);
     this.updateAttention(dt);
     this.moke?.update(dt, alpha);
+    this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing);
     for (const prop of this.props) prop.render(alpha);
     this.updateInteractionPrompt(playing);
     this.updateSniff(playing ? dt : 0, playing);
@@ -309,6 +422,8 @@ export class Game {
     if (this.barkedThisFrame) this.showBarkBubble();
     if (this.growledThisFrame) this.showGrowlBubble();
 
+    // Dynamic resolution on phones: a slightly softer picture beats a stuttering one.
+    if (playing && this.resolution.update(dt, elapsed * 1000)) this.gfx.pixelRatioCap = this.resolution.pixelRatio;
     this.gfx.render(this.scene, this.camera);
     this.frameStats.record(elapsed);
     this.debug.update(dt);
@@ -325,11 +440,12 @@ export class Game {
       // A trick holds him in place; heading off somewhere cuts it short.
       const tricking = this.moke.animation.holdsStillForTrick;
       if (tricking && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.moke.animation.cancelTrick();
-      const stayPut = this.rest.holdsMoke || this.moke.animation.holdsStillForTrick;
+      const stayPut = this.rest.holdsMoke || this.moke.animation.holdsStillForTrick || this.moke.animation.eating;
       this.moke.fixedUpdate(step, stayPut ? this.stillIntent : this.moveIntent);
     }
     this.rest.update(step, c);
     this.moke.resting = this.rest.lying;
+    this.heist?.fixedUpdate(step);
     this.physics.step();
     for (const prop of this.props) prop.afterStep();
   };
@@ -366,6 +482,7 @@ export class Game {
       this.moke.animation.bark();
       this.audio.play('bark');
       this.barkedThisFrame = true;
+      this.heist?.noteBark();
     }
     if (input.wasPressed('growl') && this.moke) {
       this.moke.animation.growl();
@@ -451,6 +568,7 @@ export class Game {
         'avg / worst': `${this.frameStats.averageMs.toFixed(1)} / ${this.frameStats.worstMs.toFixed(1)} ms`,
         'draw calls': info.render.calls,
         triangles: info.render.triangles.toLocaleString(),
+        quality: `${this.quality}${QUALITY[this.quality].adaptive ? ` (cap ${this.gfx.pixelRatioCap.toFixed(2)})` : ''}`,
         'pixel ratio': this.gfx.pixelRatio.toFixed(2),
         buffer: `${width}×${height}`,
       };
@@ -518,10 +636,29 @@ export class Game {
     this.debug.addSection('Input', () => {
       const move = this.input.state.getMoveAxis(this.moveAxis);
       return {
+        mode: this.input.mode,
+        viewport: `${window.innerWidth}×${window.innerHeight} ${matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape'} · DPR ${window.devicePixelRatio}`,
         held: this.input.state.heldActions().join(' ') || '—',
         move: `${move.x.toFixed(2)}, ${move.y.toFixed(2)}`,
         gamepad: this.input.gamepad.connected ? this.input.gamepad.name : '—',
         mapping: this.input.gamepad.mapping || '—',
+      };
+    });
+    this.debug.addSection('Sock Heist', (): DebugValues => {
+      const runtime = this.heist;
+      if (!runtime) return { status: 'not set up' };
+      const { heist, human } = runtime;
+      const b = human.brain;
+      const p = human.controller.position;
+      return {
+        phase: `${heist.phase} (${heist.elapsed.toFixed(0)} s)`,
+        human: `${b.state} ${b.timeInState.toFixed(1)} s`,
+        'sees Moke': b.seesMoke,
+        frustration: `${b.frustration.toFixed(1)} / ${HUMAN.chase.giveUpAt}`,
+        holding: [b.hasSock ? 'sock' : '', b.hasTreat ? 'treat' : ''].filter(Boolean).join(' + ') || '—',
+        'human at': `${p.x.toFixed(2)}, ${p.z.toFixed(2)} · ${human.controller.speed.toFixed(2)} m/s`,
+        treat: heist.treat.state,
+        events: this.events.recent.join(' › ') || '—',
       };
     });
     this.debug.addSection('Camera', () => this.followCamera.debugInfo());

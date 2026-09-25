@@ -66,6 +66,13 @@ export class Prop implements Carryable {
     this.snapToBody();
   }
 
+  /** A Sock Heist replay: back where it started and loose in the world again, whoever was holding it. */
+  reset(parent: Object3D): void {
+    this.carriedNow = false;
+    parent.add(this.view);
+    this.returnHome();
+  }
+
   /** After each physics step. */
   afterStep(): void {
     if (this.carriedNow) return;

@@ -57,6 +57,7 @@ frame. `GltfMokeVisual` eases every clip's weight toward its target (a crossfade
 | Lying down in the bed / resting / getting up | `lie_down` → `rest` → `stand_up` (without the transitions, `rest` covers both ways) |
 | Sitting (idle 8 s) / play-bow stretch | `sit` / `stretch` |
 | Sniff mode, bark, growl, eating a treat (Sock Heist) | `sniff`, `bark`, `growl`, `eat` |
+| In the air (a jump, or dropping off the couch) | `jump` |
 | Trick (Q / controller X) | `trick_belly_up`, `trick_beg`, `trick_paw`, `trick_spin` |
 | Picking up / dropping | `pickup` / `drop`, played once when the carry state flips |
 | Ducking under low furniture | `duck`, **additive**, on top of any of the above |
@@ -115,7 +116,8 @@ and `imdog.moke.visual.clips` the clips it found.
    | Ducking | Under the coffee table: he ducks, and neither his head nor his tail goes through it. |
    | Carrying | E near the sock, ball and rope toy: each sits in his mouth, including at a run. E again to drop. |
    | Sniff | R: nose down, sniffing, head turned toward the strongest scent. |
-   | Bark, growl | F and G: mouth opens. |
+   | Bark, growl | F (at random, press a few times): mouth opens. |
+   | Jump | Space next to the couch or coffee table: he leaps up and lands on top; nothing pokes through the cushions. |
    | Tricks | Q ×4: belly up, beg, paw, spin; moving cancels a trick smoothly. |
    | Rest | E at his bed: lies down rump first, rests with eyes closed; E or a move key gets him up. |
    | Rapid mixed input | Mash moves, E, R, F and Q together: no stuck pose. |

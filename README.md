@@ -7,7 +7,7 @@ a small white Maltipoo. No combat, no death: just socks, smells, naps and a very
 (tag `phase-2-complete`, [docs/PHASE_2.md](docs/PHASE_2.md)). The game is ready for a final rigged, animated `moke.glb`, which still has
 to be made. Until then, a soft, stylized stand-in Moke modelled on the real dog (curly white
 coat, dark eyes, black button nose, blue collar) trots, runs and sneaks around a cozy, true-scale living room: linen couch, rug, coffee table he can
-duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can bark, growl, do tricks, sniff,
+duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can jump up onto the couch and coffee table, bark, growl, do tricks, sniff,
 carry his sock and toys, and nap in his bed. A low dog-height camera follows him and avoids walls and furniture.
 
 **Phase 3 (built, awaiting review and a real-phone test, [docs/PHASE_3.md](docs/PHASE_3.md)):** **Sock Heist**, the
@@ -42,9 +42,9 @@ npm run preview      # serve dist/ at http://localhost:4173
 `dist/` is a plain static site (relative paths) that can go on GitHub Pages, Cloudflare Pages, Netlify or Vercel.
 
 ## Controls
-WASD move · Mouse look · Wheel zoom · Shift run · C walk · E interact · F bark · G growl · Q trick · R sniff · Esc pause · ` debug panel.
-Touch: left thumb joystick (push past the ring to run) · drag the right side to look · buttons for interact, bark,
-sniff, trick, run and pause. All listed controls are implemented. See [docs/CONTROLS.md](docs/CONTROLS.md).
+WASD move · Mouse look · Wheel zoom · Shift run · C walk · Space jump · E interact · F bark or growl · Q trick · R sniff · Esc pause · ` debug panel.
+Touch: left thumb joystick (push past the ring to run) · drag the right side to look · tap the paw to interact, hold
+it for jump, bark or growl, sniff, trick and run · pause. All listed controls are implemented. See [docs/CONTROLS.md](docs/CONTROLS.md).
 
 ## Project layout
 ```

@@ -732,17 +732,21 @@ export class ToonMokeVisual implements MokeVisual {
     const { active, lie } = composePose(s, this.pose);
     const trick = this.pose;
     const speed = Math.max(s.speed, trick.stepSpeed);
-    const moving = clamp(speed / 0.35, 0, 1);
+    // In the air his legs stop walking and reach instead.
+    const ground = 1 - s.air;
+    const moving = clamp(speed / 0.35, 0, 1) * ground;
 
     // Gait cycle: stride length grows with speed, so little legs patter at a walk and reach at a run.
     const stride = lerp(0.2, 0.55, clamp(speed / 4, 0, 1));
-    this.phase = (this.phase + (speed / stride) * dt) % 1;
+    this.phase = (this.phase + (speed / stride) * dt * ground) % 1;
     const p = this.phase * TAU;
-    const swing = clamp(speed * 0.3, 0, 0.7) * (1 - s.rest);
+    const swing = clamp(speed * 0.3, 0, 0.7) * (1 - s.rest) * ground;
     for (const [i, leg] of this.legs.entries()) {
       const a = p + lerp(leg.trot, leg.run, s.runBlend);
+      // Jumping: front paws reach forward, hind legs push out behind (more on the way up, less coming down).
+      const leap = s.air * (leg.front ? -(0.75 + 0.25 * s.rise) : 0.5 + 0.2 * s.rise);
       // Lying: a sphinx pose, front paws stretched forward, hind legs tucked alongside.
-      leg.pivot.rotation.x = swing * Math.sin(a) - lie * (leg.front ? 1.35 : 1.15) + trick.legX[i]!;
+      leg.pivot.rotation.x = swing * Math.sin(a) - lie * (leg.front ? 1.35 : 1.15) + trick.legX[i]! + leap;
       leg.pivot.rotation.z = lie * (leg.front ? 0 : leg.side * 0.35) + trick.legZ[i]!;
       // Lift the paw while it swings forward, so feet step instead of sliding.
       leg.pivot.position.y = HIP_HEIGHT + Math.max(0, -Math.cos(a)) * 0.022 * moving;
@@ -753,9 +757,10 @@ export class ToonMokeVisual implements MokeVisual {
     this.torso.rotation.x = s.runBlend * 0.09 * Math.sin(p + 0.8);
     this.body.scale.y = 1 + (1 - moving) * 0.02 * Math.sin(s.time * 2.6); // breathing
 
-    // A bark is a little hop; a growl plants him low and pushes his chest forward.
-    this.rig.position.set(0, -s.crouch * 0.03 + s.bark * 0.018 - s.growl * 0.008 - lie * 0.105 + trick.lift, RIG_Z);
-    this.rig.rotation.set(-s.bark * 0.08 + s.growl * 0.045 + trick.pitch, trick.spin, -s.lean + trick.roll);
+    // A bark is a little hop; a growl plants him low and pushes his chest forward. In the air he points his nose
+    // where he's going (up, then down), and he squashes a little as he lands.
+    this.rig.position.set(0, -s.crouch * 0.03 + s.bark * 0.018 - s.growl * 0.008 - lie * 0.105 + trick.lift - s.land * 0.035, RIG_Z);
+    this.rig.rotation.set(-s.bark * 0.08 + s.growl * 0.045 + trick.pitch - s.air * s.rise * 0.28, trick.spin, -s.lean + trick.roll);
     // Tricks pitch him about his hind hips and roll him about his middle, not about his feet.
     const [py, pz] = trick.pitchPivot;
     this.rig.position.y += py - (py * Math.cos(trick.pitch) - pz * Math.sin(trick.pitch));
@@ -772,7 +777,7 @@ export class ToonMokeVisual implements MokeVisual {
     const chew = Math.max(0, Math.sin(s.time * 15));
     const eatDip = s.eat * (a.sniffHeadDip + 0.12 + 0.05 * chew);
     this.neck.rotation.x =
-      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch + eatDip - s.bark * 0.35 + s.growl * 0.16 + lie * 0.22 + trick.neckX -
+      s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch + eatDip - s.bark * 0.35 + s.growl * 0.16 + lie * 0.22 + trick.neckX + s.land * 0.18 -
       s.headPitch * 0.8; // glancing up at something, or down at a scent
     this.neck.rotation.z = trick.neckZ;
     this.head.rotation.y = s.headYaw * (1 - 0.5 * s.sniff) + s.sniff * 0.25 * Math.sin(s.time * 1.7);
@@ -781,8 +786,10 @@ export class ToonMokeVisual implements MokeVisual {
     const flop = moving * 0.1 * Math.sin(2 * p + 1.2);
     for (const ear of this.ears) {
       // Drop ears: they bounce and sweep back at speed rather than sticking out sideways.
-      ear.pivot.rotation.z = ear.side * (0.12 + flop + s.runBlend * 0.15 - s.bark * 0.25 - s.sniff * 0.08 - s.growl * 0.16);
-      ear.pivot.rotation.x = s.runBlend * 0.6 - s.bark * 0.3 - s.growl * 0.38;
+      // In the air they fly up, and float out on the way down.
+      const floaty = s.air * 0.15 * clamp(-s.rise, 0, 1);
+      ear.pivot.rotation.z = ear.side * (0.12 + flop + s.runBlend * 0.15 - s.bark * 0.25 - s.sniff * 0.08 - s.growl * 0.16 + floaty);
+      ear.pivot.rotation.x = s.runBlend * 0.6 - s.bark * 0.3 - s.growl * 0.38 - s.air * 0.35;
     }
 
     // The tag hangs down whatever his head does, and jingles a little as he trots.
@@ -794,7 +801,7 @@ export class ToonMokeVisual implements MokeVisual {
     this.tail.rotation.z = wag;
     // Swept back at a run, lying flat in bed, and tucked lower while ducking under furniture.
     // Tail up while sniffing or barking.
-    this.tail.rotation.x = -s.runBlend * 0.9 - lie * 1.1 - s.crouch * 1.2 + trick.tailX + s.sniff * 0.2 + s.bark * 0.25;
+    this.tail.rotation.x = -s.runBlend * 0.9 - lie * 1.1 - s.crouch * 1.2 + trick.tailX + s.sniff * 0.2 + s.bark * 0.25 - s.air * 0.4;
 
     // Eyes: idle blinks; closed while resting, a little squint while sniffing or barking.
     const eyeOpen =
@@ -807,7 +814,7 @@ export class ToonMokeVisual implements MokeVisual {
     for (const lid of this.lids) lid.visible = shut;
 
     // A growl reveals four tiny teeth; bark/panting shows the tongue instead.
-    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0, trick.mouthOpen, s.eat * (0.25 + 0.45 * chew)) : 0;
+    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0, trick.mouthOpen, s.eat * (0.25 + 0.45 * chew), s.air * 0.5) : 0;
     this.mouth.visible = open > 0.05;
     this.tongue.visible = open > 0.05 && s.growl < 0.2 && s.eat < 0.2;
     this.teeth.visible = s.carry < 0.5 && s.growl > 0.05;

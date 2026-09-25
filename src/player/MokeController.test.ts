@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Vector3 } from 'three';
-import { MOKE_BODY, MOVEMENT } from '../config/movement';
+import { JUMP, MOKE_BODY, MOVEMENT } from '../config/movement';
 import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld, type StaticBox } from '../physics/PhysicsWorld';
 import type { MoveIntent } from './Locomotion';
-import { MokeController } from './MokeController';
+import { jumpSpeed, MokeController } from './MokeController';
 
 // Integration tests: the real Rapier character controller in a tiny test room.
 const DT = 1 / 60;
@@ -89,6 +89,108 @@ describe('MokeController with Rapier', () => {
     simulate(run(1, 0), 2);
     expect(moke.position.x).toBeLessThan(1 - R + 0.001);
     expect(Math.abs(moke.position.y)).toBeLessThan(0.02);
+  });
+
+  describe('jumping', () => {
+    const trot = (x: number, z: number): MoveIntent => ({ x, z, walk: false, run: false });
+    /**
+     * Heads toward +x at `intent`, jumps once his capsule is `gap` metres short of x = edge, keeps pushing
+     * forward through the jump, then stands still to see where he ends up.
+     */
+    const jumpAt = async (boxes: StaticBox[], edge: number, gap: number, intent: MoveIntent) => {
+      const world = await setup(boxes, Math.PI / 2);
+      const { moke, simulate } = world;
+      for (let i = 0; i < 4 / DT && moke.position.x + R < edge - gap; i++) simulate(intent, DT);
+      moke.requestJump();
+      simulate(intent, 0.5);
+      simulate(STAND, 0.8);
+      return world;
+    };
+
+    it('takes off at the speed that lifts his feet exactly to the cap', () => {
+      for (const rise of [0.04, 0.2, JUMP.maxHeight]) {
+        let y = 0;
+        let top = 0;
+        let v = jumpSpeed(rise, JUMP.gravity, DT);
+        for (let i = 0; i < 120; i++) {
+          if (i > 0) v -= JUMP.gravity * DT;
+          y += v * DT;
+          top = Math.max(top, y);
+        }
+        expect(top).toBeCloseTo(rise, 3);
+      }
+    });
+
+    it('jumps up onto a couch-seat-height box (0.45 m) from a trot', async () => {
+      const seat = box(1.5, 0.225, 0, 0.5, 0.225, 1);
+      const { moke } = await jumpAt([seat], 1, 0.15, trot(1, 0));
+      expect(moke.position.y).toBeCloseTo(0.45, 1);
+      expect(moke.grounded).toBe(true);
+      expect(moke.airborne).toBe(false);
+    });
+
+    it("can never get onto a TV-console-height box (0.56 m), from any distance, trotting or running", async () => {
+      const cabinet = box(1.5, 0.28, 0, 0.5, 0.28, 1);
+      for (const intent of [trot(1, 0), run(1, 0)]) {
+        for (let gap = 0; gap <= 1.2; gap += 0.1) {
+          const { moke } = await jumpAt([cabinet], 1, gap, intent);
+          expect(moke.position.y, `gap ${gap.toFixed(1)} m`).toBeLessThan(0.05);
+        }
+      }
+    });
+
+    it("can't get from up on the couch onto something taller beside it", async () => {
+      // Standing on a 0.45 m seat with a 0.56 m cabinet right next to it.
+      const seat = box(0, 0.225, 0, 0.6, 0.225, 1);
+      const cabinet = box(0.85, 0.28, 0, 0.25, 0.28, 1);
+      const physics = await PhysicsWorld.create();
+      physics.addStaticBoxes([FLOOR, seat, cabinet]);
+      physics.commitStaticGeometry();
+      const moke = new MokeController(new CharacterBody(physics, { x: 0, y: 0.45, z: 0 }, MOKE_BODY), Math.PI / 2, tuning);
+      let top = 0;
+      for (let i = 0; i < 2 / DT; i++) {
+        if (moke.grounded) moke.requestJump();
+        moke.fixedUpdate(DT, run(1, 0));
+        physics.step();
+        top = Math.max(top, moke.position.y);
+      }
+      for (let i = 0; i < 0.5 / DT; i++) {
+        moke.fixedUpdate(DT, STAND);
+        physics.step();
+      }
+      // Jumping from 0.45 m only leaves him the cap's few centimetres of rise, so he never gets near 0.56 m.
+      expect(top).toBeLessThan(JUMP.maxHeight + 0.01);
+      expect(moke.position.y).toBeCloseTo(0.45, 2); // still on the seat...
+      expect(moke.position.x).toBeLessThan(0.6); // ...not on the cabinet
+    });
+
+    it("doesn't jump under a low table top", async () => {
+      const tableTop = box(0, 0.425, 0, 0.6, 0.025, 0.6);
+      const { moke, simulate } = await setup([tableTop]);
+      simulate(STAND, 0.1);
+      moke.requestJump();
+      simulate(STAND, 0.3);
+      expect(Math.abs(moke.position.y)).toBeLessThan(0.02);
+      expect(moke.airborne).toBe(false);
+    });
+
+    it('drops off an edge and lands, in the air in between', async () => {
+      const seat = box(0, 0.225, 0, 0.6, 0.225, 1);
+      const physics = await PhysicsWorld.create();
+      physics.addStaticBoxes([FLOOR, seat]);
+      physics.commitStaticGeometry();
+      const moke = new MokeController(new CharacterBody(physics, { x: 0, y: 0.45, z: 0 }, MOKE_BODY), Math.PI / 2, tuning);
+      let wasAirborne = false;
+      for (let i = 0; i < 1.5 / DT; i++) {
+        moke.fixedUpdate(DT, trot(1, 0));
+        physics.step();
+        wasAirborne ||= moke.airborne;
+      }
+      expect(wasAirborne).toBe(true);
+      expect(moke.position.x).toBeGreaterThan(0.8);
+      expect(Math.abs(moke.position.y)).toBeLessThan(0.02);
+      expect(moke.airborne).toBe(false);
+    });
   });
 
   it('interpolates between fixed steps for smooth rendering', async () => {

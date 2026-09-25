@@ -14,12 +14,11 @@ using: "E — Pick Up Sock" on a keyboard, "A — …" on a controller, a lit-up
 | Shift (hold) | Run | Working |
 | C (hold) | Walk / sneak | Working. Not Ctrl, because Ctrl+W closes the browser tab. |
 | E | Interact: pick up · drop · **give** (the sock, for a treat) · **eat** (the treat) · lie down in the bed · get up | Working: the prompt shows what E will do |
-| F | Bark | Working: a little hop, "Arf!" and a synthesized bark. The human can hear it. |
-| G | Cute growl | Working: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a deep, rumbly "grrrr" |
+| Space | Jump | Working: up onto the couch seat or the coffee table (0.45 m), the highest places he can get to. Never the TV console, the side table or the couch's arms or back. On the couch or table it's only a little hop; walk off the edge to hop down. No jumping under the coffee table. |
+| F | Bark or growl, at random | Working. Bark: a little hop, "Arf!" and a synthesized bark; the human can hear it. Growl: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a deep, rumbly "grrrr". |
 | Q | Do a trick | Working: a random trick, never the same twice in a row: belly up, beg, give paw, or spin. He stays put for it; moving or E cuts it short. No belly-up with something in his mouth, no begging under the furniture. |
 | R | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed, a treat) |
-| Space | Jump (optional, undecided) | Not planned yet |
-| W A S D while resting | Get up out of the bed | Working |
+| W A S D or Space while resting | Get up out of the bed | Working |
 | Esc | Pause and release the mouse | Working. Esc never resumes (it also closes the Controls dialog); resume with RESUME, Enter/Space on it, or a click. |
 | Enter / Space on a menu button | Press that button (PLAY, CONTROLS, RESUME, PLAY AGAIN…) | Working |
 | ` (Backquote) | Toggle the debug panel | Working |
@@ -44,9 +43,9 @@ may hide a newly connected controller until one of its buttons is pressed.
 | Left stick or D-pad | Move (analog stick preserves speed and direction) |
 | Right stick | Look around / orbit camera |
 | A / bottom face button | Interact (pick up, drop, give, eat, lie down); start from the menu; resume from pause; PLAY AGAIN after Sock Heist |
-| B / right face button | Bark |
+| B / right face button | Jump |
 | X / left face button | Do a trick |
-| Y / top face button | Cute growl |
+| Y / top face button | Bark or growl, at random |
 | Left shoulder or left trigger | Walk / sneak (hold) |
 | Right shoulder or right trigger | Run (hold) |
 | Right stick press | Sniff (all four face buttons are taken) |
@@ -63,20 +62,20 @@ screen. Using a mouse or keyboard again switches back. **Landscape is best**; po
 |---|---|
 | Left thumb, anywhere on the left of the screen | Move. A stick appears under your thumb: push a little to walk, further to trot. |
 | Push the stick past its ring (it turns coral) | Run, one-handed |
-| RUN button | Run toggle: stays on until you tap it again |
 | Right thumb, drag anywhere on the right | Look around |
-| Big round button | Interact: it lights up and says what it will do ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…) |
-| Bark · Sniff · Trick buttons | Bark, sniff mode, a trick |
+| Tap the paw button | Interact: it lights up and says what it will do ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…) |
+| **Hold** the paw button (~0.3 s) | The other buttons pop out of it: **Jump**, **Bark** (bark or growl, at random), **Sniff**, **Trick**, **Run**. Slide onto one and let go, or let go and tap one (as many as you like). They tuck back in after 2.5 s unused, or at once when you tap the paw or drag to look. |
+| RUN (in the paw's buttons) | Run toggle: stays on until you tap it again. While it's on, the stick is coral. |
 | II (top-right) | Pause |
 | FULLSCREEN (menu and pause, where supported) | Fullscreen; on Android it also asks for landscape |
 
-No growl or walk button on touch (to keep the screen clear); a partly pushed stick walks slowly anyway. Details and
-tested sizes: `docs/MOBILE.md`.
+Only the stick, the paw and pause stay on screen, to keep it clear. There's no walk button; a partly pushed stick
+walks slowly anyway. Details and tested sizes: `docs/MOBILE.md`.
 
 ## First play
 The first time on each kind of controls, a few seconds of how-to:
-- keyboard or controller: a small card with Move, Look, Interact, Run, Sniff, Bark;
-- touch: "Move" under the stick's resting place and "Drag to look" on the right.
+- keyboard or controller: a small card with Move, Look, Interact, Run, Jump, Sniff, Bark;
+- touch: "Move" under the stick's resting place, "Drag to look" on the right, and "Hold for more" above the paw.
 
 After that, a one-line reminder when play starts.
 

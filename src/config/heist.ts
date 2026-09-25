@@ -32,4 +32,9 @@ export const HEIST = {
   eatTime: 1.4,
   /** Moke can eat a placed treat from this far (m). */
   eatReach: 0.6,
+  /**
+   * Putting the treat down toward Moke: a small ball (radius, height above the floor) swept from the human's feet;
+   * the treat stops this far short of any furniture it meets (m).
+   */
+  treatSweep: { radius: 0.06, height: 0.05, margin: 0.03 },
 } as const;

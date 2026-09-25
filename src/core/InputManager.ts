@@ -48,7 +48,7 @@ export class InputManager {
       }),
       isInputMode(forced),
     );
-    this.touch = new TouchInput(touchRoot, this.state, this.listeners.signal, forced === 'touch');
+    this.touch = new TouchInput(touchRoot, this.state, this.listeners.signal, { acceptMouse: forced === 'touch' });
     this.touch.onTouch = () => this.useMode('touch');
 
     window.addEventListener('keydown', this.handleKeyDown, opts);

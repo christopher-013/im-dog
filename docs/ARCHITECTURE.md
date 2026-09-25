@@ -184,7 +184,14 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - `MokeController` runs in the fixed step. It feeds the locomotion result to `CharacterBody` and keeps the
   previous step for interpolation. If he's blocked head-on for 2+ steps, his stored speed drops, so he doesn't
   burst off a wall at full speed. Glancing contacts slide along the wall.
+- **Jumping** (`MokeController.requestJump`, tuning in `JUMP`, `config/movement.ts`): only when he's standing, with
+  nothing low overhead, and below the cap. The take-off speed is worked out so his feet peak exactly at
+  `JUMP.maxHeight` (0.50 m) **above the floor**, wherever he jumps from: the couch seat and coffee table (0.45 m)
+  are the highest he can get, never the TV console (0.56 m). From up on the couch a jump is just a little hop. A press
+  up to 0.1 s before landing still counts. Rapier tests in `MokeController.test.ts` and `LivingRoom.test.ts` pin
+  what he can and can't reach.
 - `MokeAnimationController` turns motion into model-independent body language. It's the same for any visual.
+  In the air: `air` (legs reach instead of walking), `rise` (nose up, then down) and `land` (a small squash).
 - **One authoritative scale:** `MOKE_CHARACTER.size` (`config/mokeCharacter.ts`: shoulder 0.28 m, eyes 0.33 m, head
   top 0.43 m). The camera pivot (`eyeHeight + 0.03`) and the ducking threshold (`headTop + 0.02`) derive from it,
   and a `moke.glb` is checked against it. The collision capsule (`MOKE_BODY`) is deliberately separate, sized for
@@ -317,10 +324,12 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - Body language: `Moke.sniffing` → `MokeAnimationState.sniff` (nose down, quick twitches). UI: a warm vignette.
 
 ## Bark and audio (with Milestone 8)
-- F → `BarkTimer.tryBark()` (cooldown) → `MokeAnimationController.bark()` (a short envelope in
+- One button for his voice (F, controller Y, the touch Bark button): `barkOrGrowl()` picks a bark or a growl at
+  random (`BARK.growlChance`, 50%).
+- A bark → `BarkTimer.tryBark()` (cooldown) → `MokeAnimationController.bark()` (a short envelope in
   `MokeAnimationState.bark`: little hop, head up, ears back, mouth open) + `AudioManager.play('bark')` + a comic
-  "Arf!" bubble projected above his head.
-- G / controller Y → `MokeAnimationController.growl()` → a brief mock-tough pose (lowered body, forward chest,
+  "Arf!" bubble projected above his head. The Sock Heist human can hear barks.
+- A growl → `MokeAnimationController.growl()` → a brief mock-tough pose (lowered body, forward chest,
   pinned ears, squint, head tremble and visible teeth) + `AudioManager.play('growl')` + a small “grrr” bubble.
   The growl is presentation-only and has no combat effect.
 - `AudioManager` creates/resumes its `AudioContext` inside the PLAY/RESUME clicks (browsers require a gesture). If
@@ -436,7 +445,16 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
   - Queries filter by layer: the camera sweep sees `world` only.
 - **Gravity** applies only while airborne. On the ground, snap-to-ground keeps him planted. Also pushing down into
   the floor made Rapier's controller occasionally drop a whole step of horizontal movement, which read as a
-  stutter; this was measured and fixed.
+  stutter; this was measured and fixed. Moke's gravity in the air is `JUMP.gravity` (18 m/s², snappier than real);
+  the toys keep the world's 9.81.
+- **Standing vs. teetering (for jumping):** Rapier also calls the capsule grounded when its round bottom rests on an
+  edge. `MokeController` only counts him as standing when `CharacterBody.groundBelow` finds a surface straight under
+  his middle. Otherwise he falls, and `MOKE_BODY.minSlopeSlide` lets him slide off the corner rather than balance on
+  it. In the air, `CharacterBody.move({ noClimbing })` stops a slide along an edge from lifting him higher than his
+  jump, so he can't scramble up the TV console's corner.
+- **Things Moke can stand on have Moke-only (`thin`) colliders for what sits on top:** the couch's arms, back
+  cushions and pillows, the books and mug on the coffee table, and the plant's leaves. Their footprints are inside the
+  furniture's own, so the camera, the human's eyes and the human's `NavGrid` see the room exactly as before.
 
 ## Private reference photos: four layers
 1. `.gitignore`: `reference/moke/*` (the README stays tracked).

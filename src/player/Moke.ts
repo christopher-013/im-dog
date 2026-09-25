@@ -52,6 +52,8 @@ export class Moke {
       carrying: this.carrying,
       sniffing: this.sniffing,
       resting: this.resting,
+      airborne: c.airborne,
+      verticalSpeed: c.verticalSpeed,
       look: this.lookAt ? this.lookDirection(this.lookAt, heading) : null,
     });
     this.visual.update(dt, this.animation.state);

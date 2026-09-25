@@ -36,7 +36,28 @@ async function setup() {
       physics.step();
     }
   };
-  return { room, moke, walkTo, idle };
+  /**
+   * Trots (or runs) straight along +z or -z from where he is, jumps once he's `jumpAtZ` or past it, keeps
+   * pushing until he's down again, then stands still. Where he ends up says what he landed on.
+   */
+  const jumpToward = (direction: 1 | -1, jumpAtZ: number, run = false): void => {
+    const intent = { x: 0, z: direction, walk: false, run };
+    let jumped = false;
+    for (let i = 0; i < 4 / DT && !jumped; i++) {
+      if ((moke.position.z - jumpAtZ) * direction >= 0) {
+        moke.requestJump();
+        jumped = true;
+      }
+      moke.fixedUpdate(DT, intent);
+      physics.step();
+    }
+    for (let i = 0; i < 1 / DT && (i < 3 || moke.airborne); i++) {
+      moke.fixedUpdate(DT, intent);
+      physics.step();
+    }
+    idle(0.6);
+  };
+  return { room, moke, physics, walkTo, idle, jumpToward };
 }
 
 describe('LivingRoom', () => {
@@ -73,6 +94,47 @@ describe('LivingRoom', () => {
     const { hallwayEntrance, hallwayEnd } = room.landmarks;
     expect(walkTo(hallwayEntrance.x, hallwayEntrance.z)).toBe(true);
     expect(walkTo(hallwayEnd.x, hallwayEnd.z)).toBe(true);
+  });
+
+  describe('jumping (the couch seat and coffee table are the highest he can get)', () => {
+    it('jumps up onto the couch seat, and stays out of the arms and back cushions up there', async () => {
+      const { moke, physics, walkTo, jumpToward, idle } = await setup();
+      expect(walkTo(-0.35, -1.0)).toBe(true);
+      jumpToward(-1, -1.75);
+      expect(moke.position.y).toBeCloseTo(0.45, 2);
+      // Push on into the back cushions, then along the seat into an arm.
+      for (let i = 0; i < 1.5 / DT; i++) {
+        moke.fixedUpdate(DT, { x: 0, z: -1, walk: false, run: false });
+        physics.step();
+      }
+      expect(moke.position.z).toBeGreaterThan(-2.405 + 0.15);
+      for (let i = 0; i < 2 / DT; i++) {
+        moke.fixedUpdate(DT, { x: -1, z: 0, walk: false, run: false });
+        physics.step();
+      }
+      idle(0.3);
+      expect(moke.position.x).toBeGreaterThan(-0.61 + 0.15);
+      expect(moke.position.y).toBeCloseTo(0.45, 2);
+    });
+
+    it('jumps up onto the coffee table', async () => {
+      const { moke, walkTo, jumpToward } = await setup();
+      expect(walkTo(0.4, 0.2)).toBe(true);
+      jumpToward(-1, -0.6);
+      expect(moke.position.y).toBeCloseTo(0.45, 2);
+      expect(moke.position.z).toBeLessThan(-0.84);
+    });
+
+    it("can't get onto the TV console (0.56 m), trotting or running, from near or far", async () => {
+      for (const run of [false, true]) {
+        for (const jumpAtZ of [1.7, 1.9, 2.1, 2.2, 2.3, 2.4]) {
+          const { moke, walkTo, jumpToward } = await setup();
+          expect(walkTo(0.3, 1.2)).toBe(true);
+          jumpToward(1, jumpAtZ, run);
+          expect(moke.position.y, `${run ? 'run' : 'trot'}, jump at z ${jumpAtZ}`).toBeLessThan(0.05);
+        }
+      }
+    });
   });
 
   it('stops him at the couch and the TV console', async () => {

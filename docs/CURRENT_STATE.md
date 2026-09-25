@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-25. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (tag `phase-1-complete`). **Phase 2 is complete** (tag `phase-2-complete`). **Phase 3 is built, committed and pushed** (2026-09-25, at the owner's request, so they can test it on their phone), **but not closed** and not tagged: it still needs the real-phone test and the owner's feel check. The hosted game is the Phase 3 build._
+_Last updated: 2026-09-25. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (tag `phase-1-complete`). **Phase 2 is complete** (tag `phase-2-complete`). **Phase 3 is built, committed and pushed** (2026-09-25, at the owner's request, so they can test it on their phone), **but not closed** and not tagged: it still needs the real-phone test and the owner's feel check. The hosted game is the Phase 3 build. **Since then (committed and pushed 2026-09-25 for phone testing):** the owner's jump request, the combined bark/growl button and the touch paw menu (see Completed)._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -14,8 +14,10 @@ owner's judgement of whether Sock Heist is fun. Scope and criteria: `docs/PHASE_
 ## Current Milestone
 Phase 3, Milestone 3.8 (cross-platform playtest and polish): done in emulation, **waiting on a physical-phone test**
 (`docs/MOBILE.md` → "Testing on a real phone") **and the owner's play-through** (`docs/SOCK_HEIST.md`).
+The owner played Sock Heist on the desktop ("the chase works great, it is fun"; escaping, the treat, and not
+escaping all tested) and will check it on a phone. They then asked for a jump and a clearer phone screen (below): done, committed and pushed for their phone test.
 **Still carried forward from Phase 2: the final `moke.glb`** (FINAL MOKE 3D ASSET REQUIRED), a rigged, animated model
-built outside the repo to `docs/MOKE_3D_SPEC.md` (which now also lists an `eat` clip) and installed per
+built outside the repo to `docs/MOKE_3D_SPEC.md` (which now also lists `eat` and `jump` clips) and installed per
 `docs/MOKE_INTEGRATION.md`. Until then the game uses the procedural stand-in (`ToonMokeVisual`).
 
 How Milestone 10 went: it started 2026-09-24 at the owner's request. The owner played Milestones 5–9
@@ -28,13 +30,47 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code: all of Phase 3 (committed and pushed at the owner's request for phone testing), after committing,
-tagging and pushing Phase 2.
+Claude Code: the jump, the combined bark/growl button and the touch paw menu (committed and pushed at the owner's
+request), after all of Phase 3 (committed and pushed
+at the owner's request for phone testing) and committing, tagging and pushing Phase 2.
 Before that, Claude closed Phase 1 (a review of Codex's commits with fixes, GitHub Pages hosting, the trick button,
 Moke's tail and a deeper growl). OpenAI Codex committed its Phase 1 audit, gamepad support, the cute growl and a
 collar refit.
 
 ## Completed
+**Owner requests, 2026-09-25 (committed and pushed): Moke can jump; one button barks or growls; the paw menu on touch.** The owner asked for nothing
+else to change in the game's look and feel.
+- **Jump:** Space, controller **B** (was bark), and a new touch **JUMP** button. He can get up onto the couch seat
+  and the coffee table (0.45 m), the highest places he can reach: never the TV console or side table (0.56 m), the
+  couch's arms (0.64 m) or its back (0.88 m). The cap is measured from the floor, so jumping from the couch is only
+  a little hop and can't chain higher. No jumping under the coffee table; a press just before landing still counts;
+  Space or B in his bed gets him up.
+  - **How it's enforced:** the take-off speed puts his feet at exactly 0.50 m at the top. He counts as standing only
+    with something under his middle (`CharacterBody.groundBelow`), so he slides off an edge rather than balancing on
+    a corner. In the air he can't slide up over an edge (`move({ noClimbing })`). Tuning: `JUMP` and
+    `MOKE_BODY.minSlopeSlide` in `config/movement.ts`.
+  - **So he stands on cushions, not inside them:** Moke-only (`thin`) colliders for the couch's arms, back cushions
+    and pillows, the books and mug on the coffee table, and the plant's leaves (so he can't stand on the pot).
+    Their footprints are inside the furniture's own, so the camera, the human's eyes and pathing are unchanged.
+  - **Look:** in the air his legs stop walking and reach: front paws forward, hind legs back. His nose goes up on
+    the way up and down on the way down, his ears and tail fly, his mouth opens, and he squashes a little on landing
+    (`air`, `rise`, `land` in `MokeAnimationState`). The glTF path gets a `jump` clip.
+  - **Sock Heist:** jumping up with the sock works as keep-away; the human grabs from the edge and fumbles as
+    always. The treat is now never put down inside furniture (`treatSpot`): with Moke up on the couch it could have
+    landed inside the couch and stalled the heist.
+- **Voice:** F, controller **Y** (was growl) and the touch Bark button now bark **or** growl at random (50/50,
+  `BARK.growlChance`). **G no longer does anything** (it was the separate growl key). Only barks alert the human, as
+  before.
+- **Touch layout:** JUMP sits just outside the small-button arc, between Sniff and Trick. In portrait the interact
+  label moved up 18 px to clear it.
+- **Then (owner: "too many button controls on the screen"): the paw menu.** On touch, only the stick, the paw and
+  pause show. A **tap** on the paw interacts (on release). **Holding** it for 0.3 s pops Jump, Bark, Sniff, Trick and
+  Run out of it along the same arc. Slide onto one and let go, or let go and tap one. They tuck back in after 2.5 s
+  unused, at once on a paw tap or a camera drag, and on pause, rotation or focus loss; moving with the stick keeps
+  them out. With RUN on, the stick is coral. First play shows "Hold for more" above the paw, and the start toast
+  says "Hold the paw button for more". Code: `TouchInput` (`TOUCH.menuHoldTime`, `menuIdleClose` in
+  `config/input.ts`), `.touch-actions.is-open` in `main.css`.
+
 **Phase 3 (built and pushed, not closed): Sock Heist + mobile web play.** Details: `docs/SOCK_HEIST.md`, `docs/MOBILE.md`,
 `docs/PHASE_3.md`.
 - **Sock Heist,** the first complete loop. Moke steals the sock from the rug; the human, folding laundry by the basket, notices
@@ -288,6 +324,10 @@ collar refit.
 - Details: `docs/ARCHITECTURE.md` (sections "Interactions", "Props and carrying", "Sniff mode", "Bark and audio").
 
 ## Current Gameplay State
+**Jump (2026-09-25):** Space / controller B / touch JUMP hops him up onto the couch seat or the coffee
+table and no higher. F / controller Y / touch Bark barks or growls at random. On touch, the screen shows only the
+stick, the paw and pause: tap the paw to interact, hold it for the other buttons. Everything else is as in Phase 3.
+
 **Phase 3 (2026-09-25):** the living room now has a person folding laundry by the basket, and the
 charcoal sock on the rug is theirs. Steal it and Sock Heist runs (see Completed). Everything from Phases 1 and 2
 still works, including with the human in the room. On phones and tablets the game is played by touch; desktop
@@ -357,6 +397,22 @@ From Milestone 4, verified in the browser (dev server and a production-build loa
 - **Not yet judged hands-on with a physical mouse and keyboard.**
 
 ## Known Issues
+New with the jump:
+- **Jump feel hasn't been judged by a person:** height, the snappy gravity (18 m/s²) and the pose (`JUMP`,
+  `MOKE_ANIMATION.landDuration`/`airPitchSpeed`). The camera follows his height with its existing smoothing and
+  wasn't changed; nobody has judged whether it bobs too much.
+- On the couch or table, jump is only a small hop (the cap is measured from the floor). To get down, walk off the
+  edge.
+- He can also jump onto lower things: the laundry basket (0.32 m) and his bed's bolster. Allowed, since they're
+  below the couch, but nobody has looked closely at how they look.
+- G is no longer bound (the owner merged bark and growl onto one button).
+- **On touch, jumping is slower now:** hold the paw, slide to Jump, let go (or keep the buttons out and tap Jump
+  again within 2.5 s). The hold time (0.3 s) and idle time (2.5 s) are first guesses for the owner's thumbs.
+- Noticed, not fixed (from Phase 3): in portrait, the start toast can sit under the "Landscape is best" chip for its
+  first few seconds.
+- Carried props still have no collision, so a toy in his mouth can poke into the couch back cushions while he's up
+  there (as it already could with walls).
+
 New in Phase 3:
 - **Not played on a physical phone or tablet.** Touch, layout, the PWA, performance, heat and battery are verified
   only in desktop Chrome's device emulation with synthetic touch events (`docs/MOBILE.md` → "Not tested").
@@ -427,6 +483,21 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-25 for the jump, the combined bark/growl and the paw menu (the working tree that became their commit). No physical phone, controller or mouse:
+desktop browser pane, synthetic keys, synthetic touch, frames stepped by hand.
+
+| Command / check | Result |
+|---|---|
+| `npm run typecheck` | Pass |
+| `npm test` | Pass (after the paw menu): 42 files, 302 tests. Before it: 297 tests (14 new: jump reach and limits against boxes ×6 and in the real room ×3, the air pose ×2, the `jump` clip, bark-or-growl, the treat never inside furniture; the gamepad, glyph and touch tests updated for B = jump, Y = bark or growl, the touch JUMP button) |
+| `npm run build` | Pass; `verify-dist`: no private photos |
+| Real room, Rapier tests | Onto the couch seat and the coffee table; never onto the TV console from 6 distances, trotting or running; the arms and back cushions stop him up there. A box test sweeps 13 distances (0–1.2 m) at a trot and a run against a 0.56 m box: never on top. Landing on a 0.45 m box works from up to 0.2 m away walking, 0.5 m trotting, 0.7 m running |
+| In-app browser, dev server | Keyboard: onto the coffee table (peak 0.50 m, ~0.22 s in the air); onto the couch seat; the back cushions and arm stop him; a jump from the seat peaks at 0.499 m; the TV console refused from 4 distances and from right against it, trotting and running; the air pose checked from the side (front paws forward, hind legs back, nose up, tail flying). F ×24: 12 barks, 12 growls, both bubbles; G does nothing. The Controls dialog lists Space/B = Jump and F/Y = Bark or growl. No new console errors. |
+| In-app browser, touch emulation | Layout check with the JUMP button at 844×390, 667×375, 740×360, 568×320, 390×844, 375×667, 1024×768: all on screen, no overlaps, no scrolling. The one tight gap is Sniff/Trick at 5.6 px, unchanged from Phase 3. Tapping JUMP jumps (peak 0.50 m). |
+| Paw menu (touch emulation, 844×390 and 390×844, synthetic touch in real time) | Closed by default: only the stick, paw and pause visible. A quick paw tap picked up the sock (no pop-out). Holding popped the buttons out after 0.3 s without interacting. Letting go right after the pop pressed nothing (this caught a bug, fixed: RUN, still springing out under the finger, got toggled). Sliding onto Jump lit it and jumped him (peak 0.50 m). Tapping Bark barked. They tucked away after 2.5 s. All on screen in portrait with them out. Tests: 11 touch tests (was 6), 302 in all. |
+| Sock Heist from the couch (browser) | Stole the sock, jumped up, barked: 7 fumbled grabs, the human gave up at 33 s and fetched a treat; the sock dropped from the couch was fetched ("close enough"); the treat went down on open floor in front of the couch (not inside it); hopped down, ate, SOCK = TREAT, complete |
+| Not verified | Jump feel at full frame rate; a physical controller's B; a real phone; the `jump` clip with a real `moke.glb` (there isn't one) |
+
 Run on 2026-09-24/25 for Phase 3 (the working tree that became the Phase 3 commit). **No physical phone or tablet was used:** every
 "mobile" line is desktop Chrome device emulation in the app's browser pane, with synthetic touch events.
 
@@ -567,6 +638,8 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
+0. **Owner check of the jump and the paw menu** (pushed): Space / B near the couch and coffee table on the
+   desktop; on a phone, tap and hold the paw. Then commit if happy.
 1. **Owner review of Phase 3:** play Sock Heist on the desktop (the hosted site or `npm run dev`). Commit or push only
    when the owner asks: a push to `main` publishes the game.
 2. **Play it on a real phone.** The hosted site (https://christopher-013.github.io/im-dog/) has Phase 3 and allows

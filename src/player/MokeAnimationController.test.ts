@@ -18,6 +18,25 @@ function sequence(...values: number[]): () => number {
 }
 
 describe('MokeAnimationController', () => {
+  it('goes into the air pose for a jump (nose up, then down), then squashes a little on landing', () => {
+    const anim = new MokeAnimationController(MOVEMENT);
+    const up = simulate(anim, { speed: 1.8, turnRate: 0, headroom: OPEN_SKY, airborne: true, verticalSpeed: 3 }, 0.2);
+    expect(up.air).toBeGreaterThan(0.95);
+    expect(up.rise).toBeGreaterThan(0.9);
+    expect(simulate(anim, { speed: 1.8, turnRate: 0, headroom: OPEN_SKY, airborne: true, verticalSpeed: -3 }, 0.2).rise).toBeLessThan(-0.8);
+    const landed = simulate(anim, { speed: 1.8, turnRate: 0, headroom: OPEN_SKY }, 0.05);
+    expect(landed.land).toBeGreaterThan(0.3);
+    const after = simulate(anim, { speed: 1.8, turnRate: 0, headroom: OPEN_SKY }, 0.5);
+    expect(after.air).toBeLessThan(0.01);
+    expect(after.land).toBe(0);
+  });
+
+  it("doesn't sit down in mid-air", () => {
+    const anim = new MokeAnimationController(MOVEMENT, () => 0.9);
+    const s = simulate(anim, { speed: 0, turnRate: 0, headroom: OPEN_SKY, airborne: true, verticalSpeed: 0 }, MOKE_ANIMATION.idleSitAfter + 2);
+    expect(s.sit).toBeLessThan(0.01);
+  });
+
   it('leans into turns, and not at all when stopped', () => {
     const left = simulate(new MokeAnimationController(MOVEMENT), { speed: 3, turnRate: 3, headroom: OPEN_SKY }, 1);
     const right = simulate(new MokeAnimationController(MOVEMENT), { speed: 3, turnRate: -3, headroom: OPEN_SKY }, 1);

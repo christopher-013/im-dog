@@ -1210,6 +1210,15 @@ html[data-input='touch'] .toast {
   background: var(--coral);
 }
 
+/* RUN is toggled on (its button is tucked away): the resting stick says so. */
+.touch-stick-rest.is-running {
+  border-color: var(--coral);
+}
+
+.touch-stick-rest.is-running .touch-stick-rest-knob {
+  background: var(--coral);
+}
+
 .touch-look-hint {
   position: absolute;
   right: calc(34% + var(--safe-r));
@@ -1260,29 +1269,91 @@ html[data-onboarding] .touch-look-hint {
   box-shadow: 0 2px 0 var(--shadow);
 }
 
+/*
+ * The small buttons live tucked inside the paw button, to keep the screen clear. Holding the paw pops them out
+ * along an arc (TouchInput adds .is-open); they tuck back in once unused for a moment.
+ */
 .touch-small {
   width: 58px;
   height: 58px;
   right: calc(var(--act-r) - 29px + var(--dx, 0px));
   bottom: calc(var(--act-b) - 29px + var(--dy, 0px));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  /* Back inside the paw: shifted onto its centre and shrunk. */
+  transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(0.3);
+  transition:
+    transform 0.16s ease-in,
+    opacity 0.14s ease-in,
+    visibility 0s linear 0.16s,
+    background 0.15s ease;
 }
 
-/* An arc (radius 124 px, 30° apart) around the interact button, within easy reach of the right thumb. */
+.touch-actions.is-open .touch-small {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: none;
+  /* A springy pop, one after another. */
+  transition:
+    transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--i, 0) * 28ms),
+    opacity 0.12s ease calc(var(--i, 0) * 28ms),
+    visibility 0s,
+    background 0.15s ease;
+}
+
+.touch-actions.is-open .touch-small.is-pressed {
+  transform: translateY(2px) scale(0.94);
+  transition-delay: 0s;
+}
+
+/* Popped out: an arc (radius 124 px, 30° apart) round the paw, within easy reach of the right thumb. */
 .touch-bark {
   --dx: 0px;
   --dy: 124px;
+  --i: 0;
 }
 .touch-sniff {
   --dx: 62px;
   --dy: 107px;
+  --i: 1;
 }
 .touch-trick {
   --dx: 107px;
   --dy: 62px;
+  --i: 3;
 }
 .touch-run {
   --dx: 124px;
   --dy: 0px;
+  --i: 4;
+}
+/* Jump sits in the notch outside the arc, between Sniff and Trick: one diagonal reach up from the thumb. */
+.touch-jump {
+  --dx: 127px;
+  --dy: 127px;
+  --i: 2;
+}
+
+/* First play: "Hold for more" just above the paw. */
+.touch-paw-hint {
+  left: auto;
+  top: auto;
+  right: var(--act-r);
+  bottom: calc(var(--act-b) + 50px);
+  transform: translateX(50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+html[data-onboarding] .touch-paw-hint {
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
+  opacity: 0;
 }
 
 .touch-run.is-on {
@@ -1362,7 +1433,7 @@ html[data-onboarding] .touch-look-hint {
   }
   .touch-interact-label {
     right: max(12px, calc(var(--act-r) - 60px));
-    bottom: calc(var(--act-b) + 150px);
+    bottom: calc(var(--act-b) + 168px);
   }
 }
 
@@ -1483,6 +1554,11 @@ html[data-onboarding] .touch-look-hint {
   .touch-actions.has-target .touch-interact,
   .heist-chip::before {
     animation: none;
+  }
+  .touch-small,
+  .touch-actions.is-open .touch-small {
+    transition-duration: 0.01s;
+    transition-delay: 0s;
   }
   .discovery.is-visible {
     animation-duration: 0.01s;

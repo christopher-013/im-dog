@@ -19,7 +19,7 @@ import type { StaticSceneBuilder, Vec3Tuple } from './StaticSceneBuilder';
 const rbox = (w: number, h: number, d: number, radius: number, segments = 3) =>
   new RoundedBoxGeometry(w, h, d, segments, radius);
 
-/** Oatmeal linen couch, 2.3 m wide: seat 0.45 m, back 0.88 m. Everything up there is out of Moke's reach. */
+/** Oatmeal linen couch, 2.3 m wide: seat 0.45 m (Moke can jump up onto it), arms 0.64 m, back 0.88 m. */
 export function couch(b: StaticSceneBuilder, m: RoomMaterials): void {
   const W = 2.3;
   const D = 0.95;
@@ -49,9 +49,13 @@ export function couch(b: StaticSceneBuilder, m: RoomMaterials): void {
 
   b.addCollider([0, seatTop / 2, 0.01], [W, seatTop, D + 0.02]);
   b.addCollider([0, backTop / 2, -D / 2 + 0.125], [W, backTop, 0.25]);
+  // Up on the seat, the arms and the back cushions and pillows are solid too, so he stands on the cushions
+  // rather than inside them. Thin: only Moke meets them; the camera and the human see the couch as before.
+  for (const side of [-1, 1]) b.addCollider([side * (W / 2 - 0.12), 0.32, 0.01], [0.24, 0.64, D + 0.02], { thin: true });
+  b.addCollider([0, seatTop + 0.22, -0.09], [W - 0.48, 0.44, 0.3], { thin: true });
 }
 
-/** Walnut coffee table with 0.40 m of clearance underneath: tall enough for Moke to duck under. */
+/** Walnut coffee table with 0.40 m of clearance underneath: tall enough for Moke to duck under, low enough to jump onto. */
 export function coffeeTable(b: StaticSceneBuilder, m: RoomMaterials): void {
   const H = HOUSE_SCALE.coffeeTableHeight;
   const top = 0.05;
@@ -70,6 +74,9 @@ export function coffeeTable(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.add(new CylinderGeometry(0.04, 0.036, 0.09, 20), m.mug, [0.3, H + 0.045, 0.1]);
   b.add(new TorusGeometry(0.025, 0.007, 8, 16), m.mug, [0.345, H + 0.05, 0.1]);
   b.add(rbox(0.17, 0.02, 0.05, 0.008, 2), m.tvBody, [0.05, H + 0.01, 0.16], { rotation: [0, 0.4, 0] });
+  // On the table top, he walks round the books and the mug, not through them (thin: only Moke meets them).
+  b.addCollider([-0.275, H + 0.0375, -0.045], [0.28, 0.075, 0.22], { thin: true });
+  b.addCollider([0.31, H + 0.045, 0.1], [0.11, 0.09, 0.09], { thin: true });
 }
 
 /** Round woven rug, flat on the floor. */
@@ -159,6 +166,8 @@ export function pottedPlant(b: StaticSceneBuilder, m: RoomMaterials): void {
     });
   }
   b.addCollider([0, potH / 2, 0], [0.4, potH, 0.4]);
+  // The leaves above the pot: nothing to jump up and stand on (thin: only Moke meets it).
+  b.addCollider([0, potH + 0.35, 0], [0.4, 0.7, 0.4], { thin: true });
 }
 
 /** Moke's bed: a fleece cushion inside a round bolster that's open at the front (+z), so he steps in. */

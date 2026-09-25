@@ -69,6 +69,9 @@ lies. They wear one charcoal-striped sock; the other foot is bare. Behaviour, bo
   winds up (0.45 s) and always fumbles, followed by a 1.3 s recovery and 3 s before the next try.
 - **Keep-away is built into the room.** The human's grid is widened by their radius (0.24 m), so the space under
   the coffee table and the gap behind it are dog-only. Round the table, the human has to go the long way.
+- **Up on the couch or coffee table** (Moke can jump up, sock and all): the human comes to the edge and grabs from
+  there, fumbling as always. It's a perch, not a hiding place. A sock he leaves up there gets picked up from the
+  edge (a human's arms reach). Played through in the browser: 7 fumbles, gave up at 33 s, treat, trade, complete.
 - **Standoff:** Moke under the table within 1.4 m of them. They crouch and peer at him ("Come out of there!"),
   can't reach, and lose patience twice as fast.
 - **Losing him:** out of sight for 1.6 s → search. The hallway is a dead end: no hiding there.
@@ -85,6 +88,9 @@ lies. They wear one charcoal-striped sock; the other foot is bare. Behaviour, bo
   1.15 m, the interaction is **"Give Sock"** (priority 30, above "Drop Sock"). The sock goes from his mouth into
   their left hand (`PickupSystem.handOver()`), never touching the floor. Dropping the sock at their feet (within
   1.3 m) counts too.
+- **Where the treat goes down:** toward Moke, on the floor, but never past the first furniture in between
+  (`treatSpot`: a small sweep from the human's feet, `HEIST.treatSweep`). So with Moke up on the couch, it lands
+  on open floor in front of it, never inside it, and he hops down to eat it.
 - **Eating:** "Eat Treat" → Moke holds still, nose to the floor, chewing (1.4 s), "Nom nom!" and a crunch.
 - **SOCK = TREAT:** a big pop-up card and a chime, for about 3.4 s. The first time it says Moke "has learned
   something very important"; after that, "Still true. Moke checked." The discovery is remembered in this browser

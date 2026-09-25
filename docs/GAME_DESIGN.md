@@ -20,8 +20,8 @@ a coral "?" that tilts like a curious dog, and a small katakana tag (アイム�
 Palette: warm cream, cocoa ink, coral, leaf green.
 
 ## Core verbs
-Walk, trot, run, look, bark, sniff, pick up / carry / drop, push toys, lie down / get up, and since Phase 3
-give (trade) and eat.
+Walk, trot, run, jump (up onto the couch or coffee table, no higher), look, bark, sniff, pick up / carry / drop,
+push toys, lie down / get up, and since Phase 3 give (trade) and eat.
 
 ## Mini-games (the architecture allows them; only Sock Heist is built)
 - **Sock Heist:** steal a sock, get noticed ("Moke!"), run, hide, trade the sock for a treat. **Built in Phase 3**

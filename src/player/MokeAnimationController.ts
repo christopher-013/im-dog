@@ -18,6 +18,10 @@ export interface MokeMotionSample {
   sniffing?: boolean;
   /** Lying in his bed. Default false. */
   resting?: boolean;
+  /** In the air (a jump, or dropping off the couch). Default false. */
+  airborne?: boolean;
+  /** Up (+) or down (−), m/s. Default 0. */
+  verticalSpeed?: number;
   /**
    * Something interesting to glance at (see AttentionSystem), relative to his facing: yaw (positive = to his
    * left) and pitch (positive = up), radians. Null/undefined = nothing in particular.
@@ -59,6 +63,12 @@ export interface MokeAnimationState {
   growl: number;
   /** 0..1: eating something off the floor (a treat): nose down, chewing. */
   eat: number;
+  /** 0..1: in the air (a jump, or a drop off the couch): legs reaching, not walking. */
+  air: number;
+  /** −1..1: going up (+) or coming down (−) while in the air. */
+  rise: number;
+  /** 0..1: the little squash just after landing. */
+  land: number;
   /** 0..1: lying down (sphinx pose, head resting, sleepy eyes). */
   rest: number;
   /** 0..1: sitting, because he's been standing still a while. */
@@ -92,6 +102,9 @@ export class MokeAnimationController {
     bark: 0,
     growl: 0,
     eat: 0,
+    air: 0,
+    rise: 0,
+    land: 0,
     rest: 0,
     sit: 0,
     stretch: 0,
@@ -114,6 +127,8 @@ export class MokeAnimationController {
   private sinceBark = Infinity;
   private sinceGrowl = Infinity;
   private sinceEat = Infinity;
+  private sinceLand = Infinity;
+  private wasAirborne = false;
   /** When the current trick ends (s of trick time), and how long its ease-out takes. */
   private trickEnd = 0;
   private trickOut: number = MOKE_ANIMATION.tricks.blendOut;
@@ -167,6 +182,7 @@ export class MokeAnimationController {
     this.sinceEat += dt;
     const e = this.sinceEat / a.eatDuration;
     s.eat = e >= 1 ? 0 : Math.min(1, e * 7) * Math.min(1, (1 - e) * 6);
+    this.updateAir(dt, sample);
     this.updateTrick(dt);
     this.updateSitting(dt, sample);
     const wag = s.gait === 'idle' ? a.idleTailWag : a.movingTailWag;
@@ -175,6 +191,20 @@ export class MokeAnimationController {
     const crouchTarget = clamp((a.duckBelowHeadroom - sample.headroom) / a.duckRange, 0, 1);
     s.crouch = damp(s.crouch, crouchTarget, 10, dt);
     return s;
+  }
+
+  /** In the air: legs reaching and nose up on the way up, down on the way down; a quick squash on landing. */
+  private updateAir(dt: number, sample: MokeMotionSample): void {
+    const a = MOKE_ANIMATION;
+    const s = this.state;
+    const airborne = sample.airborne ?? false;
+    s.air = damp(s.air, airborne ? 1 : 0, airborne ? 20 : 14, dt);
+    s.rise = damp(s.rise, airborne ? clamp((sample.verticalSpeed ?? 0) / a.airPitchSpeed, -1, 1) : 0, 14, dt);
+    if (this.wasAirborne && !airborne) this.sinceLand = 0;
+    this.wasAirborne = airborne;
+    this.sinceLand += dt;
+    const l = this.sinceLand / a.landDuration;
+    s.land = l >= 1 ? 0 : Math.min(1, l * 8) * (1 - l) * (1 - l);
   }
 
   /** A bark just happened (after the gameplay cooldown allowed it). */
@@ -271,7 +301,7 @@ export class MokeAnimationController {
   private updateSitting(dt: number, sample: MokeMotionSample): void {
     const a = MOKE_ANIMATION;
     const s = this.state;
-    const busy = s.gait !== 'idle' || s.trick !== null || sample.sniffing || sample.resting || s.eat > 0;
+    const busy = s.gait !== 'idle' || s.trick !== null || sample.sniffing || sample.resting || s.eat > 0 || s.air > 0.05;
     if (busy) {
       this.sitting = false;
       this.stretchLeft = 0;

@@ -18,6 +18,8 @@ export interface CharacterBodyOptions {
   skin: number;
   mass: number;
   maxSlopeClimb: number;
+  /** Slopes flatter than this (radians) don't make a falling capsule slide. Rapier's default when unset. */
+  minSlopeSlide?: number;
   snapToGround: number;
   /**
    * A low, upright cylinder that pushes toys. The capsule's round bottom would otherwise press a
@@ -43,6 +45,7 @@ export class CharacterBody {
   private readonly controller: KinematicCharacterController;
   private readonly ray: Ray;
   private readonly computed: Vector;
+  private readonly vertical: Vec3Like = { x: 0, y: 0, z: 0 };
 
   constructor(
     private readonly physics: PhysicsWorld,
@@ -74,6 +77,7 @@ export class CharacterBody {
     this.controller.setSlideEnabled(true);
     this.controller.enableSnapToGround(options.snapToGround);
     this.controller.setMaxSlopeClimbAngle(options.maxSlopeClimb);
+    if (options.minSlopeSlide !== undefined) this.controller.setMinSlopeSlideAngle(options.minSlopeSlide);
     this.controller.setCharacterMass(options.mass);
     // Toys aren't obstacles for the controller (see CAPSULE_GROUPS); this only matters if some
     // other dynamic body ever is.
@@ -87,9 +91,17 @@ export class CharacterBody {
    * Tries to move by `desired` (metres), resolving collisions. Takes effect on the next physics
    * step. Writes the movement actually applied into `out`.
    */
-  move(desired: Vec3Like, out: Vec3Like): Vec3Like {
+  move(desired: Vec3Like, out: Vec3Like, options: { noClimbing?: boolean } = {}): Vec3Like {
     this.controller.computeColliderMovement(this.collider, desired, undefined, CAPSULE_GROUPS);
-    const applied = this.controller.computedMovement(this.computed);
+    let applied = this.controller.computedMovement(this.computed);
+    // In the air, sliding along an edge can carry the round bottom up and over it, higher than the jump itself
+    // would. With `noClimbing`, such a step drops its sideways part instead: he only goes as high as he jumped.
+    if (options.noClimbing && applied.y > Math.max(desired.y, 0) + 1e-3) {
+      const vertical = this.vertical;
+      vertical.y = desired.y;
+      this.controller.computeColliderMovement(this.collider, vertical, undefined, CAPSULE_GROUPS);
+      applied = this.controller.computedMovement(this.computed);
+    }
     this.grounded = this.controller.computedGrounded();
 
     this.center.x += applied.x;
@@ -105,9 +117,24 @@ export class CharacterBody {
 
   /** Free space straight above the capsule centre, capped at `max` metres. */
   spaceAbove(max: number): number {
+    return this.castVertical(1, max);
+  }
+
+  /**
+   * Is there something to stand on straight below the capsule centre, within `reach` of the feet? The
+   * controller also calls a capsule "grounded" when its round bottom rests on an edge, so this is what tells
+   * standing on a surface apart from teetering on its corner.
+   */
+  groundBelow(reach: number): boolean {
+    const max = this.centerHeight + reach;
+    return this.castVertical(-1, max) < max;
+  }
+
+  private castVertical(direction: 1 | -1, max: number): number {
     this.ray.origin.x = this.center.x;
     this.ray.origin.y = this.center.y;
     this.ray.origin.z = this.center.z;
+    this.ray.dir.y = direction;
     const hit = this.physics.world.castRay(this.ray, max, true, undefined, WORLD_QUERY_GROUPS, this.collider);
     return hit ? hit.timeOfImpact : max;
   }

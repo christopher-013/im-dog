@@ -88,6 +88,20 @@ export class SockHeistRuntime {
       scene,
       places: { humanHome: marks.laundry, basket: marks.laundryBasket, sockReturn: marks.sockReturn },
       memory: new DogLogicMemory(),
+      // The human puts the treat down toward Moke. If he's up on the couch or table, that line runs into the
+      // furniture: stop short of it, on open floor he can reach.
+      treatSpot: (from, to) => {
+        const dx = to.x - from.x;
+        const dz = to.z - from.z;
+        const distance = Math.hypot(dx, dz);
+        if (distance < 1e-3) return to;
+        const origin = { x: from.x, y: HEIST.treatSweep.height, z: from.z };
+        const direction = { x: dx / distance, y: 0, z: dz / distance };
+        const free = physics.sweepWorldSphere(origin, direction, HEIST.treatSweep.radius, distance);
+        if (free >= distance) return to;
+        const k = Math.max(0, free - HEIST.treatSweep.margin) / distance;
+        return { x: from.x + dx * k, y: 0, z: from.z + dz * k };
+      },
       createHuman: (hands) => {
         const heading = Math.atan2(marks.laundryBasket.x - marks.laundry.x, marks.laundryBasket.z - marks.laundry.z);
         const body = new CharacterBody(physics, marks.laundry, HUMAN.body);

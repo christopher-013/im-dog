@@ -57,14 +57,19 @@ touch ────────────┘
 | Control | How | Notes |
 |---|---|---|
 | Move | Left thumb, anywhere in the left 42% of the screen | A floating stick appears under the thumb; analog: partial push walks slowly, full push trots |
-| Run | Push the stick past its ring (it turns coral), or tap **RUN** | Pushing past the ring needs no second finger; RUN is a toggle (on until tapped again) |
+| Run | Push the stick past its ring (it turns coral), or **RUN** from the paw's buttons | Pushing past the ring needs no second finger; RUN is a toggle (on until tapped again), and the stick stays coral while it's on |
 | Look | Right thumb: drag anywhere on the right that isn't a button | Mouse-like; the pause screen's Look sensitivity and Invert settings apply |
-| Interact | The big round button | Lights up coral with its label beside it ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…) |
-| Bark · Sniff · Trick | The small buttons in an arc above the interact button | 58 px targets (the interact button is 86 px) |
+| Interact | **Tap** the paw button | Lights up coral with its label beside it ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…). Fires on release, so a hold can't also interact. |
+| Jump · Bark · Sniff · Trick · Run | **Hold** the paw button (`TOUCH.menuHoldTime`, 0.3 s): they pop out of it along an arc | Slide onto one and let go, or let go and tap them. They tuck back in after `TOUCH.menuIdleClose` (2.5 s) unused, at once on a paw tap or a camera drag, and on pause, rotation or focus loss. Moving with the stick keeps them out. 58 px targets (the paw is 86 px). |
 | Pause | **II**, top-right | |
 | Fullscreen | Menu and pause screens | Only where the browser supports it (not iPhone Safari) and not when already installed |
 
-- Growl and walk have no touch button, to keep the screen clear. A partly pushed stick walks slowly anyway.
+- **A clear screen:** only the stick, the paw and pause stay visible (owner request, 2026-09-25). The other buttons
+  live inside the paw. First play shows "Hold for more" above it, and the start toast says so too.
+- Walk has no touch button. A partly pushed stick walks slowly anyway. Bark barks or growls at random (like F and
+  controller Y). Jump sits just outside the arc, between Sniff and Trick.
+- A button springing out passes under the paw finger; it only counts once the finger has left the paw's circle, so
+  letting go right after the pop never presses anything by accident.
 - **Why run works this way:** holding a run button while steering and looking needs a third thumb. Pushing past the
   ring works one-handed, and the RUN toggle is there for anyone who'd rather not (decision D15).
 - **No browser gestures while playing:**
@@ -182,7 +187,7 @@ It stays hidden unless asked for.
 - Firefox for Android.
 
 ## Known limitations
-- No growl button on touch, and no pinch-to-zoom camera on touch (default distance only).
+- No pinch-to-zoom camera on touch (default distance only).
 - iPhone Safari has no fullscreen for web pages; "Add to Home Screen" is the way to hide the browser bars.
 - The placeholder human adds about 48 draw calls; merging its parts would cut that if phones need it.
 - The service worker only activates on the hosted (https) build, not on a LAN dev server.

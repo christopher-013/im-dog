@@ -60,6 +60,11 @@ describe('selecting clips from the animation state', () => {
     expect(select({ trick: 'beg', trickBlend: 1 }).weights).toEqual({ trick_beg: 1 });
   });
 
+  it('plays the jump clip while he is in the air', () => {
+    expect(select({ air: 1, speed: MOVEMENT.trotSpeed }).weights).toEqual({ jump: 1 });
+    expect(select({ air: 0.5, speed: MOVEMENT.trotSpeed }).weights).toEqual({ jump: 0.5, trot: 0.5 });
+  });
+
   it('skips an action the model has no clip for, instead of freezing', () => {
     expect(select({ trick: 'spin', trickBlend: 1, speed: 0 }, ['idle', 'walk', 'trot', 'run']).weights).toEqual({ idle: 1 });
     expect(select({ bark: 1 }, ['idle']).weights).toEqual({ idle: 1 });

@@ -26,11 +26,11 @@ export function actionGlyph(action: Action, mode: InputMode): string | null {
 /** A short reminder of the controls for this mode, shown briefly when play starts. */
 export function controlsSummary(mode: InputMode): string {
   const g = (action: Action) => actionGlyph(action, mode) ?? '?';
-  if (mode === 'touch') return 'Left thumb: move · Right thumb: look · Push the stick far to run';
+  if (mode === 'touch') return 'Left thumb: move · Right thumb: look · Hold the paw button for more';
   if (mode === 'gamepad') {
-    return `Left stick move · Right stick look · ${g('interact')} interact · ${g('bark')} bark · ${g('trick')} trick · ${g('sniff')} sniff`;
+    return `Left stick move · Right stick look · ${g('interact')} interact · ${g('jump')} jump · ${g('bark')} bark · ${g('trick')} trick · ${g('sniff')} sniff`;
   }
-  return `WASD move · Mouse look · ${g('interact')} interact · Shift run · ${g('sniff')} sniff · ${g('bark')} bark · ${g('trick')} trick`;
+  return `WASD move · Mouse look · ${g('interact')} interact · ${g('jump')} jump · Shift run · ${g('sniff')} sniff · ${g('bark')} bark · ${g('trick')} trick`;
 }
 
 /** First-play onboarding rows: [what to press, what it does]. Touch shows its own on-screen hints instead. */
@@ -42,6 +42,7 @@ export function onboardingRows(mode: Exclude<InputMode, 'touch'>): readonly (rea
       ['Right stick', 'Look'],
       [g('interact'), 'Interact'],
       [g('run'), 'Run'],
+      [g('jump'), 'Jump'],
       [g('sniff'), 'Sniff'],
       [g('bark'), 'Bark'],
     ];
@@ -51,6 +52,7 @@ export function onboardingRows(mode: Exclude<InputMode, 'touch'>): readonly (rea
     ['Mouse', 'Look'],
     [g('interact'), 'Interact'],
     [g('run'), 'Run'],
+    [g('jump'), 'Jump'],
     [g('sniff'), 'Sniff'],
     [g('bark'), 'Bark'],
   ];

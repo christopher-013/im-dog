@@ -4,11 +4,11 @@ import { HEIST } from '../config/heist';
 import { GameEvents, type GameEventName } from '../core/GameEvents';
 import { InteractionSystem } from '../interactions/InteractionSystem';
 import { DogLogicMemory } from './DogLogic';
-import { SockHeistController, type HeistHuman, type HeistSock } from './SockHeistController';
+import { SockHeistController, type HeistDeps, type HeistHuman, type HeistSock } from './SockHeistController';
 
 const DT = 1 / 60;
 
-function setup() {
+function setup(options: { treatSpot?: HeistDeps['treatSpot'] } = {}) {
   const events = new GameEvents();
   const emitted: GameEventName[] = [];
   for (const name of ['SOCK_TRADED', 'TREAT_EATEN', 'DOG_LOGIC_DISCOVERED', 'HEIST_COMPLETE', 'HEIST_RESET'] as const) {
@@ -68,6 +68,7 @@ function setup() {
     places: { humanHome: { x: -1, y: 0, z: -1 }, basket: { x: -2, y: 0, z: -2 }, sockReturn: { x: -2.3, y: 0, z: -1.3 } },
     memory: new DogLogicMemory(storage),
     createHuman: () => human,
+    treatSpot: options.treatSpot,
   });
   const run = (seconds: number) => {
     for (let t = 0; t < seconds; t += DT) heist.fixedUpdate(DT);
@@ -176,6 +177,20 @@ describe('SockHeistController', () => {
     expect(humanResets).toHaveLength(1);
     expect(emitted).toContain('HEIST_RESET');
     expect(heist.elapsed).toBe(0);
+  });
+
+  it("puts the treat down short of any furniture between the human and Moke (he may be up on the couch)", () => {
+    const asked: { from: { x: number; z: number }; to: { x: number; z: number } }[] = [];
+    const { heist } = setup({
+      treatSpot: (from, to) => {
+        asked.push({ from: { x: from.x, z: from.z }, to: { x: to.x, z: to.z } });
+        return { x: 1.2, y: 0, z: 0 }; // stopped at the couch's edge
+      },
+    });
+    heist.placeTreat({ x: 1.5, y: 0, z: 0 });
+    expect(asked).toEqual([{ from: { x: 1, z: 0 }, to: { x: 1.5, z: 0 } }]);
+    expect(heist.treat.position.x).toBeCloseTo(1.2);
+    expect(heist.treat.position.y).toBe(0);
   });
 
   it('remembers SOCK = TREAT: "new" the first time only', () => {

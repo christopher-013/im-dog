@@ -17,7 +17,7 @@ import { RestSystem } from '../interactions/RestSystem';
 import { REST } from '../config/interaction';
 import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
-import { BarkTimer } from '../player/Bark';
+import { BarkTimer, barkOrGrowl } from '../player/Bark';
 import type { MoveIntent } from '../player/Locomotion';
 import { Moke } from '../player/Moke';
 import { pickTrick, type Trick } from '../player/Tricks';
@@ -468,29 +468,47 @@ export class Game {
     this.moveIntent.run = input.isDown('run');
   }
 
-  /** The discrete action keys, once per rendered frame while playing: E interact, F bark, G growl, Q trick, R sniff. */
+  /** The discrete action keys, once per rendered frame while playing: E interact, Space jump, F bark or growl, Q trick, R sniff. */
   private handleActions(): void {
     const input = this.input.state;
     if (input.wasPressed('interact')) {
       this.moke?.animation.cancelTrick();
       this.interactions.interact();
     }
-    // Any fresh movement key gets him up out of his bed.
-    const moved = ['moveForward', 'moveBackward', 'moveLeft', 'moveRight'] as const;
-    if (this.rest.holdsMoke && (input.wasMoveStarted() || moved.some((a) => input.wasPressed(a)))) this.rest.standUp();
-    if (input.wasPressed('bark') && this.moke && this.barkTimer.tryBark()) {
-      this.moke.animation.bark();
-      this.audio.play('bark');
-      this.barkedThisFrame = true;
-      this.heist?.noteBark();
-    }
-    if (input.wasPressed('growl') && this.moke) {
-      this.moke.animation.growl();
-      this.audio.play('growl');
-      this.growledThisFrame = true;
+    // Any fresh movement key (or a jump) gets him up out of his bed.
+    const moved = ['moveForward', 'moveBackward', 'moveLeft', 'moveRight', 'jump'] as const;
+    const wasResting = this.rest.holdsMoke;
+    if (wasResting && (input.wasMoveStarted() || moved.some((a) => input.wasPressed(a)))) this.rest.standUp();
+    if (input.wasPressed('jump') && !wasResting) this.jump();
+    if (input.wasPressed('bark') && this.moke) {
+      if (barkOrGrowl() === 'growl') this.growl();
+      else this.bark();
     }
     if (input.wasPressed('trick')) this.startTrick();
     if (input.wasPressed('sniff') && !this.moke?.animation.performingTrick && this.scent.start()) this.audio.play('sniff');
+  }
+
+  /** Up he goes (MokeController decides whether he can: on his feet, nothing low overhead, under the height cap). */
+  private jump(): void {
+    const moke = this.moke;
+    if (!moke || moke.animation.eating) return;
+    moke.animation.cancelTrick();
+    moke.controller.requestJump();
+  }
+
+  private bark(): void {
+    if (!this.moke || !this.barkTimer.tryBark()) return;
+    this.moke.animation.bark();
+    this.audio.play('bark');
+    this.barkedThisFrame = true;
+    this.heist?.noteBark();
+  }
+
+  private growl(): void {
+    if (!this.moke) return;
+    this.moke.animation.growl();
+    this.audio.play('growl');
+    this.growledThisFrame = true;
   }
 
   /** A random trick (see Tricks.ts): not while in his bed, sniffing, or already doing one. */

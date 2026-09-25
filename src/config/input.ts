@@ -8,7 +8,6 @@ export const ACTIONS = [
   'run',
   'interact',
   'bark',
-  'growl',
   'trick',
   'sniff',
   'jump',
@@ -38,12 +37,12 @@ export const KEY_BINDINGS: Readonly<Record<Action, readonly string[]>> = {
   // Touch: the Run toggle button, or the joystick pushed past its rim.
   run: ['ShiftLeft', 'ShiftRight', 'Gamepad:Button5', 'Gamepad:Button7', 'Touch:run', 'Touch:sprint'],
   interact: ['KeyE', 'Gamepad:Button0', 'Touch:interact'],
-  bark: ['KeyF', 'Gamepad:Button1', 'Touch:bark'],
-  growl: ['KeyG', 'Gamepad:Button3', 'Touch:growl'],
+  // One button for his voice: a bark or a growl, at random (see player/Bark.ts).
+  bark: ['KeyF', 'Gamepad:Button3', 'Touch:bark'],
   trick: ['KeyQ', 'Gamepad:Button2', 'Touch:trick'],
   // Right stick press: all four face buttons are taken.
   sniff: ['KeyR', 'Gamepad:Button11', 'Touch:sniff'],
-  jump: ['Space'],
+  jump: ['Space', 'Gamepad:Button1', 'Touch:jump'],
   pause: ['Escape', 'Gamepad:Button9', 'Touch:pause'],
   // Controller-only: keyboard menus use the focused button (Enter/Space), and Esc can't resume (see MenuInput.ts).
   resume: ['Gamepad:Button9'],
@@ -80,6 +79,10 @@ export const TOUCH = {
   lookScale: 1.9,
   /** A single touch move larger than this (px) is clamped, like a mouse spike. */
   maxLookPerEvent: 90,
+  /** Holding the paw button this long (s) pops out the other buttons (jump, bark, sniff, trick, run); a quicker tap interacts. */
+  menuHoldTime: 0.3,
+  /** Popped-out buttons tuck themselves back into the paw after this long unused (s). */
+  menuIdleClose: 2.5,
 } as const;
 
 export interface MouseSettings {
@@ -120,9 +123,9 @@ export const CONTROL_HINTS: readonly ControlHint[] = [
   { label: 'Zoom camera', input: 'Wheel', ready: true },
   { label: 'Run (hold)', input: ['run'], ready: true },
   { label: 'Walk / sneak (hold)', input: ['walk'], ready: true },
+  { label: 'Jump (up onto the couch or coffee table)', input: ['jump'], ready: true },
   { label: 'Interact · pick up · drop · give · eat', input: ['interact'], ready: true },
-  { label: 'Bark', input: ['bark'], ready: true },
-  { label: 'Cute growl', input: ['growl'], ready: true },
+  { label: 'Bark or growl (random)', input: ['bark'], ready: true },
   { label: 'Do a trick', input: ['trick'], ready: true },
   { label: 'Sniff', input: ['sniff'], ready: true },
   { label: 'Pause · free the mouse', input: ['pause'], ready: true },
@@ -132,10 +135,10 @@ export const CONTROL_HINTS: readonly ControlHint[] = [
 /** What the Controls screen shows for touch play. */
 export const TOUCH_CONTROL_HINTS: readonly GamepadControlHint[] = [
   { label: 'Move (trot)', input: 'Left thumb: drag anywhere on the left' },
-  { label: 'Run', input: 'Push the stick past its ring, or tap RUN' },
+  { label: 'Run', input: 'Push the stick past its ring, or RUN (hold the paw button)' },
   { label: 'Look around', input: 'Right thumb: drag anywhere on the right' },
-  { label: 'Interact · pick up · drop · give · eat', input: 'The big round button (it says what it will do)' },
-  { label: 'Bark · sniff · trick', input: 'The small buttons' },
+  { label: 'Interact · pick up · drop · give · eat', input: 'Tap the paw button (it says what it will do)' },
+  { label: 'Jump · bark or growl · sniff · trick · run', input: 'Hold the paw button: they pop out. Slide onto one and let go, or tap one.' },
   { label: 'Pause', input: 'II, top corner' },
 ];
 
@@ -144,9 +147,9 @@ export const GAMEPAD_CONTROL_HINTS: readonly GamepadControlHint[] = [
   { label: 'Move (trot)', input: 'Left stick / D-pad' },
   { label: 'Look around', input: 'Right stick' },
   { label: 'Interact · confirm', input: 'A / bottom button' },
-  { label: 'Bark', input: 'B / right button' },
+  { label: 'Jump', input: 'B / right button' },
   { label: 'Do a trick', input: 'X / left button' },
-  { label: 'Cute growl', input: 'Y / top button' },
+  { label: 'Bark or growl (random)', input: 'Y / top button' },
   { label: 'Walk / sneak (hold)', input: 'LB / LT' },
   { label: 'Run (hold)', input: 'RB / RT' },
   { label: 'Sniff', input: 'Press the right stick' },

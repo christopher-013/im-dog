@@ -32,6 +32,10 @@ export const MOKE_ANIMATION = {
   growlDuration: 1.15,
   /** Eating a treat off the floor (s). */
   eatDuration: 1.4,
+  /** The little squash when he lands from a jump or a drop (s). */
+  landDuration: 0.22,
+  /** Vertical speed (m/s) at which his body is fully pitched up (rising) or down (falling) in the air. */
+  airPitchSpeed: 3,
   /** Tricks (Q / controller X): how long each lasts (s) and how he eases into and out of it. */
   tricks: {
     bellyUp: 2.8,

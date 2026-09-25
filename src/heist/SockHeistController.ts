@@ -51,6 +51,11 @@ export interface HeistDeps {
   readonly memory: DogLogicMemory;
   /** Builds the human, given the hands this heist lends them. */
   readonly createHuman: (hands: HumanHands) => HeistHuman;
+  /**
+   * Where a treat meant for `to` can really go down, reaching from `from` (the human): short of any furniture
+   * in between, so it's never inside the couch when Moke is up on it. Unchanged when omitted.
+   */
+  readonly treatSpot?: (from: Vec3Like, to: Vec3Like) => Vec3Like;
 }
 
 const ZERO: Vec3Like = { x: 0, y: 0, z: 0 };
@@ -194,7 +199,7 @@ export class SockHeistController implements HumanHands {
   }
 
   placeTreat(at: Vec3Like): void {
-    this.treat.place(at, this.deps.scene);
+    this.treat.place(this.deps.treatSpot?.(this.human.controller.position, at) ?? at, this.deps.scene);
   }
 
   // ---- the heist's own moments

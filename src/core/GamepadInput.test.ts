@@ -43,10 +43,10 @@ describe('GamepadInput', () => {
     input.beginFrame();
     expect(input.wasPressed('interact')).toBe(true);
     expect(input.wasPressed('menuConfirm')).toBe(true);
-    expect(input.isDown('bark')).toBe(true);
+    expect(input.isDown('jump')).toBe(true); // B
     expect(input.isDown('trick')).toBe(true);
     expect(input.isDown('sniff')).toBe(true); // right stick press
-    expect(input.isDown('growl')).toBe(true);
+    expect(input.isDown('bark')).toBe(true); // Y: bark or growl
     expect(input.isDown('walk')).toBe(true);
     expect(input.isDown('run')).toBe(true);
     expect(input.wasPressed('pause')).toBe(true);

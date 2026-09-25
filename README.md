@@ -3,7 +3,7 @@
 *A Day in the Life of Moke.* A cozy, funny third-person browser game about an ordinary day as Moke,
 a small white Maltipoo. No combat, no death: just socks, smells, naps and a very big living room.
 
-**Status:** Phase 1, Milestone 10 (polish) in progress. A soft, stylized Moke modelled on the real dog (curly white
+**Status:** Phase 1 complete: the technical prototype (tag `phase-1-complete`). Phase 2 is being planned. A soft, stylized Moke modelled on the real dog (curly white
 coat, dark eyes, black button nose, blue collar) trots, runs and sneaks around a cozy, true-scale living room: linen couch, rug, coffee table he can
 duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can bark, growl, do tricks, sniff,
 carry his sock and toys, and nap in his bed. A low dog-height camera follows him and avoids walls and furniture.

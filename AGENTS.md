@@ -6,17 +6,11 @@ Shared, tool-independent instructions for every coding agent working in this rep
 ## Project
 - **I'M DOG?** (keep the exact capitalization, apostrophe and question mark): a browser-based, stylized 3D
   third-person game about **Moke**, a real white Maltipoo. Cozy, funny, family friendly. No combat, no death.
-- **Current phase:** Phase 1, the first playable prototype (one living room). Scope: `docs/PHASE_1.md`.
-- **Completed:**
-  - Milestone 1, project foundation and architecture.
-  - Milestone 2, the basic Moke character.
-  - Milestone 3, the third-person camera.
-  - Milestone 4, the living room (plus a short hallway).
-  - Milestones 5–9 (interactions, sock, physics toys, sniff + bark, rest), built overnight and merged into
-    `main` at the owner's request (PR #1).
-  - Milestones 2–9 still await the owner's hands-on playtest.
-- **In progress:** Milestone 10 (polish), started 2026-09-24 at the owner's request. Done so far: Moke's
-  look, modelled on the real dog (`ToonMokeVisual`, with his collar and name tag), and title-screen fixes. The owner liked the Milestones 5–9 gameplay.
+- **Phase 1 is complete:** the first playable technical prototype (one living room), Milestones 1–10, closed by the
+  owner on 2026-09-24 and tagged `phase-1-complete`. Scope and history: `docs/PHASE_1.md`.
+- **Next:** Phase 2 isn't defined yet. Write `docs/PHASE_2.md` (scope, milestones, success criteria) for the owner to
+  approve before any Phase 2 code. Carried over from Phase 1: the hands-on checks and Known Issues in
+  `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES

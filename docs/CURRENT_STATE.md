@@ -1,18 +1,23 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. Moke's real-dog look, collar and tag, the title-screen fixes, Codex's Phase 1 audit and gamepad support are committed locally on `main`. So are Moke's new tail, the deeper growl and the trick button, with sniff moved to R (Claude). Nothing of Claude's is pushed. See `git log` and `git status`._
+_Last updated: 2026-09-24. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (commit "milestone: complete Phase 1 technical prototype", tag `phase-1-complete`). Everything is committed and pushed. See `git log` and `git status`._
 
 ## Current Phase
-Phase 1
+**Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
+**Phase 2: not defined yet.**
 
 ## Current Milestone
-**Milestone 10 (polish) is in progress**, started 2026-09-24 at the owner's request. The owner played Milestones 5–9
+None. Phase 1's last milestone, **Milestone 10 (polish)**, is done and closed with the phase. Phase 2's milestones will
+come from `docs/PHASE_2.md` once the owner approves it.
+
+How Milestone 10 went: it started 2026-09-24 at the owner's request. The owner played Milestones 5–9
 ("the overall gameplay is incredible… I like it") and asked to start M10 with Moke's look: anime style instead of
 polygon shapes, following a reference picture they shared (see `docs/MOKE_CHARACTER_REFERENCE.md` → "Owner style
 target"). After seeing it, the owner asked for Moke to look **less jagged and more like the real dog** (their photos), then
 for shorter ears and a collar with a name tag, and for two title-screen fixes (no scrollbar/cut-off; the dog-face "O"
-in line with D and G). Then a tail attached to his body and shaped like the real one, and a deeper growl. All done
-and awaiting the owner's look. The rest of M10 (Known Issues below) is not started.
+in line with D and G). Then a tail attached to his body and shaped like the real one, a deeper growl, a trick button,
+a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's left is in Known Issues below and
+carries into Phase 2.
 
 ## Last Developer
 Claude Code (a review of Codex's commits, three fixes from it, and GitHub Pages hosting; before that the trick button, Moke's tail and a deeper growl). Before that, OpenAI Codex committed its
@@ -83,7 +88,7 @@ Phase 1 audit, gamepad support, the cute growl and a collar refit.
 - Debug panel: "Scent" (sniff state, sources, the ranked nearby list); "Game" shows audio state and bark count.
 - No treat placeholder was added (optional in the spec); the four sources are the sock, rope toy, ball and bed.
 
-**Milestone 10 (in progress): Moke's look, modelled on the real Moke.**
+**Milestone 10 (done): Moke's look, modelled on the real Moke.**
 - `ToonMokeVisual` replaces `PlaceholderDogVisual` (deleted). Generated entirely in code, no image files.
 - First pass: an anime look from the owner's illustration. Current pass: the owner asked for "less jagged, more like
   the real dog", so it now follows the photos in `reference/moke/`:
@@ -111,7 +116,7 @@ Phase 1 audit, gamepad support, the cute growl and a collar refit.
 - All look numbers are in `src/config/mokeLook.ts` (palette, key light, crease shading, outline, collar, blinks).
 - Gameplay untouched (D7): same `MokeVisual` interface, same `mouthSocket`, same animation state.
 
-**Milestone 10 (in progress): tricks** (owner request: "replace the smell button with a trick button").
+**Milestone 10 (done): tricks** (owner request: "replace the smell button with a trick button").
 - Q / controller X: a random trick, never the same twice in a row, all things a small dog really does:
   - **belly up:** lies down, rolls onto his back with all four paws up and a wiggle, head turned to look at you,
     tongue out;
@@ -124,7 +129,7 @@ Phase 1 audit, gamepad support, the cute growl and a collar refit.
 - Code: `player/Tricks.ts`, `MokeAnimationController.trick/cancelTrick`, `TrickPose` in `ToonMokeVisual`, lengths in
   `MOKE_ANIMATION.tricks`.
 
-**Milestone 10 (in progress): review fixes and hosting.**
+**Milestone 10 (done): review fixes and hosting.**
 - Code review of Codex's commits (`6804ffd`, `3a2d761`); fixed:
   - Enter/Space on any focused menu control (CONTROLS, the invert-Y box…) also started or resumed the game. Menu
     confirm/resume are now controller-only (A, Start); keyboard menus use the focused button natively.
@@ -140,7 +145,7 @@ Phase 1 audit, gamepad support, the cute growl and a collar refit.
   `main`). The owner chose to make the repo public; the git history was audited first (only the photo folder's
   README was ever committed; no images, secrets or private files).
 
-**Milestone 10 (in progress): title screen.**
+**Milestone 10 (done): title screen.**
 - The title and loading stacks are no longer scroll containers (that produced a horizontal scrollbar and clipped
   the tilted "?"). The logo scales with both width and height (`min(10.5vw, 17vh)`), and very short windows hide
   the Japanese tag. Cards (pause, error, controls) still scroll on tiny windows.
@@ -368,9 +373,12 @@ Earlier, at the end of Milestone 4:
 - Moke's look: `src/player/ToonMokeVisual.ts`, `src/player/toon/`, `src/config/mokeLook.ts`.
 
 ## Next Recommended Task
-1. The owner playtests on real machines (https://christopher-013.github.io/im-dog/): mouse capture, audio by ear, a controller, real-GPU frame rate,
-   and the feel of movement, camera and tricks. Then says what to change. Tune from that (`config/mokeLook.ts` first).
-2. Continue Milestone 10 with the owner's priorities. Candidates:
+1. **Define Phase 2:** write `docs/PHASE_2.md` (goal, scope, what's out of scope, milestones, success criteria) with
+   the owner, and get it approved before any Phase 2 code (D6: one polished slice before expanding).
+2. **Carried-over checks** from Phase 1, best done on the hosted build (https://christopher-013.github.io/im-dog/): pointer lock with a physical
+   mouse, audio by ear, a physical controller, real-GPU frame rate, Firefox and Safari, and the feel of movement,
+   camera and tricks.
+3. **Carried-over polish** (the owner decides whether it belongs in Phase 2). Candidates:
    - redraw the logo "O" face to match the real Moke;
    - a sit pose when idle;
    - Known Issues above (loading-overlay ghosting, carried props poking walls, drop vs. lie-down priority);

@@ -42,16 +42,13 @@ touch ────────────┘
   so neither wipes the other.
 
 ## Orientation
-- **Landscape is the intended way to play** (a third-person view wants width).
-- **Portrait works**, and doesn't break:
-  - the menu shows "Rotate your phone for the best experience";
-  - play shows a "Landscape is best" chip for a few seconds;
-  - the camera widens its vertical field of view (up to 80°) so enough of the room fits side to side (at least
-    60°); landscape and desktop keep 55°;
-  - the controls fit at the bottom.
+- **Portrait and landscape both play well.** The owner found portrait works well on a real phone and may be how
+  most people hold it (2026-09-25), so nothing asks you to rotate any more. (Phase 3 had a "Rotate your phone" line
+  on the menu and a "Landscape is best" chip; both are gone.)
+- In portrait the camera widens its vertical field of view (up to 80°) so enough of the room fits side to side (at
+  least 60°); landscape and desktop keep 55°. The controls fit at the bottom either way.
 - Rotating mid-game releases any held touches and resizes the canvas; play continues.
-- Orientation isn't locked, except that choosing FULLSCREEN on Android also asks for landscape. That's allowed only
-  in fullscreen, and a refusal is ignored.
+- Orientation is never locked: not by FULLSCREEN, and the installed app's manifest says `any`.
 
 ## Touch controls
 | Control | How | Notes |
@@ -60,7 +57,7 @@ touch ────────────┘
 | Run | Push the stick past its ring (it turns coral), or **RUN** from the paw's buttons | Pushing past the ring needs no second finger; RUN is a toggle (on until tapped again), and the stick stays coral while it's on |
 | Look | Right thumb: drag anywhere on the right that isn't a button | Mouse-like; the pause screen's Look sensitivity and Invert settings apply |
 | Interact | **Tap** the paw button | Lights up coral with its label beside it ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…). Fires on release, so a hold can't also interact. |
-| Jump · Bark · Sniff · Trick · Run | **Hold** the paw button (`TOUCH.menuHoldTime`, 0.3 s): they pop out of it along an arc | Slide onto one and let go, or let go and tap them. They tuck back in after `TOUCH.menuIdleClose` (2.5 s) unused, at once on a paw tap or a camera drag, and on pause, rotation or focus loss. Moving with the stick keeps them out. 58 px targets (the paw is 86 px). |
+| Jump · Bark · Trick · Run | **Hold** the paw button (`TOUCH.menuHoldTime`, 0.3 s): they pop out of it along an arc | Slide onto one and let go, or let go and tap them. They tuck back in after `TOUCH.menuIdleClose` (2.5 s) unused, at once on a paw tap or a camera drag, and on pause, rotation or focus loss. Moving with the stick keeps them out. 58 px targets (the paw is 86 px). |
 | Pause | **II**, top-right | |
 | Fullscreen | Menu and pause screens | Only where the browser supports it (not iPhone Safari) and not when already installed |
 
@@ -79,20 +76,44 @@ touch ────────────┘
   - no text selection or long-press menu.
 
   Menus and dialogs keep normal zoom for accessibility.
-- **First play:** the stick's resting spot is labelled "Move", and "Drag to look" shows on the right. After the
-  first time, a one-line reminder.
+- **First play:** the stick's resting spot is labelled "Move", "Drag to look" shows on the right, and "Hold for more"
+  above the paw. After the first time, a one-line reminder.
+- **No sniff on touch** (owner, 2026-09-25): it's rarely used on a phone, and the paw menu is shorter without it.
+  Keyboard R and the controller's right-stick press still sniff.
 
 ## Start, audio, fullscreen, lifecycle
 - **PLAY** (a tap) starts the audio. Browsers only allow sound after a gesture. There's no pointer lock on touch.
+- **Sound on phones** (fixed 2026-09-25, after the owner heard no bark or growl on their phone):
+  - **Every tap, click or key wakes the audio** (`AudioManager.wake()`), not just PLAY and RESUME. Phones stop web
+    audio by themselves (a call, Siri, the lock screen, switching apps) and only a gesture may restart it. iOS
+    Safari calls that state `interrupted`, which the old code never resumed, so the game could stay silent until
+    a reload. A sound asked for by the tap that wakes the audio (the Bark button, say) waits for it rather than
+    being lost.
+  - **The iPhone silent switch:** web audio follows the ringer switch unless the page asks otherwise. The game asks
+    for the `playback` audio session (Safari's Audio Session API, feature-detected; `AUDIO.iosSession`), so it's
+    heard like a video even on silent. That also pauses other apps' music while it plays. `ambient` would do the
+    opposite (respect the switch, mix with music).
+  - **Phone speakers** play almost nothing below ~400 Hz. Every sound was rendered offline and measured through a
+    phone-speaker filter (two 400 Hz high-passes), at its in-game level:
+
+    | Sound | Full range | Phone speaker, before | Phone speaker, now |
+    |---|---|---|---|
+    | Bark | −28.6 dB | −26.4 dB | unchanged |
+    | Growl | −23.8 dB | **−36.7 dB** (all but gone) | −29.0 dB, with a throaty rasp at 1.15 kHz |
+    | Drop | −26.1 dB | **−42 dB** (all but gone) | −32.4 dB, with a soft "tock" |
+    | Pickup, surprise, discovery, treat bag | −24 to −31 dB | within ~3 dB of full range | unchanged |
+    | Sniff, whoosh, crunch (quiet by design) | −38 to −42 dB | within ~1 dB of full range | unchanged |
+
+    The new layers change the full-range levels by under 0.5 dB (`AUDIO.speakerPresence`).
 - **Leaving the game** (phone locked, app switched, tab hidden):
   - it pauses, audio is suspended, and every touch is released;
-  - on return it's on the pause screen, and RESUME (a tap) brings the sound back;
+  - on return it's on the pause screen, and the next tap (RESUME, or anything) brings the sound back;
   - the frame clock restarts, so there's no catch-up jump.
 - Fullscreen is offered, never required.
 
 ## Home screen / PWA
 - `public/manifest.webmanifest`: name and short name "I'M DOG?", `display: fullscreen` (falling back to
-  standalone), landscape, cream theme and background. Icons in `public/icons/` are generated from the favicon art
+  standalone), any orientation, cream theme and background. Icons in `public/icons/` are generated from the favicon art
   by `node scripts/make-icons.mjs`: 192, 512, maskable 512 and a 180 px Apple touch icon.
 - iOS meta tags: `apple-mobile-web-app-capable`, title, status-bar style, and the touch icon.
 - **Service worker (`dist/sw.js`):**
@@ -181,8 +202,9 @@ It stays hidden unless asked for.
   - safe areas on notched phones;
   - home-screen installation and the installed app's display mode;
   - real frame rate, GPU load, heat and battery;
-  - audio on iOS after locking the phone.
-- Fullscreen and the landscape lock on a real Android device.
+  - audio on a real phone: whether the silent-switch and wake fixes work on the owner's phone, and how the
+    growl's rasp and the drop's tock sound through a real speaker (only measured through a filter here).
+- Fullscreen on a real Android device.
 - Offline play from the home screen.
 - Firefox for Android.
 

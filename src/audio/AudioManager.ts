@@ -5,9 +5,13 @@ export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surpri
 
 const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop, surprise, whoosh, treatBag, crunch, discovery };
 
+/** Safari's Audio Session API (feature-detected; not in the TypeScript DOM types yet). */
+type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
+
 /**
  * Game audio. Browsers only allow sound after a user gesture, so the AudioContext is created (or
- * resumed) by `unlock()` from the PLAY / RESUME clicks. Before that, and where Web Audio is
+ * resumed) by `unlock()` from the PLAY / RESUME clicks, and woken again by `wake()` on any later tap or key
+ * (phones put it to sleep: a call, the lock screen, switching apps). Before that, and where Web Audio is
  * unavailable, `play()` quietly does nothing: audio is never allowed to break the game.
  */
 export class AudioManager {
@@ -15,17 +19,20 @@ export class AudioManager {
   private master: GainNode | null = null;
   private noise: AudioBuffer | null = null;
   private failed = false;
+  /** A resume() in flight, so sounds asked for meanwhile can wait for it instead of being lost. */
+  private waking: Promise<void> | null = null;
 
   get status(): string {
     if (this.failed) return 'unavailable';
     return this.ctx ? this.ctx.state : 'locked (waiting for PLAY)';
   }
 
-  /** Call from a click handler. */
+  /** Call from a click handler (PLAY, RESUME): creates the audio if needed and wakes it. */
   unlock(): void {
     if (this.failed) return;
     try {
       if (!this.ctx) {
+        preferAudibleSession();
         const ctx = new AudioContext();
         this.master = ctx.createGain();
         this.master.gain.value = AUDIO.master;
@@ -33,7 +40,7 @@ export class AudioManager {
         this.noise = whiteNoise(ctx, 1);
         this.ctx = ctx;
       }
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      this.wake();
     } catch (err) {
       this.failed = true;
       console.warn('Audio is unavailable:', err);
@@ -41,8 +48,23 @@ export class AudioManager {
   }
 
   /**
-   * Silence everything while the page is hidden (phone locked, app switched). The next PLAY/RESUME tap
-   * calls unlock(), which resumes it; iOS may also have "interrupted" it, which resume() handles too.
+   * Call from any user gesture (tap, click, key). Resumes audio the browser has stopped: "suspended" (hidden page,
+   * autoplay rules) or iOS Safari's "interrupted" (a call, Siri, the lock screen). Only a gesture may do that.
+   */
+  wake(): void {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state === 'running' || ctx.state === 'closed' || this.waking) return;
+    this.waking = ctx
+      .resume()
+      .catch(() => {})
+      .finally(() => {
+        this.waking = null;
+      });
+  }
+
+  /**
+   * Silence everything while the page is hidden (phone locked, app switched). The next tap or key wakes it again
+   * (see wake()).
    */
   suspend(): void {
     if (this.ctx?.state === 'running') void this.ctx.suspend();
@@ -50,7 +72,12 @@ export class AudioManager {
 
   play(name: SoundName): void {
     const { ctx, master, noise } = this;
-    if (!ctx || !master || !noise || ctx.state !== 'running') return;
+    if (!ctx || !master || !noise) return;
+    if (ctx.state !== 'running') {
+      // Just woken by this very tap (the bark button, say): play it as soon as the audio is back.
+      if (this.waking) void this.waking.then(() => ctx.state === 'running' && this.play(name));
+      return;
+    }
     const level = ctx.createGain();
     level.gain.value = AUDIO[name];
     level.connect(master);
@@ -63,6 +90,20 @@ export class AudioManager {
   dispose(): void {
     void this.ctx?.close();
     this.ctx = null;
+  }
+}
+
+/**
+ * iPhones mute web audio with the ringer (silent) switch unless the page asks for "playback", as video does.
+ * Set before the audio starts; ignored where the browser has no Audio Session API. See AUDIO.iosSession.
+ */
+function preferAudibleSession(): void {
+  const session = (navigator as AudioSessionNavigator).audioSession;
+  if (!session) return;
+  try {
+    session.type = AUDIO.iosSession;
+  } catch {
+    // An unknown type: leave the browser's default.
   }
 }
 

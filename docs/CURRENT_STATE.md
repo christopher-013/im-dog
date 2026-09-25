@@ -71,6 +71,22 @@ else to change in the game's look and feel.
   says "Hold the paw button for more". Code: `TouchInput` (`TOUCH.menuHoldTime`, `menuIdleClose` in
   `config/input.ts`), `.touch-actions.is-open` in `main.css`.
 
+**Owner's phone test, 2026-09-25 (committed and pushed): sound on phones, no sniff button, portrait welcome.** The owner:
+"the mobile looks and plays great", but no bark or growl sound on their phone.
+- **Sound on phones:** every tap, click or key now wakes the audio (`AudioManager.wake()`); it used to be woken only
+  by PLAY/RESUME, and never from iOS Safari's `interrupted` state (a call, the lock screen, switching apps). A
+  sound asked for by the waking tap waits for the audio instead of being lost. iPhones get the `playback` audio
+  session, so the silent switch doesn't mute the game (`AUDIO.iosSession`; it also pauses other apps' music).
+- **Other sounds checked:** all ten rendered offline through a phone-speaker filter. Only the growl (−13 dB) and the
+  drop (−16 dB) vanished on a phone speaker; they now have mid-range layers (a throaty rasp, a soft tock) that bring
+  them back while changing full-range playback by under 0.5 dB (`AUDIO.speakerPresence`). Table in
+  `docs/MOBILE.md`. The bark was always loud enough, so a silent bark means the audio never started: the
+  silent switch or the unresumed `interrupted` state are the likely causes. Neither can be reproduced here.
+- **No sniff on touch:** the paw menu is Bark, Jump, Trick, Run on one arc (Jump took Sniff's spot, closer to the
+  thumb). R and the controller's right-stick press still sniff.
+- **Portrait welcome:** the "Rotate your phone" line and the "Landscape is best" chip are gone, the manifest allows any
+  orientation, and FULLSCREEN no longer locks landscape.
+
 **Phase 3 (built and pushed, not closed): Sock Heist + mobile web play.** Details: `docs/SOCK_HEIST.md`, `docs/MOBILE.md`,
 `docs/PHASE_3.md`.
 - **Sock Heist,** the first complete loop. Moke steals the sock from the rug; the human, folding laundry by the basket, notices
@@ -408,8 +424,9 @@ New with the jump:
 - G is no longer bound (the owner merged bark and growl onto one button).
 - **On touch, jumping is slower now:** hold the paw, slide to Jump, let go (or keep the buttons out and tap Jump
   again within 2.5 s). The hold time (0.3 s) and idle time (2.5 s) are first guesses for the owner's thumbs.
-- Noticed, not fixed (from Phase 3): in portrait, the start toast can sit under the "Landscape is best" chip for its
-  first few seconds.
+- ~~In portrait, the start toast could sit under the "Landscape is best" chip~~: the chip is gone.
+- **Phone sound fixes are unverified on a real phone:** the silent switch and `interrupted` fixes need the owner's
+  phone to confirm, and the growl's new rasp and the drop's tock were measured, not heard.
 - Carried props still have no collision, so a toy in his mouth can poke into the couch back cushions while he's up
   there (as it already could with walls).
 
@@ -483,6 +500,14 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-25 for the phone sound fixes, no touch sniff and portrait (the working tree that became their commit): typecheck pass; 43 files, 306
+tests (new: `AudioManager` ×4: the iOS audio session, waking from `interrupted`, a sound asked for mid-wake still
+plays, no Web Audio never throws). Offline render of all ten sounds through a phone-speaker filter (table in
+`docs/MOBILE.md`). Touch emulation (390×844): audio running after PLAY; forced to sleep, a tap woke it; a bark asked
+for mid-wake played once it woke; the growl and drop play; touch buttons are interact, bark, jump, trick, run, pause;
+no rotate prompts. Paw-menu layout with 4 buttons at 390×844, 844×390 and 568×320: all on screen, no overlaps. **Not
+verified: sound on a real phone** (Chromium can't reproduce iOS's silent switch or `interrupted` state).
+
 Run on 2026-09-25 for the jump, the combined bark/growl and the paw menu (the working tree that became their commit). No physical phone, controller or mouse:
 desktop browser pane, synthetic keys, synthetic touch, frames stepped by hand.
 
@@ -638,8 +663,8 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-0. **Owner check of the jump and the paw menu** (pushed): Space / B near the couch and coffee table on the
-   desktop; on a phone, tap and hold the paw. Then commit if happy.
+0. **Owner check on the phone** (pushed): bark and growl sound (silent switch on and off),
+   sound after locking and unlocking the phone, the 4-button paw menu, portrait. Then commit if happy.
 1. **Owner review of Phase 3:** play Sock Heist on the desktop (the hosted site or `npm run dev`). Commit or push only
    when the owner asks: a push to `main` publishes the game.
 2. **Play it on a real phone.** The hosted site (https://christopher-013.github.io/im-dog/) has Phase 3 and allows

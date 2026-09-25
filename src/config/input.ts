@@ -41,7 +41,8 @@ export const KEY_BINDINGS: Readonly<Record<Action, readonly string[]>> = {
   bark: ['KeyF', 'Gamepad:Button3', 'Touch:bark'],
   trick: ['KeyQ', 'Gamepad:Button2', 'Touch:trick'],
   // Right stick press: all four face buttons are taken.
-  sniff: ['KeyR', 'Gamepad:Button11', 'Touch:sniff'],
+  // No touch button (owner, 2026-09-25: rarely used on a phone, and a shorter paw menu).
+  sniff: ['KeyR', 'Gamepad:Button11'],
   jump: ['Space', 'Gamepad:Button1', 'Touch:jump'],
   pause: ['Escape', 'Gamepad:Button9', 'Touch:pause'],
   // Controller-only: keyboard menus use the focused button (Enter/Space), and Esc can't resume (see MenuInput.ts).
@@ -79,7 +80,7 @@ export const TOUCH = {
   lookScale: 1.9,
   /** A single touch move larger than this (px) is clamped, like a mouse spike. */
   maxLookPerEvent: 90,
-  /** Holding the paw button this long (s) pops out the other buttons (jump, bark, sniff, trick, run); a quicker tap interacts. */
+  /** Holding the paw button this long (s) pops out the other buttons (jump, bark, trick, run); a quicker tap interacts. */
   menuHoldTime: 0.3,
   /** Popped-out buttons tuck themselves back into the paw after this long unused (s). */
   menuIdleClose: 2.5,
@@ -138,7 +139,7 @@ export const TOUCH_CONTROL_HINTS: readonly GamepadControlHint[] = [
   { label: 'Run', input: 'Push the stick past its ring, or RUN (hold the paw button)' },
   { label: 'Look around', input: 'Right thumb: drag anywhere on the right' },
   { label: 'Interact · pick up · drop · give · eat', input: 'Tap the paw button (it says what it will do)' },
-  { label: 'Jump · bark or growl · sniff · trick · run', input: 'Hold the paw button: they pop out. Slide onto one and let go, or tap one.' },
+  { label: 'Jump · bark or growl · trick · run', input: 'Hold the paw button: they pop out. Slide onto one and let go, or tap one.' },
   { label: 'Pause', input: 'II, top corner' },
 ];
 

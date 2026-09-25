@@ -56,7 +56,7 @@ Keyboard and mouse remain active while a controller is connected; prompts switch
 
 ## Touch: phones and tablets
 Shown automatically on phones and tablets (when a finger is the primary pointer), or as soon as you touch the
-screen. Using a mouse or keyboard again switches back. **Landscape is best**; portrait works.
+screen. Using a mouse or keyboard again switches back. Portrait and landscape both work.
 
 | Input | Action |
 |---|---|
@@ -64,13 +64,13 @@ screen. Using a mouse or keyboard again switches back. **Landscape is best**; po
 | Push the stick past its ring (it turns coral) | Run, one-handed |
 | Right thumb, drag anywhere on the right | Look around |
 | Tap the paw button | Interact: it lights up and says what it will do ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…) |
-| **Hold** the paw button (~0.3 s) | The other buttons pop out of it: **Jump**, **Bark** (bark or growl, at random), **Sniff**, **Trick**, **Run**. Slide onto one and let go, or let go and tap one (as many as you like). They tuck back in after 2.5 s unused, or at once when you tap the paw or drag to look. |
+| **Hold** the paw button (~0.3 s) | The other buttons pop out of it: **Jump**, **Bark** (bark or growl, at random), **Trick**, **Run**. Slide onto one and let go, or let go and tap one (as many as you like). They tuck back in after 2.5 s unused, or at once when you tap the paw or drag to look. |
 | RUN (in the paw's buttons) | Run toggle: stays on until you tap it again. While it's on, the stick is coral. |
 | II (top-right) | Pause |
-| FULLSCREEN (menu and pause, where supported) | Fullscreen; on Android it also asks for landscape |
+| FULLSCREEN (menu and pause, where supported) | Fullscreen, in whichever way you hold the phone |
 
-Only the stick, the paw and pause stay on screen, to keep it clear. There's no walk button; a partly pushed stick
-walks slowly anyway. Details and tested sizes: `docs/MOBILE.md`.
+Only the stick, the paw and pause stay on screen, to keep it clear. There's no walk button (a partly pushed stick
+walks slowly anyway) and no sniff button (rarely used on a phone). Details and tested sizes: `docs/MOBILE.md`.
 
 ## First play
 The first time on each kind of controls, a few seconds of how-to:

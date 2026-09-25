@@ -13,12 +13,12 @@ carry his sock and toys, and nap in his bed. A low dog-height camera follows him
 **Phase 3 (built, awaiting review and a real-phone test, [docs/PHASE_3.md](docs/PHASE_3.md)):** **Sock Heist**, the
 first complete loop. Steal the sock, get noticed ("Hey! That's my sock!"), dodge a very un-scary chase round the
 furniture, hide, then trade the sock for a treat and discover SOCK = TREAT. Plus **touch controls** for phones and
-tablets in the same web game (landscape first), phone quality presets, and Add to Home Screen.
+tablets in the same web game (portrait or landscape), phone quality presets, and Add to Home Screen.
 See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
 **Play it:** https://christopher-013.github.io/im-dog/ (desktop Chrome or Edge; keyboard + mouse or a standard controller). Every push to `main`
 rebuilds and republishes it through GitHub Actions (`.github/workflows/deploy-pages.yml`). Since Phase 3 it
-also runs in phone and tablet browsers (touch controls, landscape first).
+also runs in phone and tablet browsers (touch controls, portrait or landscape).
 
 ## Requirements
 - Node.js **22.12+** (tested with Node 24) and npm
@@ -44,7 +44,7 @@ npm run preview      # serve dist/ at http://localhost:4173
 ## Controls
 WASD move · Mouse look · Wheel zoom · Shift run · C walk · Space jump · E interact · F bark or growl · Q trick · R sniff · Esc pause · ` debug panel.
 Touch: left thumb joystick (push past the ring to run) · drag the right side to look · tap the paw to interact, hold
-it for jump, bark or growl, sniff, trick and run · pause. All listed controls are implemented. See [docs/CONTROLS.md](docs/CONTROLS.md).
+it for jump, bark or growl, trick and run · pause. All listed controls are implemented. See [docs/CONTROLS.md](docs/CONTROLS.md).
 
 ## Project layout
 ```

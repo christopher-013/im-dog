@@ -103,7 +103,7 @@ src/
     ScentWisps.ts         the stylized look: soft wisps and pulses, one Points draw, fixed budget
     roomScents.ts         the living room's sources (props while not carried, the dog bed)
   audio/
-    AudioManager.ts       Web Audio context (unlocked by PLAY/RESUME), plays named sounds, never throws
+    AudioManager.ts       Web Audio context (unlocked by PLAY/RESUME, woken by any tap or key), plays named sounds, never throws
     synth.ts              original synthesized sounds: bark, growl, sniff, pickup, drop; surprise, whoosh, treat bag, crunch, discovery
   ui/
     UIManager.ts          screens (incl. Sock Heist complete), controls dialog, toast, hints, input-aware prompt, touch UI state,
@@ -332,8 +332,12 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - A growl → `MokeAnimationController.growl()` → a brief mock-tough pose (lowered body, forward chest,
   pinned ears, squint, head tremble and visible teeth) + `AudioManager.play('growl')` + a small “grrr” bubble.
   The growl is presentation-only and has no combat effect.
-- `AudioManager` creates/resumes its `AudioContext` inside the PLAY/RESUME clicks (browsers require a gesture). If
-  Web Audio is missing or still locked, `play()` does nothing. All sounds are synthesized at play time (`synth.ts`), with
+- `AudioManager` creates/resumes its `AudioContext` inside the PLAY/RESUME clicks (browsers require a gesture), and
+  `wake()` resumes it on every later tap, click or key (`Game` listens on `window`), because phones stop it by
+  themselves (iOS: `interrupted`). A sound asked for while it wakes waits for it. On iPhones it asks for the
+  `playback` audio session (`AUDIO.iosSession`), so the silent switch doesn't mute it. If Web Audio is missing or
+  still locked, `play()` does nothing. The growl and drop carry mid-range layers so phone speakers play them
+  (`AUDIO.speakerPresence`; measurements in `docs/MOBILE.md`). All sounds are synthesized at play time (`synth.ts`), with
   a little random pitch variation; there are no audio files.
 
 ## Tricks (Milestone 10, owner request)

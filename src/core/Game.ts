@@ -165,6 +165,12 @@ export class Game {
     this.gfx.onContextLost = () => this.ui.showToast('Graphics hiccup. Trying to recover…', 6000);
     this.gfx.onContextRestored = () => this.ui.showToast('Back!', 2000);
 
+    // Phones stop web audio by themselves (a call, the lock screen, switching apps), and only a user gesture may
+    // start it again: every tap, click or key wakes it. (Pointer-down counts for a mouse, pointer-up for a finger.)
+    for (const type of ['pointerdown', 'pointerup', 'touchend', 'keydown'] as const) {
+      window.addEventListener(type, () => this.audio.wake(), { capture: true, passive: true });
+    }
+
     // Phone locked, app switched, tab hidden: pause (never keep running unseen) and silence the audio.
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {

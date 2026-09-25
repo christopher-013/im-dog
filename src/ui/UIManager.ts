@@ -98,8 +98,8 @@ export class UIManager {
 
   /**
    * FULLSCREEN (touch devices, menu and pause): offered only where the browser supports it (not iPhone
-   * Safari) and when not already running as an installed app. Entering it also tries to lock landscape
-   * (Android allows that only in fullscreen); any refusal is simply ignored.
+   * Safari) and when not already running as an installed app. It doesn't lock the orientation: portrait and
+   * landscape both play well. Any refusal is simply ignored.
    */
   private setUpFullscreen(): void {
     const doc = this.doc as Document & { webkitFullscreenEnabled?: boolean };
@@ -120,12 +120,7 @@ export class UIManager {
         const request = root.requestFullscreen
           ? root.requestFullscreen({ navigationUI: 'hide' })
           : Promise.resolve(root.webkitRequestFullscreen?.());
-        void request
-          .then(() => {
-            const orientation = screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> };
-            return orientation?.lock?.('landscape');
-          })
-          .catch(() => {});
+        void request.catch(() => {});
       });
     }
     doc.addEventListener('fullscreenchange', label);

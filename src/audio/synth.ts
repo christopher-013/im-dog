@@ -1,5 +1,9 @@
 // Original placeholder sounds, synthesized with Web Audio at play time. No sample files.
 
+import { AUDIO } from '../config/audio';
+
+const SPEAKER_PRESENCE = AUDIO.speakerPresence;
+
 /** Schedules one sound into `out` starting at `t0`. `pitch` is a multiplier around 1. */
 export type Synth = (ctx: AudioContext, out: AudioNode, t0: number, pitch: number, noise: AudioBuffer) => void;
 
@@ -121,11 +125,13 @@ export const growl: Synth = (ctx, out, t0, pitch, noise) => {
   const throat = pulsing();
   const amp = swell(ctx, t0, 0.07, duration - 0.27, 0.2, 0.55);
   voice.connect(shaper).connect(throat);
-  // Dark resonances: the chest, and two low mouth formants.
+  // Dark resonances: the chest and two low mouth formants, plus a throaty rasp higher up. A phone's little speaker
+  // plays almost nothing below ~400 Hz, so without the rasp the growl all but vanished on phones.
   for (const [type, freq, q, gain] of [
     ['lowpass', 190, 0.7, 0.9],
     ['bandpass', 320 * pitch, 1.3, 1.0],
     ['bandpass', 720 * pitch, 2.2, 0.4],
+    ['bandpass', 1150 * pitch, 1.4, SPEAKER_PRESENCE.growlRasp],
   ] as const) {
     const filter = ctx.createBiquadFilter();
     filter.type = type;
@@ -189,6 +195,15 @@ export const drop: Synth = (ctx, out, t0, pitch, noise) => {
   lp.type = 'lowpass';
   lp.frequency.value = 900;
   thud.connect(lp).connect(envelope(ctx, t0, 0.003, 0.4, 0.05)).connect(out);
+  // A soft "tock" on top of the thump, so a phone speaker (nothing much below ~400 Hz) still has something to play.
+  if (SPEAKER_PRESENCE.dropTap <= 0) return;
+  const knock = ctx.createOscillator();
+  knock.type = 'sine';
+  knock.frequency.setValueAtTime(560 * pitch, t0);
+  knock.frequency.exponentialRampToValueAtTime(420 * pitch, t0 + 0.06);
+  knock.connect(envelope(ctx, t0, 0.003, SPEAKER_PRESENCE.dropTap, 0.06)).connect(out);
+  knock.start(t0);
+  knock.stop(t0 + 0.08);
 };
 
 // ---- Sock Heist (Phase 3)

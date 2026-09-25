@@ -160,9 +160,9 @@ describe('TouchInput (touch controls feeding the shared input state)', () => {
   it('keeps the other buttons tucked inside the paw: hidden ones do nothing', () => {
     const { root, state, touch, frame } = setup();
     expect(touch.menuIsOpen).toBe(false);
-    for (const [i, name] of ['jump', 'bark', 'sniff', 'trick', 'run'].entries()) root.press(name, 10 + i);
+    for (const [i, name] of ['jump', 'bark', 'trick', 'run'].entries()) root.press(name, 10 + i);
     frame();
-    for (const action of ['jump', 'bark', 'sniff', 'trick', 'run'] as const) expect(state.isDown(action)).toBe(false);
+    for (const action of ['jump', 'bark', 'trick', 'run'] as const) expect(state.isDown(action)).toBe(false);
   });
 
   it('pops them out when the paw is held (without interacting); slide onto one and let go to use it', () => {

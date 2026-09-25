@@ -986,66 +986,6 @@ html[data-debug] .heist-chip {
   height: 1.4em;
 }
 
-/* ---------- Rotate hints (touch, portrait) ---------- */
-
-.rotate-hint,
-.rotate-chip {
-  display: none;
-  align-items: center;
-  gap: 0.5em;
-}
-
-.rotate-hint {
-  margin: 4px 0 0;
-  color: var(--ink-soft);
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-.rotate-hint-icon,
-.rotate-chip-icon {
-  width: 1.6em;
-  height: 1.6em;
-  flex: none;
-  color: var(--coral);
-}
-
-.rotate-chip {
-  position: absolute;
-  left: 50%;
-  /* Below the objective line and the pause button. */
-  top: calc(66px + env(safe-area-inset-top));
-  padding: 0.45em 1em;
-  border-radius: var(--pill);
-  background: rgba(255, 250, 243, 0.92);
-  box-shadow: 0 4px 0 var(--shadow);
-  font-weight: 600;
-  white-space: nowrap;
-  transform: translateX(-50%);
-  opacity: 0;
-}
-
-@media (orientation: portrait) {
-  html[data-input='touch'] .rotate-hint {
-    display: flex;
-  }
-  html[data-input='touch'][data-playing] .rotate-chip {
-    display: flex;
-    animation: rotate-chip 6s ease forwards;
-  }
-}
-
-@keyframes rotate-chip {
-  0%,
-  100% {
-    opacity: 0;
-  }
-  8%,
-  80% {
-    opacity: 1;
-  }
-}
-
 /* ---------- First-play onboarding ---------- */
 
 .onboarding {
@@ -1314,7 +1254,7 @@ html[data-onboarding] .touch-look-hint {
   --dy: 124px;
   --i: 0;
 }
-.touch-sniff {
+.touch-jump {
   --dx: 62px;
   --dy: 107px;
   --i: 1;
@@ -1322,18 +1262,12 @@ html[data-onboarding] .touch-look-hint {
 .touch-trick {
   --dx: 107px;
   --dy: 62px;
-  --i: 3;
+  --i: 2;
 }
 .touch-run {
   --dx: 124px;
   --dy: 0px;
-  --i: 4;
-}
-/* Jump sits in the notch outside the arc, between Sniff and Trick: one diagonal reach up from the thumb. */
-.touch-jump {
-  --dx: 127px;
-  --dy: 127px;
-  --i: 2;
+  --i: 3;
 }
 
 /* First play: "Hold for more" just above the paw. */

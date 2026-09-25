@@ -4,11 +4,11 @@ import type { InputState } from './InputState';
 import { VirtualJoystick } from './VirtualJoystick';
 
 /** The on-screen buttons (`data-touch="…"` in index.html). RUN toggles; the rest are held while touched. */
-const TOUCH_BUTTONS = ['interact', 'jump', 'bark', 'sniff', 'trick', 'run', 'pause'] as const;
+const TOUCH_BUTTONS = ['interact', 'jump', 'bark', 'trick', 'run', 'pause'] as const;
 type TouchButton = (typeof TOUCH_BUTTONS)[number];
 
 /** Tucked inside the paw (interact) button until a long press pops them out, to keep the screen clear. */
-const MENU_BUTTONS: readonly TouchButton[] = ['jump', 'bark', 'sniff', 'trick', 'run'];
+const MENU_BUTTONS: readonly TouchButton[] = ['jump', 'bark', 'trick', 'run'];
 
 const isTouchButton = (value: string | undefined): value is TouchButton =>
   value !== undefined && (TOUCH_BUTTONS as readonly string[]).includes(value);
@@ -31,7 +31,7 @@ export interface TouchInputOptions {
  * - a floating joystick: any touch that starts on the left part of the screen (analog movement; pushed past
  *   its ring, Moke runs);
  * - camera drag: any touch that starts elsewhere, not on a button (look delta, like a mouse);
- * - the paw button: a tap interacts; holding it pops out the other buttons (jump, bark, sniff, trick, run).
+ * - the paw button: a tap interacts; holding it pops out the other buttons (jump, bark, trick, run).
  *   Slide onto one and let go, or let go and tap one. They tuck themselves away again once unused for a moment,
  *   or at once on a tap of the paw or a camera drag;
  * - buttons: virtual `Touch:…` keys (see KEY_BINDINGS), so gameplay never knows it was a touch.

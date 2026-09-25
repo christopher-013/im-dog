@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AUDIO } from '../config/audio';
 import { AudioManager } from './AudioManager';
 
@@ -33,16 +33,26 @@ class FakeContext {
     return { duration: length / this.sampleRate, getChannelData: () => new Float32Array(length) };
   }
   private node() {
-    const param = { value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} };
+    const param = () => ({
+      value: 0,
+      setValueAtTime() {},
+      linearRampToValueAtTime() {},
+      exponentialRampToValueAtTime() {},
+      cancelScheduledValues() {},
+    });
     const node = {
-      gain: { ...param },
-      frequency: { ...param },
-      Q: { ...param },
+      gain: param(),
+      frequency: param(),
+      detune: param(),
+      delayTime: param(),
+      Q: param(),
       type: '',
       curve: null,
       buffer: null,
+      onended: null,
       connect: (target: unknown) => target,
       disconnect() {},
+      setPeriodicWave() {},
       start: () => this.started++,
       stop() {},
     };
@@ -53,6 +63,8 @@ class FakeContext {
   createBiquadFilter = () => this.node();
   createWaveShaper = () => this.node();
   createBufferSource = () => this.node();
+  createDelay = () => this.node();
+  createPeriodicWave = () => ({});
 }
 
 const globals = globalThis as unknown as Record<string, unknown>;
@@ -101,6 +113,33 @@ describe('AudioManager (phones)', () => {
     expect(ctx.started).toBe(0);
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(ctx.started).toBeGreaterThan(0);
+  });
+
+  it('plays the music only once play has begun, and follows the Music setting', () => {
+    vi.useFakeTimers();
+    try {
+      const audio = new AudioManager();
+      audio.unlock();
+      expect(audio.musicPlaying).toBe(false); // the menu: not yet
+      audio.startMusic();
+      expect(audio.musicPlaying).toBe(true);
+      expect(FakeContext.last!.started).toBeGreaterThan(0); // the first notes are scheduled
+      audio.musicEnabled = false;
+      vi.advanceTimersByTime(3000); // fades out, then stops
+      expect(audio.musicPlaying).toBe(false);
+      audio.musicEnabled = true;
+      expect(audio.musicPlaying).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps the music off from the start when the player turned it off', () => {
+    const audio = new AudioManager();
+    audio.musicEnabled = false;
+    audio.unlock();
+    audio.startMusic();
+    expect(audio.musicPlaying).toBe(false);
   });
 
   it('never throws when a phone has no Web Audio, and leaves a running context alone', () => {

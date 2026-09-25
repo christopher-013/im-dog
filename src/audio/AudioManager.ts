@@ -1,4 +1,5 @@
-import { AUDIO } from '../config/audio';
+import { AUDIO, MUSIC } from '../config/audio';
+import { MusicPlayer } from './music';
 import { bark, crunch, discovery, drop, growl, pickup, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
 
 export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'discovery';
@@ -21,6 +22,12 @@ export class AudioManager {
   private failed = false;
   /** A resume() in flight, so sounds asked for meanwhile can wait for it instead of being lost. */
   private waking: Promise<void> | null = null;
+  private music: MusicPlayer | null = null;
+  /** The player's Music setting (pause screen). */
+  private musicOn = true;
+  /** Play has begun (PLAY was pressed), so the music may run. */
+  private musicStarted = false;
+  private musicLevel = 1;
 
   get status(): string {
     if (this.failed) return 'unavailable';
@@ -39,6 +46,8 @@ export class AudioManager {
         this.master.connect(ctx.destination);
         this.noise = whiteNoise(ctx, 1);
         this.ctx = ctx;
+        this.music = createMusic(ctx, this.master);
+        this.updateMusic();
       }
       this.wake();
     } catch (err) {
@@ -87,7 +96,41 @@ export class AudioManager {
     window.setTimeout(() => level.disconnect(), 1000);
   }
 
+  /** The Music setting. Turning it off fades the song out; on, it fades back in (once play has begun). */
+  get musicEnabled(): boolean {
+    return this.musicOn;
+  }
+
+  set musicEnabled(on: boolean) {
+    this.musicOn = on;
+    this.updateMusic();
+  }
+
+  get musicPlaying(): boolean {
+    return this.music?.isPlaying ?? false;
+  }
+
+  /** Background music from now on (call when play begins, after unlock()). */
+  startMusic(): void {
+    this.musicStarted = true;
+    this.updateMusic();
+  }
+
+  /** Quieter on the pause screen, full during play. */
+  duckMusic(ducked: boolean): void {
+    this.musicLevel = ducked ? MUSIC.pausedLevel : 1;
+    this.music?.setLevel(this.musicLevel);
+  }
+
+  private updateMusic(): void {
+    const music = this.music;
+    if (!music) return;
+    if (this.musicOn && this.musicStarted) music.play(this.musicLevel);
+    else music.stop();
+  }
+
   dispose(): void {
+    this.music?.stop();
     void this.ctx?.close();
     this.ctx = null;
   }
@@ -104,6 +147,16 @@ function preferAudibleSession(): void {
     session.type = AUDIO.iosSession;
   } catch {
     // An unknown type: leave the browser's default.
+  }
+}
+
+/** The background music, if this browser can make it: a problem there must never cost the sound effects. */
+function createMusic(ctx: AudioContext, out: AudioNode): MusicPlayer | null {
+  try {
+    return new MusicPlayer(ctx, out);
+  } catch (err) {
+    console.warn('Music is unavailable:', err);
+    return null;
   }
 }
 

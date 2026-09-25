@@ -71,6 +71,14 @@ else to change in the game's look and feel.
   says "Hold the paw button for more". Code: `TouchInput` (`TOUCH.menuHoldTime`, `menuIdleClose` in
   `config/input.ts`), `.touch-actions.is-open` in `main.css`.
 
+**Owner request, 2026-09-25 (committed and pushed): background music.** "8-bit video games but Hawaiian styled… like
+elevator muzak". An original tune, "Aloha, Moke" (`src/audio/music.ts`): 24 bars, a 64 s loop, 90 BPM, gently swung;
+a triangle bass walking between chords, a pulse-wave ukulele strumming the island rhythm on real uke chord
+shapes, a square-wave "steel guitar" lead sliding into notes with vibrato and a soft echo, and a quiet shaker. The
+harmony is the classic Hawaiian vamp (C6, F6, D7, G7, a bridge through A7). It starts with PLAY, fades in, carries
+on quieter on the pause screen, and the pause screen's new **Music** switch turns it off (remembered). Level 0.09:
+about −36 dB, some 7 dB under a bark; measured, not heard.
+
 **Owner's phone test, 2026-09-25 (committed and pushed): sound on phones, no sniff button, portrait welcome.** The owner:
 "the mobile looks and plays great", but no bark or growl sound on their phone.
 - **Sound on phones:** every tap, click or key now wakes the audio (`AudioManager.wake()`); it used to be woken only
@@ -413,6 +421,13 @@ From Milestone 4, verified in the browser (dev server and a production-build loa
 - **Not yet judged hands-on with a physical mouse and keyboard.**
 
 ## Known Issues
+New with the music:
+- **Nobody has heard it yet** (Claude can't listen): the melody, mix, swing and level are by design and by
+  measurement only. Level: `MUSIC.level`; the band's mix: `MIX` in `music.ts`.
+- One 64 s loop, repeated: pleasant muzak, but it may wear thin in long sessions. A second song or variations
+  would help.
+- On iPhones (the `playback` session) it pauses the player's own music app while the game plays.
+
 New with the jump:
 - **Jump feel hasn't been judged by a person:** height, the snappy gravity (18 m/s²) and the pose (`JUMP`,
   `MOKE_ANIMATION.landDuration`/`airPitchSpeed`). The camera follows his height with its existing smoothing and
@@ -500,6 +515,16 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-25 for the background music (the working tree that became its commit): typecheck pass; 44 files, 313 tests pass (new: the song ×5:
+full bars, strong-beat notes fit their chords, a sorted loop with the island strum and swing, the sequencer hands
+out each note once and loops without a seam, no burst after a stall; `AudioManager` ×2: music only once play
+begins and follows the setting, off from the start when turned off; settings: `music` saved, and old settings
+default to on). Offline render of a whole pass (64 s, 44.1 kHz): no errors, peak 0.27, steady loudness (−20.5 to
+−22.1 dB at level 0.5, so about −36 dB at the chosen 0.09); through a phone-speaker filter only 1.3 dB quieter.
+In the browser: no audio before PLAY; after PLAY the music plays and fades in to 0.09; the pause screen lowers it to
+0.04; the Music checkbox stops it, saves "off", and brings it back. The pause card fits with the new row at
+568×320 and 375×667. No console errors. **Not verified: listening to it.**
+
 Run on 2026-09-25 for the phone sound fixes, no touch sniff and portrait (the working tree that became their commit): typecheck pass; 43 files, 306
 tests (new: `AudioManager` ×4: the iOS audio session, waking from `interrupted`, a sound asked for mid-wake still
 plays, no Web Audio never throws). Offline render of all ten sounds through a phone-speaker filter (table in
@@ -663,8 +688,8 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-0. **Owner check on the phone** (pushed): bark and growl sound (silent switch on and off),
-   sound after locking and unlocking the phone, the 4-button paw menu, portrait. Then commit if happy.
+0. **Owner listen to the music** (pushed): does it sound 8-bit, Hawaiian and muzak-y, and is the level right?
+   Also still open: the phone sound check (silent switch on and off, after a lock).
 1. **Owner review of Phase 3:** play Sock Heist on the desktop (the hosted site or `npm run dev`). Commit or push only
    when the owner asks: a push to `main` publishes the game.
 2. **Play it on a real phone.** The hosted site (https://christopher-013.github.io/im-dog/) has Phase 3 and allows

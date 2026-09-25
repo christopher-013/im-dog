@@ -6,9 +6,11 @@ export interface PlayerSettings {
   /** Multiplier on the base mouse sensitivity. */
   mouseSensitivity: number;
   invertY: boolean;
+  /** Background music on or off. */
+  music: boolean;
 }
 
-export const DEFAULT_SETTINGS: Readonly<PlayerSettings> = { mouseSensitivity: 1, invertY: false };
+export const DEFAULT_SETTINGS: Readonly<PlayerSettings> = { mouseSensitivity: 1, invertY: false, music: true };
 export const SENSITIVITY_RANGE = { min: 0.25, max: 3, step: 0.05 } as const;
 
 const STORAGE_KEY = 'imdog.settings.v1';
@@ -25,6 +27,7 @@ export function parseSettings(raw: string | null): PlayerSettings {
       settings.mouseSensitivity = clamp(value.mouseSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max);
     }
     if (typeof value.invertY === 'boolean') settings.invertY = value.invertY;
+    if (typeof value.music === 'boolean') settings.music = value.music;
   } catch {
     // Corrupt JSON: keep defaults.
   }

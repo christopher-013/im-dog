@@ -105,6 +105,7 @@ src/
   audio/
     AudioManager.ts       Web Audio context (unlocked by PLAY/RESUME, woken by any tap or key), plays named sounds, never throws
     synth.ts              original synthesized sounds: bark, growl, sniff, pickup, drop; surprise, whoosh, treat bag, crunch, discovery
+    music.ts              the background music: the song as data, a sequencer, and the 8-bit band that plays it
   ui/
     UIManager.ts          screens (incl. Sock Heist complete), controls dialog, toast, hints, input-aware prompt, touch UI state,
                           onboarding, speech bubble, objective chip, SOCK = TREAT card, fullscreen, bark bubble, sniff haze
@@ -322,6 +323,19 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
   written into preallocated arrays. A bigger soft dot "breathes" at each source. Depth-tested, so wisps never paint over Moke;
   near-lens particles fade out.
 - Body language: `Moke.sniffing` → `MokeAnimationState.sniff` (nose down, quick twitches). UI: a warm vignette.
+
+## Background music (`audio/music.ts`, tuning `MUSIC` in `config/audio.ts`)
+- "Aloha, Moke": an original 8-bit island-lounge tune, stored as data (`SONG`: chords per bar, melody notes with
+  slides). `songEvents()` turns it into timed notes (swing applied); tests check that every bar is full and every
+  strong-beat melody note fits its chord.
+- `MusicSequencer` (pure timing, tested) hands out the notes a little ahead of the audio clock (lookahead 0.35 s,
+  topped up every 0.1 s) and loops seamlessly. After a stall it skips late notes rather than playing a burst.
+- `MusicPlayer` plays them: triangle bass, pulse-wave ukulele strums, a square-wave steel-guitar lead (slide,
+  vibrato, soft echo) and a noise shaker, through a mellow low-pass and a fade. It can also render a whole pass
+  offline (`renderInto`), which is how the levels were measured.
+- `AudioManager` creates it with the audio (a failure there never costs the sound effects), starts it when play
+  begins (`startMusic`), lowers it on the pause screen (`duckMusic`), and follows the player's **Music** setting
+  (pause screen, `PlayerSettings.music`, on by default). Hiding the page suspends it with everything else.
 
 ## Bark and audio (with Milestone 8)
 - One button for his voice (F, controller Y, the touch Bark button): `barkOrGrowl()` picks a bark or a growl at

@@ -135,6 +135,7 @@ export class UIManager {
     const slider = this.el<HTMLInputElement>('setting-sensitivity');
     const readout = this.el<HTMLOutputElement>('setting-sensitivity-value');
     const invert = this.el<HTMLInputElement>('setting-invert-y');
+    const music = this.el<HTMLInputElement>('setting-music');
     const current = { ...initial };
 
     slider.min = String(SENSITIVITY_RANGE.min);
@@ -142,6 +143,7 @@ export class UIManager {
     slider.step = String(SENSITIVITY_RANGE.step);
     slider.value = String(current.mouseSensitivity);
     invert.checked = current.invertY;
+    music.checked = current.music;
     const showValue = () => (readout.textContent = `${current.mouseSensitivity.toFixed(2)}×`);
     showValue();
 
@@ -152,6 +154,10 @@ export class UIManager {
     });
     invert.addEventListener('change', () => {
       current.invertY = invert.checked;
+      onChange({ ...current });
+    });
+    music.addEventListener('change', () => {
+      current.music = music.checked;
       onChange({ ...current });
     });
   }

@@ -15,8 +15,10 @@ afterEach(() => applySettings(DEFAULT_SETTINGS));
 describe('PlayerSettings', () => {
   it('round-trips through storage', () => {
     const store = memoryStore();
-    saveSettings({ mouseSensitivity: 1.5, invertY: true }, store);
-    expect(loadSettings(store)).toEqual({ mouseSensitivity: 1.5, invertY: true });
+    saveSettings({ mouseSensitivity: 1.5, invertY: true, music: false }, store);
+    expect(loadSettings(store)).toEqual({ mouseSensitivity: 1.5, invertY: true, music: false });
+    // Settings saved before the Music option existed: music stays on.
+    expect(parseSettings('{"mouseSensitivity":1.5,"invertY":true}').music).toBe(true);
   });
 
   it('falls back to defaults for missing or corrupt data', () => {
@@ -45,7 +47,7 @@ describe('PlayerSettings', () => {
   });
 
   it('applies to the live mouse config', () => {
-    applySettings({ mouseSensitivity: 2, invertY: true });
+    applySettings({ mouseSensitivity: 2, invertY: true, music: true });
     expect(MOUSE.sensitivityScale).toBe(2);
     expect(MOUSE.invertY).toBe(true);
   });

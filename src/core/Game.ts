@@ -143,8 +143,10 @@ export class Game {
     });
     const settings = loadSettings();
     applySettings(settings);
+    this.audio.musicEnabled = settings.music;
     ui.bindSettings(settings, (changed) => {
       applySettings(changed);
+      this.audio.musicEnabled = changed.music;
       saveSettings(changed);
     });
     ui.setInputMode(this.input.mode);
@@ -349,11 +351,13 @@ export class Game {
     this.followCamera.mode = next === 'loading' || next === 'menu' ? 'attract' : 'follow';
     this.ui.showScreen(next === 'playing' ? null : next);
     this.ui.setPlaying(next === 'playing');
+    this.audio.duckMusic(next === 'paused');
   }
 
   private play(captureMouse = true): void {
     if (this.state !== 'menu') return;
     this.audio.unlock(); // inside the PLAY click: browsers only allow sound after a gesture
+    this.audio.startMusic();
     this.setState('playing');
     this.followCamera.recenterBehind(this.updateCameraTarget());
     if (captureMouse) void this.input.requestPointerLock();
@@ -601,7 +605,7 @@ export class Game {
       state: this.state,
       'pointer lock': this.input.pointerLockSupported ? (this.input.isPointerLocked ? 'locked' : 'free') : 'unsupported',
       'fixed step': `${(this.fixedStep.step * 1000).toFixed(2)} ms`,
-      audio: this.audio.status,
+      audio: `${this.audio.status}${this.audio.musicPlaying ? ' · music on' : ''}`,
       barks: this.barkTimer.count,
     }));
     this.debug.addSection('Moke', (): DebugValues => {

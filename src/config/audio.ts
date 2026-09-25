@@ -28,3 +28,20 @@ export const AUDIO = {
    */
   iosSession: 'playback',
 } as const;
+
+/** Background music: an original 8-bit island-lounge tune, synthesized in code (src/audio/music.ts). */
+export const MUSIC = {
+  /**
+   * Loudness (0..1, before AUDIO.master). Measured on a full offline render: 0.09 averages about −36 dB, some 7 dB
+   * under a bark (−28.6 dB at its loudest), and only 1.3 dB less through a phone-speaker filter (it lives in the
+   * midrange). Peaks stay far from clipping.
+   */
+  level: 0.09,
+  /** On the pause screen it carries on, a little quieter (fraction of `level`). */
+  pausedLevel: 0.45,
+  /** Fade in and out (s). */
+  fade: 1.5,
+  /** Notes are scheduled this far ahead (s), topped up this often (s). */
+  lookahead: 0.35,
+  tick: 0.1,
+} as const;

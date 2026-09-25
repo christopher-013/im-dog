@@ -27,8 +27,8 @@ using: "E — Pick Up Sock" on a keyboard, "A — …" on a controller, a lit-up
 pauses. Chrome needs about a second after Esc before it will capture again; if resume doesn't capture, click the
 room. Where pointer lock isn't available, click and drag to look.
 
-**Camera settings:** the pause screen has a Look sensitivity slider (0.25–3×, for the mouse and touch look) and
-an invert-vertical-look option. They're remembered in this browser only.
+**Settings (pause screen):** a Look sensitivity slider (0.25–3×, for the mouse and touch look), an
+invert-vertical-look option, and **Music** on/off for the background music. They're remembered in this browser only.
 
 **How WASD relates to the camera:** W moves away from the camera. While you keep a movement key held, the
 direction stays put even if the camera swings by itself (behind Moke, or away from a wall). Only your own mouse

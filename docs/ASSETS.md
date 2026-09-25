@@ -27,7 +27,7 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 ## Temporary assets that must be replaced before release
 | Temporary asset | Replaced by | Status |
 |---|---|---|
-| `ToonMokeVisual` (procedural stand-in Moke) | The final rigged, animated `moke.glb` (`docs/MOKE_3D_SPEC.md`) | **Blocking Phase 2.** Not made yet. The stand-in stays in code as the fallback only. |
+| `ToonMokeVisual` (procedural stand-in Moke) | The final rigged, animated `moke.glb` (`docs/MOKE_3D_SPEC.md`) | **Carried forward from Phase 2.** Not made yet. The stand-in stays in code as the fallback only. |
 | Synthesized bark, growl, sniff, pickup and drop sounds | The owner's chosen final sounds (ideally Moke's real bark) | Placeholders (original, so no licence problem), pending the owner's choice |
 
 Everything else in the tables above is original and can ship as is. It could still be improved (for example
@@ -41,7 +41,7 @@ nicer furniture models), but nothing else has to be replaced.
 ## Needed later (not sourced yet)
 | Need | Milestone | Plan |
 |---|---|---|
-| **Final `moke.glb` (rigged, animated)** | **Phase 2 (blocking)** | **Not made yet.** The main missing piece of Phase 2. Build it to `docs/MOKE_3D_SPEC.md` (mesh, PBR textures, skeleton, `blink` morph, sockets, and all clips from `idle` to `trick_spin` in one file) and install it per `docs/MOKE_INTEGRATION.md` at `public/assets/models/moke/moke.glb`. It must be original work made for this project (by the owner or someone they commission) or properly licensed for it. **No marketplace dog models or animation packs retargeted onto him without owner approval**, and never a purchase without approval. Record here: author, licence, date, and where the source files live (outside `public/`). The photos go to the modeller only via the owner (D8). |
+| **Final `moke.glb` (rigged, animated)** | **Carried forward from Phase 2** | **Not made yet.** The main missing piece of the character. Build it to `docs/MOKE_3D_SPEC.md` (mesh, PBR textures, skeleton, `blink` morph, sockets, and all clips from `idle` to `trick_spin` in one file) and install it per `docs/MOKE_INTEGRATION.md` at `public/assets/models/moke/moke.glb`. It must be original work made for this project (by the owner or someone they commission) or properly licensed for it. **No marketplace dog models or animation packs retargeted onto him without owner approval**, and never a purchase without approval. Record here: author, licence, date, and where the source files live (outside `public/`). The photos go to the modeller only via the owner (D8). |
 | Animation clips for `moke.glb` | Phase 2 | Made with the model (same file). There's no animation source yet; motion capture or stock clips need the licence rules above. |
 | Final bark (owner's choice), footsteps (carpet/wood), room ambience | 10 | Synthesized placeholders exist for bark/sniff/pickup/drop. For finals: CC0 sources (e.g. Freesound CC0 only, Kenney) or recorded; ideally Moke's real bark if you record one |
 | Nicer furniture/prop models (optional) | 10 | In-code geometry is in place; optionally CC0 packs (Kenney, Poly Pizza CC0) later |

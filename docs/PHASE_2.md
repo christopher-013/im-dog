@@ -1,10 +1,15 @@
 # Phase 2 — Make Moke Actually Moke
 
-> **Status: in progress. Blocked on the final 3D asset.** The owner started Phase 2 on 2026-09-24 with the brief
-> "Make Moke actually Moke". Everything the codebase can do is built and tested: the model path, the animation
-> system, personality, attention, carrying, one authoritative scale, the fallback, and the docs. **Phase 2 can't be
-> finished until a real, rigged and animated `moke.glb` exists.** It has to be made outside this repo to
-> [`MOKE_3D_SPEC.md`](MOKE_3D_SPEC.md). The procedural `ToonMokeVisual` is a stand-in, not the Phase 2 result.
+> **Status: complete.** The owner closed Phase 2 as the Moke character foundation on 2026-09-24 (git tag
+> `phase-2-complete`). Everything the codebase can do is built and tested: the model path, the animation system,
+> personality, attention, carrying, one authoritative scale, the fallback, and the docs. Every engineering success
+> criterion from the owner's brief is met (below).
+>
+> **Carried forward, not done: the final `moke.glb`.** No real, rigged and animated model exists yet; it has to be
+> made outside this repo to [`MOKE_3D_SPEC.md`](MOKE_3D_SPEC.md) and installed per
+> [`MOKE_INTEGRATION.md`](MOKE_INTEGRATION.md). Until then the game shows the procedural `ToonMokeVisual`
+> **stand-in, which isn't the final Moke.** Also carried forward: an idle scratch (only a reserved clip name) and
+> the hands-on checks in `docs/CURRENT_STATE.md`.
 
 **Goal:** the character on screen is recognizably *the real Moke*, softly stylized (not a generic anime dog), and
 moves, reacts and carries things like him. Phase 1 gameplay stays exactly as it is.
@@ -43,18 +48,35 @@ rebranding the game.
 | 15 | Fallback when `moke.glb` is missing | **Done.** The stand-in, a clear dev warning, and no 404 (a build-time flag). |
 | 16 | Asset documentation | **Done.** `ASSETS.md`. |
 | 17 | Phase 1 regression | **Done.** In the browser (dev server, frames stepped by hand) and tests. See `CURRENT_STATE.md`. |
-| 18 | **Final `moke.glb`** | **Not started. Needs external 3D work** (modelling, texturing, rigging, animation) to `MOKE_3D_SPEC.md`. |
+| 18 | **Final `moke.glb`** | **Carried forward. Not started.** Needs external 3D work (modelling, texturing, rigging, animation) to `MOKE_3D_SPEC.md`. |
 
-## Success criteria (end of Phase 2)
+## Engineering success criteria (the owner's brief): all met
+1. Phase 1 gameplay still works.
+2. Moke's gameplay controller is independent from the visual model.
+3. A finished `moke.glb` can replace the current visual without rewriting gameplay.
+4. Character scale and orientation are standardized (`MOKE_CHARACTER`, D14).
+5. The animation architecture supports Moke's required behaviours.
+6. Locomotion animation follows his real speed.
+7. Carrying uses a reusable mouth attachment.
+8. There's a foundation for subtle personality.
+9. He visually attends to interesting objects.
+10. Character rendering stays performant.
+11. The reference photos stayed private.
+12. The production Moke specification is documented.
+13. Final-model integration is documented.
+14. Placeholder and final asset status is clear.
+15–18. Typecheck, tests, production build and the browser playtest all pass (`CURRENT_STATE.md` → Verification Status).
+
+## Carried forward: when the final model arrives
+These criteria were written for the final asset. They still apply to it, and the owner decides which phase they belong to:
 1. A `moke.glb` built to `MOKE_3D_SPEC.md` loads with **no `[moke]` warnings**, and the debug panel shows `visual: model`.
 2. It passes the testing procedure in `MOKE_INTEGRATION.md`: every Phase 1 action looks right, with no foot sliding,
    no popping and nothing clipping through the coffee table, and carried toys sit in his mouth.
 3. It stays within budget (≤ 40k triangles, ≤ 8 MB), and the frame rate holds on the owner's machine.
 4. **The owner recognizes him as Moke.**
-5. Phase 1 gameplay is unchanged.
 
-## What happens next
+Steps:
 1. The owner arranges the model: an artist, their own work, or another pipeline. They share the private photos with
-   that person themselves, with the spec and the extra reference listed in `MOKE_CHARACTER_REFERENCE.md`.
+   that person themselves, along with the spec and the extra reference listed in `MOKE_CHARACTER_REFERENCE.md`.
 2. The finished file goes in `public/assets/models/moke/moke.glb` and is tested per `MOKE_INTEGRATION.md`.
-3. Fixes follow from the console's `[moke]` notes and the owner's reaction; then Phase 2 closes.
+3. Fixes follow from the console's `[moke]` notes and the owner's reaction.

@@ -8,13 +8,15 @@ Shared, tool-independent instructions for every coding agent working in this rep
   third-person game about **Moke**, a real white Maltipoo. Cozy, funny, family friendly. No combat, no death.
 - **Phase 1 is complete:** the first playable technical prototype (one living room), Milestones 1–10, closed by the
   owner on 2026-09-24 and tagged `phase-1-complete`. Scope and history: `docs/PHASE_1.md`.
-- **Current phase: Phase 2, "Make Moke actually Moke"** (owner brief, 2026-09-24). Scope and status:
-  `docs/PHASE_2.md`. The code side is done: the `moke.glb` path, animation blending, personality and attention,
-  carrying, one authoritative scale (`MOKE_CHARACTER`) and the fallback. **It's blocked on the final 3D asset:** a
-  rigged, animated `moke.glb` built to `docs/MOKE_3D_SPEC.md` and installed per `docs/MOKE_INTEGRATION.md`. Don't
-  call the procedural `ToonMokeVisual` the finished Moke, and don't start humans, Sock Heist, more rooms or another
-  phase without the owner's approval.
-- Carried over from Phase 1: the hands-on checks and Known Issues in `docs/CURRENT_STATE.md`.
+- **Phase 2 is complete:** "Make Moke actually Moke", the Moke character foundation, closed by the owner on
+  2026-09-24 and tagged `phase-2-complete`. Scope and history: `docs/PHASE_2.md`. It delivered the `moke.glb` path,
+  animation blending, personality and attention, carrying, one authoritative scale (`MOKE_CHARACTER`) and the
+  fallback.
+- **Carried forward, not done: the final `moke.glb`.** A rigged, animated model built to `docs/MOKE_3D_SPEC.md` and
+  installed per `docs/MOKE_INTEGRATION.md`. The game still shows the procedural `ToonMokeVisual` stand-in; don't
+  call it the finished Moke.
+- **Next:** Phase 3 isn't defined yet. Don't start humans, Sock Heist, more rooms or another phase without the
+  owner's approval. Also carried over: the hands-on checks and Known Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES

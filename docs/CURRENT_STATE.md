@@ -1,17 +1,19 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (tag `phase-1-complete`). **Phase 2's code and docs are committed on `main` but not pushed**, so the hosted game is still the Phase 1 build. See `git log` and `git status`._
+_Last updated: 2026-09-24. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (tag `phase-1-complete`). **Phase 2 is complete** (commit "milestone: complete Phase 2 Moke character foundation", tag `phase-2-complete`); the final `moke.glb` is carried forward. Whether it's pushed yet: compare `git status` with `origin/main`. Until it is, the hosted game is the Phase 1 build._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
-**Phase 2: "Make Moke actually Moke", in progress. Blocked on the final 3D asset.** Started 2026-09-24 from the
-owner's brief. Scope and item-by-item status: `docs/PHASE_2.md`.
+**Phase 2: complete** ("Make Moke actually Moke", the Moke character foundation), started and closed by the owner
+on 2026-09-24 and tagged `phase-2-complete`. Every engineering success criterion in the owner's brief is met. Scope,
+item-by-item status and criteria: `docs/PHASE_2.md`.
+**Phase 3: not defined yet.**
 
 ## Current Milestone
-Phase 2 has work items rather than numbered milestones (`docs/PHASE_2.md`). Every item the codebase can deliver is
-done. The one left is the **final `moke.glb`**: a rigged, animated model built outside the repo to
-`docs/MOKE_3D_SPEC.md`, installed and tested per `docs/MOKE_INTEGRATION.md`. **FINAL MOKE 3D ASSET REQUIRED.**
-Until then the game uses the procedural stand-in (`ToonMokeVisual`), which isn't the Phase 2 result.
+None. Phase 2 is closed. **Carried forward, not done: the final `moke.glb`** (FINAL MOKE 3D ASSET REQUIRED), a
+rigged, animated model built outside the repo to `docs/MOKE_3D_SPEC.md` and installed and tested per
+`docs/MOKE_INTEGRATION.md`. Until then the game uses the procedural stand-in (`ToonMokeVisual`), which isn't the
+final Moke.
 
 How Milestone 10 went: it started 2026-09-24 at the owner's request. The owner played Milestones 5–9
 ("the overall gameplay is incredible… I like it") and asked to start M10 with Moke's look: anime style instead of
@@ -28,7 +30,7 @@ with fixes, GitHub Pages hosting, the trick button, Moke's tail and a deeper gro
 Phase 1 audit, gamepad support, the cute growl and a collar refit.
 
 ## Completed
-**Phase 2 (in progress): the code side of "Make Moke actually Moke".**
+**Phase 2 (complete, tag `phase-2-complete`): "Make Moke actually Moke", the Moke character foundation.**
 - **The final-model path:**
   - `GltfMokeVisual` (`src/player/gltf/`) plays a `moke.glb` built to `docs/MOKE_3D_SPEC.md`:
     - scale and orientation from config;
@@ -462,13 +464,13 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-1. **Get the final `moke.glb` made. This is what blocks Phase 2.** The owner decides who makes it (an artist they
+1. **Get the final `moke.glb` made** (carried forward from Phase 2). The owner decides who makes it (an artist they
    commission, their own work, or another pipeline). Hand over `docs/MOKE_3D_SPEC.md`, the extra reference listed in
    `docs/MOKE_CHARACTER_REFERENCE.md`, and screenshots of the stand-in. The private photos go only via the owner.
 2. **When it arrives:** install and test it per `docs/MOKE_INTEGRATION.md`, fix every `[moke]` note, and get the
-   owner's verdict ("is that Moke?"). Then close Phase 2.
-3. **Push when the owner asks.** The Phase 2 commit is local; a push to `main` publishes
-   the game.
+   owner's verdict ("is that Moke?").
+3. **Define Phase 3** with the owner before any Phase 3 code. Push only when the owner asks: a push to `main`
+   publishes the game.
 4. **Feel check** by the owner: glances, sitting after 8 s, the head tilt, the staged lie-down, carrying.
 5. **Carried-over checks** from Phase 1: pointer lock with a physical mouse, audio by ear, a physical controller,
    real-GPU frame rate, Firefox and Safari. Carried-over polish candidates: the logo "O" face, carried props poking

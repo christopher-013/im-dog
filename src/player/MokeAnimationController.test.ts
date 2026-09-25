@@ -1,3 +1,4 @@
+import { MOKE_ANIMATION } from '../config/animation';
 import { describe, expect, it } from 'vitest';
 import { MOVEMENT } from '../config/movement';
 import { MokeAnimationController, type MokeMotionSample } from './MokeAnimationController';
@@ -83,5 +84,45 @@ describe('MokeAnimationController', () => {
     anim.growl();
     expect(simulate(anim, idle, 0.15).growl).toBeGreaterThan(0.7);
     expect(simulate(anim, idle, 1.2).growl).toBe(0);
+  });
+
+  it('sits down after standing still a while, and hops straight up when he moves', () => {
+    const anim = new MokeAnimationController(MOVEMENT, () => 0.99); // no stretch first
+    const idle = { speed: 0, turnRate: 0, headroom: OPEN_SKY };
+    expect(simulate(anim, idle, MOKE_ANIMATION.idleSitAfter - 1).sit).toBeLessThan(0.01);
+    expect(simulate(anim, idle, 3).sit).toBeGreaterThan(0.9);
+    expect(simulate(anim, { ...idle, speed: 1 }, 0.25).sit).toBeLessThan(0.05);
+  });
+
+  it('sometimes stretches (a play bow) before sitting', () => {
+    const anim = new MokeAnimationController(MOVEMENT, () => 0); // always stretch
+    const idle = { speed: 0, turnRate: 0, headroom: OPEN_SKY };
+    simulate(anim, idle, MOKE_ANIMATION.idleSitAfter + MOKE_ANIMATION.stretchDuration / 2);
+    expect(anim.state.stretch).toBeGreaterThan(0.8);
+    expect(simulate(anim, idle, MOKE_ANIMATION.stretchDuration + 2).sit).toBeGreaterThan(0.9);
+  });
+
+  it("doesn't sit while sniffing, resting or doing a trick", () => {
+    for (const busy of [{ sniffing: true }, { resting: true }]) {
+      const anim = new MokeAnimationController(MOVEMENT, () => 0.99);
+      const sample = { speed: 0, turnRate: 0, headroom: OPEN_SKY, ...busy };
+      expect(simulate(anim, sample, MOKE_ANIMATION.idleSitAfter + 3).sit).toBeLessThan(0.01);
+    }
+    const tricky = new MokeAnimationController(MOVEMENT, () => 0.99);
+    tricky.trick('spin');
+    expect(simulate(tricky, { speed: 0, turnRate: 0, headroom: OPEN_SKY }, 1).sit).toBeLessThan(0.01);
+  });
+
+  it('turns his head toward something interesting, within a natural range', () => {
+    const anim = new MokeAnimationController(MOVEMENT, () => 0.5); // idle looks go straight ahead, no tilts
+    const s = simulate(anim, { speed: 0, turnRate: 0, headroom: OPEN_SKY, look: { yaw: 0.4, pitch: -0.2 } }, 1.5);
+    expect(s.headYaw).toBeCloseTo(0.4, 1);
+    expect(s.headPitch).toBeCloseTo(-0.2, 1);
+    expect(s.attention).toBeGreaterThan(0.9);
+    const far = simulate(new MokeAnimationController(MOVEMENT), { speed: 0, turnRate: 0, headroom: OPEN_SKY, look: { yaw: 3, pitch: 2 } }, 2);
+    expect(far.headYaw).toBeLessThanOrEqual(MOKE_ANIMATION.maxHeadYaw + 1e-6);
+    expect(far.headPitch).toBeLessThanOrEqual(MOKE_ANIMATION.lookMaxPitch + 1e-6);
+    // Done looking: back to facing forward.
+    expect(Math.abs(simulate(anim, { speed: 0, turnRate: 0, headroom: OPEN_SKY }, 1.5).headYaw)).toBeLessThan(0.05);
   });
 });

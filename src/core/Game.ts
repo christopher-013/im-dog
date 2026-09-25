@@ -2,7 +2,8 @@ import { Color, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { MoveBasis } from '../camera/MoveBasis';
 import { ThirdPersonCamera, type CameraInput, type CameraTarget } from '../camera/ThirdPersonCamera';
 import { AudioManager } from '../audio/AudioManager';
-import { ASSET_MANIFEST } from '../config/assets';
+import { ASSET_MANIFEST, MOKE_MODEL_AVAILABLE } from '../config/assets';
+import { MOKE_ATTENTION } from '../config/attention';
 import { CAMERA } from '../config/camera';
 import { CAMERA_LENS, RENDER } from '../config/engine';
 import { MOKE_BODY } from '../config/movement';
@@ -18,7 +19,8 @@ import type { MoveIntent } from '../player/Locomotion';
 import { Moke } from '../player/Moke';
 import { pickTrick, type Trick } from '../player/Tricks';
 import { MokeController } from '../player/MokeController';
-import { createMokeVisual } from '../player/MokeVisual';
+import { AttentionSystem, type AttentionKind, type AttentionObserver } from '../player/AttentionSystem';
+import { createMokeVisual, type MokeVisualChoice } from '../player/MokeVisual';
 import type { Prop } from '../props/Prop';
 import { createRoomProps } from '../props/roomProps';
 import { createRoomScents } from '../senses/roomScents';
@@ -62,6 +64,14 @@ export class Game {
     this.physics?.rayDistance(o, d, max) ?? max,
   );
   private readonly scent = new ScentSystem();
+  private readonly attention = new AttentionSystem();
+  /** Where Moke is and how he's moving, for the attention system. Reused every frame (no allocation). */
+  private readonly observer: { -readonly [K in keyof AttentionObserver]: AttentionObserver[K] } = {
+    position: { x: 0, y: 0, z: 0 },
+    heading: 0,
+    speed: 0,
+  };
+  private visualChoice: MokeVisualChoice | null = null;
   private readonly wisps = new ScentWisps();
   private readonly barkTimer = new BarkTimer();
   private readonly audio = new AudioManager();
@@ -165,7 +175,8 @@ export class Game {
   private spawnMoke(physics: PhysicsWorld): Moke {
     const { position, heading } = this.room.spawn;
     const body = new CharacterBody(physics, position, MOKE_BODY);
-    const moke = new Moke(new MokeController(body, heading), createMokeVisual());
+    this.visualChoice = createMokeVisual(this.assets.getGLTF('moke'), MOKE_MODEL_AVAILABLE);
+    const moke = new Moke(new MokeController(body, heading), this.visualChoice.visual);
     this.scene.add(moke.visual.object);
     return moke;
   }
@@ -179,7 +190,7 @@ export class Game {
     );
     for (const prop of this.props) pickup.add(prop);
     pickup.onPickUp = (prop) => {
-      prop.holdIn(moke.visual.mouthSocket);
+      prop.holdIn(moke.visual.attachments.mouth);
       moke.carrying = true;
       this.audio.play('pickup');
     };
@@ -190,6 +201,42 @@ export class Game {
     };
     this.pickup = pickup;
     for (const source of createRoomScents(this.room, this.props)) this.scent.register(source);
+    this.registerAttention();
+  }
+
+  /** What catches Moke's eye: the loose props (not while in his mouth) and his bed. */
+  private registerAttention(): void {
+    const kinds: Record<string, AttentionKind> = { sock: 'sock', ball: 'ball', toy: 'toy' };
+    for (const prop of this.props) {
+      const kind = kinds[prop.id] ?? 'toy';
+      this.attention.register({
+        id: prop.id,
+        kind,
+        interest: MOKE_ATTENTION.interest[kind],
+        get position() {
+          return prop.position;
+        },
+        get enabled() {
+          return !prop.carried;
+        },
+      });
+    }
+    const bed = this.room.landmarks.dogBed;
+    this.attention.register({ id: 'dogBed', kind: 'bed', interest: MOKE_ATTENTION.interest.bed, position: { x: bed.x, y: 0.12, z: bed.z } });
+  }
+
+  /** Visual only: something for Moke to glance at, or the strongest scent while he sniffs. */
+  private updateAttention(dt: number): void {
+    const moke = this.moke;
+    if (!moke) return;
+    this.attention.focus = this.scent.active && this.scent.hitsLength > 0 ? this.scent.hitAt(0).source.position : null;
+    const busy = this.rest.holdsMoke || moke.animation.performingTrick;
+    const c = moke.controller;
+    const observer = this.observer;
+    observer.position = moke.renderPosition;
+    observer.heading = c.heading;
+    observer.speed = c.actualSpeed;
+    moke.lookAt = this.attention.update(dt, observer, busy);
   }
 
   private setState(next: GameState): void {
@@ -245,6 +292,7 @@ export class Game {
 
     // The world only advances while playing; menus and pause freeze it.
     const alpha = this.fixedStep.advance(playing ? dt : 0, this.fixedUpdate);
+    this.updateAttention(dt);
     this.moke?.update(dt, alpha);
     for (const prop of this.props) prop.render(alpha);
     this.updateInteractionPrompt(playing);
@@ -428,6 +476,9 @@ export class Game {
         headroom: `${c.headroom.toFixed(2)} m (duck ${this.moke.animation.state.crouch.toFixed(2)})`,
         rest: `${this.rest.phase} (pose ${this.moke.animation.state.rest.toFixed(2)})`,
         trick: this.moke.animation.state.trick ?? '—',
+        visual: this.visualChoice ? `${this.visualChoice.kind}${this.visualChoice.notes.length ? ` (${this.visualChoice.notes.length} note${this.visualChoice.notes.length > 1 ? 's' : ''}, see console)` : ''}` : '—',
+        'looking at': this.attention.focus ? 'scent' : (this.attention.target?.id ?? '—'),
+        'sit / stretch': `${this.moke.animation.state.sit.toFixed(2)} / ${this.moke.animation.state.stretch.toFixed(2)}`,
       };
     });
     this.debug.addSection('Interaction', (): DebugValues => {

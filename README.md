@@ -3,7 +3,9 @@
 *A Day in the Life of Moke.* A cozy, funny third-person browser game about an ordinary day as Moke,
 a small white Maltipoo. No combat, no death: just socks, smells, naps and a very big living room.
 
-**Status:** Phase 1 complete: the technical prototype (tag `phase-1-complete`). Phase 2 is being planned. A soft, stylized Moke modelled on the real dog (curly white
+**Status:** Phase 1 complete: the technical prototype (tag `phase-1-complete`). Phase 2 ("Make Moke actually Moke") is in progress: the
+code is ready for a final rigged, animated `moke.glb`, which still has to be made ([docs/PHASE_2.md](docs/PHASE_2.md)). Until then, a soft,
+stylized stand-in Moke modelled on the real dog (curly white
 coat, dark eyes, black button nose, blue collar) trots, runs and sneaks around a cozy, true-scale living room: linen couch, rug, coffee table he can
 duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can bark, growl, do tricks, sniff,
 carry his sock and toys, and nap in his bed. A low dog-height camera follows him and avoids walls and furniture.
@@ -47,7 +49,8 @@ scripts/        build helpers
 
 ## Docs
 [Current state](docs/CURRENT_STATE.md) · [Game design](docs/GAME_DESIGN.md) · [Phase 1 scope](docs/PHASE_1.md) ·
-[Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) · [Moke reference](docs/MOKE_CHARACTER_REFERENCE.md) ·
-[Assets & licenses](docs/ASSETS.md) · [Controls](docs/CONTROLS.md)
+[Phase 2 scope](docs/PHASE_2.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) ·
+[Moke reference](docs/MOKE_CHARACTER_REFERENCE.md) · [Moke 3D spec](docs/MOKE_3D_SPEC.md) ·
+[Moke integration](docs/MOKE_INTEGRATION.md) · [Assets & licenses](docs/ASSETS.md) · [Controls](docs/CONTROLS.md)
 
 **Coding agents** (Codex, Claude Code): start with [AGENTS.md](AGENTS.md). Claude Code also reads [CLAUDE.md](CLAUDE.md).

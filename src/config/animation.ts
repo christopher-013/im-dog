@@ -1,3 +1,5 @@
+import { MOKE_CHARACTER } from './mokeCharacter';
+
 /**
  * How Moke's body language reacts to movement. Visual only; none of this affects gameplay.
  * Units: radians, seconds.
@@ -43,11 +45,25 @@ export const MOKE_ANIMATION = {
     /** Standing on his hind legs needs this much space above his feet (m). */
     begHeadroom: 0.62,
   },
+  /** Glancing at something interesting (see AttentionSystem): how far his head may turn and tip (radians). */
+  lookMaxPitch: 0.35,
+  /** When he first notices something while standing still, sometimes a curious head tilt. */
+  noticeTiltChance: 0.3,
+  /**
+   * Personality when left alone: after standing still this long (s) he sits down, sometimes stretching first
+   * (a play bow). Any movement, trick, sniff or rest cancels it straight away.
+   */
+  idleSitAfter: 8,
+  idleStretchChance: 0.4,
+  stretchDuration: 1.5,
+  /** Responsiveness of sitting down / hopping back up (per second). */
+  sitDownRate: 4,
+  standUpRate: 14,
   /** Responsiveness of lying down / getting up (per second). */
   lieDownRate: 4,
   getUpRate: 9,
-  /** Start ducking when the space above Moke's feet is below this (m). His fluffy head reaches ~0.42 m. */
-  duckBelowHeadroom: 0.45,
+  /** Start ducking when the space above Moke's feet is below this (m): a little above the top of his fluffy head. */
+  duckBelowHeadroom: MOKE_CHARACTER.size.headTop + 0.02,
   /** Headroom range over which he goes from standing to fully ducked (m). */
   duckRange: 0.08,
 } as const;

@@ -21,8 +21,10 @@ src/
     input.ts              actions, keyboard/gamepad bindings, stick + mouse tuning, control hints
     movement.ts           Moke's movement feel (speeds, acceleration, turning) + collision capsule
     camera.ts             third-person camera feel (distance, zoom, smoothing, collision, whiskers, auto-follow)
-    animation.ts          body-language tuning (lean, idle looks, tail, ducking)
-    world.ts              world scale: Moke's size, furniture heights
+    animation.ts          body-language tuning (lean, idle looks, tail, ducking, sit/stretch, looking at things, tricks)
+    mokeCharacter.ts      Moke's ONE authoritative size, plus the moke.glb conventions (path, bones, sockets, morphs, clip speeds)
+    attention.ts          what catches his eye and for how long (range, field of view, glance/look-away timing, interest by kind)
+    world.ts              world scale: furniture heights
     interaction.ts        interaction reach/facing tuning
     props.ts              prop definitions (shape, mass, damping, carry pose) + pickup/drop tuning
     senses.ts             sniff timing, wisp look, scent colours per category
@@ -41,11 +43,14 @@ src/
   player/
     Locomotion.ts         pure movement model: speed, heading, gaits (tested; no three/Rapier)
     MokeController.ts     gameplay body: locomotion + collision + interpolation (tested with real Rapier)
-    MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking (tested)
-    MokeVisual.ts         the visual interface + createMokeVisual() factory
-    ToonMokeVisual.ts     Moke built in code after the real dog (curly fur, soft shading, silhouette line, face, collar), animated procedurally (tested)
+    MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking, sit/stretch, look-at, tricks (tested)
+    MokeVisual.ts         the visual interface (object, attachments, update, dispose) + createMokeVisual(): model or stand-in (tested)
+    ToonMokeVisual.ts     the procedural stand-in: Moke built in code after the real dog (curly fur, soft shading, silhouette line, face, collar), animated procedurally (tested)
     toon/                 furGeometry.ts (fur clumps with curls and creases, tested), toonMaterials.ts (soft toon + outline), faceTextures.ts (eye), tagTexture.ts (name tag)
-    Moke.ts               composite: controller + animation + visual (+ carrying/sniffing flags from gameplay)
+    gltf/                 the final-model path: GltfMokeVisual.ts (moke.glb: mixer, crossfades, sockets, procedural layer; tested),
+                          clips.ts (MOKE_CLIPS names + selectClips: state → clip weights; tested), testing/syntheticMoke.ts (test-only model)
+    AttentionSystem.ts    what he glances at: targets, interest, glance/look-away pacing, sniff focus (tested; DOM/three-free)
+    Moke.ts               composite: controller + animation + visual (+ carrying/sniffing/lookAt from gameplay)
     Bark.ts               bark cooldown (tested)
     Tricks.ts             the tricks and how one is picked (random, no repeats, context rules) (tested)
   physics/
@@ -84,6 +89,7 @@ src/
     DebugPanel.ts         ` overlay + FrameStats
   styles/main.css
   utils/math.ts           clamp, damp, lerp, smoothstep, moveToward, angle helpers
+  env.d.ts                build-time constants from vite.config.ts (__MOKE_MODEL_AVAILABLE__)
 ```
 
 
@@ -124,8 +130,10 @@ The key rule: **gameplay never touches the mesh.** The data flows one way:
 
 ```
 input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─► MokeVisual
-          (world dir)    (Locomotion +      (lean, head, tail,         (ToonMokeVisual today,
-                          CharacterBody)     ducking: plain numbers)    moke.glb possible)
+          (world dir)    (Locomotion +      (lean, head, tail, sit,    (GltfMokeVisual for moke.glb,
+                          CharacterBody)     ducking: plain numbers)    else the ToonMokeVisual stand-in)
+                                                   ▲
+                               AttentionSystem ─ Moke.lookAt (what he glances at)
 ```
 - `Locomotion` is the feel model. Moke always travels the way he faces:
   - He turns at a limited rate: quick pivots when slow, wider arcs at a run.
@@ -136,9 +144,49 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
   previous step for interpolation. If he's blocked head-on for 2+ steps, his stored speed drops, so he doesn't
   burst off a wall at full speed. Glancing contacts slide along the wall.
 - `MokeAnimationController` turns motion into model-independent body language. It's the same for any visual.
-- `MokeVisual` is the only interface a visual implements: `object`, a `mouthSocket` for carried items (Milestone 6),
-  `update(dt, animationState)` and `dispose()`. `createMokeVisual()` is the single place that picks one.
-  - Today it returns `ToonMokeVisual` (Milestone 10): Moke modelled on the real dog, generated in code, no image files.
+- **One authoritative scale:** `MOKE_CHARACTER.size` (`config/mokeCharacter.ts`: shoulder 0.28 m, eyes 0.33 m, head
+  top 0.43 m). The camera pivot (`eyeHeight + 0.03`) and the ducking threshold (`headTop + 0.02`) derive from it,
+  and a `moke.glb` is checked against it. The collision capsule (`MOKE_BODY`) is deliberately separate, sized for
+  the coffee table.
+- `MokeVisual` is the only interface a visual implements:
+  - `object`;
+  - `attachments`: `mouth` for carried items, and `collar` and `back` for future cosmetics;
+  - `update(dt, animationState)` and `dispose()`.
+
+  `createMokeVisual(gltf, modelExpected)` is the single place that picks one (Phase 2):
+  - the final **`GltfMokeVisual`** when `moke.glb` loaded and is usable (below, and `docs/MOKE_INTEGRATION.md`);
+  - otherwise **`ToonMokeVisual`**, the procedural stand-in, with a console warning that says why. Moke is never invisible.
+  - `Game.visualChoice` and the debug panel's `visual` row record which one was picked, and any notes.
+- **`GltfMokeVisual`** (Phase 2, `player/gltf/`) wraps the loaded scene in a pivot turned and scaled only by
+  `MOKE_CHARACTER.model`; nothing else compensates. It checks the model against the spec (height, bones, sockets,
+  the `blink` morph, clip names) and lists problems in `issues`. Each frame:
+  1. `selectClips()` maps the state to per-clip target weights and playback speeds:
+     - actions take their share first (lie down/rest/stand up, tricks, sit, stretch, sniff, growl, bark, pickup and
+       drop moments);
+     - locomotion gets the rest, as a 1D speed blend between the two nearest gaits (playback = real ÷ authored speed,
+       0.3–2.5×);
+     - `duck` is additive on top (weight = `crouch`).
+  2. Weights are damped toward their targets for smooth crossfades. One-shot clips restart on a rising edge.
+  3. Driven bones go back to their rest pose, then the `AnimationMixer` runs.
+  4. A procedural layer turns bones in the model's own frame, so bone axes don't matter and nothing accumulates:
+     - neck and head glances and tilts, and a head lift while carrying;
+     - tail wag;
+     - ear bounce;
+     - jaw open for barks, growls and panting;
+     - the blink morph;
+     - without a `duck` clip, a head dip and lowered tail.
+
+  Missing clips, bones, sockets or morphs are skipped, never a crash. **No model file exists yet**, so this is tested
+  with a synthetic model built to the spec (`gltf/testing/syntheticMoke.ts`).
+- **`ToonMokeVisual`** (Milestone 10; the stand-in since Phase 2): Moke modelled on the real dog, generated in code, no image files.
+    - **Poses** are composed `BodyPose` layers added to his normal pose:
+      - sit, and the play-bow stretch;
+      - a staged lie-down (rump first, then front, like a real dog);
+      - tricks.
+
+      A pose pitches about his hind hips or rolls about his middle. Any pose that swings fur below his feet is
+      lifted clear of the floor.
+    - **Attachments:** `socket_mouth` on the head, `socket_collar` at the tag ring, `socket_back` on his back.
     - **Fur:** `furClump` grows soft tufts (rounded, or pointed with `sharpness`; tips swept along a flow direction)
       from dense ellipsoids, plus an optional finer layer of rounded `curls`. Static parts are merged, so Moke has 9
       fur meshes (each with a silhouette line). Each clump also stores the smooth ellipsoid's normal (`smoothNormal`),
@@ -158,10 +206,26 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
       tag counter-rotates to hang straight down.
     - **Face:** a canvas-drawn dark, glossy eye texture on domed discs placed on the face; eyes blink and close to a
       lash line while resting; the nose, open mouth and tongue are small meshes (no drawn mouth when closed).
-  - A future `moke.glb` would still plug in here (load it as an `optional` asset and return a glTF-based visual),
-    keeping the toon visual as the fallback.
-- Camera, interactions, pickup, scent and physics must talk to `Moke.controller` (and later the mouth socket),
-  never to the visual.
+- Camera, interactions, pickup, scent and physics must talk to `Moke.controller` (carrying uses
+  `visual.attachments.mouth`), never to the visual itself.
+
+## Attention and personality (Phase 2)
+- **`AttentionSystem`** (`player/AttentionSystem.ts`, tuning in `config/attention.ts`) is pure logic: no DOM, no
+  three.js.
+  - `Game.registerAttention()` registers targets: each prop (switched off while carried) and his bed. Each has a
+    kind and an interest; positions are getters.
+  - Each frame, *before* `Moke.update`, `Game.updateAttention()` picks what he looks at. The choice goes to
+    `Moke.lookAt`, which `Moke` converts to a head yaw and pitch relative to his heading for the animation.
+  - How he chooses: the most interesting thing within range and in front of him, weighed by distance and angle. He
+    glances for a moment, looks away, and gets bored of staring at the same thing.
+  - While sniffing, the focus is the strongest scent. He's quiet while busy (resting in his bed, a trick) or running.
+- **Personality in `MokeAnimationController`:**
+  - `updateLook` turns the head toward the attention target within natural limits (`maxHeadYaw`, `lookMaxPitch`),
+    sometimes with a curious tilt (`noticeTiltChance`).
+  - `updateSitting` sits him down after `idleSitAfter` seconds standing still, sometimes with a play-bow stretch
+    first (`idleStretchChance`). Moving makes him hop straight up (`standUpRate`).
+  - These are plain numbers in `MokeAnimationState` (`headPitch`, `attention`, `sit`, `stretch`), so every visual
+    shows them: the stand-in with poses, a `moke.glb` with `sit` and `stretch` clips plus the procedural head turn.
 
 ## Interactions (`interactions/`, Milestone 5)
 - An `Interactable` is plain data plus a callback: `id`, `type` (PICKUP, DROP, REST, SNIFF, PLAY, EAT, DRINK,
@@ -188,8 +252,9 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
     `MokeController`'s position and heading (never the mesh), pulled back from solid and thin geometry with a
     conservative swept-sphere probe sized for that prop, and gives it half his velocity, so it falls and tumbles
     naturally without spawning through a wall.
-  - Presentation listens through `onPickUp`/`onDrop`: `Game` parents the prop's view to `MokeVisual.mouthSocket`
-    with the prop's `carry` pose, and sets `Moke.carrying` so body language reacts (head up, tail wag).
+  - Presentation listens through `onPickUp`/`onDrop`: `Game` parents the prop's view to
+    `MokeVisual.attachments.mouth` with the prop's `carry` pose (retuned in Phase 2 so each toy sits in his mouth),
+    and sets `Moke.carrying` so body language reacts (head up, tail wag; a `moke.glb` also plays `pickup`/`drop`).
 - Frame order: `Moke.fixedUpdate` → `PhysicsWorld.step` → `Prop.afterStep` (fixed); `Prop.render(alpha)` per frame.
 - **Pushing toys (Milestone 7):** Moke's capsule and the character controller ignore the `toy` layer. Instead
   `CharacterBody` carries a low upright **toy bumper** cylinder (`MOKE_BODY.toyBumper`, just inside the capsule)
@@ -229,7 +294,7 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
   in and out; lengths in `MOKE_ANIMATION.tricks`). Model-independent, so a `moke.glb` could play a clip per trick.
 - While `holdsStillForTrick`, `Game` feeds Moke a still intent. Movement input calls `cancelTrick()`: he's free
   to move at once and eases out of the pose in `cancelOut` seconds. E also cancels it before interacting.
-- `ToonMokeVisual` turns the state into a `TrickPose` added on top of his normal pose: rig pitch about his hind hips
+- `GltfMokeVisual` plays a `trick_*` clip per trick. `ToonMokeVisual` turns the state into a `BodyPose` layer added on top of his normal pose: rig pitch about his hind hips
   (beg, sit), roll about his middle (belly up), a spin, leg/neck/head/tail offsets, mouth and eyes. During a trick a
   sparse sample of fur vertices lifts him just clear of the floor if a pose swings anything below his feet.
 
@@ -292,7 +357,9 @@ with a fake. Cost: about 5–7 µs per frame.
 
 ## Assets
 - Runtime assets live in `public/assets/{models,textures,audio}` and are loaded **by URL from a manifest**
-  (`src/config/assets.ts`). Dropping `moke.glb` into `public/assets/models/moke/` needs no import changes.
+  (`src/config/assets.ts`). Dropping `moke.glb` into `public/assets/models/moke/` needs no code changes. At startup
+  `vite.config.ts` checks whether that file exists and defines `__MOKE_MODEL_AVAILABLE__`. The manifest only lists
+  the model when it's there, so its absence costs no 404. **Restart the dev server after adding or removing it.**
 - A missing or broken asset never crashes loading. It's logged and reported so the game can fall back.
 - Vite's hashed JS/CSS/fonts go to `dist/app/`; runtime assets stay in `dist/assets/`.
 - Production builds emit `dist/THIRD_PARTY_NOTICES.txt` with the distributed font and runtime-library licenses.
@@ -343,5 +410,10 @@ Vitest (node environment) covers:
   trot with no stutter steps, walls, sliding, walking under a table and not climbing a couch seat.
 - **Gameplay regressions:** interaction height and wall occlusion, conservative prop-drop clearance (including thin
   geometry), repeated pickup/drop and rest transitions, rescue of escaped props, and raw-vs-clamped frame timing.
+- **The final-model path without a model file:**
+  - `syntheticMoke()` builds a tiny spec-shaped model in code;
+  - tests cover clip selection and blending, crossfades, missing clips, bones and sockets, the head turn in model
+    space (and that turns don't accumulate), ducking, the pickup moment, and the model-or-stand-in choice with its
+    warnings.
 
 Rendering, responsive UI and accessibility state are also verified in the browser.

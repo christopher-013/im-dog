@@ -4,6 +4,9 @@ Analysis of the real Moke (white Maltipoo) from the nine photos in `reference/mo
 **Everything under "Observations" is limited to what the photos show.** Design suggestions are kept
 separate at the end and labelled as such.
 
+How this feeds the final 3D model: [`MOKE_3D_SPEC.md`](MOKE_3D_SPEC.md) turns these observations into a build
+specification (Phase 2); [`MOKE_INTEGRATION.md`](MOKE_INTEGRATION.md) covers how the model gets into the game.
+
 ## Photo index
 
 | File | What it shows | Most useful for |
@@ -84,8 +87,9 @@ separate at the end and labelled as such.
 - **Paws:** small and round, fur-covered; dark pads (04).
 - **Neck:** looks short because of the fur; the collar sits down in the coat (06).
 - **Apparent size:** a small dog. The only rough scale cue is the paper plate in 03, which is about as wide as
-  his chest. **Actual size can't be measured from these photos**; the game currently assumes ~0.28 m at the
-  shoulder (`src/config/world.ts`).
+  his chest. **Actual size can't be measured from these photos**; the game assumes 0.28 m at the shoulder and
+  0.43 m to the top of the head fur (`MOKE_CHARACTER.size` in `src/config/mokeCharacter.ts`, the one
+  authoritative scale since Phase 2).
 
 ### Tail
 - **Shape:** a big plume.
@@ -105,9 +109,40 @@ separate at the end and labelled as such.
 8. **Accessories he's been photographed in:** green monstera-leaf bandana, light-blue flamingo "Relax"
    bandana, grey collar with a silver ring, tan harness. These are nice optional cosmetics later.
 
+### Modelling observations (added in Phase 2, for the 3D model)
+Still observations only, gathered for whoever builds `moke.glb`.
+
+- **Head width vs. body (03, from above; 09, front):** with the ear fur, the head is about as wide as his chest
+  and shoulders, or slightly wider. From the front, the ear curtains flare the silhouette to roughly 1.5× the
+  width of the face between the eyes' outer corners (09).
+- **Ear curtains (06, 09):** hang from about eye level to about the mouth line, fluffy and slightly flared at the
+  bottom, with wispy tips flicking outward (09). Seen lying down they read slightly more cream than the head (04).
+- **Eye line vs. ear set (06, 09):** the eyes sit at about the same height as where the ears join the head. The
+  nose sits clearly below the eye line, and the muzzle fur (mustache) is wider than the nose.
+- **Sitting (03, 08, 09):** front legs straight, close together and parallel, with round fluffy feet. The haunches
+  are tucked, with a hind foot showing just outside and behind the front feet (03). The tail rests on the floor
+  behind him (03).
+- **Standing (06):** straight front legs under the chest. The tail rises from the rump and curls forward over the
+  back, its plume about the size of the head's top dome. The body and chest fur is tight, short curls.
+- **Lying (01, 04):** the body is a rounded, curly "loaf" with the hind legs folded under, the front paws
+  crossed (01) or stretched forward, and dark paw pads showing (01, 04). The tail is either raised as a plume (01) or stretched straight back with
+  looser curls toward the tip (04).
+- **Mouth (02, 03, 07):** open, it shows dark lips, a pink tongue and a short, wide mouth. Panting (02, 07), the
+  tongue hangs forward over the lower lip.
+- **Collar (06):** a thin dark grey collar sits deep in the neck fluff, almost hidden at the sides, with a silver
+  ring at the throat and a tag hanging from it (out of focus).
+
+**From photos the owner shared in chat** (not stored in the repo, so they can't be re-checked):
+- a **side profile** with a level back, legs about as long as the body is deep, and the plume tail curled over the
+  back; faint apricot tint on the ear tips;
+- his **real collar** (grey) with a **navy bone-shaped tag** (the in-game collar is blue at the owner's request),
+  with the lower teeth visible when his mouth is open.
+
 ## Additional reference needed
-The third-person camera will mostly show Moke **from behind and above**, and none of the photos show that.
-In priority order:
+The third-person camera will mostly show Moke **from behind and above**, and none of the photos show that. For
+the final 3D model (Phase 2), items 1, 2, 5 and 7 matter most: a modeller needs a turnaround and real
+measurements, and an animator needs video. A side profile was shared in chat but isn't stored, so it can't be
+handed to an artist. In priority order:
 
 1. **Standing side profile** at dog height, full body, neutral pose: torso length, leg length, back line, neck, tail set.
 2. **Rear and rear-¾ views**, standing and walking: back of the head, ears from behind, tail from behind.
@@ -130,6 +165,9 @@ In priority order:
 - **Then** shorter ears (ending about at mouth level, as in the "Relax" bandana photo), and a collar: blue, snug in
   the fluff just under his head, with a navy bone-shaped name tag on a silver ring, after a photo of Moke in his
   own collar and bone tag.
+- **Phase 2 brief ("Make Moke actually Moke"):** the target is the *real Moke, softly stylized*, not a generic
+  anime dog. The final character is a rigged, animated `moke.glb` built to [`MOKE_3D_SPEC.md`](MOKE_3D_SPEC.md);
+  the code-built `ToonMokeVisual` is the stand-in and fallback until then.
 
 ## Design notes for the stylized character (suggestions, not observations)
 - **Protect the silhouette first.** A round fluffy dome for the head, a neat curly body and a high pom tail make

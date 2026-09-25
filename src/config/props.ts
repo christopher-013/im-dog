@@ -33,7 +33,7 @@ export const PROPS: Readonly<Record<PropId, PropDefinition>> = {
     },
     restHeight: 0.012,
     // Held crosswise like a real dog carries a sock, dangling a little.
-    carry: { offset: [0, -0.03, 0.01], turn: Math.PI / 2 },
+    carry: { offset: [0, -0.012, 0], turn: Math.PI / 2 },
   },
   ball: {
     id: 'ball',
@@ -50,7 +50,7 @@ export const PROPS: Readonly<Record<PropId, PropDefinition>> = {
       maxSpeed: 4.5,
     },
     restHeight: 0.033,
-    carry: { offset: [0, -0.02, 0.02], turn: 0 },
+    carry: { offset: [0, -0.024, 0.006], turn: 0 },
   },
   toy: {
     id: 'toy',
@@ -66,7 +66,7 @@ export const PROPS: Readonly<Record<PropId, PropDefinition>> = {
       maxSpeed: 3.5,
     },
     restHeight: 0.03,
-    carry: { offset: [0, -0.025, 0.015], turn: Math.PI / 2 },
+    carry: { offset: [0, -0.014, 0.002], turn: Math.PI / 2 },
   },
 };
 

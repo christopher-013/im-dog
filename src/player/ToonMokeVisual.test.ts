@@ -1,4 +1,5 @@
 import { Box3, Mesh, Raycaster, Vector3, type Object3D } from 'three';
+import { MOKE_CHARACTER } from '../config/mokeCharacter';
 import { describe, expect, it } from 'vitest';
 import { MOKE_ANIMATION } from '../config/animation';
 import { MokeAnimationController, type MokeAnimationState } from './MokeAnimationController';
@@ -6,6 +7,8 @@ import { ToonMokeVisual } from './ToonMokeVisual';
 import { TRICKS } from './Tricks';
 
 const DT = 1 / 60;
+/** Hip pivot height in the toon rig. */
+const HIP = 0.172;
 
 function pose(over: Partial<MokeAnimationState> = {}): MokeAnimationState {
   return { ...new MokeAnimationController().state, ...over };
@@ -49,7 +52,7 @@ describe('ToonMokeVisual', () => {
     const visual = new ToonMokeVisual();
     visual.update(DT, pose());
     visual.object.updateMatrixWorld(true);
-    const socket = visual.mouthSocket.getWorldPosition(new Vector3());
+    const socket = visual.attachments.mouth.getWorldPosition(new Vector3());
     expect(socket.z).toBeGreaterThan(0.2);
     expect(socket.y).toBeGreaterThan(0.2);
     expect(socket.y).toBeLessThan(0.35);
@@ -110,7 +113,7 @@ describe('ToonMokeVisual', () => {
     visual.object.updateMatrixWorld(true);
     expect(meshes(visual.object, 'collar')).toHaveLength(1);
     const tag = new Box3().setFromObject(meshes(visual.object, 'tag')[0]!, true);
-    const head = visual.mouthSocket.getWorldPosition(new Vector3());
+    const head = visual.attachments.mouth.getWorldPosition(new Vector3());
     expect(tag.min.z).toBeGreaterThan(0.1); // out in front of his chest
     expect(tag.max.y).toBeLessThan(head.y); // below his mouth
     expect(tag.min.y).toBeGreaterThan(0.12); // well clear of the floor
@@ -178,6 +181,50 @@ describe('ToonMokeVisual', () => {
     expect(after.min.distanceTo(before.min)).toBeLessThan(0.01);
     expect(after.max.distanceTo(before.max)).toBeLessThan(0.01);
     visual.dispose();
+  });
+
+  it('stands at the authoritative Moke size (MOKE_CHARACTER.size)', () => {
+    const visual = new ToonMokeVisual();
+    visual.update(DT, pose());
+    const box = new Box3().setFromObject(visual.object, true);
+    expect(box.max.y).toBeCloseTo(MOKE_CHARACTER.size.headTop, 1);
+    expect(Math.abs(box.max.y - MOKE_CHARACTER.size.headTop)).toBeLessThan(0.03);
+    visual.dispose();
+  });
+
+  it('has a mouth, collar and back attachment where they belong', () => {
+    const visual = new ToonMokeVisual();
+    visual.update(DT, pose());
+    visual.object.updateMatrixWorld(true);
+    const { mouth, collar, back } = visual.attachments;
+    const y = (node: Object3D | null) => node!.getWorldPosition(new Vector3());
+    expect(collar).not.toBeNull();
+    expect(back).not.toBeNull();
+    expect(y(mouth).z).toBeGreaterThan(y(collar).z); // mouth is ahead of the collar
+    expect(y(back).y).toBeGreaterThan(0.25); // on top of his back
+    expect(y(back).z).toBeLessThan(y(collar).z);
+    visual.dispose();
+  });
+
+  it('lies down rump first, like a real dog', () => {
+    const visual = new ToonMokeVisual();
+    const hip = (name: string) => visual.object.getObjectByName(name)!.getWorldPosition(new Vector3()).y;
+    visual.update(DT, pose({ rest: 0.4 }));
+    visual.object.updateMatrixWorld(true);
+    const hindDrop = HIP - hip('hip_hind_L');
+    const frontDrop = HIP - hip('hip_front_L');
+    expect(hindDrop).toBeGreaterThan(0.05);
+    expect(hindDrop).toBeGreaterThan(frontDrop + 0.04);
+    visual.dispose();
+  });
+
+  it('sits and stretches without sinking into the floor', () => {
+    for (const over of [{ sit: 1 }, { stretch: 1 }, { rest: 0.4 }]) {
+      const visual = new ToonMokeVisual();
+      visual.update(DT, pose(over));
+      expect(new Box3().setFromObject(visual.object, true).min.y, JSON.stringify(over)).toBeGreaterThan(-0.02);
+      visual.dispose();
+    }
   });
 
   it('removes itself from the scene on dispose', () => {

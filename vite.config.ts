@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
@@ -20,6 +20,9 @@ function runtimeLicenses(): Plugin {
     },
   };
 }
+
+/** Keep in sync with MOKE_CHARACTER.model.path (relative to public/). */
+const MOKE_MODEL_FILE = path.join(projectRoot, 'public', 'assets', 'models', 'moke', 'moke.glb');
 
 function isInside(file: string, dir: string): boolean {
   const rel = path.relative(dir, file);
@@ -50,6 +53,8 @@ function blockPrivateReferencePhotos(): Plugin {
 export default defineConfig({
   // Relative base so the build works from any static host path (GitHub Pages project sites, etc.).
   base: './',
+  // Only ask for moke.glb when it's there (restart the dev server after adding it). See docs/MOKE_INTEGRATION.md.
+  define: { __MOKE_MODEL_AVAILABLE__: JSON.stringify(existsSync(MOKE_MODEL_FILE)) },
   plugins: [blockPrivateReferencePhotos(), runtimeLicenses()],
   server: {
     fs: {

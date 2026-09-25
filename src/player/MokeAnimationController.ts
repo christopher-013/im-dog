@@ -18,6 +18,11 @@ export interface MokeMotionSample {
   sniffing?: boolean;
   /** Lying in his bed. Default false. */
   resting?: boolean;
+  /**
+   * Something interesting to glance at (see AttentionSystem), relative to his facing: yaw (positive = to his
+   * left) and pitch (positive = up), radians. Null/undefined = nothing in particular.
+   */
+  look?: { yaw: number; pitch: number } | null;
 }
 
 /**
@@ -34,6 +39,10 @@ export interface MokeAnimationState {
   lean: number;
   /** Positive = looking left (radians). */
   headYaw: number;
+  /** Positive = looking up (radians). */
+  headPitch: number;
+  /** 0..1: how intently he's looking at something in particular (eyes can follow too). */
+  attention: number;
   /** Curious head tilt (radians). Positive = tilting toward his left. */
   headTilt: number;
   /** Tail wag intensity, 0..1. */
@@ -50,6 +59,10 @@ export interface MokeAnimationState {
   growl: number;
   /** 0..1: lying down (sphinx pose, head resting, sleepy eyes). */
   rest: number;
+  /** 0..1: sitting, because he's been standing still a while. */
+  sit: number;
+  /** 0..1: a stretch (play bow) in progress, before he sits. */
+  stretch: number;
   /** The trick he's doing, or null. */
   trick: Trick | null;
   /** Seconds since the current trick started. */
@@ -67,6 +80,8 @@ export class MokeAnimationController {
     runBlend: 0,
     lean: 0,
     headYaw: 0,
+    headPitch: 0,
+    attention: 0,
     headTilt: 0,
     tailWag: MOKE_ANIMATION.idleTailWag,
     crouch: 0,
@@ -75,6 +90,8 @@ export class MokeAnimationController {
     bark: 0,
     growl: 0,
     rest: 0,
+    sit: 0,
+    stretch: 0,
     trick: null,
     trickTime: 0,
     trickBlend: 0,
@@ -84,6 +101,11 @@ export class MokeAnimationController {
   private idleTime = 0;
   private nextIdleAction: number = MOKE_ANIMATION.idleActionEvery[0];
   private lookTarget = 0;
+  private pitchTarget = 0;
+  private looking = false;
+  /** Standing-still personality: waiting → (stretching) → sitting. */
+  private sitting = false;
+  private stretchLeft = 0;
   private tiltTarget = 0;
   private tiltTimeLeft = 0;
   private sinceBark = Infinity;
@@ -119,7 +141,10 @@ export class MokeAnimationController {
       this.tiltTimeLeft = 0;
       this.lookTarget = clamp(sample.turnRate * a.headLeadIntoTurn, -a.maxHeadYaw, a.maxHeadYaw);
     }
+    this.updateLook(sample, s.gait === 'idle');
     s.headYaw = damp(s.headYaw, this.lookTarget, 5, dt);
+    s.headPitch = damp(s.headPitch, this.pitchTarget, 5, dt);
+    s.attention = damp(s.attention, this.looking ? 1 : 0, 4, dt);
     s.headTilt = damp(s.headTilt, this.tiltTarget, 6, dt);
 
     s.carry = damp(s.carry, sample.carrying ? 1 : 0, 10, dt);
@@ -135,6 +160,7 @@ export class MokeAnimationController {
     const g = this.sinceGrowl / a.growlDuration;
     s.growl = g >= 1 ? 0 : Math.min(1, g * 9) * Math.min(1, (1 - g) * 5);
     this.updateTrick(dt);
+    this.updateSitting(dt, sample);
     const wag = s.gait === 'idle' ? a.idleTailWag : a.movingTailWag;
     s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8, s.trickBlend * a.tricks.tailWag), 3, dt);
 
@@ -202,6 +228,50 @@ export class MokeAnimationController {
     s.trickBlend = smoothstep(0, 1, Math.min(easeIn, easeOut));
   }
 
+  /** Glancing at something interesting overrides his idle looks and the head lead into turns. */
+  private updateLook(sample: MokeMotionSample, idle: boolean): void {
+    const a = MOKE_ANIMATION;
+    const look = sample.look;
+    if (!look) {
+      if (this.looking && idle) this.lookTarget = 0; // done looking: face forward again
+      this.looking = false;
+      this.pitchTarget = 0;
+      return;
+    }
+    if (!this.looking && idle && this.random() < a.noticeTiltChance) {
+      this.tiltTarget = (this.random() < 0.5 ? -1 : 1) * a.headTiltAngle; // "huh?"
+      this.tiltTimeLeft = a.headTiltHold;
+    }
+    this.looking = true;
+    this.lookTarget = clamp(look.yaw, -a.maxHeadYaw, a.maxHeadYaw);
+    this.pitchTarget = clamp(look.pitch, -a.lookMaxPitch, a.lookMaxPitch);
+  }
+
+  /**
+   * Left alone, he sits down after a while, sometimes with a stretch first. Anything else he does (moving,
+   * a trick, sniffing, resting) cancels it at once, so it never gets in the way of play.
+   */
+  private updateSitting(dt: number, sample: MokeMotionSample): void {
+    const a = MOKE_ANIMATION;
+    const s = this.state;
+    const busy = s.gait !== 'idle' || s.trick !== null || sample.sniffing || sample.resting;
+    if (busy) {
+      this.sitting = false;
+      this.stretchLeft = 0;
+      this.idleTime = 0;
+    } else if (!this.sitting && this.stretchLeft <= 0 && this.idleTime >= a.idleSitAfter) {
+      if (this.random() < a.idleStretchChance) this.stretchLeft = a.stretchDuration;
+      else this.sitting = true;
+    }
+    if (this.stretchLeft > 0) {
+      this.stretchLeft -= dt;
+      if (this.stretchLeft <= 0) this.sitting = true;
+    }
+    const u = this.stretchLeft > 0 ? 1 - this.stretchLeft / a.stretchDuration : 0;
+    s.stretch = this.stretchLeft > 0 ? Math.sin(Math.PI * u) : 0;
+    s.sit = damp(s.sit, this.sitting ? 1 : 0, this.sitting ? a.sitDownRate : a.standUpRate, dt);
+  }
+
   /** Little signs of life while standing: glance around, and now and then a curious head tilt. */
   private updateIdle(dt: number): void {
     const a = MOKE_ANIMATION;
@@ -211,7 +281,7 @@ export class MokeAnimationController {
       this.tiltTimeLeft -= dt;
       if (this.tiltTimeLeft <= 0) this.tiltTarget = 0;
     }
-    if (this.idleTime < this.nextIdleAction) return;
+    if (this.idleTime < this.nextIdleAction || this.looking) return;
 
     this.nextIdleAction = this.idleTime + a.idleActionEvery[0] + this.random() * a.idleActionEvery[1];
     if (this.random() < a.headTiltChance) {

@@ -1,14 +1,17 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-24. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (commit "milestone: complete Phase 1 technical prototype", tag `phase-1-complete`). Everything is committed and pushed. See `git log` and `git status`._
+_Last updated: 2026-09-24. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (tag `phase-1-complete`). **Phase 2's code and docs are committed on `main` but not pushed**, so the hosted game is still the Phase 1 build. See `git log` and `git status`._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
-**Phase 2: not defined yet.**
+**Phase 2: "Make Moke actually Moke", in progress. Blocked on the final 3D asset.** Started 2026-09-24 from the
+owner's brief. Scope and item-by-item status: `docs/PHASE_2.md`.
 
 ## Current Milestone
-None. Phase 1's last milestone, **Milestone 10 (polish)**, is done and closed with the phase. Phase 2's milestones will
-come from `docs/PHASE_2.md` once the owner approves it.
+Phase 2 has work items rather than numbered milestones (`docs/PHASE_2.md`). Every item the codebase can deliver is
+done. The one left is the **final `moke.glb`**: a rigged, animated model built outside the repo to
+`docs/MOKE_3D_SPEC.md`, installed and tested per `docs/MOKE_INTEGRATION.md`. **FINAL MOKE 3D ASSET REQUIRED.**
+Until then the game uses the procedural stand-in (`ToonMokeVisual`), which isn't the Phase 2 result.
 
 How Milestone 10 went: it started 2026-09-24 at the owner's request. The owner played Milestones 5–9
 ("the overall gameplay is incredible… I like it") and asked to start M10 with Moke's look: anime style instead of
@@ -20,10 +23,44 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code (a review of Codex's commits, three fixes from it, and GitHub Pages hosting; before that the trick button, Moke's tail and a deeper growl). Before that, OpenAI Codex committed its
+Claude Code: Phase 2 code and docs (committed to `main` at the owner's request, not pushed). Before that, Claude closed Phase 1 (a review of Codex's commits
+with fixes, GitHub Pages hosting, the trick button, Moke's tail and a deeper growl). OpenAI Codex committed its
 Phase 1 audit, gamepad support, the cute growl and a collar refit.
 
 ## Completed
+**Phase 2 (in progress): the code side of "Make Moke actually Moke".**
+- **The final-model path:**
+  - `GltfMokeVisual` (`src/player/gltf/`) plays a `moke.glb` built to `docs/MOKE_3D_SPEC.md`:
+    - scale and orientation from config;
+    - an `AnimationMixer` with clips looked up by name;
+    - damped crossfades;
+    - the `socket_mouth`, `socket_collar` and `socket_back` sockets;
+    - a procedural layer (head/neck glances and tilts, a head lift while carrying, tail wag, ear bounce, jaw, blink);
+    - an additive `duck` for the coffee table.
+  - Spec problems (clips, bones, sockets, the `blink` morph, height) are reported, never fatal.
+  - `createMokeVisual()` picks the model or the stand-in and warns why. A build-time flag means no request and no
+    404 while the file is missing.
+- **Animation:** `selectClips` maps the model-independent state to clips:
+  - actions take their share first, locomotion gets the rest as a 1D blend of the two nearest gaits, with playback
+    scaled so the feet keep pace;
+  - missing clips are skipped cleanly;
+  - clip names and need levels are in `MOKE_CLIPS`.
+- **Personality:** after ~8 s standing still he sits (sometimes a play-bow stretch first) and hops straight up when
+  he moves. Sometimes he tilts his head at something new. Lying down is staged rump first, then front. Sniffing
+  lowers his head toward the strongest scent; a bark lifts his tail.
+- **Attention:** `AttentionSystem` has him glance at toys and his bed in front of him, look away, get bored of
+  staring, follow the scent while sniffing, and stay quiet while busy or running.
+- **Carrying:** carried toys use the reusable `attachments.mouth` socket on both visuals. The sock, ball and rope toy
+  offsets were retuned so each sits in his mouth.
+- **One authoritative scale:** `MOKE_CHARACTER.size` (`src/config/mokeCharacter.ts`). The camera pivot and ducking
+  threshold derive from it, with values unchanged; `MOKE_SIZE` is gone from `world.ts`.
+- **Performance:** no per-frame allocations in the new code; the gamepad path's two per-frame allocations were
+  removed (a Phase 1 review item).
+- **Docs:**
+  - new: `MOKE_3D_SPEC.md`, `MOKE_INTEGRATION.md` and `PHASE_2.md`;
+  - updated: `MOKE_CHARACTER_REFERENCE.md` (modelling observations), `ASSETS.md`, `ARCHITECTURE.md`,
+    `DECISIONS.md` (D14; D12 is now the stand-in), `AGENTS.md` and `README.md`.
+- **Not done: the final `moke.glb`.** It needs external modelling, texturing, rigging and animation.
 **Milestone 1: foundation.**
 - Vite + strict TypeScript + three.js, Vitest, static build.
 - Original I'M DOG? screens; state machine; fixed 60 Hz step; resize/DPR-aware renderer; action-based input.
@@ -140,7 +177,7 @@ Phase 1 audit, gamepad support, the cute growl and a collar refit.
   - Menu decisions moved into `core/MenuInput.ts` (tested); A or Start closes the Controls dialog when it's open.
 - Not fixed yet (from the same review): the toast and "E — …" prompt aren't announced by screen readers (their
   text changes while still `aria-hidden`); Codex recoloured the sock charcoal without updating the docs (the M6 notes
-  below still say coral); two small controller-code allocations per frame.
+  below still say coral). The two small controller-code allocations per frame were fixed in Phase 2.
 - **Hosting:** GitHub Pages at https://christopher-013.github.io/im-dog/ via `.github/workflows/deploy-pages.yml` (tests + build on every push to
   `main`). The owner chose to make the repo public; the git history was audited first (only the photo folder's
   README was ever committed; no images, secrets or private files).
@@ -166,14 +203,18 @@ Phase 1 audit, gamepad support, the cute growl and a collar refit.
 - `Game` owns the scene, renderer, input, physics, UI and state machine. Frame order:
   1. input
   2. global keys
-  3. discrete actions (while playing): E → `InteractionSystem.interact()`, F → bark, Q → sniff, move keys → get up
+  3. discrete actions (while playing): E → `InteractionSystem.interact()`, F → bark, G → growl, Q → trick,
+     R → sniff, move keys → get up
   4. fixed steps: `MoveBasis` → `MoveIntent` → `Moke.fixedUpdate` (or `glideTo` / held still by `RestSystem`)
      → `RestSystem.update` → `PhysicsWorld.step` → `Prop.afterStep`
-  5. `Moke.update`, `Prop.render`, interaction prompt, `ScentSystem` + `ScentWisps`, resting HUD
+  5. `updateAttention` (what he glances at) → `Moke.update`, `Prop.render`, interaction prompt, `ScentSystem` +
+     `ScentWisps`, resting HUD
   6. `ThirdPersonCamera.update` (bark bubble placed after it)
   7. render
   8. debug
-- **Moke:** `MokeController` → `MokeAnimationController` → `MokeVisual` (placeholder). Gameplay never touches meshes.
+- **Moke:** `MokeController` → `MokeAnimationController` (+ `AttentionSystem` → `Moke.lookAt`) → `MokeVisual`.
+  `createMokeVisual()` picks `GltfMokeVisual` (`moke.glb`, not made yet) or the `ToonMokeVisual` stand-in. Gameplay
+  never touches meshes. Carrying uses `visual.attachments.mouth`. Moke's size lives only in `MOKE_CHARACTER.size`.
 - **Physics:** `PhysicsWorld` (static boxes with collision layers, `sweepSphere`, `rayDistance`), `CharacterBody`
   (kinematic capsule + toy bumper) and `PropBody` (dynamic props on the `toy` layer).
 - **Gameplay systems:** `interactions/` (`InteractionSystem`, `PickupSystem`, `RestSystem`), `props/` (`Prop`),
@@ -183,11 +224,21 @@ Phase 1 audit, gamepad support, the cute growl and a collar refit.
   - Palette in `materials.ts`, textures in `textures.ts`.
   - `RoomLighting` plus `applySoftEnvironment`.
 - **Tuning** is in `src/config/`: `movement.ts`, `camera.ts`, `animation.ts`, `input.ts`, `engine.ts` (including the
-  lighting balance), `world.ts`, `interaction.ts` (reach, rest), `props.ts`, `senses.ts`, `audio.ts`.
+  lighting balance), `world.ts`, `interaction.ts` (reach, rest), `props.ts`, `senses.ts`, `audio.ts`,
+  `mokeCharacter.ts` (size and `moke.glb` conventions), `attention.ts`.
 - **Moke's look:** `ToonMokeVisual` + `player/toon/` (fur geometry with curls and creases, soft toon/outline materials, eye and tag textures), tuned in `config/mokeLook.ts`.
 - Details: `docs/ARCHITECTURE.md` (sections "Interactions", "Props and carrying", "Sniff mode", "Bark and audio").
 
 ## Current Gameplay State
+**Phase 2 personality (2026-09-24):**
+- Standing still, Moke glances at the toys and his bed in front of him, sometimes with a curious head tilt.
+- After about 8 s he sits, sometimes with a play bow first, and hops straight up when you move.
+- Sniff mode turns his head toward the strongest scent.
+- He lies down in his bed rump first, then front.
+- Carried toys sit in his mouth.
+
+Controls and gameplay are otherwise exactly as in Phase 1.
+
 **Gamepad controls (2026-09-24):** standard browser gamepads are detected automatically. Left stick/D-pad moves,
 right stick looks, A/bottom interacts and confirms, B/right barks, X/left does a trick, Y/top growls, right stick press
 sniffs, LB/LT walks, RB/RT runs,
@@ -243,6 +294,23 @@ From Milestone 4, verified in the browser (dev server and a production-build loa
 - **Not yet judged hands-on with a physical mouse and keyboard.**
 
 ## Known Issues
+New in Phase 2:
+- **There's no final `moke.glb`, so Phase 2's goal isn't met yet.** The Moke on screen is the procedural stand-in.
+- The glTF path is tested only with a synthetic model (a box with named bones, sockets and dummy clips). A real
+  model may still turn up problems: skinned bounds for the height check, blend quality, socket placement, how
+  PBR fur looks under the room lighting.
+- Without a `duck` clip, the procedural head dip may not be enough for a real model to clear the coffee table.
+  The spec asks for `duck`.
+- The stand-in is heavy: 37 meshes and ~110k triangles of fur geometry. The final model's budget is 15–40k.
+- The main bundle grew from 773 kB (the `phase-1-complete` build) to 804 kB (217 kB gzipped), +31 kB, with the
+  animation mixer and glTF path.
+- Scratching isn't triggered by anything yet. `scratch` and `look_around` are reserved clip names; looking around
+  already happens through the procedural idle head looks.
+- Glance pacing, interest values, sitting after 8 s, the stretch chance and the head-tilt chance are first guesses
+  that need the owner's feel check (`config/attention.ts`, `config/animation.ts`).
+- The browser checks stepped frames by hand (`imdog.frame`, since the pane pauses rendering while hidden), so
+  nothing has been judged at full frame rate.
+
 Carried over:
 - Pointer lock is untested with a physical mouse (the embedded test browser uses drag-to-look).
 - The embedded browser reported roughly 25–29 FPS at 1920×953, but automation/background throttling and 100 ms stalls make that unsuitable as a real-GPU benchmark; recheck manually.
@@ -263,7 +331,7 @@ New in Milestone 10 (Moke's look):
 - From the usual follow camera (behind and above) his plume tail covers much of the back of his head. That's true
   to the real Moke, but it could be lowered.
 - The eyes are unlit decals: they don't darken in the dim hallway.
-- There's no sit pose (several photos show him sitting).
+- ~~There's no sit pose.~~ Fixed in Phase 2: he sits after standing still for ~8 s.
 - The logo "O" face (inline SVG) is still the earlier cartoon face with pink cheeks; it could be redrawn to match.
 - The tag's name is small: readable in close-ups, not from the usual follow camera behind him.
 - The collar's loop is measured in the standing pose. It moves with his head, so when he sniffs or lies down it can
@@ -278,6 +346,20 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-24 for Phase 2 (the working tree that became the Phase 2 commit):
+
+| Command / check | Result |
+|---|---|
+| Baseline (`phase-1-complete`, a clean worktree) | Typecheck pass; 27 files / 179 tests pass; build pass (main bundle 773 kB); dev server smoke test: sock pickup, carry, run, drop, bark, sniff, trick; no console errors; ~1.22 ms per stepped frame. (Its first run was the pre-brief check on the same commit. This was re-run in the verification pass, since no fresh baseline had run before the first Phase 2 change.) |
+| `npm run typecheck` | Pass |
+| `npm test` | Pass: 31 files, 215 tests. New: clip selection ×8, `GltfMokeVisual` ×11, choosing the visual ×4, `AttentionSystem` ×5, sit/stretch/busy/look ×4, stand-in size/attachments/rump-first/floor ×4 |
+| `npm run build` | Pass. Main bundle 804 kB (217 kB gzipped). `verify-dist`: no private photos. The test-only synthetic model isn't in the bundle. |
+| In-app browser, dev server (frames stepped via `imdog.frame`) | Idle: glanced at the sock and ball, then sat. From the sit he moved off (sit 0.01, 1.8 m/s). Carrying: "Pick Up Sock", sock in the mouth, running with it at 4 m/s, dropped back into the world. Also: sock, ball and rope toy carry offsets; run → stop → bark; sniff (head toward the scent), including while moving; lying in the bed and W to get up; rapid mixed input recovered; tricks (paw, belly up); growl; under the coffee table (headroom 0.40 m, crouch 0.62, the stand-in's top 0.383 m, clear). Console: only the intended `[moke]` stand-in warning, no errors. |
+| In-app browser, production preview | Loaded, PLAY started the game with the stand-in; `moke.glb` never requested; the console's only line is the `[moke]` stand-in note as `info` |
+| Verification pass (same day) | Run → pickup (grabbed at 4 m/s, sock in the mouth); carry + run + turn (sock ≥ 14.6 cm above the floor); ball knocked 0.32 m by a run into it; Esc pauses and RESUME resumes; no console errors. Also resolved the "speed 0 after pickup" reading: he'd run into a wall (the same in the baseline). |
+| Performance (dev server, 800×450 pane) | ~1.31 ms per stepped frame vs. the baseline's ~1.22 ms (same method, 3 × 300 frames each; the Phase 2 tab also had the debug panel on). Moke's visual update ~0.004 ms. 105 draw calls and ~190k triangles rendered including shadows; the stand-in alone is 37 meshes, ~110k triangles |
+| Not verified | A real `moke.glb` (none exists); feel at full frame rate; real-GPU FPS; a physical controller; Firefox and Safari |
+
 Run on 2026-09-24 after the review fixes and adding hosting:
 
 | Command / check | Result |
@@ -371,15 +453,25 @@ Earlier, at the end of Milestone 4:
 - `src/interactions/`, `src/props/`, `src/senses/`, `src/audio/`.
 - Gamepad: `src/core/GamepadInput.ts`, `src/core/InputState.ts`, and mappings/tuning in `src/config/input.ts`.
 - Moke's look: `src/player/ToonMokeVisual.ts`, `src/player/toon/`, `src/config/mokeLook.ts`.
+- Phase 2:
+  - docs: `docs/PHASE_2.md`, `docs/MOKE_3D_SPEC.md`, `docs/MOKE_INTEGRATION.md`;
+  - character and scale: `src/config/mokeCharacter.ts`;
+  - the model path: `src/player/MokeVisual.ts` and `src/player/gltf/` (`GltfMokeVisual.ts`, `clips.ts`,
+    `testing/syntheticMoke.ts`);
+  - attention: `src/player/AttentionSystem.ts` and `src/config/attention.ts`;
+  - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-1. **Define Phase 2:** write `docs/PHASE_2.md` (goal, scope, what's out of scope, milestones, success criteria) with
-   the owner, and get it approved before any Phase 2 code (D6: one polished slice before expanding).
-2. **Carried-over checks** from Phase 1, best done on the hosted build (https://christopher-013.github.io/im-dog/): pointer lock with a physical
-   mouse, audio by ear, a physical controller, real-GPU frame rate, Firefox and Safari, and the feel of movement,
-   camera and tricks.
-3. **Carried-over polish** (the owner decides whether it belongs in Phase 2). Candidates:
-   - redraw the logo "O" face to match the real Moke;
-   - a sit pose when idle;
-   - Known Issues above (loading-overlay ghosting, carried props poking walls, drop vs. lie-down priority);
-   - the open questions: final bark sound, walk key C, camera auto-follow strength.
+1. **Get the final `moke.glb` made. This is what blocks Phase 2.** The owner decides who makes it (an artist they
+   commission, their own work, or another pipeline). Hand over `docs/MOKE_3D_SPEC.md`, the extra reference listed in
+   `docs/MOKE_CHARACTER_REFERENCE.md`, and screenshots of the stand-in. The private photos go only via the owner.
+2. **When it arrives:** install and test it per `docs/MOKE_INTEGRATION.md`, fix every `[moke]` note, and get the
+   owner's verdict ("is that Moke?"). Then close Phase 2.
+3. **Push when the owner asks.** The Phase 2 commit is local; a push to `main` publishes
+   the game.
+4. **Feel check** by the owner: glances, sitting after 8 s, the head tilt, the staged lie-down, carrying.
+5. **Carried-over checks** from Phase 1: pointer lock with a physical mouse, audio by ear, a physical controller,
+   real-GPU frame rate, Firefox and Safari. Carried-over polish candidates: the logo "O" face, carried props poking
+   walls, drop vs. lie-down priority, the final bark, walk key C, camera auto-follow strength.
+
+**Not to start without the owner's approval:** humans, Sock Heist, more rooms, or another phase.

@@ -5,6 +5,7 @@
  * Units: metres, seconds, radians, degrees for field of view.
  * "Smoothing" values are responsiveness per second: ~4 is lazy, ~15 is snappy.
  */
+import { MOKE_CHARACTER } from './mokeCharacter';
 export interface CameraTuning {
   fov: number;
   /** Extra field of view at full speed, for a sense of speed (degrees). */
@@ -95,7 +96,8 @@ export const CAMERA: CameraTuning = {
   maxDistance: 2.6,
   zoomFactorPerStep: 1.12,
 
-  pivotHeight: 0.36,
+  /** A little above his eyes (MOKE_CHARACTER.size.eyeHeight), so the view skims over his head. */
+  pivotHeight: MOKE_CHARACTER.size.eyeHeight + 0.03,
   minPivotHeight: 0.14,
   lookAbove: 0.06,
 

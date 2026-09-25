@@ -18,10 +18,20 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 | Favicon | `public/favicon.svg` | Simplified Moke face |
 | Living room, hallway, furniture, lighting | `src/world/` | Built in code from simple shapes |
 | Floorboard, rug, pillow, wall-art and garden textures | `src/world/textures.ts` | Original canvas drawings generated at startup (no image files) |
-| Moke (incl. collar and tag) | `src/player/ToonMokeVisual.ts`, `src/player/toon/` | Generated in code: procedural curly fur geometry, original toon/outline shaders, an eye texture and the tag's "Moke" lettering (Fredoka font, OFL) drawn on a canvas at startup (no image files). Modelled on the private photos of the real Moke (looked at, never copied or bundled); an earlier pass followed an anime illustration the owner shared in chat. |
+| Moke (incl. collar and tag), **stand-in** | `src/player/ToonMokeVisual.ts`, `src/player/toon/` | Generated in code: procedural curly fur geometry, original toon/outline shaders, an eye texture and the tag's "Moke" lettering (Fredoka font, OFL) drawn on a canvas at startup (no image files). Modelled on the private photos of the real Moke (looked at, never copied or bundled); an earlier pass followed an anime illustration the owner shared in chat. **Since Phase 2 it's the stand-in and permanent fallback** until the final `moke.glb` exists (see below). All its animation is procedural code, with no clips. |
+| Synthetic test model | `src/player/gltf/testing/syntheticMoke.ts` | Test-only: a tiny box "dog" with bones, sockets and dummy clips built in code to the spec. Never shipped (only imported by tests). |
 | Sock, tennis ball, rope toy | `src/props/propVisuals.ts` | Built in code from simple shapes |
 | Scent wisps | `src/senses/ScentWisps.ts` | Procedural particles, a small original shader |
 | Bark, sniff, pickup and drop sounds | `src/audio/synth.ts` | **Original, synthesized with Web Audio at play time** (oscillators, formant filters and generated noise). No recordings or sample files. Placeholder until the owner picks a final bark (see below). |
+
+## Temporary assets that must be replaced before release
+| Temporary asset | Replaced by | Status |
+|---|---|---|
+| `ToonMokeVisual` (procedural stand-in Moke) | The final rigged, animated `moke.glb` (`docs/MOKE_3D_SPEC.md`) | **Blocking Phase 2.** Not made yet. The stand-in stays in code as the fallback only. |
+| Synthesized bark, growl, sniff, pickup and drop sounds | The owner's chosen final sounds (ideally Moke's real bark) | Placeholders (original, so no licence problem), pending the owner's choice |
+
+Everything else in the tables above is original and can ship as is. It could still be improved (for example
+nicer furniture models), but nothing else has to be replaced.
 
 ## Private references (never distributed)
 | Asset | Where | Notes |
@@ -31,6 +41,7 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 ## Needed later (not sourced yet)
 | Need | Milestone | Plan |
 |---|---|---|
-| Final `moke.glb` (rigged, animated) | Later | Separate modeling/rigging workflow from the reference photos |
+| **Final `moke.glb` (rigged, animated)** | **Phase 2 (blocking)** | **Not made yet.** The main missing piece of Phase 2. Build it to `docs/MOKE_3D_SPEC.md` (mesh, PBR textures, skeleton, `blink` morph, sockets, and all clips from `idle` to `trick_spin` in one file) and install it per `docs/MOKE_INTEGRATION.md` at `public/assets/models/moke/moke.glb`. It must be original work made for this project (by the owner or someone they commission) or properly licensed for it. **No marketplace dog models or animation packs retargeted onto him without owner approval**, and never a purchase without approval. Record here: author, licence, date, and where the source files live (outside `public/`). The photos go to the modeller only via the owner (D8). |
+| Animation clips for `moke.glb` | Phase 2 | Made with the model (same file). There's no animation source yet; motion capture or stock clips need the licence rules above. |
 | Final bark (owner's choice), footsteps (carpet/wood), room ambience | 10 | Synthesized placeholders exist for bark/sniff/pickup/drop. For finals: CC0 sources (e.g. Freesound CC0 only, Kenney) or recorded; ideally Moke's real bark if you record one |
 | Nicer furniture/prop models (optional) | 10 | In-code geometry is in place; optionally CC0 packs (Kenney, Poly Pizza CC0) later |

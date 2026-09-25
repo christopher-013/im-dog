@@ -448,7 +448,19 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
   cursor: pointer;
 }
 
-.setting input:focus-visible {
+.setting select {
+  padding: 4px 8px;
+  border: 2px solid var(--ink-soft);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.setting input:focus-visible,
+.setting select:focus-visible {
   outline: 3px solid var(--leaf);
   outline-offset: 3px;
 }
@@ -1437,9 +1449,9 @@ html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: center;
     column-gap: 22px;
-    row-gap: 8px;
+    row-gap: 6px;
     width: min(640px, calc(100vw - 32px));
-    padding: 16px 22px;
+    padding: 12px 22px;
   }
   .screen-pause .card-title,
   .screen-pause .card-text {
@@ -1451,6 +1463,9 @@ html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
   .screen-pause .settings {
     width: 100%;
     margin-top: 0;
+    /* Five settings in a short window: a little tighter. */
+    gap: 7px;
+    padding: 10px 14px;
   }
   .screen-pause .menu-buttons {
     width: 100%;

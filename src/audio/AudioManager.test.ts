@@ -115,20 +115,24 @@ describe('AudioManager (phones)', () => {
     expect(ctx.started).toBeGreaterThan(0);
   });
 
-  it('plays the music only once play has begun, and follows the Music setting', () => {
+  it('plays the music only once play has begun, and follows the Music settings: song, off, volume', () => {
     vi.useFakeTimers();
     try {
       const audio = new AudioManager();
       audio.unlock();
-      expect(audio.musicPlaying).toBe(false); // the menu: not yet
+      expect(audio.musicPlaying).toBe(null); // the menu: not yet
       audio.startMusic();
-      expect(audio.musicPlaying).toBe(true);
+      expect(audio.musicPlaying).toBe('hawaiian');
       expect(FakeContext.last!.started).toBeGreaterThan(0); // the first notes are scheduled
-      audio.musicEnabled = false;
+      audio.setMusic('japan', 1); // crossfades to the other song
+      expect(audio.musicPlaying).toBe('japan');
+      audio.setMusic('off', 1);
       vi.advanceTimersByTime(3000); // fades out, then stops
-      expect(audio.musicPlaying).toBe(false);
-      audio.musicEnabled = true;
-      expect(audio.musicPlaying).toBe(true);
+      expect(audio.musicPlaying).toBe(null);
+      audio.setMusic('hawaiian', 0); // volume 0 is as good as off
+      expect(audio.musicPlaying).toBe(null);
+      audio.setMusic('hawaiian', 0.5);
+      expect(audio.musicPlaying).toBe('hawaiian');
     } finally {
       vi.useRealTimers();
     }
@@ -136,10 +140,10 @@ describe('AudioManager (phones)', () => {
 
   it('keeps the music off from the start when the player turned it off', () => {
     const audio = new AudioManager();
-    audio.musicEnabled = false;
+    audio.setMusic('off', 1);
     audio.unlock();
     audio.startMusic();
-    expect(audio.musicPlaying).toBe(false);
+    expect(audio.musicPlaying).toBe(null);
   });
 
   it('never throws when a phone has no Web Audio, and leaves a running context alone', () => {

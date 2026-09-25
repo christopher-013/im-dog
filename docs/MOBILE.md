@@ -85,7 +85,10 @@ touch ────────────┘
 - **PLAY** (a tap) starts the audio. Browsers only allow sound after a gesture. There's no pointer lock on touch.
 - **Background music** plays on phones too, and keeps its level through a phone speaker (it lives in the
   midrange: only 1.3 dB quieter through the phone-speaker filter). With the iPhone `playback` audio session, it
-  pauses other apps' music while the game is open and playing. The pause screen's **Music** switch turns it off.
+  pauses other apps' music while the game is open and playing. The pause screen chooses the song (Hawaiian or
+  Japan Stores) or Off, and sets its volume. "Irasshaimase!" was remixed for phone speakers (a softer kick and
+  bass, a stronger lead and chords): it loses 4.2 dB through the phone-speaker filter against the Hawaiian song's
+  1.1 dB, and its loudness trim splits the difference (within ~1.5 dB on both).
 - **Sound on phones** (fixed 2026-09-25, after the owner heard no bark or growl on their phone):
   - **Every tap, click or key wakes the audio** (`AudioManager.wake()`), not just PLAY and RESUME. Phones stop web
     audio by themselves (a call, Siri, the lock screen, switching apps) and only a gesture may restart it. iOS

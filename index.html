@@ -250,9 +250,18 @@
               <input id="setting-invert-y" type="checkbox" />
               <label class="setting-label" for="setting-invert-y">Invert vertical look</label>
             </div>
-            <div class="setting setting-toggle">
-              <input id="setting-music" type="checkbox" />
+            <div class="setting">
               <label class="setting-label" for="setting-music">Music</label>
+              <select id="setting-music">
+                <option value="hawaiian">Hawaiian</option>
+                <option value="japan">Japan Stores</option>
+                <option value="off">Off</option>
+              </select>
+            </div>
+            <div class="setting">
+              <label class="setting-label" for="setting-music-volume">Music volume</label>
+              <output id="setting-music-volume-value" for="setting-music-volume">100%</output>
+              <input id="setting-music-volume" type="range" />
             </div>
           </div>
           <div class="menu-buttons">

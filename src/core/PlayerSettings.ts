@@ -6,12 +6,19 @@ export interface PlayerSettings {
   /** Multiplier on the base mouse sensitivity. */
   mouseSensitivity: number;
   invertY: boolean;
-  /** Background music on or off. */
-  music: boolean;
+  /** Which background music plays, or none. */
+  music: MusicChoice;
+  /** Music loudness: 1 is the level it was mixed at. */
+  musicVolume: number;
 }
 
-export const DEFAULT_SETTINGS: Readonly<PlayerSettings> = { mouseSensitivity: 1, invertY: false, music: true };
+/** The pause screen's Music choices (the songs are in audio/music.ts). */
+export const MUSIC_CHOICES = ['hawaiian', 'japan', 'off'] as const;
+export type MusicChoice = (typeof MUSIC_CHOICES)[number];
+
+export const DEFAULT_SETTINGS: Readonly<PlayerSettings> = { mouseSensitivity: 1, invertY: false, music: 'hawaiian', musicVolume: 1 };
 export const SENSITIVITY_RANGE = { min: 0.25, max: 3, step: 0.05 } as const;
+export const MUSIC_VOLUME_RANGE = { min: 0, max: 1.5, step: 0.05 } as const;
 
 const STORAGE_KEY = 'imdog.settings.v1';
 
@@ -27,7 +34,12 @@ export function parseSettings(raw: string | null): PlayerSettings {
       settings.mouseSensitivity = clamp(value.mouseSensitivity, SENSITIVITY_RANGE.min, SENSITIVITY_RANGE.max);
     }
     if (typeof value.invertY === 'boolean') settings.invertY = value.invertY;
-    if (typeof value.music === 'boolean') settings.music = value.music;
+    // Before the choice of songs, Music was a plain on/off.
+    if (typeof value.music === 'boolean') settings.music = value.music ? 'hawaiian' : 'off';
+    else if ((MUSIC_CHOICES as readonly unknown[]).includes(value.music)) settings.music = value.music as MusicChoice;
+    if (typeof value.musicVolume === 'number' && Number.isFinite(value.musicVolume)) {
+      settings.musicVolume = clamp(value.musicVolume, MUSIC_VOLUME_RANGE.min, MUSIC_VOLUME_RANGE.max);
+    }
   } catch {
     // Corrupt JSON: keep defaults.
   }

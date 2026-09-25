@@ -143,10 +143,10 @@ export class Game {
     });
     const settings = loadSettings();
     applySettings(settings);
-    this.audio.musicEnabled = settings.music;
+    this.audio.setMusic(settings.music, settings.musicVolume);
     ui.bindSettings(settings, (changed) => {
       applySettings(changed);
-      this.audio.musicEnabled = changed.music;
+      this.audio.setMusic(changed.music, changed.musicVolume);
       saveSettings(changed);
     });
     ui.setInputMode(this.input.mode);
@@ -605,7 +605,7 @@ export class Game {
       state: this.state,
       'pointer lock': this.input.pointerLockSupported ? (this.input.isPointerLocked ? 'locked' : 'free') : 'unsupported',
       'fixed step': `${(this.fixedStep.step * 1000).toFixed(2)} ms`,
-      audio: `${this.audio.status}${this.audio.musicPlaying ? ' · music on' : ''}`,
+      audio: `${this.audio.status}${this.audio.musicPlaying ? ` · music: ${this.audio.musicPlaying}` : ''}`,
       barks: this.barkTimer.count,
     }));
     this.debug.addSection('Moke', (): DebugValues => {

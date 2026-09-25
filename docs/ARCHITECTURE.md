@@ -325,17 +325,23 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - Body language: `Moke.sniffing` → `MokeAnimationState.sniff` (nose down, quick twitches). UI: a warm vignette.
 
 ## Background music (`audio/music.ts`, tuning `MUSIC` in `config/audio.ts`)
-- "Aloha, Moke": an original 8-bit island-lounge tune, stored as data (`SONG`: chords per bar, melody notes with
-  slides). `songEvents()` turns it into timed notes (swing applied); tests check that every bar is full and every
-  strong-beat melody note fits its chord.
+- Two original 8-bit songs, stored as data (`SONGS`): "Aloha, Moke" (Hawaiian) and "Irasshaimase!" (Japan Stores).
+  A `Song` is chords per bar, a melody (notes with optional slides), an optional bells line, "sparse" bars (just
+  bells and a held bass note: the door chime and the school chime), a `Band` (each instrument's sound and the
+  rhythm section's patterns) and a loudness trim so both songs sit at the same level. `songEvents()` turns a song
+  into timed notes (swing applied); tests check that every bar is full and every strong-beat melody note fits its
+  chord, for both songs.
 - `MusicSequencer` (pure timing, tested) hands out the notes a little ahead of the audio clock (lookahead 0.35 s,
   topped up every 0.1 s) and loops seamlessly. After a stall it skips late notes rather than playing a burst.
-- `MusicPlayer` plays them: triangle bass, pulse-wave ukulele strums, a square-wave steel-guitar lead (slide,
-  vibrato, soft echo) and a noise shaker, through a mellow low-pass and a fade. It can also render a whole pass
-  offline (`renderInto`), which is how the levels were measured.
-- `AudioManager` creates it with the audio (a failure there never costs the sound effects), starts it when play
-  begins (`startMusic`), lowers it on the pause screen (`duckMusic`), and follows the player's **Music** setting
-  (pause screen, `PlayerSettings.music`, on by default). Hiding the page suspends it with everything else.
+- `MusicPlayer` plays one song with its band: triangle bass, pulse-wave chords (strums or stabs), a pulse-wave lead
+  (slides, vibrato, echo), chiptune bells, and percussion (shaker, or a kick, snare and hi-hat), through a
+  mellow low-pass and a fade. It can also render a whole pass offline (`renderInto`), which is how the levels
+  were measured and matched.
+- `AudioManager` makes one player per song the first time it's chosen (a failure there never costs the sound
+  effects), starts the music when play begins (`startMusic`), lowers it on the pause screen (`duckMusic`), and
+  follows the player's settings (`setMusic(choice, volume)`; pause screen, `PlayerSettings.music` and
+  `musicVolume`): switching songs crossfades, Off or volume 0 fades out. Hiding the page suspends it with
+  everything else.
 
 ## Bark and audio (with Milestone 8)
 - One button for his voice (F, controller Y, the touch Bark button): `barkOrGrowl()` picks a bark or a growl at

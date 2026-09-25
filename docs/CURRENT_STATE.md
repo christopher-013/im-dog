@@ -71,6 +71,18 @@ else to change in the game's look and feel.
   says "Hold the paw button for more". Code: `TouchInput` (`TOUCH.menuHoldTime`, `menuIdleClose` in
   `config/input.ts`), `.touch-actions.is-open` in `main.css`.
 
+**Owner request, 2026-09-25 (committed and pushed): a music volume, and a second song, "Japan Stores".** The owner: "The music
+sounds great." The pause screen now has **Music** (Hawaiian, Japan Stores or Off) and **Music volume** (0–150%),
+both remembered; old saved settings carry over (Music off stays off). The owner asked for 8-bit versions of real
+Japanese store entrance chimes (FamilyMart, Lawson, 7-Eleven, Don Quijote), linking videos. Those jingles are other
+people's compositions (FamilyMart's is a Panasonic melody; Don Quijote's is its own theme song), and the repo is
+public with an original/CC0/licensed-only rule, so they weren't copied. Instead, an original theme in that spirit,
+"Irasshaimase!" (`src/audio/music.ts`): every 50 s loop opens with an original "ding-dong… welcome!" door chime,
+then a bright tune in the Japanese pop pentatonic over a bouncy shop-radio groove (octave-jumping bass, off-beat
+stabs, a thin pulse lead, a kick/snare/hat drum machine). Midway the bells play the Westminster Quarters, the
+Japanese school chime (1793, public domain). Switching songs crossfades. The music code now takes a band per song;
+the Hawaiian song's note list was fingerprinted before and after the change and is identical.
+
 **Owner request, 2026-09-25 (committed and pushed): background music.** "8-bit video games but Hawaiian styled… like
 elevator muzak". An original tune, "Aloha, Moke" (`src/audio/music.ts`): 24 bars, a 64 s loop, 90 BPM, gently swung;
 a triangle bass walking between chords, a pulse-wave ukulele strumming the island rhythm on real uke chord
@@ -422,10 +434,11 @@ From Milestone 4, verified in the browser (dev server and a production-build loa
 
 ## Known Issues
 New with the music:
-- **Nobody has heard it yet** (Claude can't listen): the melody, mix, swing and level are by design and by
-  measurement only. Level: `MUSIC.level`; the band's mix: `MIX` in `music.ts`.
-- One 64 s loop, repeated: pleasant muzak, but it may wear thin in long sessions. A second song or variations
-  would help.
+- ~~Nobody has heard it yet~~: the owner says the Hawaiian song "sounds great". **"Irasshaimase!" hasn't been heard
+  yet**: its tune, groove and mix are by design and measurement only. Mix: its `band` in `music.ts`; loudness:
+  its `gain`.
+- It isn't the stores' own chimes (not ours to copy; see Completed); it's an original in their style.
+- Each song is one loop (64 s and 50 s), repeated.
 - On iPhones (the `playback` session) it pauses the player's own music app while the game plays.
 
 New with the jump:
@@ -515,6 +528,16 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-25 for the music volume and "Japan Stores" (the working tree that became its commit): typecheck pass; 44 files, 318 tests pass (the song tests
+now run for both songs ×3 each, plus the door chime and school chime placement; `AudioManager`: song choice,
+crossfade, Off, volume 0 as off; settings: choice and volume saved, old on/off settings and nonsense handled). The
+Hawaiian note list's fingerprint (468 notes) is identical before and after the refactor. Offline renders: no errors
+or clipping; after remixing and a ×2.15 trim, "Irasshaimase!" −34.4 dB (phone filter −38.6) against "Aloha, Moke"
+−36.0 (−37.1). In the browser: the pause screen offers Hawaiian / Japan Stores / Off and a 0–150% volume; choosing
+Japan Stores crossfaded (Hawaiian faded out and stopped, Japan faded in to the paused level 0.087); 50% halved it;
+Off stopped it and saved. The pause card fits at 568×320 (after tightening its spacing there), 667×375, 375×667
+and 800×450. **Not verified: listening to "Irasshaimase!".**
+
 Run on 2026-09-25 for the background music (the working tree that became its commit): typecheck pass; 44 files, 313 tests pass (new: the song ×5:
 full bars, strong-beat notes fit their chords, a sorted loop with the island strum and swing, the sequencer hands
 out each note once and loops without a seam, no burst after a stall; `AudioManager` ×2: music only once play
@@ -688,8 +711,8 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-0. **Owner listen to the music** (pushed): does it sound 8-bit, Hawaiian and muzak-y, and is the level right?
-   Also still open: the phone sound check (silent switch on and off, after a lock).
+0. **Owner listen to "Irasshaimase!"** (pushed): pause → Music → Japan Stores. Is it the convenience-store
+   feel? Also try the Music volume. Still open: the phone sound check (silent switch on and off, after a lock).
 1. **Owner review of Phase 3:** play Sock Heist on the desktop (the hosted site or `npm run dev`). Commit or push only
    when the owner asks: a push to `main` publishes the game.
 2. **Play it on a real phone.** The hosted site (https://christopher-013.github.io/im-dog/) has Phase 3 and allows

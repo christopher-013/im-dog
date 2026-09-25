@@ -1,7 +1,7 @@
 import { CONTROL_HINTS, GAMEPAD_CONTROL_HINTS, KEY_BINDINGS, TOUCH_CONTROL_HINTS, type Action, type GamepadControlHint } from '../config/input';
 import type { InputMode } from '../core/InputMode';
 import { keyLabel } from '../core/InputState';
-import { SENSITIVITY_RANGE, type PlayerSettings } from '../core/PlayerSettings';
+import { MUSIC_CHOICES, MUSIC_VOLUME_RANGE, SENSITIVITY_RANGE, type MusicChoice, type PlayerSettings } from '../core/PlayerSettings';
 import { actionGlyph, onboardingRows } from './ControlGlyphs';
 
 export type Screen = 'loading' | 'menu' | 'paused' | 'complete' | 'error';
@@ -135,7 +135,9 @@ export class UIManager {
     const slider = this.el<HTMLInputElement>('setting-sensitivity');
     const readout = this.el<HTMLOutputElement>('setting-sensitivity-value');
     const invert = this.el<HTMLInputElement>('setting-invert-y');
-    const music = this.el<HTMLInputElement>('setting-music');
+    const music = this.el<HTMLSelectElement>('setting-music');
+    const volume = this.el<HTMLInputElement>('setting-music-volume');
+    const volumeReadout = this.el<HTMLOutputElement>('setting-music-volume-value');
     const current = { ...initial };
 
     slider.min = String(SENSITIVITY_RANGE.min);
@@ -143,9 +145,15 @@ export class UIManager {
     slider.step = String(SENSITIVITY_RANGE.step);
     slider.value = String(current.mouseSensitivity);
     invert.checked = current.invertY;
-    music.checked = current.music;
+    music.value = current.music;
+    volume.min = String(MUSIC_VOLUME_RANGE.min);
+    volume.max = String(MUSIC_VOLUME_RANGE.max);
+    volume.step = String(MUSIC_VOLUME_RANGE.step);
+    volume.value = String(current.musicVolume);
     const showValue = () => (readout.textContent = `${current.mouseSensitivity.toFixed(2)}×`);
+    const showVolume = () => (volumeReadout.textContent = `${Math.round(current.musicVolume * 100)}%`);
     showValue();
+    showVolume();
 
     slider.addEventListener('input', () => {
       current.mouseSensitivity = Number(slider.value);
@@ -157,7 +165,12 @@ export class UIManager {
       onChange({ ...current });
     });
     music.addEventListener('change', () => {
-      current.music = music.checked;
+      if ((MUSIC_CHOICES as readonly string[]).includes(music.value)) current.music = music.value as MusicChoice;
+      onChange({ ...current });
+    });
+    volume.addEventListener('input', () => {
+      current.musicVolume = Number(volume.value);
+      showVolume();
       onChange({ ...current });
     });
   }

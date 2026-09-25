@@ -15,10 +15,15 @@ afterEach(() => applySettings(DEFAULT_SETTINGS));
 describe('PlayerSettings', () => {
   it('round-trips through storage', () => {
     const store = memoryStore();
-    saveSettings({ mouseSensitivity: 1.5, invertY: true, music: false }, store);
-    expect(loadSettings(store)).toEqual({ mouseSensitivity: 1.5, invertY: true, music: false });
-    // Settings saved before the Music option existed: music stays on.
-    expect(parseSettings('{"mouseSensitivity":1.5,"invertY":true}').music).toBe(true);
+    saveSettings({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6 }, store);
+    expect(loadSettings(store)).toEqual({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6 });
+    // Settings saved before the Music option existed: the Hawaiian song, at full volume.
+    expect(parseSettings('{"mouseSensitivity":1.5,"invertY":true}')).toMatchObject({ music: 'hawaiian', musicVolume: 1 });
+    // Saved when Music was a plain on/off switch.
+    expect(parseSettings('{"music":false}').music).toBe('off');
+    expect(parseSettings('{"music":true}').music).toBe('hawaiian');
+    // Nonsense falls back; the volume is kept in range.
+    expect(parseSettings('{"music":"polka","musicVolume":9}')).toMatchObject({ music: 'hawaiian', musicVolume: 1.5 });
   });
 
   it('falls back to defaults for missing or corrupt data', () => {
@@ -47,7 +52,7 @@ describe('PlayerSettings', () => {
   });
 
   it('applies to the live mouse config', () => {
-    applySettings({ mouseSensitivity: 2, invertY: true, music: true });
+    applySettings({ mouseSensitivity: 2, invertY: true, music: 'hawaiian', musicVolume: 1 });
     expect(MOUSE.sensitivityScale).toBe(2);
     expect(MOUSE.invertY).toBe(true);
   });

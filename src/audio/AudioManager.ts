@@ -1,5 +1,5 @@
 import { AUDIO, MUSIC } from '../config/audio';
-import { MusicPlayer } from './music';
+import { MusicPlayer, SONGS, type SongId } from './music';
 import { bark, crunch, discovery, drop, growl, pickup, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
 
 export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'discovery';
@@ -22,12 +22,14 @@ export class AudioManager {
   private failed = false;
   /** A resume() in flight, so sounds asked for meanwhile can wait for it instead of being lost. */
   private waking: Promise<void> | null = null;
-  private music: MusicPlayer | null = null;
-  /** The player's Music setting (pause screen). */
-  private musicOn = true;
+  /** One player per song, made the first time it's chosen (null: this browser can't make it). */
+  private readonly players = new Map<SongId, MusicPlayer | null>();
+  /** The player's Music settings (pause screen). */
+  private musicChoice: SongId | 'off' = 'hawaiian';
+  private musicVolume = 1;
   /** Play has begun (PLAY was pressed), so the music may run. */
   private musicStarted = false;
-  private musicLevel = 1;
+  private musicDucked = false;
 
   get status(): string {
     if (this.failed) return 'unavailable';
@@ -46,7 +48,6 @@ export class AudioManager {
         this.master.connect(ctx.destination);
         this.noise = whiteNoise(ctx, 1);
         this.ctx = ctx;
-        this.music = createMusic(ctx, this.master);
         this.updateMusic();
       }
       this.wake();
@@ -96,18 +97,20 @@ export class AudioManager {
     window.setTimeout(() => level.disconnect(), 1000);
   }
 
-  /** The Music setting. Turning it off fades the song out; on, it fades back in (once play has begun). */
-  get musicEnabled(): boolean {
-    return this.musicOn;
-  }
-
-  set musicEnabled(on: boolean) {
-    this.musicOn = on;
+  /**
+   * The Music settings: which song (or none) and how loud (1 = as mixed). Changing song crossfades; turning it off
+   * or the volume to 0 fades it out. Nothing plays until play has begun (startMusic()).
+   */
+  setMusic(choice: SongId | 'off', volume: number): void {
+    this.musicChoice = choice;
+    this.musicVolume = volume;
     this.updateMusic();
   }
 
-  get musicPlaying(): boolean {
-    return this.music?.isPlaying ?? false;
+  /** The song playing now, if any. */
+  get musicPlaying(): SongId | null {
+    for (const [id, player] of this.players) if (player?.isPlaying && id === this.wantedSong()) return id;
+    return null;
   }
 
   /** Background music from now on (call when play begins, after unlock()). */
@@ -118,19 +121,27 @@ export class AudioManager {
 
   /** Quieter on the pause screen, full during play. */
   duckMusic(ducked: boolean): void {
-    this.musicLevel = ducked ? MUSIC.pausedLevel : 1;
-    this.music?.setLevel(this.musicLevel);
+    this.musicDucked = ducked;
+    this.updateMusic();
+  }
+
+  private wantedSong(): SongId | null {
+    return this.musicStarted && this.musicChoice !== 'off' && this.musicVolume > 0.001 ? this.musicChoice : null;
   }
 
   private updateMusic(): void {
-    const music = this.music;
-    if (!music) return;
-    if (this.musicOn && this.musicStarted) music.play(this.musicLevel);
-    else music.stop();
+    const ctx = this.ctx;
+    const master = this.master;
+    if (!ctx || !master) return;
+    const wanted = this.wantedSong();
+    for (const [id, player] of this.players) if (id !== wanted) player?.stop();
+    if (!wanted) return;
+    if (!this.players.has(wanted)) this.players.set(wanted, createMusic(ctx, master, wanted));
+    this.players.get(wanted)?.play(this.musicVolume * (this.musicDucked ? MUSIC.pausedLevel : 1));
   }
 
   dispose(): void {
-    this.music?.stop();
+    for (const player of this.players.values()) player?.stop();
     void this.ctx?.close();
     this.ctx = null;
   }
@@ -151,9 +162,9 @@ function preferAudibleSession(): void {
 }
 
 /** The background music, if this browser can make it: a problem there must never cost the sound effects. */
-function createMusic(ctx: AudioContext, out: AudioNode): MusicPlayer | null {
+function createMusic(ctx: AudioContext, out: AudioNode, song: SongId): MusicPlayer | null {
   try {
-    return new MusicPlayer(ctx, out);
+    return new MusicPlayer(ctx, out, SONGS[song]);
   } catch (err) {
     console.warn('Music is unavailable:', err);
     return null;

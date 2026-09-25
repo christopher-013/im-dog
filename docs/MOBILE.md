@@ -4,15 +4,16 @@ I'M DOG? is one web game for desktop and mobile browsers: the same code, the sam
 no native app and no separate mobile version. Phase 3 made it playable by touch, including Sock Heist from start
 to finish.
 
-> **Testing status:** everything below was built and checked in **browser emulation** (Chromium device emulation
-> in the desktop app's browser pane, with synthetic touch events). It has **not yet been tested on a physical phone
-> or tablet.** See "Testing performed" and "Not tested".
+> **Testing status:** the owner reported that the game "looks and plays great" on their phone on 2026-09-25.
+> The exact phone, browser, installed-web-app status and test coverage were not recorded, so platform-specific
+> claims below still come from **browser emulation** (Chromium with synthetic touch). See "Testing performed"
+> and "Not tested".
 
 ## Target browsers
 | Priority | Browser | Status |
 |---|---|---|
-| 1 | iPhone Safari (and the home-screen web app) | Built for it; **not tested on a device** |
-| 1 | Android Chrome (and the installed web app) | Built for it; **not tested on a device** |
+| 1 | iPhone Safari (and the home-screen web app) | Built for it; not independently confirmed because the owner phone test's device/browser was not recorded |
+| 1 | Android Chrome (and the installed web app) | Built for it; not independently confirmed because the owner phone test's device/browser was not recorded |
 | 2 | iPad Safari, Android tablets | Layout checked in emulation (768×1024, 1024×768) |
 | — | Desktop Chrome/Edge | Unchanged, still the primary platform |
 
@@ -178,7 +179,14 @@ It stays hidden unless asked for.
    installing, use the hosted site (https://christopher-013.github.io/im-dog/).
 5. To test a production build on the phone: `npm run build`, then `npx vite preview --host`.
 
-## Testing performed (emulation, not real devices)
+## Testing performed
+- **Limited physical-phone playtest (owner, 2026-09-25):** "the mobile looks and plays great." The device,
+  browser, completed gameplay path, safe-area shape, installation status, frame rate and session length were not
+  recorded. The owner separately reported missing bark/growl audio; fixes landed afterward and remain unverified
+  on a phone.
+- **Independent Codex audit (browser emulation, 2026-09-25):** desktop startup, movement/actions, pause and pointer
+  lock; touch movement and camera; layouts at 390×844, 844×390, 667×375, 412×915 and 915×412; no overflow or
+  clipped controls and no runtime errors. This was not a physical-device test.
 - **Viewports, automated layout check** (after the final button spacing): 390×844, 412×915, 375×667 (portrait);
   844×390, 915×412, 667×375 (landscape); 768×1024 and 1024×768 (tablet). At each size the controls were on
   screen, 6 px or more apart, nothing scrolled, and the camera's field of view suited the orientation. Sizes 768 px
@@ -201,15 +209,15 @@ It stays hidden unless asked for.
 - **Quality:** a touch-emulated phone picks MEDIUM with a 1.5 pixel-ratio cap; desktop stays HIGH.
 
 ## Not tested
-- **Any physical phone or tablet** (iPhone Safari, Android Chrome, iPad), and therefore:
-  - how the controls feel under real thumbs;
-  - real touch-event quirks;
-  - iOS gesture handling;
-  - safe areas on notched phones;
+- A documented physical-device/browser matrix (iPhone Safari, Android Chrome and iPad). The limited owner phone
+  playtest did not record:
+  - which browser and phone were used;
+  - real touch-event and iOS gesture edge cases;
+  - safe areas on a notched phone;
   - home-screen installation and the installed app's display mode;
   - real frame rate, GPU load, heat and battery;
-  - audio on a real phone: whether the silent-switch and wake fixes work on the owner's phone, and how the
-    growl's rasp and the drop's tock sound through a real speaker (only measured through a filter here).
+  - whether the later silent-switch and audio-wake fixes work, or how the growl's rasp and drop's tock sound
+    through a real speaker (only measured through a filter here).
 - Fullscreen on a real Android device.
 - Offline play from the home screen.
 - Firefox for Android.

@@ -15,13 +15,15 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - **Carried forward, not done: the final `moke.glb`.** A rigged, animated model built to `docs/MOKE_3D_SPEC.md` and
   installed per `docs/MOKE_INTEGRATION.md`. The game still shows the procedural `ToonMokeVisual` stand-in; don't
   call it the finished Moke.
-- **Phase 3 is built but not closed:** "Sock Heist + Mobile Web Play" (`docs/PHASE_3.md`), from the owner's brief of
-  2026-09-24. Sock Heist (one placeholder human, the treat trade, SOCK = TREAT) and touch/mobile web play are
-  implemented and tested in desktop browser emulation. **Not yet played on a physical phone** and not yet judged
-  by the owner; until it is, don't call it tested on mobile hardware. Details: `docs/SOCK_HEIST.md`, `docs/MOBILE.md`.
-- **Next:** the owner's review and a real-phone test of Phase 3, then closing it. Don't start Phase 4 (the full Dog
-  Logic system), more humans, more rooms or another mini-game without the owner's approval. Also carried over: the
-  hands-on checks and Known Issues in `docs/CURRENT_STATE.md`.
+- **Phase 3 is complete:** "Sock Heist + Mobile Web Play", closed by the owner on 2026-09-25 and tagged
+  `phase-3-complete`. Scope and history: `docs/PHASE_3.md`. It delivered Sock Heist (one placeholder human, the
+  treat trade, SOCK = TREAT), touch/mobile web play (the paw menu), jumping, phone audio fixes and background music.
+  Real-device coverage is the owner's own phone playtest (device and browser not recorded): don't claim broader
+  mobile testing. Details: `docs/SOCK_HEIST.md`, `docs/MOBILE.md`.
+- **Next:** Phase 4 isn't defined yet. Write `docs/PHASE_4.md` (scope, milestones, success criteria) for the owner to
+  approve before any Phase 4 code; the Phase 3 brief left the full Dog Logic system to it. Don't start Phase 4, more
+  humans, more rooms or another mini-game without the owner's approval. Also carried over: `docs/PHASE_3.md` →
+  "Carried forward", and the hands-on checks and Known Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES
@@ -65,7 +67,7 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - `docs/PHASE_1.md`: milestone scope.
   - `docs/PHASE_1_SPEC.md`: detailed requirements for Milestones 5–10.
   - `docs/PHASE_2.md`: Phase 2 scope and status.
-  - `docs/PHASE_3.md`: Phase 3 scope and status; `docs/SOCK_HEIST.md` (the mini-game, the human) and
+  - `docs/PHASE_3.md`: Phase 3 scope, history and what's carried forward; `docs/SOCK_HEIST.md` (the mini-game, the human) and
     `docs/MOBILE.md` (touch, quality, PWA, phone testing).
   - `docs/MOKE_CHARACTER_REFERENCE.md`: character work.
   - `docs/MOKE_3D_SPEC.md` and `docs/MOKE_INTEGRATION.md`: the final `moke.glb` and how it plugs in.

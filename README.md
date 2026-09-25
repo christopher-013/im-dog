@@ -4,16 +4,18 @@
 a small white Maltipoo. No combat, no death: just socks, smells, naps and a very big living room.
 
 **Status:** Phase 1 complete: the technical prototype (tag `phase-1-complete`). Phase 2 complete: the Moke character foundation
-(tag `phase-2-complete`, [docs/PHASE_2.md](docs/PHASE_2.md)). The game is ready for a final rigged, animated `moke.glb`, which still has
+(tag `phase-2-complete`, [docs/PHASE_2.md](docs/PHASE_2.md)). Phase 3 complete: Sock Heist + mobile web play (tag
+`phase-3-complete`, [docs/PHASE_3.md](docs/PHASE_3.md)). The game is ready for a final rigged, animated `moke.glb`, which still has
 to be made. Until then, a soft, stylized stand-in Moke modelled on the real dog (curly white
 coat, dark eyes, black button nose, blue collar) trots, runs and sneaks around a cozy, true-scale living room: linen couch, rug, coffee table he can
 duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can jump up onto the couch and coffee table, bark, growl, do tricks, sniff,
 carry his sock and toys, and nap in his bed. A low dog-height camera follows him and avoids walls and furniture.
 
-**Phase 3 (built, awaiting review and a real-phone test, [docs/PHASE_3.md](docs/PHASE_3.md)):** **Sock Heist**, the
+**Phase 3 (complete, [docs/PHASE_3.md](docs/PHASE_3.md)):** **Sock Heist**, the
 first complete loop. Steal the sock, get noticed ("Hey! That's my sock!"), dodge a very un-scary chase round the
 furniture, hide, then trade the sock for a treat and discover SOCK = TREAT. Plus **touch controls** for phones and
-tablets in the same web game (portrait or landscape), phone quality presets, and Add to Home Screen.
+tablets in the same web game (portrait or landscape), phone quality presets, Add to Home Screen, jumping, and
+8-bit background music (Hawaiian or Japanese convenience store).
 See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
 **Play it:** https://christopher-013.github.io/im-dog/ (desktop Chrome or Edge; keyboard + mouse or a standard controller). Every push to `main`
@@ -23,7 +25,8 @@ also runs in phone and tablet browsers (touch controls, portrait or landscape).
 ## Requirements
 - Node.js **22.12+** (tested with Node 24) and npm
 - A desktop browser with WebGL 2: Chrome or Edge first; Firefox and Safari should work. Phones and tablets: iPhone
-  Safari and Android Chrome are the targets, not yet tested on a physical device ([docs/MOBILE.md](docs/MOBILE.md)).
+  Safari and Android Chrome are the targets. One owner phone playtest passed; the exact device/browser and broader
+  real-device coverage remain unrecorded ([docs/MOBILE.md](docs/MOBILE.md)).
 
 ## Install & run
 ```bash

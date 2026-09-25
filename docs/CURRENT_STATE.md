@@ -1,21 +1,25 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-25. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (tag `phase-1-complete`). **Phase 2 is complete** (tag `phase-2-complete`). **Phase 3 is built, committed and pushed** (2026-09-25, at the owner's request, so they can test it on their phone), **but not closed** and not tagged: it still needs the real-phone test and the owner's feel check. The hosted game is the Phase 3 build. **Since then (committed and pushed 2026-09-25 for phone testing):** the owner's jump request, the combined bark/growl button and the touch paw menu (see Completed)._
+_Last updated: 2026-09-25. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (tag `phase-1-complete`). **Phase 2 is complete** (tag `phase-2-complete`). **Phase 3 is complete:** built, pushed and independently audited on 2026-09-25, then closed by the owner the same day and tagged `phase-3-complete`. The audit found it ready to form the Phase 4 foundation. The owner also reported that the mobile game looks and plays great on their phone, although the exact device/browser and broader physical-device coverage were not recorded. The hosted game is the Phase 3 build. **Since the original Phase 3 commit (committed and pushed 2026-09-25):** the owner's jump request, the combined bark/growl button and the touch paw menu (see Completed)._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
 **Phase 2: complete** ("Make Moke actually Moke", the Moke character foundation), started and closed by the owner
 on 2026-09-24, tagged `phase-2-complete` and pushed. Scope and criteria: `docs/PHASE_2.md`.
-**Phase 3: built, needs a real phone and the owner's feel check** ("Sock Heist + Mobile Web Play", from the owner's
-brief of 2026-09-24). Every milestone (3.1–3.8) is implemented, tested and played through in the browser on desktop
-and at phone sizes (emulated touch). **Not done:** play on a physical phone, installing the web app on one, and the
-owner's judgement of whether Sock Heist is fun. Scope and criteria: `docs/PHASE_3.md`.
+**Phase 3: complete** ("Sock Heist + Mobile Web Play", from the owner's brief of 2026-09-24), closed by the owner on
+2026-09-25 and tagged `phase-3-complete`. Every milestone (3.1–3.8) is implemented, tested and played through in the browser on desktop
+and at phone sizes (emulated touch). The owner also played on a physical phone and reported that mobile looks and
+plays great. **Still not documented:** the exact phone/browser, installing the web app and real-device performance.
+The owner judged the desktop Sock Heist chase fun. Scope, criteria and what's carried forward: `docs/PHASE_3.md`.
+**Phase 4: not defined yet.**
 
 ## Current Milestone
-Phase 3, Milestone 3.8 (cross-platform playtest and polish): done in emulation, **waiting on a physical-phone test**
-(`docs/MOBILE.md` → "Testing on a real phone") **and the owner's play-through** (`docs/SOCK_HEIST.md`).
+None. Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
+browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
+(`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
 The owner played Sock Heist on the desktop ("the chase works great, it is fun"; escaping, the treat, and not
-escaping all tested) and will check it on a phone. They then asked for a jump and a clearer phone screen (below): done, committed and pushed for their phone test.
+escaping all tested), then later reported that mobile looks and plays great. They also asked for a jump and a
+clearer phone screen (below): done, committed and pushed.
 **Still carried forward from Phase 2: the final `moke.glb`** (FINAL MOKE 3D ASSET REQUIRED), a rigged, animated model
 built outside the repo to `docs/MOKE_3D_SPEC.md` (which now also lists `eat` and `jump` clips) and installed per
 `docs/MOKE_INTEGRATION.md`. Until then the game uses the procedural stand-in (`ToonMokeVisual`).
@@ -459,10 +463,12 @@ New with the jump:
   there (as it already could with walls).
 
 New in Phase 3:
-- **Not played on a physical phone or tablet.** Touch, layout, the PWA, performance, heat and battery are verified
-  only in desktop Chrome's device emulation with synthetic touch events (`docs/MOBILE.md` → "Not tested").
-- **Sock Heist's fun hasn't been judged by a person.** Chase length, how often he lunges, the lines, the standoff
-  and the treat timing are first tunings from scripted play (`config/human.ts`, `config/heist.ts`). Played
+- **Physical-device coverage is limited.** The owner reported that mobile looks and plays great on their phone,
+  but the device/browser and coverage were not recorded. PWA installation, post-fix phone audio, performance, heat
+  and battery remain verified only through emulation or static checks (`docs/MOBILE.md` → "Not tested").
+- **Sock Heist's chase has been judged fun by the owner, but its individual tunings have not had a detailed feel
+  review.** Chase length, how often he lunges, the lines, the standoff and the treat timing are first tunings from
+  scripted play (`config/human.ts`, `config/heist.ts`). Played
   straight, a heist takes about a minute, shorter than the brief's 3–5 minutes; it runs longer only when Moke
   hides or keeps away. It wasn't padded.
 - The human is a code-built placeholder: ~48 more draw calls (166 vs 118 at 1280×720) and ~11.8k triangles. Merging
@@ -471,7 +477,8 @@ New in Phase 3:
   1280×720, noisy). The heist's own logic is ~0.014 ms per fixed step; the rest is drawing, mostly the human.
 - The human's pathing is grid A* with simple steering: he can look a bit robotic round corners, and in the
   dead-end hallway he gives up by frustration rather than cornering Moke (intended: no catches).
-- No growl button and no pinch-zoom on touch; iPhone Safari has no fullscreen for pages (use Add to Home Screen).
+- No dedicated growl button (the Bark button randomly barks or growls) and no pinch-zoom on touch; iPhone Safari
+  has no fullscreen for pages (use Add to Home Screen).
 - The service worker only runs on the https build; over a LAN dev server it doesn't (by design).
 - SOCK = TREAT is remembered in `localStorage`; a private window forgets it (the card says "New!" again).
 - The main bundle grew from 804 kB to ~861 kB (236 kB gzipped).
@@ -528,6 +535,17 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Independent Phase 3 Codex audit on 2026-09-25 (no physical device used by Codex): typecheck pass; 44 files / 318
+tests pass; production build pass; `verify-dist` checked 20 built files against 9 private reference files and found
+no leak. No lint script is configured. Desktop browser smoke testing covered startup, browser-reported pointer lock, movement/actions,
+pause and rendering. Touch emulation covered movement, camera and layouts at 390×844, 844×390, 667×375,
+412×915 and 915×412 with no overflow or clipped controls. The console had no runtime errors; its only warning was
+the documented procedural-Moke fallback because `moke.glb` is not installed. The production preview served the
+manifest, generated service worker and all 14 precached build files successfully. Source/state-machine review and
+the automated tests covered heist completion, replay, adversarial drop/retrieve paths, chase termination, human
+navigation, trade eligibility, Dog Logic memory, input abstraction and touch cleanup. No gameplay code change was
+needed; the audit corrected stale physical-phone claims in `README.md`, `docs/MOBILE.md` and this document.
+
 Run on 2026-09-25 for the music volume and "Japan Stores" (the working tree that became its commit): typecheck pass; 44 files, 318 tests pass (the song tests
 now run for both songs ×3 each, plus the door chime and school chime placement; `AudioManager`: song choice,
 crossfade, Off, volume 0 as off; settings: choice and volume saved, old on/off settings and nonsense handled). The
@@ -711,18 +729,16 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-0. **Owner listen to "Irasshaimase!"** (pushed): pause → Music → Japan Stores. Is it the convenience-store
-   feel? Also try the Music volume. Still open: the phone sound check (silent switch on and off, after a lock).
-1. **Owner review of Phase 3:** play Sock Heist on the desktop (the hosted site or `npm run dev`). Commit or push only
-   when the owner asks: a push to `main` publishes the game.
-2. **Play it on a real phone.** The hosted site (https://christopher-013.github.io/im-dog/) has Phase 3 and allows
-   Add to Home Screen; `npm run dev:lan` on a trusted Wi-Fi also works (`docs/MOBILE.md` → "Testing on a real phone"). Check: the heist by touch only,
-   thumbs on the controls, portrait/landscape, notch safe areas, frame rate and warmth after 10+ minutes, audio
-   after locking the phone.
-3. **Tune from those two sessions** (`config/human.ts`, `config/heist.ts`, `TOUCH` in `config/input.ts`), then close
-   Phase 3 the way Phases 1 and 2 were closed.
-4. **Still carried forward:** the final `moke.glb` (`docs/MOKE_3D_SPEC.md`, including the new `eat` clip), and the
-   Phase 1 checks (pointer lock with a physical mouse, audio by ear, a physical controller, real-GPU frame rate,
-   Firefox and Safari).
+1. **Define Phase 4 with the owner.** Write `docs/PHASE_4.md` (scope, milestones, success criteria) for the owner to
+   approve before any Phase 4 code. The Phase 3 brief left the full Dog Logic system to Phase 4 (SOCK = TREAT and
+   `DogLogicMemory` are its only pieces so far). Commit or push only when the owner asks: a push to `main`
+   publishes the game.
+2. **Owner listens to "Irasshaimase!"** (pause → Music → Japan Stores) and says whether it has the
+   convenience-store feel; adjust its band in `src/audio/music.ts` if not.
+3. **Carried-forward real-device checks** (`docs/MOBILE.md`): record the phone and browser, install the web app,
+   the phone sound check (silent switch on and off, after a lock), frame rate and warmth after 10+ minutes.
+4. **Still carried forward:** the final `moke.glb` (`docs/MOKE_3D_SPEC.md`, including the `eat` and `jump` clips),
+   Sock Heist tuning (`config/human.ts`, `config/heist.ts`), and the Phase 1 checks (pointer lock with a physical
+   mouse, audio by ear, a physical controller, real-GPU frame rate, Firefox and Safari).
 
 **Not to start without the owner's approval:** Phase 4 (the full Dog Logic system), more humans, more rooms.

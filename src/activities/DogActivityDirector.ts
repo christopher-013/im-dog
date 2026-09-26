@@ -11,6 +11,15 @@ export class DogActivityDirector {
   constructor(readonly activities: readonly DogActivity[]) {}
 
   update(dt: number, ctx: DogActivityContext): void {
+    // Sock Heist owns the human from the moment the sock is stolen.  A hunt that has already reached its
+    // independent "find it" step no longer has a live HumanRole for HumanActivityController.interrupt() to
+    // cancel, so enforce the priority here as well.  This keeps a hidden hunt treat from remaining active beside
+    // the heist treat and gives every human-dependent activity the same interruption rule.
+    if (ctx.heistRunning) {
+      for (const activity of this.activities) {
+        if (activity.needsHuman && activity.running) activity.cancel();
+      }
+    }
     for (const activity of this.activities) activity.update(dt, ctx);
     let humanBusy = this.activities.some((a) => a.needsHuman && a.running);
     for (const activity of this.activities) {

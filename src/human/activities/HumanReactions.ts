@@ -76,6 +76,7 @@ export class HumanReactions implements ReactionLayer {
     this.left = 0;
     this.barks.length = 0;
     this.petRequested = false;
+    this.gestureRequest = null;
     this.nearFor = 0;
   }
 

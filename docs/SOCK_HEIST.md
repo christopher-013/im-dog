@@ -38,7 +38,7 @@ lies. They wear one charcoal-striped sock; the other foot is bare. Behaviour, bo
 | Awareness | `HumanAwareness.ts` | What they can see and hear (pure functions). |
 | Body | `HumanController.ts` | Walks along NavGrid paths through a Rapier character body, at human speeds (tested with Rapier). |
 | Navigation | `NavGrid.ts` | A walkability grid built from the room's colliders, A* and path smoothing (tested). |
-| Look | `ToonHumanVisual.ts` | A stylized placeholder person built in code; poses blend smoothly. |
+| Look | `StylizedHumanVisual.ts` | The Phase 4 skinned, code-built stylized adult; the visual remains separate from gameplay and poses blend smoothly. |
 | Composite | `Human.ts` | Perceive → decide → move each fixed step; draw each frame. |
 
 ### States

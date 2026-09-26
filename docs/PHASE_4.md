@@ -1,9 +1,9 @@
 # Phase 4 — Moke's Home & Family Life
 
-> **Status: built, not closed.** Started 2026-09-25 from the owner's brief, with nine private photos of the real
-> home. Milestones 4.1–4.10 are implemented, pass automated tests, and were played through in the browser (desktop,
-> and phone sizes with emulated touch). **Not done:** the owner's own play of it, any physical phone, and a real-GPU
-> frame-rate check. Nothing is committed yet (the brief: "do NOT automatically commit"). Details:
+> **Status: built, committed to `main`, independently audited, not yet closed by the owner.** Started 2026-09-25
+> from the owner's brief, with nine private photos of the real home. Milestones 4.1–4.10 are implemented, pass
+> automated tests, and were played through in the browser (desktop, and phone sizes with emulated touch).
+> **Not done:** the owner's Phase 4 sign-off, a Phase 4 physical-phone playtest, and sustained real-device profiling. Details:
 > `HOME_REFERENCE.md`, `HUMAN_SYSTEM.md`, `ACTIVITIES.md`, `DOG_LOGIC.md`, `CURRENT_STATE.md`.
 
 **Goal:** turn "Moke in a room" into "Moke living in his home with his family": a connected home drawn from the real
@@ -37,7 +37,7 @@ Human, Someone's Home, Dinner Time, Backyard Patrol, Squirrel, Laundry Day, Tras
 | 4.7 | Perfect Nap | **Done.** Seven nap spots; each nap judged on sunny, soft, warm, quiet and "my human's near", shown as five little signs; four of five is perfect; BED = NAP and SUN + SOFT = NAP. |
 | 4.8 | Make Human Play | **Done.** Bring the ball or rope toy to a busy human; ignored, then pester (drop it at their feet, bark, trick, hang about) until they give in; they throw it; bring it back, keep it, or run off (they give chase, laughing). HUMAN + BALL/TOY = PLAY. |
 | 4.9 | Dog Logic | **Done.** A registry of eight discoveries, each backed by play (`config/dogLogic.ts`); the discovery card draws any of them; they queue; remembered in the browser. |
-| 4.10 | Cross-platform polish | **Done in emulation.** Desktop and phone-sized touch play-throughs, performance against the Phase 3 baseline, privacy build check. **Not on a physical phone.** |
+| 4.10 | Cross-platform polish | **Done in emulation and independently audited.** Desktop and phone-sized play-throughs, performance against the Phase 3 baseline, privacy build check. **Phase 4 is not verified on a physical phone.** |
 
 ## Success criteria: where they stand
 Met in automated tests and browser play (desktop and emulated touch) unless noted:
@@ -47,7 +47,7 @@ Met in automated tests and browser play (desktop and emulated touch) unless note
   pink blanket, bowls, the door sign): by design from the photos; **needs the owner's eye.**
 - **Human quality, navigation, sitting, activities, interruptions, resuming, stuck recovery, long runs:** met in
   tests (47 human tests including a 20-minute simulation) and browser play.
-- **Moke ↔ human, petting, the three activities, their replays, Dog Logic:** met in tests (11 activity tests) and
+- **Moke ↔ human, petting, the three activities, their replays, Dog Logic:** met in tests (14 activity tests) and
   browser play-throughs.
 - **Sock Heist intact:** met (its 24 tests, and a full browser play-through in the new house, including PLAY AGAIN).
 - **Mobile first-class:** every new action works from the paw (Get Pets, Nap Here, Drop, Eat Treat; sniff when

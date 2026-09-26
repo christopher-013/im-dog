@@ -130,10 +130,10 @@ All in code (`src/world/home/`), stylized, from the photos above; nothing from t
   stool, the bedroom-hall door with the hand-painted "I love you all" sign, three interior windows into the sunroom.
 - **Kitchen:** white shaker cabinets with glass-front uppers, quartz counters, subway tile with the arabesque panel
   behind the stainless range (red knobs) and chimney hood, the tall wall (double ovens, French-door fridge,
-  microwave over drawers), the big island with turned legs, a sink, jars of monstera cuttings and a fruit bowl, five
-  white upholstered stools, the rectangular crystal chandelier; a coffee maker and rice cooker; a treat jar on the
-  counter (**invented:** where the real treats live isn't in the photos).
-- **Dining room:** the whitewashed trestle table with flowers, eight beige chairs (armchairs at the ends), the round
+  microwave over drawers), the big island with turned legs, a sink, jars of monstera cuttings and a fruit bowl, three
+  white upholstered stools along the family-room side, the rectangular crystal chandelier; a coffee maker and rice
+  cooker; a treat jar on the counter (**invented:** where the real treats live isn't in the photos).
+- **Dining room:** the whitewashed trestle table with flowers, six beige side chairs (no end chairs), the round
   crystal chandelier, the dark carved sideboard between two wine fridges with bottles and the bevelled mirror, the
   window, the big Roman-numeral clock, the TV on its rolling stand, plants, sliding doors with white curtains, white
   wainscoting.

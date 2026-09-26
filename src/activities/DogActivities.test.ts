@@ -85,7 +85,7 @@ async function world(seed = 1) {
 class Probe extends DogActivity {
   readonly id = 'perfectNap' as const;
   readonly name = 'probe';
-  readonly needsHuman = false;
+  readonly needsHuman: boolean = false;
   trigger = false;
   cancelled = 0;
   protected wants(): boolean {
@@ -99,6 +99,10 @@ class Probe extends DogActivity {
   protected onCancel(): void {
     this.cancelled++;
   }
+}
+
+class HumanProbe extends Probe {
+  override readonly needsHuman = true;
 }
 
 describe('DogActivity lifecycle', () => {
@@ -133,6 +137,19 @@ describe('DogActivity lifecycle', () => {
     expect(probe.cancelled).toBe(1);
     for (let i = 0; i < 20; i++) director.update(DT, context());
     expect(probe.state).toBe('COOLDOWN');
+  });
+
+  it('gives Sock Heist priority over a human-dependent activity already in progress', () => {
+    const probe = new HumanProbe(3, 0.5);
+    const director = new DogActivityDirector([probe]);
+    const ctx = context();
+    probe.trigger = true;
+    director.update(DT, ctx);
+    expect(probe.state).toBe('STARTING');
+    ctx.heistRunning = true;
+    director.update(DT, ctx);
+    expect(probe.state).toBe('CANCELLED');
+    expect(probe.cancelled).toBe(1);
   });
 });
 
@@ -280,6 +297,33 @@ describe('TreatHunt (in the house, with the real human)', () => {
     expect(hunt.state).toBe('CANCELLED');
     expect(treat.state).toBe('stored');
   }, 60_000);
+
+  it('the Sock Heist also cancels a hunt after the treat is hidden, leaving no second treat active', async () => {
+    const { ctx, step, hunt, director, treat } = await setup();
+    ctx.moke.trick = true;
+    step(director);
+    ctx.moke.trick = false;
+    for (let i = 0; i < 90 / DT && hunt.state === 'STARTING'; i++) step(director);
+    expect(hunt.state).toBe('ACTIVE');
+    expect(treat.state).toBe('placed');
+    ctx.heistRunning = true;
+    step(director);
+    expect(hunt.state).toBe('CANCELLED');
+    expect(hunt.hiddenAt).toBeNull();
+    expect(treat.state).toBe('stored');
+  }, 60_000);
+});
+
+describe('Human reactions', () => {
+  it('clears a queued human gesture when an interruption resets reactions', async () => {
+    const { reactions, routine, step, said } = await world(12);
+    const director = new DogActivityDirector([]);
+    reactions.perform('shoo', 1.6, 'Not now, Moke…');
+    routine.interrupt();
+    step(director);
+    expect(reactions.kind).not.toBe('gesture');
+    expect(said).not.toContain('Not now, Moke…');
+  });
 });
 
 describe('MakeHumanPlay (in the house, with the real human and a real ball)', () => {

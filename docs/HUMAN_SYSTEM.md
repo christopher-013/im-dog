@@ -72,12 +72,13 @@ every stand point is walkable and reachable from every other.
 - Pure logic, tested (every pose finite standing and sitting; hips onto the seat; walking; blinking; talking; eyes).
 
 ## Look: `StylizedHumanVisual`
-- Built in code (original; no files): a warm, friendly adult in the game's palette: brown tousled hair with a swept
-  fringe, brown eyes with catch-lights, soft brows, blush, a coral cable-knit sweater with ribbed cuffs, hem and crew
-  neck, cuffed denim jeans, and **one striped sock** (Moke has the other; the right foot is bare).
+- Built in code (original; no files): a warm, friendly stylized adult man in the game's palette: warm tan skin,
+  short black hair with a soft side-swept fringe, brown eyes with catch-lights, soft brows, a plain white T-shirt,
+  blue jeans, and **one striped sock** (Moke has the other; the right foot is bare).
 - **One skinned body:** every part is built in the standing pose, weighted to the rig's bones (smooth blends at the
   waist, elbows and knees; caps fill the hips, knees and elbows when bent), and merged per material into
-  `SkinnedMesh`es sharing one `Skeleton`: 16 draw calls for the whole person (the Phase 3 toon had ~40 meshes).
+  `SkinnedMesh`es sharing one `Skeleton`: six material meshes plus five outlines for the body (the Phase 3 toon had
+  ~40 separate meshes).
   The face uses extra bones: eyes that turn, lids that roll down to blink, brows that lift, a jaw that opens the mouth,
   a smile line that curves.
 - **Hands and props:** `hands.left/right` anchors ride the wrist bones (the Sock Heist's sock and treat use them, as
@@ -109,4 +110,5 @@ Lines are short and rare (at most one every 7 s, and not every time).
 ## Performance
 The routine decides only when an activity ends (the scheduler is never run per frame); reactions are a few distance
 checks per fixed step plus one line-of-sight ray when he's near; paths are planned on demand (A* on a 207 × 103 grid).
-The human renders as 16 skinned draw calls (plus shadows for the body, hair and clothes).
+The human's body renders as six material meshes plus five matching outline meshes (11 skinned draw calls), with
+additional small face details, a held prop when needed, and shadows.

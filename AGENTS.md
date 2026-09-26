@@ -20,11 +20,11 @@ Shared, tool-independent instructions for every coding agent working in this rep
   treat trade, SOCK = TREAT), touch/mobile web play (the paw menu), jumping, phone audio fixes and background music.
   Real-device coverage is the owner's own phone playtest (device and browser not recorded): don't claim broader
   mobile testing. Details: `docs/SOCK_HEIST.md`, `docs/MOBILE.md`.
-- **Phase 4 is built but not closed (and not committed):** "Moke's Home & Family Life" (`docs/PHASE_4.md`), from the
+- **Phase 4 is built, committed to `main`, and independently audited, but not yet closed by the owner:** "Moke's Home & Family Life" (`docs/PHASE_4.md`), from the
   owner's brief of 2026-09-25 with photos of the real home. The whole home (living room, kitchen, family room, dining
   room), a stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and
-  Dog Logic. Tested in automation and the browser (desktop, emulated phone) only: **not yet played by the owner or
-  on a physical phone.** Details: `docs/HOME_REFERENCE.md`, `docs/HUMAN_SYSTEM.md`, `docs/ACTIVITIES.md`,
+  Dog Logic. Tested in automation and the browser (desktop, emulated phone) only: **Phase 4 has not yet been played
+  by the owner on a physical phone.** Details: `docs/HOME_REFERENCE.md`, `docs/HUMAN_SYSTEM.md`, `docs/ACTIVITIES.md`,
   `docs/DOG_LOGIC.md`.
 - **Next:** the owner's review of Phase 4, then closing it. Don't start Phase 5, more humans, more rooms, the outdoors
   or another mini-game without the owner's approval. Also carried over: `docs/PHASE_4.md` → "Carried forward", and the

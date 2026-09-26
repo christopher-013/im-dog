@@ -43,8 +43,8 @@ on in the same seat). Tuning: `ROUTINE`.
 **Lifecycle** (`DogActivity.ts`): `AVAILABLE → STARTING → ACTIVE → SUCCESS | CANCELLED → COOLDOWN → READY_AGAIN →
 AVAILABLE`. Each activity decides its own natural trigger (`wants`), setup, running and clean-up. The
 **`DogActivityDirector`** updates them every fixed step and lets only one borrow the human at a time, never during the
-Sock Heist (which cancels any setting up). The HUD line (the chip at the top) shows the running one's objective when
-the heist has nothing to say. Tuning: `config/dogActivities.ts`.
+Sock Heist (which cancels any human-dependent dog activity already running). The HUD line (the chip at the top)
+shows the running one's objective when the heist has nothing to say. Tuning: `config/dogActivities.ts`.
 
 ### Treat Hunt (`TreatHunt.ts`)
 1. **Trigger:** Moke does a trick within 3.2 m of the free human, in view (or within 2 m, facing or not); the first
@@ -61,8 +61,8 @@ the heist has nothing to say. Tuning: `config/dogActivities.ts`.
    they walk over and point at it ("It's right here, silly!"). Never a fail.
 7. **Found:** "Eat Treat" → he eats it ("Nom nom!"), "Good find, Moke!" → **SNIFF = TREAT** (first time) → a toast
    with the time. Cooldown 90 s.
-- The Sock Heist taking the human mid-errand calls it off (the treat goes back in the jar); once hidden, the treat
-  stays hidden until he finds it.
+- Sock Heist has priority: taking the human mid-errand or after the treat is hidden calls the hunt off and returns
+  the hunt treat to storage, so it cannot coexist with the heist reward.
 
 ### Perfect Nap (`PerfectNap.ts`)
 1. **Nap spots** (`NAP_SPOTS`): his bed (in the window's sun), the pink blanket (by the fire), the sunny couch (sun
@@ -101,5 +101,6 @@ left; afterwards the routine walks back and carries on, or picks something new i
 `human/activities/HumanActivityController.test.ts` (a 20-minute simulated day in the real house: variety, rooms,
 sitting, no stuck, no give-ups; cooking → dinner; cooldowns and location; resume; Moke in the seat),
 `activities/DogActivities.test.ts` (the lifecycle; Dog Logic; nap judging and timing; a full Treat Hunt in the
-house, its hints and its cancellation; Make Human Play from asking to a real thrown ball, and keep-away),
+house, its hints and cancellation before and after hiding; Sock Heist priority; queued-reaction cleanup; Make Human
+Play from asking to a real thrown ball, and keep-away),
 `world/Home.test.ts` (every nap and hiding spot reachable).

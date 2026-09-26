@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-25. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phases 1–3 are complete** (tags `phase-1-complete`, `phase-2-complete`, `phase-3-complete`). **Phase 4, "Moke's Home & Family Life", is built but not closed and not committed** (the owner's brief: "do NOT automatically commit"): the whole home from the owner's photos, a new stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and Dog Logic. The hosted game is still the Phase 3 build._
+_Last updated: 2026-09-25. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phases 1–3 are complete** (tags `phase-1-complete`, `phase-2-complete`, `phase-3-complete`). **Phase 4, "Moke's Home & Family Life", is built, committed to `main`, and independently audited, but not yet closed by the owner:** the whole home from the owner's photos, a new stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and Dog Logic. The audit fixes described below remain uncommitted for owner review._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -11,9 +11,10 @@ on 2026-09-24, tagged `phase-2-complete` and pushed. Scope and criteria: `docs/P
 and at phone sizes (emulated touch). The owner also played on a physical phone and reported that mobile looks and
 plays great. **Still not documented:** the exact phone/browser, installing the web app and real-device performance.
 The owner judged the desktop Sock Heist chase fun. Scope, criteria and what's carried forward: `docs/PHASE_3.md`.
-**Phase 4: built, not closed** ("Moke's Home & Family Life", from the owner's brief of 2026-09-25, with photos of the
-real home). Milestones 4.1–4.10 implemented, tested and played through in the browser (desktop and emulated phone).
-**Not done:** the owner's own play, a physical phone, real-GPU frame rate. **Uncommitted.** Scope, criteria and status:
+**Phase 4: built, independently audited, not closed by the owner** ("Moke's Home & Family Life", from the owner's
+brief of 2026-09-25, with photos of the real home). Milestones 4.1–4.10 are committed to `main`, tested and played
+through in the browser (desktop and phone-sized emulation). **Not done:** the owner's Phase 4 sign-off, a Phase 4
+physical-phone playtest, and sustained real-device profiling. Scope, criteria and status:
 `docs/PHASE_4.md`.
 
 ## Current Milestone
@@ -38,7 +39,9 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code: all of Phase 4 (2026-09-25, uncommitted). Before that, Claude Code: the jump, the combined bark/growl button and the touch paw menu (committed and pushed at the owner's
+OpenAI Codex: independent Phase 4 audit (2026-09-25), with narrow uncommitted fixes for Sock Heist/Treat Hunt
+priority, reaction cleanup, regression tests and stale Phase 4 documentation. Claude Code: all of Phase 4
+(committed and pushed before the audit). Before that, Claude Code: the jump, the combined bark/growl button and the touch paw menu (committed and pushed at the owner's
 request), after all of Phase 3 (committed and pushed
 at the owner's request for phone testing) and committing, tagging and pushing Phase 2.
 Before that, Claude closed Phase 1 (a review of Codex's commits with fixes, GitHub Pages hosting, the trick button,
@@ -46,7 +49,7 @@ Moke's tail and a deeper growl). OpenAI Codex committed its Phase 1 audit, gamep
 collar refit.
 
 ## Completed
-**Phase 4, "Moke's Home & Family Life" (2026-09-25, uncommitted; the owner's brief).** Details in `docs/PHASE_4.md`,
+**Phase 4, "Moke's Home & Family Life" (2026-09-25; committed to `main`; awaiting owner sign-off).** Details in `docs/PHASE_4.md`,
 `HOME_REFERENCE.md`, `HUMAN_SYSTEM.md`, `ACTIVITIES.md`, `DOG_LOGIC.md`.
 - **4.1 References:** nine home photos in `reference/home/` (git-ignored like the Moke photos; the build's leak check
   covers them; `reference/home/README.md` explains), studied into `docs/HOME_REFERENCE.md` (layout, landmarks,
@@ -581,7 +584,30 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
-Run on 2026-09-25 for Phase 4 (uncommitted):
+Independent Phase 4 Codex audit on 2026-09-25 (no physical device used by Codex):
+- Baseline before fixes: typecheck pass; **50 files / 366 tests pass**; production build pass; no lint script is
+  configured. Review covered the Phase 4 diff from `phase-3-complete`, the connected-home collision/navigation tests,
+  the human layers and 20-minute simulated routine, all three dog activities, Dog Logic, mobile/PWA/privacy paths,
+  and Phase 3 Sock Heist regressions.
+- One reproducible conflict was fixed: a Treat Hunt whose treat was already hidden could remain active beside Sock
+  Heist, leaving two rewards/activity paths. Sock Heist now immediately cancels any running human-dependent dog
+  activity; a cancelled hunt returns its treat to storage. Reaction reset also clears a queued gesture so a stale
+  "not now" cannot play after an interruption. Three regression tests cover these cases.
+- Final verification: `npm run typecheck` pass; **50 files / 369 tests pass**; `npm run build` pass (main bundle
+  1,002.96 kB / 282.15 kB gzip; Rapier 2,853.74 / 1,094.44); `verify-dist` checked 20 build files against all
+  **18 private reference files** and found no leak; `git diff --check` pass.
+- Development-browser validation at 1440×900 HIGH: the human completed laundry, walked, sat facing Moke to watch TV,
+  responded to repeated barking, started Treat Hunt, crossed the hallway, hid a treat, and resumed the routine in
+  the family room. Sniff guidance activated. The debug panel reported about **163–165 FPS**, **6.1 ms average**, 147–152
+  draw calls and 257–258k triangles during these scenes. These are browser-reported figures on this machine, not a
+  physical-phone or long thermal test.
+- Responsive layout bounds were checked at 390×844, 844×390 and 667×375: title, subtitle, PLAY and CONTROLS remained
+  visible and inside the viewport. This audit did not emulate a coarse pointer, so it does not replace the earlier
+  synthetic-touch coverage or a physical device.
+- The production preview loaded, played, accepted bark/sniff/trick, paused/resumed, and logged no warnings or errors.
+  The development console's only warning was the documented missing final `moke.glb` fallback.
+
+Initial Phase 4 verification on 2026-09-25 (before it was committed):
 - `npm run typecheck`: pass. `npm test`: **49 files, 364 tests pass** (46 new: the house's navigation 20, the human's
   animation 6 and visual 3, the routine 6, dog activities and Dog Logic 11). No lint script is configured.
 - `npm run build`: pass; JS 989 kB (277 kB gzipped; Phase 3: 880 / 242), CSS 22.8 kB, Rapier unchanged; `verify-dist`
@@ -801,7 +827,7 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-1. **Owner review of Phase 4** (uncommitted, so `npm run dev` on this machine): walk the house, watch the human's day,
+1. **Owner review and sign-off of Phase 4:** use `npm run dev` on this machine (the audit fixes are uncommitted), walk the house, watch the human's day,
    pet them, do a trick near them (Treat Hunt), nap in a few spots, bring them the ball. Is it recognisably home? Does
    it feel inhabited? Then tune (`config/activities.ts`, `config/dogActivities.ts`, the human's poses in
    `HumanAnimationController.ts`). Commit or push only when the owner asks: a push to `main` publishes the game.

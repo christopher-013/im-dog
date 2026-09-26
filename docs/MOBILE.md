@@ -225,7 +225,8 @@ It stays hidden unless asked for.
 ## Known limitations
 - No pinch-to-zoom camera on touch (default distance only).
 - iPhone Safari has no fullscreen for web pages; "Add to Home Screen" is the way to hide the browser bars.
-- The placeholder human adds about 48 draw calls; merging its parts would cut that if phones need it.
+- The Phase 4 human's body is already merged by material (six material meshes plus five outlines). Its face details,
+  optional held prop and shadows still add work; use physical-phone profiling before simplifying it further.
 - The service worker only activates on the hosted (https) build, not on a LAN dev server.
 
 ## Phase 4 on phones (emulated only)

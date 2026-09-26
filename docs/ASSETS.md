@@ -24,7 +24,7 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 | Synthetic test model | `src/player/gltf/testing/syntheticMoke.ts` | Test-only: a tiny box "dog" with bones, sockets and dummy clips built in code to the spec. Never shipped (only imported by tests). |
 | Sock, tennis ball, rope toy | `src/props/propVisuals.ts` | Built in code from simple shapes |
 | ~~The human (Sock Heist), placeholder~~ | ~~`src/human/ToonHumanVisual.ts`~~ | Phase 3; **removed in Phase 4**, replaced by the stylized human below. |
-| The human (Phase 4) | `src/human/StylizedHumanVisual.ts`, `src/human/humanProps.ts` | Original, built in code: a stylized animated-film-style adult (skinned body merged per material, face bones for eyes, lids, brows and mouth, hands with fingers), a cable-knit sweater texture and a denim twill drawn on canvases at startup; held props (paperback, phone, mug, cutlery, wooden spoon, remote) from simple shapes. No model or image files. Keeps Phase 3's colours and the one striped sock. Not modelled on any real person. |
+| The human (Phase 4) | `src/human/StylizedHumanVisual.ts`, `src/human/humanProps.ts` | Original, built in code: a stylized animated-film-style adult man (skinned body merged per material, face bones for eyes, lids, brows and mouth, hands with fingers), a plain white T-shirt, blue jeans with a denim twill drawn on a canvas at startup, and one striped sock; held props (paperback, phone, mug, cutlery, wooden spoon, remote) from simple shapes. No model or image files. Not modelled on any real person. |
 | The kitchen, family room, dining room and sunroom, their furniture and lighting | `src/world/home/`, `src/world/Home.ts` | Phase 4. Built in code from simple shapes, **drawn from the owner's private home photos** (`reference/home/`, looked at, never copied, bundled or used as textures; D18): the fireplace with its TV, built-ins, sectional, beige couch, rustic coffee table, monsteras in baskets, the white kitchen with its island and stools, the range and hood, the trestle table and chairs, the sideboard and wine fridges, the clock, sliders and curtains, the door sign's words. |
 | Grey plank floor, arabesque and subway tiles, clock face, door sign, sun patch | `src/world/textures.ts` | Phase 4. Original canvas drawings generated at startup (no image files). The clock numerals and the sign ("I love you all", from the photos) are drawn with the system's Georgia/serif font. |
 | TV glow, steaming pot, dinner plate | `src/world/HouseholdEffects.ts` | Phase 4. Built in code from simple shapes |
@@ -41,7 +41,6 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 |---|---|---|
 | `ToonMokeVisual` (procedural stand-in Moke) | The final rigged, animated `moke.glb` (`docs/MOKE_3D_SPEC.md`) | **Carried forward from Phase 2.** Not made yet. The stand-in stays in code as the fallback only. |
 | Synthesized bark, growl, sniff, pickup and drop sounds, and the Sock Heist sounds | The owner's chosen final sounds (ideally Moke's real bark) | Placeholders (original, so no licence problem), pending the owner's choice |
-| The code-built placeholder human (`ToonHumanVisual`) | Final human character art, if the owner wants it (the visual is kept apart from behaviour, like Moke's) | Placeholder; not blocking. Sock Heist works with it |
 
 Everything else in the tables above is original and can ship as is. It could still be improved (for example
 nicer furniture models), but nothing else has to be replaced.
@@ -50,6 +49,7 @@ nicer furniture models), but nothing else has to be replaced.
 | Asset | Where | Notes |
 |---|---|---|
 | Photos of the real Moke | `reference/moke/` | Git-ignored, blocked from bundling and dev serving, checked out of `dist/` on every build |
+| Photos of the real home | `reference/home/` | Git-ignored, blocked from bundling and dev serving, checked out of `dist/` on every build |
 
 ## Needed later (not sourced yet)
 | Need | Milestone | Plan |

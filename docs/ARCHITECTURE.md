@@ -563,7 +563,8 @@ The real Moke (`reference/moke/`) and, since Phase 4, the real home (`reference/
 - **Dog activities:** `DogActivityDirector` updates Treat Hunt, Perfect Nap and Make Human Play every fixed step with
   a `DogActivityContext` built in `Game.updateDogActivities` (Moke's position, carrying, bark, trick, sniffing, nap
   spot; the human's position, availability, sight of Moke, attention; whether the heist is on). Activities that need
-  the human borrow it through `routine.claim(role)`; the heist interrupting the routine cancels their errands.
+  the human borrow it through `routine.claim(role)`. Sock Heist has explicit priority in the director: it cancels
+  any running human-dependent dog activity, including an active Treat Hunt whose setup role has already ended.
 - **Dog Logic:** `DogLogicBook` (learn + `DOG_LOGIC_DISCOVERED`) over Phase 3's `DogLogicMemory`; `Game` shows the card
   for any entry of `config/dogLogic.ts`.
 - **Interactions added:** "Get Pets" (`PET`, near a free human), "Nap Here" at the nap spots (`RestSystem` with many

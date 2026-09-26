@@ -121,9 +121,10 @@ export class TreatHunt extends DogActivity {
 
   protected onCancel(): void {
     if (this.step !== 'done') this.goStep('done');
-    // Still in their hand (or not fetched yet): back in the jar. Already hidden: it stays hidden for later.
-    if (this.deps.treat.state === 'held') this.deps.treat.reset();
-    if (this.deps.treat.state !== 'placed') this.hiddenAt = null;
+    // A cancelled hunt is over, including one interrupted after the treat was hidden. Put the treat away so it
+    // cannot coexist with Sock Heist's treat or be eaten after this activity has stopped listening for success.
+    this.deps.treat.reset();
+    this.hiddenAt = null;
   }
 
   /** A replay (PLAY AGAIN): the treat goes back in the jar, the hunt starts over. */

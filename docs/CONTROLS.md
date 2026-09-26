@@ -28,7 +28,7 @@ pauses. Chrome needs about a second after Esc before it will capture again; if r
 room. Where pointer lock isn't available, click and drag to look.
 
 **Settings (pause screen):** a Look sensitivity slider (0.25–3×, for the mouse and touch look), an
-invert-vertical-look option, **Music** (Hawaiian, Japan Stores or Off) and **Music volume** (0–150%; 100% is the
+invert-vertical-look option, **Music** (Hawaii, Konbini or Off) and **Music volume** (0–150%; 100% is the
 level it was mixed at). They're remembered in this browser only.
 
 **How WASD relates to the camera:** W moves away from the camera. While you keep a movement key held, the

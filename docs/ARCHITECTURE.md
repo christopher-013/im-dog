@@ -349,7 +349,7 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 - Body language: `Moke.sniffing` → `MokeAnimationState.sniff` (nose down, quick twitches). UI: a warm vignette.
 
 ## Background music (`audio/music.ts`, tuning `MUSIC` in `config/audio.ts`)
-- Two original 8-bit songs, stored as data (`SONGS`): "Aloha, Moke" (Hawaiian) and "Irasshaimase!" (Japan Stores).
+- Two original 8-bit songs, stored as data (`SONGS`): "Aloha, Moke" (the Hawaii option) and "Irasshaimase!" (Konbini).
   A `Song` is chords per bar, a melody (notes with optional slides), an optional bells line, "sparse" bars (just
   bells and a held bass note: the door chime and the school chime), a `Band` (each instrument's sound and the
   rhythm section's patterns) and a loudness trim so both songs sit at the same level. `songEvents()` turns a song

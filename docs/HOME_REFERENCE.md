@@ -27,7 +27,7 @@ kitchen–dining junction; the **bedroom hallway** leaves from the fireplace wal
             N
   built-ins | fireplace+TV | bedroom hall |  kitchen tall wall (microwave · fridge · ovens)
   window                                 |                                          range wall (E):
-  + beige   FAMILY ROOM        coffee    |   KITCHEN      [ island + 5 stools ]     counters, range, hood
+  + beige   FAMILY ROOM        coffee    |   KITCHEN      [ island + 3 stools ]     counters, range, hood
   couch (W)                    table     |                                          ── front-door hallway → E
   window                                 |
   sectional + interior windows (S)       |   DINING ROOM (S of kitchen): sideboard + wine fridges (E),
@@ -81,12 +81,14 @@ In the game, walking out of the hallway: the dining room is on your left (north)
   its stainless **hood**; small appliances (coffee maker, rice cooker).
 - **Island**: very large, white, with **turned legs** at the corners, a thick white quartz top, a sink with a tall
   faucet, glass jars of monstera cuttings; **five white upholstered counter stools** with dark legs (three on the
-  family-room side, one at each end); a **rectangular crystal chandelier** above.
+  family-room side, one at each end); a **rectangular crystal chandelier** above. *In the game: only the three on
+  the family-room side (the owner had the end stools removed, 2026-09-25).*
 - Walls: warm greige (#cfc5b6). Food things happen here.
 
 ### Dining room (x 6.6…10.8)
 - **Table**: long (≈2.6 m) whitewashed-oak trestle table with an X base; **beige upholstered chairs** with dark
-  legs, armchairs at the ends; a flower arrangement in the middle; a **round crystal chandelier**.
+  legs, armchairs at the ends; a flower arrangement in the middle; a **round crystal chandelier**. *In the game:
+  three chairs along each side, no armchairs at the ends (removed at the owner's request, 2026-09-25).*
 - **Sideboard wall** (game west): dark carved sideboard and **two stainless wine fridges**, bottles on top, a
   **bevelled mirror** above, trailing plants.
 - **Window wall** (game north): window with blinds, a **large black Roman-numeral clock**, a TV on a rolling

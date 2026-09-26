@@ -274,7 +274,7 @@ function kitchen(b: StaticSceneBuilder, m: RoomMaterials): void {
   const endX = ovensX + 0.76 + 0.92 + 0.76;
   b.add(new BoxGeometry(WING.kitchenFamily - endX, H, 0.68), m.cabinet, [(endX + WING.kitchenFamily) / 2, H / 2, sz - 0.34], solid);
 
-  // The island and its five stools, and the crystal chandelier.
+  // The island and its three stools, and the crystal chandelier.
   const is = FURNITURE.island;
   b.at([is.x, 0, is.z], is.rotation, () => island(b, m));
   for (const stool of FURNITURE.islandStools) b.at([stool.x, 0, stool.z], stool.rotation, () => counterStool(b, m));
@@ -311,7 +311,7 @@ function diningRoom(b: StaticSceneBuilder, m: RoomMaterials): void {
   // The sliding doors to the sunroom.
   b.at([WING.diningEast + T / 2, 0, (s.zMin + s.zMax) / 2], WEST, () => slidingDoors(b, m, s.zMax - s.zMin, T));
 
-  // The table, eight chairs and the round chandelier.
+  // The table, six chairs and the round chandelier.
   const t = FURNITURE.diningTable;
   b.at([t.x, 0, t.z], EAST, () => diningTable(b, m));
   for (const chair of FURNITURE.diningChairs) b.at([chair.x, 0, chair.z], chair.rotation, () => diningChair(b, m, chair.arms));

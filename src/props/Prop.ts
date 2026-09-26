@@ -5,8 +5,18 @@ import type { Vec3Like } from '../physics/CharacterBody';
 import type { PropBody } from '../physics/PropBody';
 
 const UP = new Vector3(0, 1, 0);
-/** Anything further than this from the room, or below the floor, has escaped and goes home. */
-const ESCAPE = { belowY: -1, radius: 15 };
+/** Anything below the floor, or outside the house's bounds (plus this margin), has escaped and goes home. */
+const ESCAPE = { belowY: -1, margin: 1 };
+
+/** The floor area a prop belongs in (the house's outer walls). */
+export interface PropBounds {
+  readonly minX: number;
+  readonly maxX: number;
+  readonly minZ: number;
+  readonly maxZ: number;
+}
+
+const ANYWHERE_NEAR: PropBounds = { minX: -15, maxX: 15, minZ: -15, maxZ: 15 };
 
 /**
  * A loose prop in the world: a physics body plus its view. The view follows the body, smoothed
@@ -29,6 +39,7 @@ export class Prop implements Carryable {
     readonly view: Object3D,
     private readonly home: Vec3Like,
     private readonly homeHeading = 0,
+    private readonly bounds: PropBounds = ANYWHERE_NEAR,
   ) {
     this.id = definition.id;
     this.name = definition.name;
@@ -80,7 +91,9 @@ export class Prop implements Carryable {
     this.previousRotation.copy(this.currentRotation);
     this.body.sync();
     const p = this.body.position;
-    if (p.y < ESCAPE.belowY || Math.hypot(p.x, p.z) > ESCAPE.radius) {
+    const b = this.bounds;
+    const m = ESCAPE.margin;
+    if (p.y < ESCAPE.belowY || p.x < b.minX - m || p.x > b.maxX + m || p.z < b.minZ - m || p.z > b.maxZ + m) {
       this.returnHome();
       return;
     }
@@ -100,6 +113,14 @@ export class Prop implements Carryable {
     socket.add(this.view);
     this.view.position.set(offset[0], offset[1], offset[2]);
     this.view.quaternion.setFromAxisAngle(UP, turn);
+  }
+
+  /** In someone's hand (the human, about to throw it): out of the world, riding in `hand`. */
+  holdInHand(hand: Object3D): void {
+    this.pickUp();
+    hand.add(this.view);
+    this.view.position.set(0, -0.02, 0.03);
+    this.view.quaternion.identity();
   }
 
   /** Presentation: back into the world under `parent`. */

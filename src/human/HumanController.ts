@@ -1,7 +1,7 @@
 import { HUMAN } from '../config/human';
 import type { CharacterBody, Vec3Like } from '../physics/CharacterBody';
 import { angleDelta, clamp, lerp, moveToward } from '../utils/math';
-import type { HumanIntent } from './HumanBrain';
+import type { HumanIntent, SeatSpec } from './HumanBrain';
 import type { NavGrid, Point2 } from './NavGrid';
 
 type MoveTuning = typeof HUMAN.move;
@@ -19,6 +19,11 @@ export class HumanController {
   arrived = true;
   /** Feet position (world). */
   readonly position: Vec3Like;
+  /** The seat they're on (or sitting down on, or getting up from), and how far down they are (0 standing … 1 seated). */
+  seat: SeatSpec | null = null;
+  seatBlend = 0;
+  /** Seconds without getting closer to a goal they're walking to (the activity gives up after a while). */
+  stuckFor = 0;
 
   private previousX: number;
   private previousZ: number;
@@ -27,7 +32,7 @@ export class HumanController {
   private pathIndex = 0;
   private plannedFor: Point2 | null = null;
   private replanIn = 0;
-  private stuckFor = 0;
+  private checkTime = 0;
   private readonly progressFrom: Point2 = { x: 0, z: 0 };
   private readonly desired: Vec3Like = { x: 0, y: 0, z: 0 };
   private readonly applied: Vec3Like = { x: 0, y: 0, z: 0 };
@@ -54,15 +59,20 @@ export class HumanController {
     let targetSpeed = 0;
     let wantHeading = this.heading;
     const goal = intent.goal;
-    if (goal) {
+    if (this.updateSeat(dt, intent)) {
+      // Sitting, sitting down or getting up: the body stays put, facing the way the seat faces.
+      this.arrived = !intent.seat || intent.seat === this.seat;
+      wantHeading = this.seat ? this.seat.facing : this.heading;
+    } else if (goal) {
       const remaining = Math.hypot(goal.x - this.position.x, goal.z - this.position.z);
       if (remaining <= intent.stopWithin) {
         this.arrived = true;
       } else {
-        this.plan(goal, dt);
+        this.plan(goal, dt, intent.avoid ?? null);
         const waypoint = this.nextWaypoint();
         if (!waypoint) {
           this.arrived = true; // nowhere closer to go
+          this.stuckFor = 0;
         } else {
           this.arrived = false;
           wantHeading = Math.atan2(waypoint.x - this.position.x, waypoint.z - this.position.z);
@@ -76,8 +86,9 @@ export class HumanController {
     } else {
       this.arrived = true;
       this.plannedFor = null;
+      this.stuckFor = 0;
     }
-    if (this.arrived && intent.face) {
+    if (this.arrived && intent.face && !this.seat) {
       wantHeading = Math.atan2(intent.face.x - this.position.x, intent.face.z - this.position.z);
     }
 
@@ -97,6 +108,40 @@ export class HumanController {
       const actual = Math.hypot(this.applied.x, this.applied.z) / dt;
       this.speed = Math.min(this.speed, actual + 0.3);
     }
+  }
+
+  /** Fully sat down. */
+  get seated(): boolean {
+    return this.seat !== null && this.seatBlend >= 1;
+  }
+
+  /**
+   * Sitting down and getting up (true while that holds the body still): once at the seat's stand point and facing
+   * the way it faces, they lower themselves onto it; asked to stand (or to use a different seat), they get up first.
+   */
+  private updateSeat(dt: number, intent: HumanIntent): boolean {
+    const t = this.tuning;
+    const want = intent.seat;
+    if (this.seat && want !== this.seat) {
+      this.seatBlend = Math.max(0, this.seatBlend - dt / t.standTime);
+      if (this.seatBlend <= 0) this.seat = null;
+      return this.seat !== null;
+    }
+    if (!this.seat && want && intent.goal) {
+      const there = Math.hypot(intent.goal.x - this.position.x, intent.goal.z - this.position.z) <= Math.max(intent.stopWithin, t.seatReach);
+      if (there && this.speed < 0.25 && Math.abs(angleDelta(this.heading, want.facing)) < t.seatAlign) this.seat = want;
+      else if (there) {
+        this.heading = rotateToward(this.heading, want.facing, t.turnRate * dt);
+        this.speed = moveToward(this.speed, 0, t.braking * dt);
+        return true;
+      }
+    }
+    if (this.seat) {
+      this.seatBlend = Math.min(1, this.seatBlend + dt / t.sitTime);
+      this.speed = 0;
+      return true;
+    }
+    return false;
   }
 
   /** Where to draw the body between the last two fixed steps. */
@@ -121,13 +166,19 @@ export class HumanController {
     this.speed = 0;
     this.path.length = 0;
     this.plannedFor = null;
+    this.seat = null;
+    this.seatBlend = 0;
   }
 
-  private plan(goal: Vec3Like, dt: number): void {
+  private plan(goal: Vec3Like, dt: number, avoid: Vec3Like | null): void {
     this.replanIn -= dt;
     const moved = !this.plannedFor || Math.hypot(goal.x - this.plannedFor.x, goal.z - this.plannedFor.z) > 0.3;
     if (!moved && this.replanIn > 0) return;
-    this.nav.findPath(this.position, goal, this.path);
+    // Held up by something that isn't furniture (Moke in the way)? Plan round it, unless it's where they're going.
+    const blocking =
+      avoid && this.stuckFor > 0 && Math.hypot(avoid.x - this.position.x, avoid.z - this.position.z) < 1.2 && Math.hypot(avoid.x - goal.x, avoid.z - goal.z) > 0.8;
+    const found = this.nav.findPath(this.position, goal, this.path, blocking ? { x: avoid.x, z: avoid.z, r: this.tuning.avoidRadius } : null);
+    if (!found && blocking) this.nav.findPath(this.position, goal, this.path);
     this.pathIndex = 0;
     this.plannedFor = { x: goal.x, z: goal.z };
     this.replanIn = this.tuning.replanEvery;
@@ -147,20 +198,23 @@ export class HumanController {
     return null;
   }
 
-  /** Wedged against something: skip ahead a waypoint, or plan afresh. */
+  /** Wedged against something: skip ahead a waypoint, or plan afresh. Counts how long no progress is made. */
   private checkStuck(dt: number, targetSpeed: number): void {
     if (targetSpeed < 0.2) {
-      this.stuckFor = 0;
+      this.checkTime = 0;
       return;
     }
-    this.stuckFor += dt;
-    if (this.stuckFor < this.tuning.stuckTime) return;
+    this.checkTime += dt;
+    if (this.checkTime < this.tuning.stuckTime) return;
     const progress = Math.hypot(this.position.x - this.progressFrom.x, this.position.z - this.progressFrom.z);
     if (progress < this.tuning.stuckProgress) {
-      if (this.pathIndex < this.path.length - 1) this.pathIndex++;
-      else this.plannedFor = null;
+      // Plan afresh from here (round Moke, if he's what's in the way).
+      this.plannedFor = null;
+      this.stuckFor += this.checkTime;
+    } else {
+      this.stuckFor = 0;
     }
-    this.stuckFor = 0;
+    this.checkTime = 0;
     this.progressFrom.x = this.position.x;
     this.progressFrom.z = this.position.z;
   }

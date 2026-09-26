@@ -4,10 +4,10 @@ import { HEIST } from '../config/heist';
 import { HUMAN } from '../config/human';
 import type { GameEvents } from '../core/GameEvents';
 import { Human } from '../human/Human';
-import { HumanBrain, type HumanPlaces } from '../human/HumanBrain';
+import { HumanBrain, type HumanIdleDriver, type HumanPlaces } from '../human/HumanBrain';
 import { HumanController } from '../human/HumanController';
 import { NavGrid } from '../human/NavGrid';
-import { ToonHumanVisual } from '../human/ToonHumanVisual';
+import { StylizedHumanVisual } from '../human/StylizedHumanVisual';
 import type { InteractionSystem } from '../interactions/InteractionSystem';
 import type { PickupSystem } from '../interactions/PickupSystem';
 import { CharacterBody, type Vec3Like } from '../physics/CharacterBody';
@@ -17,14 +17,14 @@ import type { Moke } from '../player/Moke';
 import type { Prop } from '../props/Prop';
 import type { ScentSystem } from '../senses/ScentSystem';
 import type { UIManager } from '../ui/UIManager';
-import type { LivingRoom } from '../world/LivingRoom';
+import type { Home } from '../world/Home';
 import { DogLogicMemory } from './DogLogic';
 import { SockHeistController } from './SockHeistController';
 
 export interface HeistRuntimeDeps {
   readonly scene: Object3D;
   readonly physics: PhysicsWorld;
-  readonly room: LivingRoom;
+  readonly room: Pick<Home, 'landmarks' | 'colliders' | 'bounds'>;
   readonly events: GameEvents;
   readonly interactions: InteractionSystem;
   readonly pickup: PickupSystem<Prop>;
@@ -36,6 +36,12 @@ export interface HeistRuntimeDeps {
   readonly audio: AudioManager;
   /** Pops a little word over Moke ("Nom!"). */
   readonly mokeSays: (text: string) => void;
+  /** The human's daily routine (what they do when the heist doesn't need them). */
+  readonly routine?: HumanIdleDriver;
+  /** The human's walkable grid over the whole house (built once, shared with the dog activities). */
+  readonly nav?: NavGrid;
+  /** What Moke has figured out (shared with the other Dog Logic moments). */
+  readonly memory?: DogLogicMemory;
 }
 
 /** Under something this low (m of headroom), he's out of the human's reach. */
@@ -60,6 +66,9 @@ export class SockHeistRuntime {
     mokeBarked: boolean;
     looseSock: Vec3Like | null;
     clear: (from: Vec3Like, to: Vec3Like) => boolean;
+    mokeCarrying: string | null;
+    mokeTrick: boolean;
+    mokeLying: boolean;
   };
 
   constructor(private readonly deps: HeistRuntimeDeps) {
@@ -67,13 +76,15 @@ export class SockHeistRuntime {
     const marks = room.landmarks;
     this.sockHome = marks.sock;
     const places: HumanPlaces = { home: marks.laundry, basket: marks.laundryBasket, treatStand: marks.treatStand, treatJar: marks.treatJar };
-    const nav = new NavGrid(room.colliders, {
-      bounds: { minX: -3.6, maxX: 6.8, minZ: -3.1, maxZ: 3.1 },
-      cell: 0.1,
-      agentRadius: HUMAN.body.radius,
-      minY: 0.08,
-      maxY: 1.7,
-    });
+    const nav =
+      deps.nav ??
+      new NavGrid(room.colliders, {
+        bounds: room.bounds,
+        cell: 0.1,
+        agentRadius: HUMAN.body.radius,
+        minY: 0.08,
+        maxY: 1.7,
+      });
 
     this.heist = new SockHeistController({
       events,
@@ -87,7 +98,7 @@ export class SockHeistRuntime {
       },
       scene,
       places: { humanHome: marks.laundry, basket: marks.laundryBasket, sockReturn: marks.sockReturn },
-      memory: new DogLogicMemory(),
+      memory: deps.memory ?? new DogLogicMemory(),
       // The human puts the treat down toward Moke. If he's up on the couch or table, that line runs into the
       // furniture: stop short of it, on open floor he can reach.
       treatSpot: (from, to) => {
@@ -105,7 +116,12 @@ export class SockHeistRuntime {
       createHuman: (hands) => {
         const heading = Math.atan2(marks.laundryBasket.x - marks.laundry.x, marks.laundryBasket.z - marks.laundry.z);
         const body = new CharacterBody(physics, marks.laundry, HUMAN.body);
-        const human = new Human(new HumanBrain(places, hands, events), new HumanController(body, nav, heading), new ToonHumanVisual());
+        const brain = new HumanBrain(places, hands, events);
+        if (deps.routine) {
+          brain.driver = deps.routine;
+          deps.routine.reset();
+        }
+        const human = new Human(brain, new HumanController(body, nav, heading), new StylizedHumanVisual());
         scene.add(human.visual.object);
         return human;
       },
@@ -132,6 +148,9 @@ export class SockHeistRuntime {
       mokeBarked: false,
       looseSock: null,
       clear: (from, to) => physics.lineOfSight(from, to),
+      mokeCarrying: null,
+      mokeTrick: false,
+      mokeLying: false,
     };
 
     events.on('HUMAN_SAID', ({ text, mood }) => {
@@ -141,10 +160,6 @@ export class SockHeistRuntime {
     events.on('HUMAN_NOTICED', () => audio.play('surprise'));
     events.on('GRAB_MISSED', () => audio.play('whoosh'));
     events.on('TREAT_FETCHED', () => audio.play('treatBag'));
-    events.on('DOG_LOGIC_DISCOVERED', ({ first }) => {
-      ui.showDiscovery(first, HEIST.discoveryTime * 1000 - 250);
-      audio.play('discovery');
-    });
     events.on('HEIST_RESET', () => ui.clearHeist());
   }
 
@@ -168,18 +183,24 @@ export class SockHeistRuntime {
     w.mokeUnderFurniture = moke.controller.headroom < UNDER_FURNITURE;
     w.mokeBarked = this.barked;
     w.looseSock = !sock.carried && pickup.carried !== sock ? sock.position : null;
+    w.mokeCarrying = pickup.carried?.id ?? null;
+    w.mokeTrick = moke.animation.performingTrick;
+    w.mokeLying = moke.resting;
     this.human.fixedUpdate(step, w);
     this.barked = false;
     this.heist.fixedUpdate(step);
   }
 
-  /** Each frame: draw the human, keep the speech bubble over their head, update the objective line. */
-  update(dt: number, alpha: number, camera: Camera, canvas: HTMLCanvasElement, playing: boolean): void {
+  /**
+   * Each frame: draw the human, keep the speech bubble over their head, update the objective line (the heist's, or
+   * `otherObjective` when the heist has nothing to say).
+   */
+  update(dt: number, alpha: number, camera: Camera, canvas: HTMLCanvasElement, playing: boolean, otherObjective: string | null = null): void {
     this.human.visual.setSeeThrough(this.blocksView(camera.position));
     this.human.update(dt, alpha);
     this.heist.update();
     const ui = this.deps.ui;
-    ui.setObjective(playing ? this.heist.objective : null);
+    ui.setObjective(playing ? (this.heist.objective ?? otherObjective) : null);
     if (!ui.speaking) return;
     const p = this.human.headPosition(this.head).project(camera);
     // Behind the camera: pin it to the side they're on, near the top.
@@ -194,7 +215,7 @@ export class SockHeistRuntime {
    * characters on purpose (no jitter), so instead the human fades to see-through while in the way.
    */
   private blocksView(eye: Vec3Like): boolean {
-    const h = this.human.renderPosition;
+    const h = this.human.visualPosition;
     const m = this.deps.moke.renderPosition;
     const radius = HUMAN.body.radius + 0.12;
     if (Math.hypot(eye.x - h.x, eye.z - h.z) < radius + 0.15 && eye.y < 1.7) return true;

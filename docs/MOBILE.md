@@ -227,3 +227,14 @@ It stays hidden unless asked for.
 - iPhone Safari has no fullscreen for web pages; "Add to Home Screen" is the way to hide the browser bars.
 - The placeholder human adds about 48 draw calls; merging its parts would cut that if phones need it.
 - The service worker only activates on the hosted (https) build, not on a LAN dev server.
+
+## Phase 4 on phones (emulated only)
+- **No new buttons.** Everything new comes through the paw: "Get Pets", "Nap Here", "Eat Treat" (the hidden treat),
+  "Drop Tennis Ball" / "Drop Rope Toy" for Make Human Play; and **tapping the paw with nothing to interact with sniffs**, so a
+  Treat Hunt works without the Sniff button the owner dropped in Phase 3. Tricks and barks (which start a Treat
+  Hunt and pester the human) are in the paw's hold-menu as before.
+- **The nap card** sits at the top centre, below the notch (safe-area aware), and never covers the controls.
+- **Cost, measured in emulation on this desktop (MEDIUM, 1110 × 540 buffer, 740 × 360 touch):** 1.6–2.3 ms of CPU per
+  frame, 158–185 draw calls, 264–298 k triangles across the house (Phase 3 baseline in the living room: 1.1–1.2 ms,
+  152 calls, 223 k). The new wing's furniture doesn't cast sun shadows (no sun reaches it), which saved ~35 calls.
+  **Not measured on a physical phone:** GPU time, heat and memory with the bigger house and the skinned human.

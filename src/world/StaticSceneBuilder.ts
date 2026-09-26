@@ -60,6 +60,11 @@ function transform(position: Vec3Tuple, rotation: Vec3Tuple = [0, 0, 0], scale: 
  */
 export class StaticSceneBuilder {
   readonly colliders: StaticBox[] = [];
+  /**
+   * Whether parts cast shadows unless they say otherwise. Off where the sun never reaches (the wing's furniture:
+   * its walls keep the sun out), so the shadow pass doesn't draw things that could never show a shadow.
+   */
+  castByDefault = true;
   private readonly batches = new Map<string, Batch>();
   private readonly extras: Object3D[] = [];
   private frame = new Matrix4();
@@ -83,7 +88,7 @@ export class StaticSceneBuilder {
     }
     if (options.worldUV) remapWorldUV(placed, options.worldUV);
 
-    const cast = options.cast ?? true;
+    const cast = options.cast ?? this.castByDefault;
     const receive = options.receive ?? true;
     const key = `${material.uuid}|${cast}|${receive}`;
     let batch = this.batches.get(key);

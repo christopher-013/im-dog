@@ -1,4 +1,5 @@
 import { CONTROL_HINTS, GAMEPAD_CONTROL_HINTS, KEY_BINDINGS, TOUCH_CONTROL_HINTS, type Action, type GamepadControlHint } from '../config/input';
+import type { DogLogicEntry } from '../config/dogLogic';
 import type { InputMode } from '../core/InputMode';
 import { keyLabel } from '../core/InputState';
 import { MUSIC_CHOICES, MUSIC_VOLUME_RANGE, SENSITIVITY_RANGE, type MusicChoice, type PlayerSettings } from '../core/PlayerSettings';
@@ -43,6 +44,9 @@ export class UIManager {
   private inputMode: InputMode = 'keyboard';
   private speechTimer: number | undefined;
   private discoveryTimer: number | undefined;
+  private napTimer = 0;
+  private discoveryShowing: string | null = null;
+  private readonly discoveryQueue: { first: boolean; durationMs: number; entry: DogLogicEntry }[] = [];
   private objective: string | null = null;
   private readonly sniffVignette: HTMLElement;
   private readonly barkBubble: HTMLElement;
@@ -372,9 +376,20 @@ export class UIManager {
     chip.setAttribute('aria-hidden', String(text === null));
   }
 
-  /** SOCK = TREAT, for a few seconds. `first`: a brand-new discovery (or one he already knew). */
-  showDiscovery(first: boolean, durationMs: number): void {
+  /**
+   * A Dog Logic moment ("SOCK = TREAT") for a few seconds. `first`: a brand-new discovery (or one he already knew).
+   * Given an entry, the equation is drawn from it; several at once take turns.
+   */
+  showDiscovery(first: boolean, durationMs: number, entry?: DogLogicEntry): void {
     const card = this.el('discovery');
+    if (entry && card.classList.contains('is-visible') && this.discoveryShowing !== entry.id) {
+      this.discoveryQueue.push({ first, durationMs, entry });
+      return;
+    }
+    if (entry) {
+      this.discoveryShowing = entry.id;
+      this.renderEquation(entry);
+    }
     this.el('discovery-note').textContent = first ? 'Moke has learned something very important.' : 'Still true. Moke checked.';
     card.classList.remove('is-leaving');
     card.classList.add('is-visible');
@@ -389,6 +404,68 @@ export class UIManager {
     if (card.classList.contains('is-visible')) card.classList.add('is-leaving');
     card.classList.remove('is-visible');
     card.setAttribute('aria-hidden', 'true');
+    this.discoveryShowing = null;
+    const next = this.discoveryQueue.shift();
+    if (next) window.setTimeout(() => this.showDiscovery(next.first, next.durationMs, next.entry), 450);
+  }
+
+  /** Builds "ICON WORD + ICON WORD = WORD ICON" into the card. */
+  private renderEquation(entry: DogLogicEntry): void {
+    const equation = this.el('discovery-equation');
+    equation.replaceChildren();
+    const icon = (name: string) => {
+      const svg = this.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'discovery-icon');
+      svg.setAttribute('aria-hidden', 'true');
+      const use = this.doc.createElementNS('http://www.w3.org/2000/svg', 'use');
+      use.setAttribute('href', `#icon-${name}`);
+      svg.append(use);
+      return svg;
+    };
+    const word = (text: string, className?: string) => {
+      const span = this.doc.createElement('span');
+      span.textContent = text;
+      if (className) span.className = className;
+      return span;
+    };
+    entry.left.forEach((term, i) => {
+      if (i > 0) equation.append(word('+', 'discovery-equals'));
+      equation.append(icon(term.icon), word(term.word));
+    });
+    equation.append(word('=', 'discovery-equals'), word(entry.right.word), icon(entry.right.icon));
+    equation.classList.toggle('is-long', entry.left.length > 1 || entry.right.word.length > 6);
+  }
+
+  /** How a nap felt: a row of five little signs (lit when true) and a few words. */
+  showNap(kicker: string, signs: readonly { icon: string; lit: boolean; label: string }[], caption: string, durationMs = 5200): void {
+    const card = this.el('nap-card');
+    this.el('nap-kicker').textContent = kicker;
+    card.classList.toggle('is-perfect', kicker !== 'Nap');
+    const row = this.el('nap-icons');
+    row.replaceChildren();
+    for (const sign of signs) {
+      const svg = this.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', `nap-icon${sign.lit ? ' is-lit' : ''}`);
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', `${sign.label}: ${sign.lit ? 'yes' : 'no'}`);
+      const use = this.doc.createElementNS('http://www.w3.org/2000/svg', 'use');
+      use.setAttribute('href', `#icon-${sign.icon}`);
+      svg.append(use);
+      row.append(svg);
+    }
+    this.el('nap-caption').textContent = caption;
+    card.classList.add('is-visible');
+    card.setAttribute('aria-hidden', 'false');
+    window.clearTimeout(this.napTimer);
+    this.napTimer = window.setTimeout(() => {
+      card.classList.remove('is-visible');
+      card.setAttribute('aria-hidden', 'true');
+    }, durationMs);
+  }
+
+  /** Napping: the edges of the screen soften and dim a little. */
+  setNapping(on: boolean): void {
+    this.el('nap-vignette').classList.toggle('is-visible', on);
   }
 
   /** "Sock Heist Complete", with how long it took. */

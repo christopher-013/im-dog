@@ -19,6 +19,13 @@ export interface NavGridOptions {
 
 const SQRT2 = Math.SQRT2;
 
+/** Something in the way just now (Moke standing in a doorway): a circle to route round, for one search. */
+export interface NavAvoid {
+  readonly x: number;
+  readonly z: number;
+  readonly r: number;
+}
+
 /**
  * A walkability grid over the floor, built once from the room's static colliders, with A* paths smoothed into
  * a few straight legs. Plain logic (no three.js or Rapier), so it's cheap and testable. Because obstacles are
@@ -35,6 +42,8 @@ export class NavGrid {
   private readonly state: Uint8Array; // 0 unseen, 1 open, 2 closed
   private readonly heap: Int32Array;
   private readonly fScore: Float32Array;
+  /** The temporary obstacle for the current search (see findPath). */
+  private avoid: NavAvoid | null = null;
 
   constructor(
     boxes: readonly StaticBox[],
@@ -56,7 +65,12 @@ export class NavGrid {
   /** Is the walker's centre allowed here? */
   isWalkable(x: number, z: number): boolean {
     const i = this.index(x, z);
-    return i >= 0 && this.blocked[i] === 0;
+    return i >= 0 && this.blocked[i] === 0 && !this.avoided(x, z);
+  }
+
+  private avoided(x: number, z: number): boolean {
+    const a = this.avoid;
+    return a !== null && Math.hypot(x - a.x, z - a.z) < a.r;
   }
 
   /** The walkable point nearest (x, z), searching outwards up to `maxRadius` (m), or null. */
@@ -91,12 +105,24 @@ export class NavGrid {
    * A smoothed path from `from` to `to` (both snapped to the nearest walkable point), written into `out` as
    * waypoints after the start, ending at the goal. Returns false (and leaves `out` empty) if unreachable.
    */
-  findPath(from: Point2, to: Point2, out: Point2[]): boolean {
+  findPath(from: Point2, to: Point2, out: Point2[], avoid: NavAvoid | null = null): boolean {
+    this.avoid = avoid;
+    try {
+      return this.search2(from, to, out);
+    } finally {
+      this.avoid = null;
+    }
+  }
+
+  private search2(from: Point2, to: Point2, out: Point2[]): boolean {
     out.length = 0;
     const start = this.nearestWalkable(from.x, from.z);
     const goal = this.nearestWalkable(to.x, to.z);
     if (!start || !goal) return false;
+    // Starting off the walkable area (squeezed against something, or inside what to avoid): step out first.
+    const offStart = Math.hypot(start.x - from.x, start.z - from.z) > this.options.cell * 0.75;
     if (this.lineOfSight(start, goal)) {
+      if (offStart) out.push(start);
       out.push(goal);
       return true;
     }
@@ -110,6 +136,7 @@ export class NavGrid {
     cells.reverse();
     const points = cells.map((i) => this.center(i % this.cols, Math.floor(i / this.cols)));
     points[points.length - 1] = goal;
+    if (offStart) out.push(start);
     let anchor: Point2 = start;
     let k = 0;
     while (k < points.length) {
@@ -248,7 +275,10 @@ export class NavGrid {
   }
 
   private open(c: number, r: number): boolean {
-    return c >= 0 && r >= 0 && c < this.cols && r < this.rows && this.blocked[r * this.cols + c] === 0;
+    if (c < 0 || r < 0 || c >= this.cols || r >= this.rows || this.blocked[r * this.cols + c] !== 0) return false;
+    if (!this.avoid) return true;
+    const p = this.center(c, r);
+    return !this.avoided(p.x, p.z);
   }
 
   private col(x: number): number {

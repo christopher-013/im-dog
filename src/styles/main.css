@@ -983,6 +983,90 @@ html[data-debug] .heist-chip {
   font-weight: 500;
 }
 
+/* Longer equations (SUN + SOFT = NAP, BARK = ATTENTION) a size smaller. */
+.discovery-equation.is-long {
+  font-size: clamp(1.5rem, 5.4vw, 2.6rem);
+}
+
+/* Perfect Nap: how the nap felt, top of the screen, out of the way. */
+.nap-card {
+  position: absolute;
+  left: 50%;
+  top: calc(16px + env(safe-area-inset-top));
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 10px 20px 12px;
+  border-radius: 22px;
+  background: rgba(255, 250, 243, 0.94);
+  box-shadow: 0 6px 0 var(--shadow), 0 16px 40px rgba(43, 37, 48, 0.16);
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -12px);
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  pointer-events: none;
+}
+
+.nap-card.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.nap-kicker {
+  margin: 0;
+  color: #6f7fb6;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.nap-card.is-perfect .nap-kicker {
+  color: var(--coral);
+  font-size: 0.95rem;
+}
+
+.nap-icons {
+  display: flex;
+  gap: 10px;
+  margin: 2px 0 0;
+}
+
+.nap-icon {
+  width: 28px;
+  height: 28px;
+  opacity: 0.22;
+  filter: grayscale(1);
+  transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
+}
+
+.nap-icon.is-lit {
+  opacity: 1;
+  filter: none;
+  transform: scale(1.08);
+}
+
+.nap-caption {
+  margin: 0;
+  color: var(--ink-soft);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* Napping: the room dims softly at the edges. */
+.nap-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(40, 36, 60, 0) 45%, rgba(40, 36, 60, 0.38) 100%);
+  opacity: 0;
+  transition: opacity 1.6s ease;
+  pointer-events: none;
+}
+
+.nap-vignette.is-visible {
+  opacity: 1;
+}
+
 .complete-icons {
   display: flex;
   align-items: center;

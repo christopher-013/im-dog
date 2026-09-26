@@ -127,6 +127,7 @@ export class MokeAnimationController {
   private sinceBark = Infinity;
   private sinceGrowl = Infinity;
   private sinceEat = Infinity;
+  private sincePet = Infinity;
   private sinceLand = Infinity;
   private wasAirborne = false;
   /** When the current trick ends (s of trick time), and how long its ease-out takes. */
@@ -182,11 +183,19 @@ export class MokeAnimationController {
     this.sinceEat += dt;
     const e = this.sinceEat / a.eatDuration;
     s.eat = e >= 1 ? 0 : Math.min(1, e * 7) * Math.min(1, (1 - e) * 6);
+    this.sincePet += dt;
+    const petted = this.petting ? Math.min(1, this.sincePet * 4) * Math.min(1, (a.petDuration - this.sincePet) * 3) : 0;
     this.updateAir(dt, sample);
     this.updateTrick(dt);
     this.updateSitting(dt, sample);
     const wag = s.gait === 'idle' ? a.idleTailWag : a.movingTailWag;
-    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8, s.trickBlend * a.tricks.tailWag, s.eat), 3, dt);
+    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8, s.trickBlend * a.tricks.tailWag, s.eat, petted * 1.4), petted > 0 ? 8 : 3, dt);
+    if (petted > 0) {
+      // Head up into the hand, a happy tilt, sitting for it.
+      s.headPitch = Math.max(s.headPitch, a.petHeadPitch * petted);
+      s.headTilt = damp(s.headTilt, a.headTiltAngle * 0.6 * petted, 6, dt);
+      s.sit = Math.max(s.sit, petted);
+    }
 
     const crouchTarget = clamp((a.duckBelowHeadroom - sample.headroom) / a.duckRange, 0, 1);
     s.crouch = damp(s.crouch, crouchTarget, 10, dt);
@@ -224,6 +233,15 @@ export class MokeAnimationController {
 
   get eating(): boolean {
     return this.sinceEat < MOKE_ANIMATION.eatDuration;
+  }
+
+  /** A hand on his head: he sits, leans his head up into it and wags. He stays put for it. */
+  pet(): void {
+    this.sincePet = 0;
+  }
+
+  get petting(): boolean {
+    return this.sincePet < MOKE_ANIMATION.petDuration;
   }
 
   /** He's in the middle of a trick (including easing out of one he cut short). */

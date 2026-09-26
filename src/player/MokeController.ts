@@ -193,6 +193,21 @@ export class MokeController {
     return this.previousHeading + angleDelta(this.previousHeading, this.locomotion.heading) * alpha;
   }
 
+  /** Straight to a spot, standing still (development: `imdog.teleport(x, z)` in the console). */
+  teleport(at: Vec3Like, heading: number): void {
+    this.body.center.x = at.x;
+    this.body.center.y = at.y + this.body.centerHeight + 0.02;
+    this.body.center.z = at.z;
+    this.verticalSpeed = 0;
+    this.locomotion.speed = 0;
+    this.locomotion.heading = heading;
+    this.body.move({ x: 0, y: -0.05, z: 0 }, this.applied);
+    this.syncPositionFromBody();
+    this.previousPosition.copy(this.position);
+    this.previousHeading = heading;
+    this.probeHeadroom();
+  }
+
   private syncPositionFromBody(): void {
     const c = this.body.center;
     this.position.set(c.x, c.y - this.body.centerHeight, c.z);

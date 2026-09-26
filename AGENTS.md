@@ -20,10 +20,15 @@ Shared, tool-independent instructions for every coding agent working in this rep
   treat trade, SOCK = TREAT), touch/mobile web play (the paw menu), jumping, phone audio fixes and background music.
   Real-device coverage is the owner's own phone playtest (device and browser not recorded): don't claim broader
   mobile testing. Details: `docs/SOCK_HEIST.md`, `docs/MOBILE.md`.
-- **Next:** Phase 4 isn't defined yet. Write `docs/PHASE_4.md` (scope, milestones, success criteria) for the owner to
-  approve before any Phase 4 code; the Phase 3 brief left the full Dog Logic system to it. Don't start Phase 4, more
-  humans, more rooms or another mini-game without the owner's approval. Also carried over: `docs/PHASE_3.md` →
-  "Carried forward", and the hands-on checks and Known Issues in `docs/CURRENT_STATE.md`.
+- **Phase 4 is built but not closed (and not committed):** "Moke's Home & Family Life" (`docs/PHASE_4.md`), from the
+  owner's brief of 2026-09-25 with photos of the real home. The whole home (living room, kitchen, family room, dining
+  room), a stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and
+  Dog Logic. Tested in automation and the browser (desktop, emulated phone) only: **not yet played by the owner or
+  on a physical phone.** Details: `docs/HOME_REFERENCE.md`, `docs/HUMAN_SYSTEM.md`, `docs/ACTIVITIES.md`,
+  `docs/DOG_LOGIC.md`.
+- **Next:** the owner's review of Phase 4, then closing it. Don't start Phase 5, more humans, more rooms, the outdoors
+  or another mini-game without the owner's approval. Also carried over: `docs/PHASE_4.md` → "Carried forward", and the
+  Known Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES
@@ -69,18 +74,23 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - `docs/PHASE_2.md`: Phase 2 scope and status.
   - `docs/PHASE_3.md`: Phase 3 scope, history and what's carried forward; `docs/SOCK_HEIST.md` (the mini-game, the human) and
     `docs/MOBILE.md` (touch, quality, PWA, phone testing).
+  - `docs/PHASE_4.md`: Phase 4 scope and status; `docs/HOME_REFERENCE.md` (the real home → the game's house),
+    `docs/HUMAN_SYSTEM.md` (the human's layers), `docs/ACTIVITIES.md` (daily life and dog activities),
+    `docs/DOG_LOGIC.md`.
   - `docs/MOKE_CHARACTER_REFERENCE.md`: character work.
   - `docs/MOKE_3D_SPEC.md` and `docs/MOKE_INTEGRATION.md`: the final `moke.glb` and how it plugs in.
   - `docs/ASSETS.md`: licence log. Record every external asset here. Original, CC0 or properly licensed only; never purchase anything.
 - The title's visual identity is original. Never copy I'M DONUT? branding.
 
-## Private Moke references
-`reference/moke/` contains **private development photographs** of the real Moke. They're git-ignored (only the
-folder's README is tracked), so a fresh clone won't include them. Never:
+## Private references (Moke and the home)
+`reference/moke/` contains **private development photographs** of the real Moke, and (since Phase 4)
+`reference/home/` photographs of the real home (D18). They're git-ignored (only each folder's README is tracked), so a
+fresh clone won't include them. Never:
 - move or copy them into `public/`, or import them from code;
 - include them in production builds;
 - upload or transmit them externally;
 - modify or delete the originals;
+- use them as textures (the rooms are modelled and textured in code);
 - commit them unless the owner explicitly approves it.
 
 Guards are already in place: `.gitignore`, a Vite plugin that fails the build on any import from `reference/`,

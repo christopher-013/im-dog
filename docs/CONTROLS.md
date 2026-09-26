@@ -13,7 +13,7 @@ using: "E — Pick Up Sock" on a keyboard, "A — …" on a controller, a lit-up
 | Mouse wheel | Zoom the camera in/out (0.7–2.6 m) | Working |
 | Shift (hold) | Run | Working |
 | C (hold) | Walk / sneak | Working. Not Ctrl, because Ctrl+W closes the browser tab. |
-| E | Interact: pick up · drop · **give** (the sock, for a treat) · **eat** (the treat) · lie down in the bed · get up | Working: the prompt shows what E will do |
+| E | Interact: pick up · drop · **give** (the sock, for a treat) · **eat** (the treat) · lie down in the bed · **nap here** (the sofas, his blanket, the hearth) · **get pets** (near the human) · get up. **With nothing to interact with, E sniffs** (like R). | Working: the prompt shows what E will do |
 | Space | Jump | Working: up onto the couch seat or the coffee table (0.45 m), the highest places he can get to. Never the TV console, the side table or the couch's arms or back. On the couch or table it's only a little hop; walk off the edge to hop down. No jumping under the coffee table. |
 | F | Bark or growl, at random | Working. Bark: a little hop, "Arf!" and a synthesized bark; the human can hear it. Growl: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a deep, rumbly "grrrr". |
 | Q | Do a trick | Working: a random trick, never the same twice in a row: belly up, beg, give paw, or spin. He stays put for it; moving or E cuts it short. No belly-up with something in his mouth, no begging under the furniture. |
@@ -64,7 +64,7 @@ screen. Using a mouse or keyboard again switches back. Portrait and landscape bo
 | Left thumb, anywhere on the left of the screen | Move. A stick appears under your thumb: push a little to walk, further to trot. |
 | Push the stick past its ring (it turns coral) | Run, one-handed |
 | Right thumb, drag anywhere on the right | Look around |
-| Tap the paw button | Interact: it lights up and says what it will do ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…) |
+| Tap the paw button | Interact: it lights up and says what it will do ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down", "Nap Here", "Get Pets"…). **With nothing to interact with, it sniffs** (for Treat Hunt: there's no separate sniff button on touch). |
 | **Hold** the paw button (~0.3 s) | The other buttons pop out of it: **Jump**, **Bark** (bark or growl, at random), **Trick**, **Run**. Slide onto one and let go, or let go and tap one (as many as you like). They tuck back in after 2.5 s unused, or at once when you tap the paw or drag to look. |
 | RUN (in the paw's buttons) | Run toggle: stays on until you tap it again. While it's on, the stick is coral. |
 | II (top-right) | Pause |
@@ -88,3 +88,14 @@ After that, a one-line reminder when play starts.
 
 **Live feel tuning (dev server only):** in the browser console, change values on `tuning.movement`
 (e.g. `tuning.movement.runSpeed = 5`), `tuning.camera` or `tuning.mouse`. Copy good values into `src/config/`.
+
+## Phase 4: new things to do (no new buttons)
+- **Get Pets:** walk up to the human when they're free and press E / A / the paw. They reach down and pat him; he
+  sits and wags.
+- **Nap Here:** lie down on the sofas (a hop up), his pink blanket or the hearth, as well as his bed. Any move key
+  (or E) gets him up.
+- **Treat Hunt:** do a trick (Q / X / the paw menu's Trick) near the human. Then sniff (R, or E / the paw when there's
+  nothing to interact with) and follow the wisps.
+- **Make Human Play:** bring the ball or rope toy to the human and keep at it (drop it at their feet, bark, do a trick)
+  until they give in.
+- **Get their attention:** bark (F / Y / the paw menu's Bark) at them three times.

@@ -4,6 +4,9 @@ import type { GameEvents, Speech } from '../core/GameEvents';
 import type { Vec3Like } from '../physics/CharacterBody';
 import { angleDelta, clamp, damp, lerp } from '../utils/math';
 import { canHear, canSee, type ClearSight } from './HumanAwareness';
+import type { HumanPose, HumanProp, HumanSitStyle } from './HumanRig';
+
+export type { HumanPose } from './HumanRig';
 
 /** Every state the human can be in (Sock Heist). Shown in the debug panel. */
 export const HUMAN_STATES = [
@@ -24,8 +27,6 @@ export const HUMAN_STATES = [
 ] as const;
 export type HumanStateName = (typeof HUMAN_STATES)[number];
 
-/** Upper-body action for the visual (legs follow speed). */
-export type HumanPose = 'fold' | 'idle' | 'surprised' | 'chase' | 'lunge' | 'stumble' | 'shrug' | 'search' | 'peek' | 'rummage' | 'offer' | 'take' | 'place' | 'tidy';
 
 /** What the human perceives this step. Built by the game from Moke, the props and physics. */
 export interface HumanSenses {
@@ -33,6 +34,10 @@ export interface HumanSenses {
   readonly heading: number;
   /** Their body reached the last goal (or can't get any closer). */
   readonly arrived: boolean;
+  /** Sitting down (on a sofa, a chair, a stool). */
+  readonly seated?: boolean;
+  /** Seconds walking without getting any closer (a blocked path). */
+  readonly stuck?: number;
   readonly moke: Vec3Like;
   readonly mokeCarryingSock: boolean;
   /** His ground speed (m/s): a sprinting dog is past before they can grab. */
@@ -43,6 +48,28 @@ export interface HumanSenses {
   /** The sock, when it's lying loose (in nobody's mouth or hand). */
   readonly looseSock: Vec3Like | null;
   readonly clear: ClearSight;
+  /** What Moke has in his mouth (a prop id), if anything. */
+  readonly mokeCarrying?: string | null;
+  /** He's doing a trick right now (begging, offering a paw…). */
+  readonly mokeTrick?: boolean;
+  /** He's lying down (in a bed, on a sofa). */
+  readonly mokeLying?: boolean;
+}
+
+/**
+ * What the human does when the Sock Heist doesn't need them: their daily routine (HumanActivityController). The
+ * brain keeps watching for a dog with a sock; the moment it notices, it interrupts the routine, and resumes it
+ * after the heist settles down.
+ */
+export interface HumanIdleDriver {
+  /** Runs the idle behaviour for this step: fills in the intent; returns the head turn to aim for (rad). */
+  drive(dt: number, s: HumanSenses, intent: HumanIntent): number;
+  /** The heist needs the human: drop everything (and remember it). */
+  interrupt(): void;
+  /** Back to idle after the heist: pick things up again. */
+  resume(s: HumanSenses): void;
+  /** A replay: start again at the laundry. */
+  reset(): void;
 }
 
 export interface HumanPlaces {
@@ -63,6 +90,15 @@ export interface HumanHands {
   placeTreat(at: Vec3Like): void;
 }
 
+/** A seat to sit on: where the hips go, how high, how (the body walks to `goal` first, facing `facing`). */
+export interface SeatSpec {
+  readonly x: number;
+  readonly z: number;
+  readonly height: number;
+  readonly style: HumanSitStyle;
+  readonly facing: number;
+}
+
 /** What the brain wants the body and visual to do. */
 export interface HumanIntent {
   /** Walk here (pathfinding), or null to stay put. */
@@ -77,12 +113,33 @@ export interface HumanIntent {
   /** 0 standing … 1 kneeling. */
   crouch: number;
   pose: HumanPose;
+  /** Sit here once at `goal` (null: stand, getting up first if seated). */
+  seat: SeatSpec | null;
+  /** Something in hand for the activity. */
+  prop: HumanProp | null;
+  /** Something to look at (their eyes follow it; the head helps). */
+  lookAt: Vec3Like | null;
+  /**
+   * How much of them turns to it: 0.3 a glance (eyes and a little head), 0.6 interested (head and neck), 1 full
+   * attention (the upper body helps). Unset: 0.6. The animation eases between weights; it never snaps.
+   */
+  lookWeight?: number;
+  /** Something the right hand should reach (petting Moke, holding out a treat). */
+  reach?: Vec3Like | null;
+  /** The height of the work surface in front of them (a counter, a table), for kitchen and table actions (m). */
+  surface?: number;
+  /** Seconds of speaking left (the mouth moves). */
+  talking: number;
+  /** Something small and alive to walk round if it's in the way (Moke). Set by the game, not the brain. */
+  avoid?: Vec3Like | null;
 }
 
 type Tuning = typeof HUMAN;
 type Handler = (dt: number, s: HumanSenses) => HumanStateName | null;
 
 const ROOM_CENTER: Vec3Like = { x: 0.3, y: 0, z: 0.2 };
+/** How long the mouth moves for one line (s). */
+export const TALK_TIME = 1.3;
 /** How far they can reach down for a sock without taking a step (m). */
 const REACH = 0.8;
 const distance = (a: Vec3Like, b: Vec3Like) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -104,7 +161,10 @@ export class HumanBrain {
   hasSock = false;
   /** Did they see Moke this step? */
   seesMoke = false;
-  readonly intent: HumanIntent = { goal: null, speed: 0, stopWithin: 0.15, face: null, headYaw: 0, crouch: 0, pose: 'fold' };
+  readonly intent: HumanIntent = { goal: null, speed: 0, stopWithin: 0.15, face: null, headYaw: 0, crouch: 0, pose: 'fold', seat: null, prop: null, lookAt: null, talking: 0 };
+  /** The daily routine, when there is one (Phase 4). Without it, idle is folding laundry at `places.home`. */
+  driver: HumanIdleDriver | null = null;
+  private lastSenses: HumanSenses | null = null;
 
   private readonly lastSeen: Vec3Like = { x: 0, y: 0, z: 0 };
   private seenFor = 0;
@@ -159,17 +219,30 @@ export class HumanBrain {
     return this.state === 'waitForTrade' || (this.state === 'offerTreat' && this.hasTreat);
   }
 
-  /** How far their eyes are off the floor now (crouching lowers them). */
+  /** How far their eyes are off the floor now (crouching and sitting lower them). */
   get eyeHeight(): number {
     const sight = this.tuning.sight;
     // Searching, they bend right down to peek under things; otherwise a crouch is a kneel.
     const low = this.intent.pose === 'peek' ? sight.peekEyeHeight : sight.crouchEyeHeight;
-    return lerp(sight.eyeHeight, low, this.intent.crouch);
+    const standing = this.seated ? sight.seatedEyeHeight : sight.eyeHeight;
+    return lerp(standing, low, this.intent.crouch);
   }
 
+  /** Sitting down right now (from the senses). */
+  private seated = false;
+
   update(dt: number, s: HumanSenses): void {
+    this.seated = s.seated ?? false;
+    this.lastSenses = s;
     this.timeInState += dt;
     this.stepsInState++;
+    this.intent.talking = Math.max(0, this.intent.talking - dt);
+    // Everything but idle is the Sock Heist: on their feet, hands free, eyes on Moke when they can see him.
+    if (this.state !== 'idle') {
+      this.intent.seat = null;
+      this.intent.prop = null;
+      this.intent.lookAt = this.seesMoke ? s.moke : null;
+    }
     this.intent.headYaw = damp(this.intent.headYaw, this.headYawTarget, 6, dt);
     // Under the coffee table he's hidden from standing eyes; only a crouch to peek finds him there.
     this.seesMoke = canSee(s.position, s.heading + this.intent.headYaw, this.eyeHeight, s.moke, s.clear, this.tuning.sight, !s.mokeUnderFurniture);
@@ -211,19 +284,36 @@ export class HumanBrain {
     this.glanceIn = this.nextGlance();
     this.glanceLeft = 0;
     this.offered = false;
+    this.driver?.reset();
   }
 
   // ---------------------------------------------------------------- states
 
   private readonly idle: Handler = (dt, s) => {
     const i = this.intent;
-    const home = distance(s.position, this.places.home) < 0.3;
-    this.walkTo(home ? null : this.places.home, this.tuning.move.walkSpeed, 0.15);
-    i.face = home ? this.places.basket : null;
-    i.crouch = 0;
-    i.pose = home ? 'fold' : 'idle';
+    if (this.driver) {
+      // The daily routine decides what they're up to; the heist only watches for the sock.
+      this.headYawTarget = this.driver.drive(dt, s, i);
+    } else {
+      const home = distance(s.position, this.places.home) < 0.3;
+      this.walkTo(home ? null : this.places.home, this.tuning.move.walkSpeed, 0.15);
+      i.face = home ? this.places.basket : null;
+      i.crouch = 0;
+      i.pose = home ? 'fold' : 'idle';
+      this.glanceAround(dt, s);
+    }
 
-    // Now and then a look round at the room (that's when a sneaky dog gets spotted).
+    const heard = s.mokeBarked && s.mokeCarryingSock && canHear(s.position, s.moke, this.tuning.sight);
+    this.seenFor = this.seesMoke && s.mokeCarryingSock ? this.seenFor + dt : 0;
+    if (heard || this.seenFor >= this.tuning.noticeDelay) {
+      this.copy(this.lastSeen, s.moke);
+      return 'noticed';
+    }
+    return null;
+  };
+
+  /** Folding laundry: now and then a look round at the room (that's when a sneaky dog gets spotted). */
+  private glanceAround(dt: number, s: HumanSenses): void {
     if (this.glanceLeft > 0) {
       this.glanceLeft -= dt;
       if (this.glanceLeft <= 0) {
@@ -235,15 +325,7 @@ export class HumanBrain {
       const toRoom = angleDelta(s.heading, Math.atan2(ROOM_CENTER.x - s.position.x, ROOM_CENTER.z - s.position.z));
       this.headYawTarget = clamp(toRoom, -this.tuning.glance.angle, this.tuning.glance.angle);
     }
-
-    const heard = s.mokeBarked && s.mokeCarryingSock && canHear(s.position, s.moke, this.tuning.sight);
-    this.seenFor = this.seesMoke && s.mokeCarryingSock ? this.seenFor + dt : 0;
-    if (heard || this.seenFor >= this.tuning.noticeDelay) {
-      this.copy(this.lastSeen, s.moke);
-      return 'noticed';
-    }
-    return null;
-  };
+  }
 
   private readonly noticed: Handler = (_dt, s) => {
     if (this.timeInState < this.tuning.reactTime) return null;
@@ -510,6 +592,8 @@ export class HumanBrain {
     this.timeInState = 0;
     this.stepsInState = 0;
     const i = this.intent;
+    if (from === 'idle' && next !== 'idle') this.driver?.interrupt();
+    if (next === 'idle' && from !== 'idle' && this.lastSenses) this.driver?.resume(this.lastSenses);
     switch (next) {
       case 'noticed':
         this.timesNoticed++;
@@ -599,6 +683,7 @@ export class HumanBrain {
     const lines = HEIST_LINES[line];
     const next = this.lineTurn.get(line) ?? Math.floor(this.random() * lines.length);
     this.lineTurn.set(line, next + 1);
+    this.intent.talking = TALK_TIME;
     this.events.emit('HUMAN_SAID', { text: lines[next % lines.length]!, mood });
   }
 

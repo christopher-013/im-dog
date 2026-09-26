@@ -10,6 +10,7 @@ import {
 } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { HOUSE_SCALE } from '../config/world';
+import type { Material } from 'three';
 import type { RoomMaterials } from './materials';
 import type { StaticSceneBuilder, Vec3Tuple } from './StaticSceneBuilder';
 
@@ -19,8 +20,18 @@ import type { StaticSceneBuilder, Vec3Tuple } from './StaticSceneBuilder';
 const rbox = (w: number, h: number, d: number, radius: number, segments = 3) =>
   new RoundedBoxGeometry(w, h, d, segments, radius);
 
+/** A couch's fabrics and its three pillows (default: the living room's oatmeal linen and leaf-print pillows). */
+export interface CouchStyle {
+  readonly frame: Material;
+  readonly cushion: Material;
+  readonly pillows: readonly [Material, Material, Material];
+}
+
 /** Oatmeal linen couch, 2.3 m wide: seat 0.45 m (Moke can jump up onto it), arms 0.64 m, back 0.88 m. */
-export function couch(b: StaticSceneBuilder, m: RoomMaterials): void {
+export function couch(b: StaticSceneBuilder, m: RoomMaterials, style?: CouchStyle): void {
+  const frame = style?.frame ?? m.linen;
+  const cushion = style?.cushion ?? m.linenLight;
+  const [pillowA, pillowB, pillowC] = style?.pillows ?? [m.pillowLeaf, m.pillowLattice, m.pillowMustard];
   const W = 2.3;
   const D = 0.95;
   const legH = 0.08;
@@ -31,21 +42,21 @@ export function couch(b: StaticSceneBuilder, m: RoomMaterials): void {
   for (const x of [-W / 2 + 0.12, W / 2 - 0.12]) {
     for (const z of [-D / 2 + 0.1, D / 2 - 0.1]) b.add(leg, m.walnut, [x, legH / 2, z]);
   }
-  b.add(rbox(W, 0.2, D, 0.05), m.linen, [0, legH + 0.1, 0]);
+  b.add(rbox(W, 0.2, D, 0.05), frame, [0, legH + 0.1, 0]);
   const cushionW = (W - 0.5) / 2 - 0.01;
   for (const side of [-1, 1]) {
-    b.add(rbox(cushionW, seatTop - 0.28, 0.67, 0.07), m.linenLight, [side * (cushionW / 2 + 0.005), (0.28 + seatTop) / 2, 0.13]);
-    b.add(rbox(cushionW, 0.4, 0.18, 0.08), m.linenLight, [side * (cushionW / 2 + 0.005), seatTop + 0.2, -0.15], {
+    b.add(rbox(cushionW, seatTop - 0.28, 0.67, 0.07), cushion, [side * (cushionW / 2 + 0.005), (0.28 + seatTop) / 2, 0.13]);
+    b.add(rbox(cushionW, 0.4, 0.18, 0.08), cushion, [side * (cushionW / 2 + 0.005), seatTop + 0.2, -0.15], {
       rotation: [-0.12, 0, 0],
     });
   }
-  b.add(rbox(W - 0.02, backTop - 0.28, 0.24, 0.07), m.linen, [0, (0.28 + backTop) / 2, -D / 2 + 0.12]);
-  for (const side of [-1, 1]) b.add(rbox(0.24, 0.56, D + 0.02, 0.08), m.linen, [side * (W / 2 - 0.12), 0.36, 0]);
+  b.add(rbox(W - 0.02, backTop - 0.28, 0.24, 0.07), frame, [0, (0.28 + backTop) / 2, -D / 2 + 0.12]);
+  for (const side of [-1, 1]) b.add(rbox(0.24, 0.56, D + 0.02, 0.08), frame, [side * (W / 2 - 0.12), 0.36, 0]);
 
   const pillow = rbox(0.44, 0.42, 0.13, 0.06);
-  b.add(pillow, m.pillowLeaf, [-0.6, 0.67, -0.02], { rotation: [-0.25, 0.25, 0.07] });
-  b.add(pillow, m.pillowLattice, [-0.2, 0.64, 0.0], { rotation: [-0.22, 0.05, -0.05], scale: [0.9, 0.9, 0.9] });
-  b.add(pillow, m.pillowMustard, [0.62, 0.67, -0.02], { rotation: [-0.25, -0.2, -0.06] });
+  b.add(pillow, pillowA, [-0.6, 0.67, -0.02], { rotation: [-0.25, 0.25, 0.07] });
+  b.add(pillow, pillowB, [-0.2, 0.64, 0.0], { rotation: [-0.22, 0.05, -0.05], scale: [0.9, 0.9, 0.9] });
+  b.add(pillow, pillowC, [0.62, 0.67, -0.02], { rotation: [-0.25, -0.2, -0.06] });
 
   b.addCollider([0, seatTop / 2, 0.01], [W, seatTop, D + 0.02]);
   b.addCollider([0, backTop / 2, -D / 2 + 0.125], [W, backTop, 0.25]);
@@ -132,7 +143,7 @@ export function floorLamp(b: StaticSceneBuilder, m: RoomMaterials, lightIntensit
 }
 
 /** A flat leaf outline pointing +y from the origin. */
-function leafGeometry(length: number, width: number): ShapeGeometry {
+export function leafGeometry(length: number, width: number): ShapeGeometry {
   const s = new Shape();
   s.moveTo(0, 0);
   s.bezierCurveTo(width, length * 0.2, width * 0.9, length * 0.8, 0, length);

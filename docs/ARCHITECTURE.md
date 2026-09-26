@@ -32,8 +32,11 @@ src/
     mokeLook.ts           Moke's look: palette, key light, crease shading, silhouette line, collar, blink timing
     assets.ts             asset manifest (preloaded behind the loading screen)
     quality.ts            graphics presets (HIGH desktop, MEDIUM/LOW phones) + dynamic-resolution tuning
-    human.ts              the Sock Heist human: body, speeds, sight, chase, treat timings
+    human.ts              the human: body, speeds, sitting, avoiding Moke, sight, chase, treat timings
     heist.ts              Sock Heist lines of dialogue and timings
+    activities.ts         the human's daily-life activities as data (Phase 4), the routine's timing, reactions to Moke
+    dogActivities.ts      Treat Hunt, Perfect Nap, Make Human Play tuning (Phase 4)
+    dogLogic.ts           the Dog Logic registry: every equation, its terms and icons (Phase 4)
   core/
     Game.ts               state machine + frame orchestration
     GameLoop.ts           FixedStep accumulator + rAF loop
@@ -62,18 +65,32 @@ src/
     Moke.ts               composite: controller + animation + visual (+ carrying/sniffing/lookAt from gameplay)
     Bark.ts               bark cooldown (tested)
     Tricks.ts             the tricks and how one is picked (random, no repeats, context rules) (tested)
-  human/                  the Sock Heist human (Phase 3)
-    HumanBrain.ts         behaviour: explicit state machine, one handler per state (tested; pure logic)
+  human/                  the human (Phase 3 Sock Heist, Phase 4 daily life; see docs/HUMAN_SYSTEM.md)
+    HumanBrain.ts         behaviour: the Sock Heist state machine, with the routine plugged in as its idle driver (tested; pure logic)
     HumanAwareness.ts     sight cone + line of sight + feel + hearing (tested; pure)
-    NavGrid.ts            walkability grid from the room colliders, A*, path smoothing (tested)
-    HumanController.ts    body: follows paths through a Rapier character capsule (tested with Rapier)
-    ToonHumanVisual.ts    stylized placeholder human built in code; blended poses; see-through when in the way
-    Human.ts              composite: perceive → decide → move; draw
+    NavGrid.ts            walkability grid from the house's colliders, A*, path smoothing, routing round Moke (tested)
+    HumanController.ts    body: follows paths through a Rapier character capsule; sits down and gets up; stuck recovery (tested with Rapier)
+    HumanRig.ts           the rig contract: joints, standing positions, angle conventions, poses, props, face dials
+    HumanAnimationController.ts  poses → joint angles, hips, face (blinks, eyes, talking), walk cycle (tested; no meshes)
+    StylizedHumanVisual.ts the look: a skinned, code-built stylized adult (16 draw calls), face bones, hands, see-through fade (tested)
+    humanProps.ts         held props: book, phone, mug, fork, spoon, knife, remote
+    Human.ts              composite: perceive → decide → move; seat slide; animate → pose the visual
+    activities/           the daily routine (Phase 4; see docs/ACTIVITIES.md)
+      HumanActivityController.ts  the routine: walk, sit, do, glance, stand; interrupt/resume; roles for dog activities (tested in the house)
+      ActivityScheduler.ts        weighted, cooldown- and location-aware choice of the next activity (tested)
+      HumanReactions.ts           moments with Moke: look, hello, bark replies, attention, praise, pats, gestures
+      intentHelpers.ts            small helpers for roles writing the human's intent
+  activities/             Moke's dog activities (Phase 4; see docs/ACTIVITIES.md, docs/DOG_LOGIC.md)
+    DogActivity.ts        the lifecycle (AVAILABLE → STARTING → ACTIVE → SUCCESS/CANCELLED → COOLDOWN → READY_AGAIN) and the context
+    DogActivityDirector.ts runs them (one borrows the human at a time, none during the heist); DogLogicBook announces discoveries
+    TreatHunt.ts          the human hides a kitchen treat; Moke sniffs it out (tested in the house)
+    PerfectNap.ts         naps judged on sunny / soft / warm / quiet / human near (tested)
+    MakeHumanPlay.ts      pester a busy human into throwing a toy; fetch, keep or keep-away (tested with a real ball)
   heist/                  Sock Heist (Phase 3)
     SockHeistController.ts  orchestration: phases, trade, eating, discovery, completion, reset (tested)
     SockHeistRuntime.ts   wires the heist into the game: builds the human, feeds senses, events → UI/audio
     Treat.ts              a reusable treat: state, smell, eye appeal, "Eat Treat"
-    DogLogic.ts           remembers discoveries (SOCK = TREAT) in localStorage
+    DogLogic.ts           remembers Dog Logic discoveries in localStorage (all of them, since Phase 4)
   physics/
     PhysicsWorld.ts       Rapier world (lazy WASM load), static box colliders, camera sphere sweep
     CharacterBody.ts      kinematic capsule driven by Rapier's character controller
@@ -83,17 +100,24 @@ src/
     ThirdPersonCamera.ts  orbit, follow, collision, tight-space handling, zoom, FOV (tested with a fake collider)
     MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
   world/
-    LivingRoom.ts         the room + hallway: shell, layout, spawn, landmarks (navigation-tested with Rapier)
+    Home.ts               the whole house: the living room + the wing; colliders, landmarks, places, nap and hiding spots (navigation-tested with Rapier)
+    home/                 the new wing (Phase 4, from the home photos; see docs/HOME_REFERENCE.md)
+      layout.ts           walls, openings, rooms (roomAt), the house's bounds
+      places.ts           furniture positions, the human's interaction points, nap spots, treat hiding spots, the kitchen treats, the fire
+      Wing.ts             builds the kitchen, dining room, family room (+ the sunroom seen through glass) and their lights
+      homeFurniture.ts    the wing's furniture: sectional, fireplace, built-ins, island, stools, range, fridge, trestle table, chairs…
+    HouseholdEffects.ts   signs of life: the TV glow, the steaming pot, dinner on the table; the FOOD smell
+    LivingRoom.ts         the room + hallway (its end opens into the wing in the house): shell, layout, spawn, landmarks (navigation-tested with Rapier)
     furniture.ts          couch, coffee table, rug, TV console, lamp, plant, dog bed, curtains, art, door, laundry basket, treat jar
     materials.ts          the room palette (shared materials)
-    textures.ts           original procedural canvas textures (floorboards, rug, pillows, art, garden)
+    textures.ts           original procedural canvas textures (floorboards, grey planks, rug, pillows, art, garden, tiles, clock face, door sign, sun patch)
     StaticSceneBuilder.ts places parts in nested frames, derives colliders, merges by material (tested)
-    RoomLighting.ts       hemisphere fill + window sun with soft shadows; soft image-based environment
+    RoomLighting.ts       hemisphere fill + window sun with soft shadows (its shadow camera fitted round the whole house); soft image-based environment
   interactions/
     Interactable.ts       the Interactable contract (id, type, label, distance, enabled, position, callback) + INTERACTION_TYPES
     InteractionSystem.ts  registry + "what would E do now?" selection (tested; DOM/three-free)
     PickupSystem.ts       pick up / carry / drop for any Carryable (tested; DOM/three-free)
-    RestSystem.ts         lie down / get up at a rest spot: state machine + REST interactables (tested, incl. Rapier)
+    RestSystem.ts         lie down / get up at any of several rest spots (his bed and the nap spots): state machine + REST interactables (tested, incl. Rapier)
   props/
     Prop.ts               a loose prop: PropBody + view, interpolated; implements Carryable; escape rescue
     propVisuals.ts        original code-built prop models (sock, tennis ball, rope toy)
@@ -409,6 +433,26 @@ steered. Holding D runs Moke straight right while the camera swings behind him.
 The camera talks to physics only through a `CameraCollider` interface (`sweepSphere`), which makes it unit-testable
 with a fake. Cost: about 5–7 µs per frame.
 
+## The house (`world/Home.ts`, Phase 4; details in `docs/HOME_REFERENCE.md`)
+- **One connected space, no loading:** the living room's hallway now opens (`LivingRoom({ hallwayOpen: true })`) into
+  a new wing built from the home photos: the kitchen and family room (one open great room, a soffit between them) and
+  the dining room through a wide cased opening, plus a sunroom seen through glass. The wing is placed rotated 180° from
+  real north so the real front hall lines up with the hallway (`world/home/layout.ts`).
+- **Two scenery groups, one set of materials:** the living room and the wing each merge their parts by material
+  (`StaticSceneBuilder`); sharing materials keeps it to ~2 draw calls per material. The wing's furniture doesn't cast
+  sun shadows (`castByDefault = false`): no sun reaches it (its walls, windows' directions and ceiling keep the
+  late-afternoon sun out), so the shadow pass skips it. Its walls and ceiling still cast.
+- **Colliders** come from the parts as before: walls and big furniture solid; legs, arms and cushions thin (Moke only).
+  Windows and sliders have solid glass (nothing, the camera included, goes out through them). Dining chair seats and
+  the dining table top block the camera (like the coffee table).
+- **Lighting:** the sun's shadow camera is fitted round the whole house (`fitShadowCamera`: the corners of its box
+  seen from the sun; the house is long east–west and the sun low from the west, so the fit stays close to Phase 3's).
+  Three new warm point lights (kitchen chandelier, dining chandelier, the fire; no shadows). The family room's sunny
+  couch has a drawn sun patch (additive) rather than real sun.
+- **Places** (`world/home/places.ts`) are data for the human (interaction points), Perfect Nap (nap spots with
+  their qualities), Treat Hunt (hiding spots) and the kitchen treats. Tests pin reachability for all of them.
+- **Props** now belong inside the house's bounds (`Prop` escape check) rather than 15 m from the origin.
+
 ## The living room (`world/`)
 - **Layout:** a 7 × 6 m room at true human scale, plus a 3 m hallway through a doorway in the right wall.
   - Window with curtains and a garden view on the left; its sun falls on Moke's bed.
@@ -481,10 +525,11 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
   furniture's own, so the camera, the human's eyes and the human's `NavGrid` see the room exactly as before.
 
 ## Private reference photos: four layers
-1. `.gitignore`: `reference/moke/*` (the README stays tracked).
+The real Moke (`reference/moke/`) and, since Phase 4, the real home (`reference/home/`, D18).
+1. `.gitignore`: `reference/moke/*` and `reference/home/*` (each folder's README stays tracked).
 2. Vite plugin `im-dog:block-private-reference` fails the build if anything imports from `reference/`.
 3. Dev server `server.fs.deny` includes `**/reference/**` (403 on direct URLs).
-4. `scripts/verify-dist.mjs` runs after every build and fails if any file in `dist/` is byte-identical to a reference photo.
+4. `scripts/verify-dist.mjs` runs after every build and fails if any file in `dist/` is byte-identical to any file under `reference/` (18 photos at the end of Phase 4).
 
 ## Mobile: quality, lifecycle, PWA (Phase 3; details in `docs/MOBILE.md`)
 - **Quality presets** (`config/quality.ts`, chosen by `pickQuality` before the renderer exists):
@@ -509,6 +554,22 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
   - navigations are network-first, other requests cache-first.
 
   `main.ts` registers it in production builds only, not on localhost unless `?sw=on`; `?sw=off` removes it.
+
+## The human and activities (Phase 4; details in `docs/HUMAN_SYSTEM.md`, `docs/ACTIVITIES.md`, `docs/DOG_LOGIC.md`)
+- **The human:** `HumanBrain` (Sock Heist) → idle driver `HumanActivityController` (routine, reactions, roles) →
+  `HumanController` (walk, sit/stand, stuck recovery) → `HumanAnimationController` (poses → joint angles, face) →
+  `HumanVisual` (`StylizedHumanVisual`, one skinned body). Nothing below the brain knows about the heist; nothing
+  above the visual knows about meshes (a modelled human implements `HumanVisual` and maps `HumanRig`).
+- **Dog activities:** `DogActivityDirector` updates Treat Hunt, Perfect Nap and Make Human Play every fixed step with
+  a `DogActivityContext` built in `Game.updateDogActivities` (Moke's position, carrying, bark, trick, sniffing, nap
+  spot; the human's position, availability, sight of Moke, attention; whether the heist is on). Activities that need
+  the human borrow it through `routine.claim(role)`; the heist interrupting the routine cancels their errands.
+- **Dog Logic:** `DogLogicBook` (learn + `DOG_LOGIC_DISCOVERED`) over Phase 3's `DogLogicMemory`; `Game` shows the card
+  for any entry of `config/dogLogic.ts`.
+- **Interactions added:** "Get Pets" (`PET`, near a free human), "Nap Here" at the nap spots (`RestSystem` with many
+  spots), "Eat Treat" for the hunt's treat. **E / the paw with nothing to interact with sniffs**, so touch play can
+  hunt without a sniff button.
+- **Speech:** routine lines and reactions go through the same `HUMAN_SAID` event and speech bubble as the heist.
 
 ## Sock Heist (Phase 3; details in `docs/SOCK_HEIST.md`)
 ```

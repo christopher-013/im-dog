@@ -10,7 +10,7 @@ const PROP_SCENTS: Record<string, { category: ScentCategory; strength: number; r
 };
 
 /** The living room's scent sources: the loose props (not while in his mouth) and his bed. */
-export function createRoomScents(room: LivingRoom, props: readonly Prop[]): ScentSource[] {
+export function createRoomScents(room: Pick<LivingRoom, 'landmarks'>, props: readonly Prop[]): ScentSource[] {
   const sources: ScentSource[] = props.map((prop) => {
     const scent = PROP_SCENTS[prop.id] ?? { category: 'INTERESTING', strength: 0.5, radius: 3 };
     return {

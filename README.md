@@ -5,7 +5,8 @@ a small white Maltipoo. No combat, no death: just socks, smells, naps and a very
 
 **Status:** Phase 1 complete: the technical prototype (tag `phase-1-complete`). Phase 2 complete: the Moke character foundation
 (tag `phase-2-complete`, [docs/PHASE_2.md](docs/PHASE_2.md)). Phase 3 complete: Sock Heist + mobile web play (tag
-`phase-3-complete`, [docs/PHASE_3.md](docs/PHASE_3.md)). The game is ready for a final rigged, animated `moke.glb`, which still has
+`phase-3-complete`, [docs/PHASE_3.md](docs/PHASE_3.md)). **Phase 4 built, awaiting review:** Moke's home and family life
+([docs/PHASE_4.md](docs/PHASE_4.md)): the whole house, a human with a daily routine, and new things to do together. The game is ready for a final rigged, animated `moke.glb`, which still has
 to be made. Until then, a soft, stylized stand-in Moke modelled on the real dog (curly white
 coat, dark eyes, black button nose, blue collar) trots, runs and sneaks around a cozy, true-scale living room: linen couch, rug, coffee table he can
 duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can jump up onto the couch and coffee table, bark, growl, do tricks, sniff,
@@ -16,6 +17,11 @@ first complete loop. Steal the sock, get noticed ("Hey! That's my sock!"), dodge
 furniture, hide, then trade the sock for a treat and discover SOCK = TREAT. Plus **touch controls** for phones and
 tablets in the same web game (portrait or landscape), phone quality presets, Add to Home Screen, jumping, and
 8-bit background music (Hawaiian or Japanese convenience store).
+**Phase 4 (built, [docs/PHASE_4.md](docs/PHASE_4.md)):** the living room's hallway now leads into a **kitchen,
+family room and dining room** modelled on Moke's real home. The human lives there: watches TV, reads, cooks and eats
+dinner, folds laundry, and responds to Moke (pats, praise, "not now, Moke…"). New to do: a **Treat Hunt** (do a trick
+for them), the **Perfect Nap** (sunny, soft, warm, quiet, near your human) and **Make Human Play** (pester them into
+throwing the ball), each teaching a bit of **Dog Logic**.
 See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
 **Play it:** https://christopher-013.github.io/im-dog/ (desktop Chrome or Edge; keyboard + mouse or a standard controller). Every push to `main`

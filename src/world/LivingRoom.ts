@@ -30,6 +30,13 @@ const HALLWAY_LENGTH = 3;
 /** Interior light strengths (candela). */
 const LIGHTS = { lamp: 7, hallway: 4 };
 
+export interface LivingRoomOptions {
+  /** Share materials with the rest of the house (one set, fewer draw calls). */
+  readonly materials?: RoomMaterials;
+  /** The hallway's far end opens into the rest of the house (Phase 4) instead of ending at a closed door. */
+  readonly hallwayOpen?: boolean;
+}
+
 /**
  * Phase 1's living room, at true human scale seen from a small dog, echoing Moke's real home:
  * an oatmeal linen couch with leaf-print pillows, warm wood floor, sunlight through the window
@@ -61,8 +68,8 @@ export class LivingRoom {
     treatJar: new Vector3(0.95, 0.56, 2.77),
   };
 
-  constructor() {
-    const m = createRoomMaterials();
+  constructor(private readonly options: LivingRoomOptions = {}) {
+    const m = options.materials ?? createRoomMaterials();
     const b = new StaticSceneBuilder();
     this.shell(b, m);
     this.windowAndView(b, m);
@@ -167,10 +174,11 @@ export class LivingRoom {
     b.add(new BoxGeometry(length + T, 0.1, width + 2 * T), m.ceiling, [midX + T / 2, H + 0.05, midZ], { receive: false });
     b.add(new BoxGeometry(length + T, H, T), m.wall, [midX + T / 2, H / 2, zMin - T / 2], solid);
     b.add(new BoxGeometry(length + T, H, T), m.wall, [midX + T / 2, H / 2, zMax + T / 2], solid);
-    b.add(new BoxGeometry(T, H, width + 2 * T), m.wall, [x1 + T / 2, H / 2, midZ], solid);
     b.add(new BoxGeometry(length - 0.6, 0.008, 0.55), m.runner, [midX + 0.15, 0.004, midZ], { cast: false });
-
-    b.at([x1 - 0.03, 0, midZ], -Math.PI / 2, () => door(b, m, 0.85, 2.02));
+    if (!this.options.hallwayOpen) {
+      b.add(new BoxGeometry(T, H, width + 2 * T), m.wall, [x1 + T / 2, H / 2, midZ], solid);
+      b.at([x1 - 0.03, 0, midZ], -Math.PI / 2, () => door(b, m, 0.85, 2.02));
+    }
     b.add(new CylinderGeometry(0.14, 0.14, 0.03, 24), m.lampShade, [midX, H - 0.015, midZ], { cast: false });
     b.addObject(new PointLight('#ffd9a8', LIGHTS.hallway, 4, 2), [midX, H - 0.2, midZ]);
   }

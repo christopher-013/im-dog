@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-25. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phase 1 is complete** (tag `phase-1-complete`). **Phase 2 is complete** (tag `phase-2-complete`). **Phase 3 is complete:** built, pushed and independently audited on 2026-09-25, then closed by the owner the same day and tagged `phase-3-complete`. The audit found it ready to form the Phase 4 foundation. The owner also reported that the mobile game looks and plays great on their phone, although the exact device/browser and broader physical-device coverage were not recorded. The hosted game is the Phase 3 build. **Since the original Phase 3 commit (committed and pushed 2026-09-25):** the owner's jump request, the combined bark/growl button and the touch paw menu (see Completed)._
+_Last updated: 2026-09-25. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phases 1–3 are complete** (tags `phase-1-complete`, `phase-2-complete`, `phase-3-complete`). **Phase 4, "Moke's Home & Family Life", is built but not closed and not committed** (the owner's brief: "do NOT automatically commit"): the whole home from the owner's photos, a new stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and Dog Logic. The hosted game is still the Phase 3 build._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -11,10 +11,14 @@ on 2026-09-24, tagged `phase-2-complete` and pushed. Scope and criteria: `docs/P
 and at phone sizes (emulated touch). The owner also played on a physical phone and reported that mobile looks and
 plays great. **Still not documented:** the exact phone/browser, installing the web app and real-device performance.
 The owner judged the desktop Sock Heist chase fun. Scope, criteria and what's carried forward: `docs/PHASE_3.md`.
-**Phase 4: not defined yet.**
+**Phase 4: built, not closed** ("Moke's Home & Family Life", from the owner's brief of 2026-09-25, with photos of the
+real home). Milestones 4.1–4.10 implemented, tested and played through in the browser (desktop and emulated phone).
+**Not done:** the owner's own play, a physical phone, real-GPU frame rate. **Uncommitted.** Scope, criteria and status:
+`docs/PHASE_4.md`.
 
 ## Current Milestone
-None. Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
+**Phase 4, Milestone 4.10 (cross-platform polish): done in emulation;** the phase awaits the owner's review.
+Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
 The owner played Sock Heist on the desktop ("the chase works great, it is fun"; escaping, the treat, and not
@@ -34,7 +38,7 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code: the jump, the combined bark/growl button and the touch paw menu (committed and pushed at the owner's
+Claude Code: all of Phase 4 (2026-09-25, uncommitted). Before that, Claude Code: the jump, the combined bark/growl button and the touch paw menu (committed and pushed at the owner's
 request), after all of Phase 3 (committed and pushed
 at the owner's request for phone testing) and committing, tagging and pushing Phase 2.
 Before that, Claude closed Phase 1 (a review of Codex's commits with fixes, GitHub Pages hosting, the trick button,
@@ -42,6 +46,28 @@ Moke's tail and a deeper growl). OpenAI Codex committed its Phase 1 audit, gamep
 collar refit.
 
 ## Completed
+**Phase 4, "Moke's Home & Family Life" (2026-09-25, uncommitted; the owner's brief).** Details in `docs/PHASE_4.md`,
+`HOME_REFERENCE.md`, `HUMAN_SYSTEM.md`, `ACTIVITIES.md`, `DOG_LOGIC.md`.
+- **4.1 References:** nine home photos in `reference/home/` (git-ignored like the Moke photos; the build's leak check
+  covers them; `reference/home/README.md` explains), studied into `docs/HOME_REFERENCE.md` (layout, landmarks,
+  scale, colours, dog-scale features, uncertain details, missing references).
+- **4.2 The home:** `world/Home.ts`: the living room's hallway now opens into a new wing drawn from the photos: the
+  kitchen and family room (one great room) and the dining room, plus the sunroom through glass (`world/home/`). Built
+  in code, no photo textures. Whole-house colliders, NavGrid and fitted sun shadows; props kept inside the house.
+- **4.3 The human:** `StylizedHumanVisual` (a skinned, code-built stylized adult: face with moving eyes, blinks,
+  brows and mouth; hands with fingers; props), animated by `HumanAnimationController` over the `HumanRig` contract.
+  `ToonHumanVisual` removed.
+- **4.4 Daily life:** `HumanActivityController` + `ActivityScheduler` + activities as data (`config/activities.ts`)
+  at interaction points (`world/home/places.ts`): TV, reading, phone, coffee, cooking then dinner, relaxing, the
+  counter, laundry. Sits and stands; routes round Moke; gives up rather than teleports; plugged into `HumanBrain` as
+  its idle driver so the Sock Heist interrupts and resumes it. The TV glows, a pot steams, dinner appears.
+- **4.5 Moke ↔ human:** `HumanReactions` (look, hello, bark replies, attention, praise, pats, "not now"); "Get Pets";
+  Moke's petted reaction (sit, head up into the hand, wag, a heart).
+- **4.6–4.8:** Treat Hunt, Perfect Nap (seven nap spots; "Nap Here"), Make Human Play, on one lifecycle
+  (`activities/`). E / the paw sniffs when there's nothing to interact with.
+- **4.9 Dog Logic:** eight equations (`config/dogLogic.ts`), the card draws any of them, queued, remembered.
+- **4.10:** browser play-throughs (desktop, emulated phone), performance vs. the baseline, the build's privacy check.
+
 **Owner requests, 2026-09-25 (committed and pushed): Moke can jump; one button barks or growls; the paw menu on touch.** The owner asked for nothing
 else to change in the game's look and feel.
 - **Jump:** Space, controller **B** (was bark), and a new touch **JUMP** button. He can get up onto the couch seat
@@ -338,7 +364,7 @@ about −36 dB, some 7 dB under a bark; measured, not heard.
   7. dynamic resolution (phones only) → render
   8. debug
 - **Sock Heist:** `SockHeistRuntime` (`src/heist/`) builds and wires the pieces: `SockHeistController` (phases),
-  the `Human` (`HumanBrain` → `HumanController` → `ToonHumanVisual`, with `HumanAwareness` and `NavGrid`), the
+  the `Human` (`HumanBrain` → `HumanController` → `StylizedHumanVisual` since Phase 4, with `HumanAwareness` and `NavGrid`), the
   `Treat` and `DogLogicMemory`. They talk to the rest of the game through `GameEvents` and the existing
   `InteractionSystem` / `PickupSystem`. See `docs/SOCK_HEIST.md` and `docs/ARCHITECTURE.md` → "Sock Heist".
 - **Input and mobile:** `TouchInput` + `VirtualJoystick` feed virtual `Touch:*` keys and a touch analog source;
@@ -351,6 +377,9 @@ about −36 dB, some 7 dB under a bark; measured, not heard.
   (kinematic capsule + toy bumper) and `PropBody` (dynamic props on the `toy` layer).
 - **Gameplay systems:** `interactions/` (`InteractionSystem`, `PickupSystem`, `RestSystem`), `props/` (`Prop`),
   `senses/` (`ScentSystem`, `ScentWisps`), `audio/` (`AudioManager`, synthesized sounds), `player/Bark.ts`.
+- **Phase 4:** `Home` (the living room + the wing) replaces `LivingRoom` in `Game`; the human's routine
+  (`HumanActivityController`) is the brain's idle driver; `DogActivityDirector` runs the dog activities in the fixed
+  step after the heist; `HouseholdEffects` shows the TV, cooking and dinner. See `docs/ARCHITECTURE.md`.
 - **World:**
   - `LivingRoom` (shell, layout, spawn, landmarks) is built from `furniture.ts` pieces via `StaticSceneBuilder`.
   - Palette in `materials.ts`, textures in `textures.ts`.
@@ -437,6 +466,23 @@ From Milestone 4, verified in the browser (dev server and a production-build loa
 - **Not yet judged hands-on with a physical mouse and keyboard.**
 
 ## Known Issues
+New with Phase 4:
+- **Nobody but Claude has looked at it.** The home's likeness to the real one, the human's look and animation, and
+  whether the house "feels inhabited" need the owner's eye. The human's poses were tuned from screenshots only.
+- **The human's body:** stylized and smooth-skinned, but simple: long tube arms and legs, a boxy sweater torso, cap
+  spheres at the joints that can show at extreme bends; no clothing folds; a few poses (reading, sipping) have hands
+  that don't quite meet the prop.
+- **No shadows in the wing:** the sun can't reach it (by design, and its furniture no longer casts), so the human and
+  Moke have no ground shadow there; point lights don't cast. A blob shadow would help.
+- **The family room's sun is drawn on** (an additive patch on the couch and floor), not real light.
+- **Timings are first guesses:** routine durations, reaction cooldowns, Treat Hunt hints, how many asks before they
+  play (`config/activities.ts`, `config/dogActivities.ts`).
+- **The human stops a hunt errand for the heist**, and Treat Hunt's "Sit… stay…" is said even if Moke is far away.
+- **Only one Treat Hunt treat and one pair of hands:** the heist's treat and the hunt's are separate; both can't be in
+  the hand at once (the heist cancels the hunt's errand).
+- **Performance on phones is unmeasured** (emulation only; more triangles and draw calls than Phase 3).
+- **Missing references** (`HOME_REFERENCE.md`): the real front living room, measurements, the bedroom hall.
+
 New with the music:
 - ~~Nobody has heard it yet~~: the owner says the Hawaiian song "sounds great". **"Irasshaimase!" hasn't been heard
   yet**: its tune, groove and mix are by design and measurement only. Mix: its `band` in `music.ts`; loudness:
@@ -535,6 +581,27 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Run on 2026-09-25 for Phase 4 (uncommitted):
+- `npm run typecheck`: pass. `npm test`: **49 files, 364 tests pass** (46 new: the house's navigation 20, the human's
+  animation 6 and visual 3, the routine 6, dog activities and Dog Logic 11). No lint script is configured.
+- `npm run build`: pass; JS 989 kB (277 kB gzipped; Phase 3: 880 / 242), CSS 22.8 kB, Rapier unchanged; `verify-dist`
+  checked 20 built files against **18 private reference files** (9 Moke, 9 home): none leaked. `dist/` holds no
+  photos (its only images are the four app icons).
+- **Browser (desktop, 1280×720, this PC):** the house renders (each room checked by screenshot), the human lives the
+  routine (folded laundry → TV → phone → reading on the living room couch, walked to the kitchen and family room),
+  "Get Pets" (they kneel and pat; he sits, a heart), a full Treat Hunt (trick → kitchen jar → hidden by the bedroom
+  door → found → SNIFF = TREAT), a Perfect Nap (his bed: 4 of 5, BED = NAP, SUN + SOFT = NAP), Make Human Play
+  (asked twice → "Drop it!" → picked up and thrown → "Bring it here, buddy!"), and **a complete Sock Heist in the new
+  house** (noticed while folding → chase → fumbles → lost → gave up → treat → trade → eaten → SOCK = TREAT → complete
+  → PLAY AGAIN resets it; the routine resumed folding afterwards). Frame cost (CPU, 200 frames, same method as the
+  Phase 3 baseline): living room 1.74–1.84 ms, kitchen 1.9–2.2 ms, family room 1.8–1.9 ms, dining 1.9–2.3 ms; 185–218
+  draw calls, 300–353 k triangles (Phase 3 baseline, living room: 1.59–2.10 ms, 166 calls, 230 k). These were
+  measured before the wing's furniture stopped casting shadows, which cut ~35 calls on the phone preset.
+- **Browser (emulated phone, touch, MEDIUM):** portrait 375×812: the paw shows "Get Pets", petting works; landscape
+  740×360 (1110×540 buffer): 1.6–2.3 ms, 158–185 calls, 264–298 k triangles (baseline 1.1–1.2 ms, 152, 223 k).
+- **Not verified:** a physical phone (any), real-GPU frame rate, audio by ear, a physical controller, the owner's
+  judgement of fun, likeness and feel.
+
 Independent Phase 3 Codex audit on 2026-09-25 (no physical device used by Codex): typecheck pass; 44 files / 318
 tests pass; production build pass; `verify-dist` checked 20 built files against 9 private reference files and found
 no leak. No lint script is configured. Desktop browser smoke testing covered startup, browser-reported pointer lock, movement/actions,
@@ -705,12 +772,17 @@ Earlier, at the end of Milestone 4:
 | Not verified | Hands-on feel; pointer lock; Firefox and Safari; a real high-DPI display. |
 
 ## Important Files
+- **Phase 4:** docs `PHASE_4.md`, `HOME_REFERENCE.md`, `HUMAN_SYSTEM.md`, `ACTIVITIES.md`, `DOG_LOGIC.md`; the house
+  `src/world/Home.ts`, `src/world/home/` (`layout.ts`, `places.ts`, `Wing.ts`, `homeFurniture.ts`),
+  `src/world/HouseholdEffects.ts`; the human `src/human/` (`HumanRig.ts`, `HumanAnimationController.ts`,
+  `StylizedHumanVisual.ts`, `humanProps.ts`, `activities/`); dog activities `src/activities/`; tuning
+  `src/config/activities.ts`, `dogActivities.ts`, `dogLogic.ts`; wiring in `src/core/Game.ts`.
 - `AGENTS.md`, `CLAUDE.md`, and in `docs/`: `PHASE_1.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `CONTROLS.md`.
 - Phase 3:
   - docs: `docs/PHASE_3.md`, `docs/SOCK_HEIST.md`, `docs/MOBILE.md`;
   - Sock Heist: `src/heist/` (`SockHeistController.ts`, `SockHeistRuntime.ts`, `Treat.ts`, `DogLogic.ts`),
-    `src/human/` (`HumanBrain.ts`, `HumanAwareness.ts`, `NavGrid.ts`, `HumanController.ts`, `Human.ts`,
-    `ToonHumanVisual.ts`), `src/core/GameEvents.ts`, `src/config/human.ts`, `src/config/heist.ts`;
+    `src/human/` (`HumanBrain.ts`, `HumanAwareness.ts`, `NavGrid.ts`, `HumanController.ts`, `Human.ts`;
+    `ToonHumanVisual.ts` was removed in Phase 4), `src/core/GameEvents.ts`, `src/config/human.ts`, `src/config/heist.ts`;
   - mobile: `src/core/TouchInput.ts`, `VirtualJoystick.ts`, `InputMode.ts`, `Quality.ts`, `src/ui/ControlGlyphs.ts`,
     `src/config/quality.ts`, `TOUCH` in `src/config/input.ts`, `public/manifest.webmanifest`, `public/icons/`,
     `scripts/make-icons.mjs`, `scripts/sw-template.js` and the `serviceWorker()` plugin in `vite.config.ts`.
@@ -729,11 +801,13 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-1. **Define Phase 4 with the owner.** Write `docs/PHASE_4.md` (scope, milestones, success criteria) for the owner to
-   approve before any Phase 4 code. The Phase 3 brief left the full Dog Logic system to Phase 4 (SOCK = TREAT and
-   `DogLogicMemory` are its only pieces so far). Commit or push only when the owner asks: a push to `main`
-   publishes the game.
-2. **Owner listens to "Irasshaimase!"** (pause → Music → Japan Stores) and says whether it has the
+1. **Owner review of Phase 4** (uncommitted, so `npm run dev` on this machine): walk the house, watch the human's day,
+   pet them, do a trick near them (Treat Hunt), nap in a few spots, bring them the ball. Is it recognisably home? Does
+   it feel inhabited? Then tune (`config/activities.ts`, `config/dogActivities.ts`, the human's poses in
+   `HumanAnimationController.ts`). Commit or push only when the owner asks: a push to `main` publishes the game.
+2. **Play it on a real phone** once pushed (or `npm run dev:lan`): the paw for pets, naps and sniffing; frame rate
+   and warmth in the big house.
+3. **Owner listens to "Irasshaimase!"** (pause → Music → Japan Stores) and says whether it has the
    convenience-store feel; adjust its band in `src/audio/music.ts` if not.
 3. **Carried-forward real-device checks** (`docs/MOBILE.md`): record the phone and browser, install the web app,
    the phone sound check (silent switch on and off, after a lock), frame rate and warmth after 10+ minutes.
@@ -741,4 +815,4 @@ Earlier, at the end of Milestone 4:
    Sock Heist tuning (`config/human.ts`, `config/heist.ts`), and the Phase 1 checks (pointer lock with a physical
    mouse, audio by ear, a physical controller, real-GPU frame rate, Firefox and Safari).
 
-**Not to start without the owner's approval:** Phase 4 (the full Dog Logic system), more humans, more rooms.
+**Not to start without the owner's approval:** Phase 5, more humans, more rooms, the outdoors, other mini-games.

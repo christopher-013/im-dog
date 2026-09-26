@@ -27,6 +27,13 @@ export const HUMAN = {
     /** If the body makes less than this much progress (m) over `stuckTime` (s), re-plan or skip a waypoint. */
     stuckProgress: 0.05,
     stuckTime: 0.8,
+    /** Sitting down and getting up (s), close enough to a seat's stand point (m), and facing its way (rad). */
+    sitTime: 1.1,
+    standTime: 0.8,
+    seatReach: 0.22,
+    seatAlign: 0.3,
+    /** Held up by Moke: re-plan keeping this far from where he stands (m, centre to centre). */
+    avoidRadius: 0.62,
   },
   sight: {
     /** How far they can make out a small dog, and the half-angle of their view (60° either side). */
@@ -37,6 +44,8 @@ export const HUMAN = {
     crouchEyeHeight: 0.62,
     /** Bent right down to peek under the furniture while searching. */
     peekEyeHeight: 0.34,
+    /** Sitting on a sofa or chair. */
+    seatedEyeHeight: 1.15,
     /** They always notice a dog this close, whatever they're looking at. */
     feelRange: 0.9,
     /** Aim at Moke's back rather than his feet. */

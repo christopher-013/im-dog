@@ -242,3 +242,161 @@ export function gardenTexture(): CanvasTexture | null {
     ctx.fillRect(0, h * 0.86, w, h * 0.14);
   });
 }
+
+/** The great room's floor: long grey-oak planks, 6 rows of 24 cm boards per 1.44 m tile, soft grain. */
+export function greyPlankTexture(): CanvasTexture | null {
+  return canvasTexture(
+    1024,
+    1024,
+    23,
+    (ctx, w, h, rand) => {
+      const rows = 6;
+      const rowH = h / rows;
+      for (let r = 0; r < rows; r++) {
+        let x = -rand() * w * 0.7;
+        while (x < w) {
+          const length = w * (0.55 + rand() * 0.6);
+          const light = 70 + (rand() - 0.5) * 7;
+          const hue = 34 + (rand() - 0.5) * 8;
+          ctx.fillStyle = `hsl(${hue} 9% ${light}%)`;
+          ctx.fillRect(x, r * rowH, length, rowH);
+          for (let g = 0; g < 14; g++) {
+            ctx.strokeStyle = `hsla(${hue} 10% ${light - 16}% / ${0.04 + rand() * 0.07})`;
+            ctx.lineWidth = 1 + rand() * 1.6;
+            const y0 = r * rowH + 4 + rand() * (rowH - 8);
+            const wave = rand() * 6;
+            ctx.beginPath();
+            ctx.moveTo(x, y0);
+            for (let px = x; px <= x + length; px += 32) ctx.lineTo(px, y0 + Math.sin(px * 0.01 + wave) * 3);
+            ctx.stroke();
+          }
+          ctx.fillStyle = 'rgba(70, 64, 58, 0.28)';
+          ctx.fillRect(x + length - 2, r * rowH, 2, rowH);
+          x += length;
+        }
+        ctx.fillStyle = 'rgba(70, 64, 58, 0.35)';
+        ctx.fillRect(0, r * rowH, w, 2);
+      }
+    },
+    true,
+  );
+}
+
+/** Grey-and-white arabesque (lantern) tiles, the feature panel behind the range. One tile per 64 px. */
+export function arabesqueTileTexture(): CanvasTexture | null {
+  return canvasTexture(
+    256,
+    256,
+    29,
+    (ctx, w, h) => {
+      ctx.fillStyle = '#d9dcdd';
+      ctx.fillRect(0, 0, w, h);
+      const s = 64;
+      for (let row = -1; row <= h / s + 1; row++) {
+        for (let col = -1; col <= w / s + 1; col++) {
+          const cx = col * s + (row % 2 ? s / 2 : 0);
+          const cy = row * s * 0.75;
+          ctx.fillStyle = (row + col) % 3 === 0 ? '#f7f7f5' : '#eef0ef';
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - s * 0.5);
+          ctx.bezierCurveTo(cx + s * 0.2, cy - s * 0.35, cx + s * 0.46, cy - s * 0.3, cx + s * 0.46, cy);
+          ctx.bezierCurveTo(cx + s * 0.46, cy + s * 0.3, cx + s * 0.2, cy + s * 0.35, cx, cy + s * 0.5);
+          ctx.bezierCurveTo(cx - s * 0.2, cy + s * 0.35, cx - s * 0.46, cy + s * 0.3, cx - s * 0.46, cy);
+          ctx.bezierCurveTo(cx - s * 0.46, cy - s * 0.3, cx - s * 0.2, cy - s * 0.35, cx, cy - s * 0.5);
+          ctx.fill();
+        }
+      }
+    },
+    true,
+  );
+}
+
+/** White subway tile: 4 rows of staggered bricks per tile. */
+export function subwayTileTexture(): CanvasTexture | null {
+  return canvasTexture(
+    256,
+    256,
+    31,
+    (ctx, w, h) => {
+      ctx.fillStyle = '#d7d8d6';
+      ctx.fillRect(0, 0, w, h);
+      const rows = 4;
+      const rowH = h / rows;
+      for (let r = 0; r < rows; r++) {
+        const offset = r % 2 ? w / 4 : 0;
+        for (let x = -w / 2 + offset; x < w; x += w / 2) {
+          ctx.fillStyle = '#fbfbf9';
+          ctx.beginPath();
+          ctx.roundRect(x + 2, r * rowH + 2, w / 2 - 4, rowH - 4, 4);
+          ctx.fill();
+        }
+      }
+    },
+    true,
+  );
+}
+
+/** The big black Roman-numeral wall clock's face (the dining room). */
+export function clockFaceTexture(): CanvasTexture | null {
+  return canvasTexture(512, 512, 37, (ctx, w) => {
+    const c = w / 2;
+    ctx.fillStyle = '#f3efe6';
+    ctx.fillRect(0, 0, w, w);
+    ctx.fillStyle = '#1f1f22';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 44px Georgia, serif';
+    const numerals = ['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
+    numerals.forEach((numeral, i) => {
+      const a = (i / 12) * Math.PI * 2;
+      ctx.save();
+      ctx.translate(c + Math.sin(a) * c * 0.74, c - Math.cos(a) * c * 0.74);
+      ctx.rotate(a);
+      ctx.fillText(numeral, 0, 0);
+      ctx.restore();
+    });
+    ctx.strokeStyle = '#1f1f22';
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(c, c);
+    ctx.lineTo(c + c * 0.32, c - c * 0.18);
+    ctx.stroke();
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.moveTo(c, c);
+    ctx.lineTo(c - c * 0.08, c - c * 0.55);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(c, c, 14, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+/** The hand-painted sign on the bedroom-hall door. */
+export function doorSignTexture(): CanvasTexture | null {
+  return canvasTexture(512, 256, 41, (ctx, w, h) => {
+    ctx.fillStyle = '#efe6d6';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#8a6a4d';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(8, 8, w - 16, h - 16);
+    ctx.fillStyle = '#4b3a30';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'italic 64px Georgia, serif';
+    ctx.fillText('I love you all', w / 2, h / 2 + 4);
+  });
+}
+
+/** A soft, warm pool of sunlight (additive): brightest in the middle, fading to nothing at the edges. */
+export function sunPatchTexture(): CanvasTexture | null {
+  return canvasTexture(128, 128, 43, (ctx, w, h) => {
+    const g = ctx.createRadialGradient(w / 2, h / 2, 4, w / 2, h / 2, w / 2);
+    g.addColorStop(0, 'rgba(255, 236, 196, 1)');
+    g.addColorStop(0.55, 'rgba(255, 228, 180, 0.65)');
+    g.addColorStop(1, 'rgba(255, 220, 170, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  });
+}

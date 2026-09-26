@@ -11,6 +11,21 @@ import { QUALITY, type QualityLevel } from '../config/quality';
 import { HUMAN } from '../config/human';
 import { SNIFF } from '../config/senses';
 import { SockHeistRuntime } from '../heist/SockHeistRuntime';
+import { DogActivityDirector, DogLogicBook } from '../activities/DogActivityDirector';
+import type { DogActivityContext } from '../activities/DogActivity';
+import { MakeHumanPlay } from '../activities/MakeHumanPlay';
+import { NAP_QUALITIES, PerfectNap, type NapReport } from '../activities/PerfectNap';
+import { TreatHunt } from '../activities/TreatHunt';
+import { MOKE_REACTIONS } from '../config/activities';
+import { DOG_ACTIVITIES } from '../config/dogActivities';
+import { dogLogicEntry } from '../config/dogLogic';
+import { HEIST } from '../config/heist';
+import { DogLogicMemory } from '../heist/DogLogic';
+import { Treat } from '../heist/Treat';
+import { HumanActivityController } from '../human/activities/HumanActivityController';
+import { HumanReactions } from '../human/activities/HumanReactions';
+import { NavGrid } from '../human/NavGrid';
+import { HouseholdEffects } from '../world/HouseholdEffects';
 import { InteractionSystem } from '../interactions/InteractionSystem';
 import { PickupSystem } from '../interactions/PickupSystem';
 import { RestSystem } from '../interactions/RestSystem';
@@ -32,7 +47,7 @@ import { ScentWisps } from '../senses/ScentWisps';
 import { DebugPanel, FrameStats, type DebugValues } from '../ui/DebugPanel';
 import { controlsSummary } from '../ui/ControlGlyphs';
 import type { UIManager } from '../ui/UIManager';
-import { LivingRoom } from '../world/LivingRoom';
+import { Home } from '../world/Home';
 import { applySoftEnvironment, RoomLighting } from '../world/RoomLighting';
 import { AssetManager } from './AssetManager';
 import { GameEvents } from './GameEvents';
@@ -66,7 +81,8 @@ export class Game {
   private readonly loop: GameLoop;
   private readonly fixedStep = new FixedStep();
   private readonly frameStats = new FrameStats();
-  private readonly room = new LivingRoom();
+  /** The whole house: the living room and hallway, the kitchen, the family room and the dining room. */
+  private readonly room = new Home();
   private readonly followCamera: ThirdPersonCamera;
   private readonly moveBasis = new MoveBasis();
   private readonly interactions = new InteractionSystem(undefined, (o, d, max) =>
@@ -97,6 +113,25 @@ export class Game {
   /** Gameplay events (Sock Heist publishes; UI, audio and the heist listen). */
   private readonly events = new GameEvents();
   private heist: SockHeistRuntime | null = null;
+  /** The human's daily life around the house (Phase 4), and how they respond to Moke. */
+  private readonly routine: HumanActivityController;
+  private readonly reactions = new HumanReactions();
+  /** The TV glow, the cooking pot, dinner on the table. */
+  private readonly household = new HouseholdEffects();
+  /** Dog Logic: what Moke has learned (remembered in this browser), and the moments he learns it. */
+  private readonly dogLogic: DogLogicBook;
+  private readonly logicMemory = new DogLogicMemory();
+  /** Treat Hunt, Perfect Nap, Make Human Play. */
+  private director: DogActivityDirector | null = null;
+  private hunt: TreatHunt | null = null;
+  private readonly huntTreat = new Treat('hunt', DOG_ACTIVITIES.treatHunt.scentRadius);
+  /** The human's walkable grid over the whole house. */
+  private nav: NavGrid | null = null;
+  /** Set by a bark or growl, read once by the dog activities in the next fixed step. */
+  private barkForActivities = false;
+  private nearStoveFor = 0;
+  private wasAttending = false;
+  private zzzIn = 0;
 
   private readonly lookDelta: Vec2Like = { x: 0, y: 0 };
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
@@ -123,15 +158,29 @@ export class Game {
     this.debug = new DebugPanel(viewport.parentElement ?? document.body);
     this.loop = new GameLoop(this.gfx.renderer, this.frame);
 
+    this.routine = new HumanActivityController(this.room.places, this.events);
+    this.routine.reactions = this.reactions;
+    this.reactions.say = (text, mood) => this.routine.say(text, mood);
+    this.reactions.onPet = () => this.petted();
+    this.dogLogic = new DogLogicBook(this.logicMemory, this.events);
+    // Somewhere to lie down all over the house: his bed, his blanket, the sofas, the hearth (Perfect Nap).
     const { dogBed, dogBedFront } = this.room.landmarks;
-    this.rest = new RestSystem(this.interactions, {
-      id: 'dogBed',
-      position: dogBed,
-      facing: Math.atan2(dogBedFront.x - dogBed.x, dogBedFront.z - dogBed.z),
-    });
+    this.rest = new RestSystem(
+      this.interactions,
+      this.room.napSpots.map((spot) => ({
+        id: spot.id,
+        position: spot.position,
+        facing: spot.id === 'dogBed' ? Math.atan2(dogBedFront.x - dogBed.x, dogBedFront.z - dogBed.z) : spot.facing,
+        label: spot.id === 'dogBed' ? 'Lie Down' : 'Nap Here',
+      })),
+    );
 
     this.scene.background = new Color(RENDER.background);
-    this.scene.add(new RoomLighting(quality).object, this.room.object, this.wisps.object);
+    this.scene.add(new RoomLighting(quality, { ...this.room.bounds, height: 2.7 }).object, this.room.object, this.wisps.object, this.household.object);
+    this.events.on('DOG_LOGIC_DISCOVERED', ({ id, first }) => {
+      this.ui.showDiscovery(first, HEIST.discoveryTime * 1000 - 250, dogLogicEntry(id));
+      this.audio.play('discovery');
+    });
     applySoftEnvironment(this.gfx.renderer, this.scene);
     this.followCamera = new ThirdPersonCamera(this.camera, this.updateCameraTarget());
 
@@ -213,6 +262,14 @@ export class Game {
     this.setState('menu');
   }
 
+  /** Development: put Moke somewhere (`imdog.teleport(13, 3)` in the console) with the camera behind him. */
+  teleport(x: number, z: number, heading = 0, y = 0): void {
+    if (!this.moke) return;
+    this.moke.controller.teleport({ x, y, z }, heading);
+    this.moke.update(0, 1);
+    this.followCamera.snapBehind(this.updateCameraTarget());
+  }
+
   dispose(): void {
     this.loop.stop();
     this.input.dispose();
@@ -233,7 +290,7 @@ export class Game {
 
   /** The loose props, and carrying them: the view rides in the mouth socket, physics stays out of it. */
   private spawnProps(physics: PhysicsWorld, moke: Moke): void {
-    this.props = createRoomProps(physics, this.room);
+    this.props = createRoomProps(physics, this.room, this.room.bounds);
     for (const prop of this.props) this.scene.add(prop.view);
     const pickup = new PickupSystem<Prop>(this.interactions, moke.controller, (origin, direction, max, radius) =>
       physics.sweepWorldSphere(origin, direction, radius, max),
@@ -265,6 +322,7 @@ export class Game {
   private spawnHeist(physics: PhysicsWorld, moke: Moke): void {
     const sock = this.props.find((p) => p.id === 'sock');
     if (!sock || !this.pickup) return;
+    this.nav = new NavGrid(this.room.colliders, { bounds: this.room.bounds, cell: 0.1, agentRadius: HUMAN.body.radius, minY: 0.08, maxY: 1.7 });
     this.heist = new SockHeistRuntime({
       scene: this.scene,
       physics,
@@ -279,8 +337,122 @@ export class Game {
       ui: this.ui,
       audio: this.audio,
       mokeSays: (text) => this.showVoiceBubble(text),
+      routine: this.routine,
+      nav: this.nav,
+      memory: this.logicMemory,
     });
     this.events.on('HEIST_COMPLETE', ({ seconds }) => this.completeHeist(seconds));
+    this.spawnDogActivities(physics, moke);
+  }
+
+  /**
+   * The Phase 4 dog activities, and asking the human for pets. They start themselves: a trick near the human (Treat
+   * Hunt), lying down somewhere (Perfect Nap), bringing them a toy (Make Human Play).
+   */
+  private spawnDogActivities(physics: PhysicsWorld, moke: Moke): void {
+    const heist = this.heist;
+    const nav = this.nav;
+    if (!heist || !nav) return;
+    const human = heist.human;
+    const treat = this.huntTreat;
+    this.scent.register(treat.scent);
+    this.attention.register(treat.attention);
+    this.interactions.register(treat.interactable);
+    this.scent.register(this.household.foodScent);
+
+    const hunt = new TreatHunt({
+      routine: this.routine,
+      hand: human.visual.hands.right,
+      treat,
+      scene: this.scene,
+      jar: this.room.kitchenTreats,
+      spots: this.room.treatHidingSpots,
+      nav,
+      mokeCanSee: (spot) => physics.lineOfSight({ x: moke.controller.position.x, y: moke.controller.position.y + 0.33, z: moke.controller.position.z }, { x: spot.x, y: 0.08, z: spot.z }),
+      roomName: (at) => this.room.roomAt(at.x, at.z).name,
+      onFound: (seconds) => {
+        moke.animation.eat();
+        this.audio.play('crunch');
+        this.showVoiceBubble('Nom nom!');
+        this.dogLogic.discover('sniff=treat');
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        window.setTimeout(() => this.ui.showToast(`Treat Hunt: found it in ${m}:${String(s).padStart(2, '0')}!`, 3500), HEIST.discoveryTime * 1000);
+      },
+    });
+    this.hunt = hunt;
+    const nap = new PerfectNap({
+      spots: this.room.napSpots,
+      fire: this.room.fire,
+      noise: () => this.noiseAt(),
+      humanPosition: () => human.controller.position,
+      onNapped: (report) => this.napped(report),
+    });
+    const toys = this.props.filter((p) => p.id === 'ball' || p.id === 'toy');
+    const play = new MakeHumanPlay({
+      routine: this.routine,
+      reactions: this.reactions,
+      toys,
+      hand: human.visual.hands.right,
+      scene: this.scene,
+      clearDistance: (from, direction, max) => physics.sweepWorldSphere(from, direction, 0.08, max),
+      openFloor: (x, z) => nav.isWalkable(x, z),
+      onThrow: (toy, first) => {
+        this.audio.play('whoosh');
+        this.dogLogic.discover(toy.id === 'ball' ? 'human+ball=play' : 'human+toy=play', !first);
+      },
+    });
+    this.director = new DogActivityDirector([hunt, nap, play]);
+
+    // "Get Pets": close to the human while they're free.
+    const game = this;
+    this.interactions.register({
+      id: 'human:pet',
+      type: 'PET',
+      label: 'Get Pets',
+      interactionDistance: MOKE_REACTIONS.petReach,
+      get enabled() {
+        return !moke.carrying && !heist.heist.running && game.reactions.canPet(game.routine);
+      },
+      get position() {
+        return human.controller.position;
+      },
+      requiresClearPath: false,
+      priority: 5,
+      interact: () => this.reactions.requestPet(),
+    });
+  }
+
+  /** The human reached down to pet him: he sits, leans in and wags; a little heart. */
+  private petted(): void {
+    const moke = this.moke;
+    if (!moke || moke.carrying) return;
+    moke.animation.cancelTrick();
+    moke.animation.pet();
+    this.showVoiceBubble('♥');
+  }
+
+  /** Something noisy right now (the TV on, dinner cooking), for how quiet a nap spot is. */
+  private noiseAt(): { x: number; y: number; z: number } | null {
+    const effect = this.routine.effect;
+    const place = this.routine.place;
+    if (effect === 'tv' && place?.look) return place.look;
+    if (effect === 'cooking') return this.household.foodScent.position;
+    return null;
+  }
+
+  /** A nap judged: the card (five little signs), and what it taught him. */
+  private napped(report: NapReport): void {
+    const icons: Record<(typeof NAP_QUALITIES)[number], [string, string]> = {
+      sunny: ['sun', 'Sunny'],
+      soft: ['soft', 'Soft'],
+      warm: ['warm', 'Warm'],
+      quiet: ['quiet', 'Quiet'],
+      nearHuman: ['human', 'Human nearby'],
+    };
+    const signs = NAP_QUALITIES.map((q) => ({ icon: icons[q][0], label: icons[q][1], lit: report.qualities[q] }));
+    this.ui.showNap(report.perfect ? 'Perfect nap!' : 'Nap', signs, report.caption);
+    for (const id of report.learned) this.dogLogic.discover(id, true);
   }
 
   /** "Sock Heist Complete": the card with PLAY AGAIN / KEEP EXPLORING (the world waits behind it). */
@@ -294,6 +466,8 @@ export class Game {
 
   private playAgain(): void {
     if (this.state !== 'complete') return;
+    this.director?.cancelAll();
+    this.hunt?.resetAll();
     this.heist?.heist.reset();
     this.ui.clearHeist();
     this.audio.unlock();
@@ -416,7 +590,10 @@ export class Game {
     const alpha = this.fixedStep.advance(playing ? dt : 0, this.fixedUpdate);
     this.updateAttention(dt);
     this.moke?.update(dt, alpha);
-    this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing);
+    this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? null);
+    this.huntTreat.update();
+    this.household.update(dt, { effect: this.routine.effect, place: this.routine.place });
+    this.updateNapping(playing ? dt : 0, playing);
     for (const prop of this.props) prop.render(alpha);
     this.updateInteractionPrompt(playing);
     this.updateSniff(playing ? dt : 0, playing);
@@ -450,12 +627,13 @@ export class Game {
       // A trick holds him in place; heading off somewhere cuts it short.
       const tricking = this.moke.animation.holdsStillForTrick;
       if (tricking && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.moke.animation.cancelTrick();
-      const stayPut = this.rest.holdsMoke || this.moke.animation.holdsStillForTrick || this.moke.animation.eating;
+      const stayPut = this.rest.holdsMoke || this.moke.animation.holdsStillForTrick || this.moke.animation.eating || this.moke.animation.petting;
       this.moke.fixedUpdate(step, stayPut ? this.stillIntent : this.moveIntent);
     }
     this.rest.update(step, c);
     this.moke.resting = this.rest.lying;
     this.heist?.fixedUpdate(step);
+    this.updateDogActivities(step);
     this.physics.step();
     for (const prop of this.props) prop.afterStep();
   };
@@ -483,7 +661,8 @@ export class Game {
     const input = this.input.state;
     if (input.wasPressed('interact')) {
       this.moke?.animation.cancelTrick();
-      this.interactions.interact();
+      // Nothing to use here: the paw (or E) sniffs instead, so a phone can hunt for treats without a sniff button.
+      if (!this.interactions.interact() && !this.rest.holdsMoke && !this.moke?.animation.performingTrick && this.scent.start()) this.audio.play('sniff');
     }
     // Any fresh movement key (or a jump) gets him up out of his bed.
     const moved = ['moveForward', 'moveBackward', 'moveLeft', 'moveRight', 'jump'] as const;
@@ -512,10 +691,12 @@ export class Game {
     this.audio.play('bark');
     this.barkedThisFrame = true;
     this.heist?.noteBark();
+    this.barkForActivities = true;
   }
 
   private growl(): void {
     if (!this.moke) return;
+    this.barkForActivities = true;
     this.moke.animation.growl();
     this.audio.play('growl');
     this.growledThisFrame = true;
@@ -584,6 +765,64 @@ export class Game {
       target.heading = this.room.spawn.heading;
     }
     return target;
+  }
+
+  /** Each fixed step: the dog activities see what Moke and the human are up to, and a couple of Dog Logic moments. */
+  private updateDogActivities(step: number): void {
+    const moke = this.moke;
+    const heist = this.heist;
+    if (!moke || !heist || !this.director) return;
+    const human = heist.human;
+    const c = moke.controller;
+    const ctx: DogActivityContext = {
+      moke: {
+        position: c.position,
+        speed: c.actualSpeed,
+        carrying: this.pickup?.carried?.id ?? null,
+        barked: this.barkForActivities,
+        trick: moke.animation.performingTrick,
+        sniffing: this.scent.active,
+        napSpot: this.rest.lying ? this.rest.spot.id : null,
+      },
+      human: {
+        position: human.controller.position,
+        available: this.routine.available && !heist.heist.running,
+        seesMoke: human.brain.seesMoke,
+        engaged: this.reactions.engaged,
+      },
+      heistRunning: heist.heist.running,
+    };
+    this.barkForActivities = false;
+    this.director.update(step, ctx);
+
+    // KITCHEN = FOOD?: hanging about the stove while dinner cooks.
+    const food = this.household.foodScent;
+    const byStove = this.routine.effect === 'cooking' && Math.hypot(c.position.x - food.position.x, c.position.z - food.position.z) < 2.2;
+    this.nearStoveFor = byStove ? this.nearStoveFor + step : 0;
+    if (this.nearStoveFor > 3) {
+      this.nearStoveFor = -Infinity;
+      this.dogLogic.discover('kitchen=food?', true);
+    }
+    // BARK = ATTENTION: barking until the human gives in.
+    const attending = this.reactions.kind === 'attend';
+    if (attending && !this.wasAttending) this.dogLogic.discover('bark=attention', true);
+    this.wasAttending = attending;
+  }
+
+  /** Napping: little z's over him and the edges of the screen dim softly. */
+  private updateNapping(dt: number, playing: boolean): void {
+    const napping = playing && this.rest.lying;
+    this.ui.setNapping(napping);
+    if (!napping) {
+      this.zzzIn = 1.2;
+      return;
+    }
+    this.zzzIn -= dt;
+    if (this.zzzIn <= 0) {
+      this.zzzIn = DOG_ACTIVITIES.perfectNap.zzzEvery;
+      const words = ['z…', 'Zz…', 'zzz…'];
+      this.showVoiceBubble(words[Math.floor(Math.random() * words.length)]!);
+    }
   }
 
   private registerDebugSections(): void {
@@ -687,6 +926,24 @@ export class Game {
         'human at': `${p.x.toFixed(2)}, ${p.z.toFixed(2)} · ${human.controller.speed.toFixed(2)} m/s`,
         treat: heist.treat.state,
         events: this.events.recent.join(' › ') || '—',
+      };
+    });
+    this.debug.addSection('Dog activities', (): DebugValues => {
+      const values: DebugValues = {};
+      for (const a of this.director?.activities ?? []) values[a.name] = `${a.state} ${a.stateTime.toFixed(0)} s · ✓${a.successes}`;
+      values.reaction = this.reactions.kind ?? '—';
+      return values;
+    });
+    this.debug.addSection('Human routine', (): DebugValues => {
+      const r = this.routine;
+      const c = this.heist?.human.controller;
+      return {
+        doing: r.role ? `role: ${r.role.id}` : r.activity ? `${r.activity.name} (${r.phase})` : r.phase,
+        place: r.place?.id ?? '—',
+        'time left': r.phase === 'doing' ? `${r.stepLeft.toFixed(0)} s` : '—',
+        room: c ? this.room.roomAt(c.position.x, c.position.z).name : '—',
+        seat: c ? `${c.seat ? 'on seat' : 'standing'} (${c.seatBlend.toFixed(2)})${c.stuckFor > 0 ? ` · stuck ${c.stuckFor.toFixed(1)} s` : ''}` : '—',
+        last: r.last ?? '—',
       };
     });
     this.debug.addSection('Camera', () => this.followCamera.debugInfo());

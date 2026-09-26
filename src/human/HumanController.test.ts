@@ -28,7 +28,7 @@ async function setup(obstacles: StaticBox[]) {
     maxY: 1.7,
   });
   const human = new HumanController(new CharacterBody(physics, { x: -2, y: 0, z: 0 }, HUMAN.body), nav, Math.PI / 2);
-  const intent: HumanIntent = { goal: null, speed: HUMAN.move.walkSpeed, stopWithin: 0.15, face: null, headYaw: 0, crouch: 0, pose: 'idle' };
+  const intent: HumanIntent = { goal: null, speed: HUMAN.move.walkSpeed, stopWithin: 0.15, face: null, headYaw: 0, crouch: 0, pose: 'idle', seat: null, prop: null, lookAt: null, talking: 0 };
   const run = (seconds: number, each?: () => void) => {
     for (let i = 0; i < Math.round(seconds / DT); i++) {
       each?.();

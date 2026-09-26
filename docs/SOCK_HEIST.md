@@ -1,5 +1,10 @@
 # Sock Heist
 
+> **Since Phase 4** (`PHASE_4.md`): the heist's rules are unchanged, but the human now lives a day around the whole house
+> (`HUMAN_SYSTEM.md`): the heist interrupts whatever they're doing the moment they see Moke with the sock, and they
+> carry on afterwards. They look different too: `StylizedHumanVisual` replaced `ToonHumanVisual` (same colours, same
+> one striped sock). Folding laundry by the basket is still where it starts, and PLAY AGAIN still resets them there.
+
 The first complete gameplay loop (Phase 3). Moke steals a sock, the human wants it back, chasing him doesn't
 work, a treat does: **SOCK = TREAT**. It's playful rather than stressful: no combat, no damage, no failure, no
 punishment. The human never catches Moke. Played straight (scripted runs), it takes about a minute from the steal

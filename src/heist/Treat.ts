@@ -25,7 +25,11 @@ export class Treat {
   /** Called when Moke eats it (Sock Heist listens). */
   onEat: (() => void) | null = null;
 
-  constructor(readonly id = 'treat') {
+  constructor(
+    readonly id = 'treat',
+    /** How far its smell carries (m): further for a hidden one (Treat Hunt). */
+    scentRadius = 6,
+  ) {
     this.view = createTreatView();
     this.view.visible = false;
     const treat = this;
@@ -35,7 +39,7 @@ export class Treat {
       category: 'TREAT',
       label: 'Treat',
       strength: 1,
-      radius: 6,
+      radius: scentRadius,
       get position() {
         return treat.position;
       },

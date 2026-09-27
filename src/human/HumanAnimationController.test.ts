@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { Matrix4, Vector3 } from 'three';
 import { mulberry32 } from '../utils/random';
+import { jointMatrix, jointPosition } from './humanIK';
 import { createVisualState, HumanAnimationController } from './HumanAnimationController';
-import { HIP_ABOVE_SEAT, HIP_HEIGHT, HUMAN_JOINTS, type HumanPose } from './HumanRig';
+import { FOREARM_TO_PALM, HIP_ABOVE_SEAT, HIP_HEIGHT, HUMAN_JOINTS, type HumanPose } from './HumanRig';
 
 const POSES: HumanPose[] = [
   'fold', 'idle', 'surprised', 'chase', 'lunge', 'stumble', 'shrug', 'search', 'peek', 'rummage', 'offer', 'take', 'place', 'tidy',
@@ -72,6 +74,45 @@ describe('HumanAnimationController', () => {
     expect(out.face.eyeYaw).toBeGreaterThan(0.1);
     expect(out.face.eyePitch).toBeLessThan(-0.05);
     expect(out.joints.neck.y + out.joints.head.y).toBeGreaterThan(0.05);
+  });
+
+  it('turns eyes, then head and neck, then upper body, with how much attention the moment has; never past the limits', () => {
+    // Something well round to their left (1.5 rad), at eye height.
+    const look = { x: Math.sin(1.5) * 2, y: 1.6, z: Math.cos(1.5) * 2 };
+    const glance = run(new HumanAnimationController(mulberry32(3)), { ...createVisualState(), look, lookWeight: 0.3 }, 2);
+    const full = run(new HumanAnimationController(mulberry32(3)), { ...createVisualState(), look, lookWeight: 1 }, 2);
+    const headTurn = (s: typeof full) => s.joints.neck.y + s.joints.head.y;
+    const torsoTurn = (s: typeof full) => s.joints.chest.y + s.joints.spine.y;
+    // A glance: the eyes go all the way, the head some, the shoulders stay square to what they're doing.
+    expect(glance.face.eyeYaw).toBeGreaterThan(0.2);
+    expect(headTurn(glance)).toBeGreaterThan(0.2);
+    expect(Math.abs(torsoTurn(glance))).toBeLessThan(0.02);
+    // Full attention: more of the head, and the upper body helps.
+    expect(headTurn(full)).toBeGreaterThan(headTurn(glance) + 0.3);
+    expect(torsoTurn(full)).toBeGreaterThan(0.15);
+    // Never an owl: the head and neck together stay within a human's reach, whatever the weight.
+    for (const s of [glance, full]) expect(Math.abs(headTurn(s))).toBeLessThanOrEqual(1.0 + 0.1);
+  });
+
+  it('pets a small dog on his back from a kneel, with the hand on his side; the free arm never swings round behind', () => {
+    for (const reach of [
+      { x: 0.15, y: 0.3, z: 0.42 },
+      { x: -0.2, y: 0.3, z: 0.4 },
+    ]) {
+      const out = run(new HumanAnimationController(mulberry32(5)), { ...createVisualState(), pose: 'pet', crouch: 1, reach }, 2);
+      const hips = { x: out.hipsX, y: out.hipsY, z: out.hipsZ };
+      const left = reach.x > 0;
+      // The palm (a hand-length past the wrist) is on his back, patting: not hovering, not stretched.
+      const palm = new Vector3(0, -FOREARM_TO_PALM, 0).applyMatrix4(jointMatrix(out.joints, hips, left ? 'elbowL' : 'elbowR', new Matrix4()));
+      expect(palm.distanceTo(new Vector3(reach.x, reach.y, reach.z)), `palm at ${reach.x}`).toBeLessThan(0.08);
+      // The free hand rests in front of the body, below the shoulder.
+      const wrist = jointPosition(out.joints, hips, left ? 'wristR' : 'wristL', new Vector3());
+      const shoulder = jointPosition(out.joints, hips, left ? 'shoulderR' : 'shoulderL', new Vector3());
+      expect(wrist.z, `free hand in front at ${reach.x}`).toBeGreaterThan(hips.z + 0.05);
+      expect(wrist.y).toBeLessThan(shoulder.y);
+      // No arm wound round the long way (the far set of Euler angles would blend through nonsense).
+      for (const j of [out.joints.shoulderL, out.joints.shoulderR]) expect(Math.max(Math.abs(j.y), Math.abs(j.z))).toBeLessThan(Math.PI * 0.75);
+    }
   });
 
   it('holds what the activity asks for', () => {

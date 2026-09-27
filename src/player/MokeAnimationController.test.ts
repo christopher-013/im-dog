@@ -81,6 +81,23 @@ describe('MokeAnimationController', () => {
     expect(open.crouch).toBeLessThan(1e-3);
   });
 
+  it('eats a meal from his bowl and laps up water, holding still for each, then carries on', () => {
+    const still = { speed: 0, turnRate: 0, headroom: OPEN_SKY };
+    const anim = new MokeAnimationController(MOVEMENT);
+    anim.eat(MOKE_ANIMATION.bowlEatDuration);
+    expect(simulate(anim, still, 1).eat).toBeGreaterThan(0.9);
+    expect(anim.eating).toBe(true);
+    simulate(anim, still, MOKE_ANIMATION.bowlEatDuration);
+    expect(anim.eating).toBe(false);
+    anim.drink();
+    const drinking = simulate(anim, still, 1);
+    expect(drinking.drink).toBeGreaterThan(0.9);
+    expect(drinking.eat).toBe(0);
+    expect(anim.eating).toBe(true);
+    expect(simulate(anim, still, MOKE_ANIMATION.drinkDuration).drink).toBe(0);
+    expect(anim.eating).toBe(false);
+  });
+
   it('carries his head up and wags harder while holding something', () => {
     const plain = simulate(new MokeAnimationController(MOVEMENT), { speed: 1.8, turnRate: 0, headroom: OPEN_SKY }, 1);
     const proud = simulate(new MokeAnimationController(MOVEMENT), { speed: 1.8, turnRate: 0, headroom: OPEN_SKY, carrying: true }, 1);

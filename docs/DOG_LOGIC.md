@@ -8,7 +8,7 @@ a score, and there's no menu of them to grind.
 |---|---|---|
 | SOCK = TREAT | Trade the sock for a treat and eat it (Sock Heist) | `SockHeistController` |
 | SNIFF = TREAT | Sniff out a hidden treat and eat it (Treat Hunt) | `TreatHunt` → `Game` |
-| BED = NAP | Nap in his bed or on his pink blanket | `PerfectNap` |
+| BED = NAP | Nap in his bed or his pink bed by the fire | `PerfectNap` |
 | SUN + SOFT = NAP | Nap somewhere sunny and soft (his bed, the sunny couch) | `PerfectNap` |
 | HUMAN + BALL = PLAY | Get the human to throw the ball (Make Human Play) | `MakeHumanPlay` |
 | HUMAN + TOY = PLAY | Get the human to throw the rope toy | `MakeHumanPlay` |

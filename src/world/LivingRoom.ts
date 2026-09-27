@@ -39,7 +39,7 @@ export interface LivingRoomOptions {
 
 /**
  * Phase 1's living room, at true human scale seen from a small dog, echoing Moke's real home:
- * an oatmeal linen couch with leaf-print pillows, warm wood floor, sunlight through the window
+ * an oatmeal linen couch with leaf-print pillows, the house's grey plank floor, sunlight through the window
  * onto his bed. Plus a short hallway for tight-space movement and camera testing.
  * Static scenery is merged by material; colliders come from the parts or simple boxes.
  */
@@ -61,7 +61,7 @@ export class LivingRoom {
     ball: new Vector3(1.55, 0, 0.35),
     toy: new Vector3(-1.05, 0, 1.55),
     /** Sock Heist: where the human folds laundry, facing the basket; where they toss a sock back; the treat jar. */
-    laundry: new Vector3(-1.35, 0, -1.45),
+    laundry: new Vector3(-1.52, 0, -1.56),
     laundryBasket: new Vector3(-2.0, 0, -1.85),
     sockReturn: new Vector3(-2.35, 0, -1.3),
     treatStand: new Vector3(0.95, 0, 2.2),
@@ -86,7 +86,7 @@ export class LivingRoom {
     const hd = D / 2;
     const solid = { solid: true };
 
-    b.add(new BoxGeometry(W, 0.1, D), m.floor, [0, -0.05, 0], { cast: false, solid: true, worldUV: FLOOR_TILE });
+    b.add(new BoxGeometry(W, 0.1, D), m.floorGrey, [0, -0.05, 0], { cast: false, solid: true, worldUV: FLOOR_TILE });
     b.add(new BoxGeometry(W + 2 * T, 0.1, D + 2 * T), m.ceiling, [0, H + 0.05, 0], { receive: false });
     b.add(new BoxGeometry(W + 2 * T, H, T), m.accentWall, [0, H / 2, -hd - T / 2], solid);
     b.add(new BoxGeometry(W + 2 * T, H, T), m.wall, [0, H / 2, hd + T / 2], solid);
@@ -170,7 +170,7 @@ export class LivingRoom {
     const width = zMax - zMin;
     const solid = { solid: true };
 
-    b.add(new BoxGeometry(length, 0.1, width), m.floor, [midX, -0.05, midZ], { cast: false, solid: true, worldUV: FLOOR_TILE });
+    b.add(new BoxGeometry(length, 0.1, width), m.floorGrey, [midX, -0.05, midZ], { cast: false, solid: true, worldUV: FLOOR_TILE });
     b.add(new BoxGeometry(length + T, 0.1, width + 2 * T), m.ceiling, [midX + T / 2, H + 0.05, midZ], { receive: false });
     b.add(new BoxGeometry(length + T, H, T), m.wall, [midX + T / 2, H / 2, zMin - T / 2], solid);
     b.add(new BoxGeometry(length + T, H, T), m.wall, [midX + T / 2, H / 2, zMax + T / 2], solid);
@@ -195,7 +195,8 @@ export class LivingRoom {
     // Moke's bed sits in the window's pool of afternoon sun, open side facing the room (+x).
     b.at([-2.25, 0, 0.05], Math.PI / 2, () => dogBed(b, m));
     // Sock Heist: the laundry basket the sock escaped from, and the treat jar, out of reach on the TV console.
-    b.at([-2.0, 0, -1.85], 0.55, () => laundryBasket(b, m));
+    // Its long side toward where the human stands to fold.
+    b.at([-2.0, 0, -1.85], 1.02, () => laundryBasket(b, m));
     b.at([0.95, 0.56, 2.77], Math.PI, () => treatJar(b, m));
 
     b.at([0.3, 1.55, -hd + 0.02], 0, () => framedArt(b, m, 1.0, 0.7));

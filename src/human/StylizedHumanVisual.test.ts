@@ -1,4 +1,4 @@
-import { SkinnedMesh } from 'three';
+import { DoubleSide, Mesh, MeshBasicMaterial, Raycaster, SkinnedMesh, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { createVisualState, HumanAnimationController } from './HumanAnimationController';
 import { StylizedHumanVisual } from './StylizedHumanVisual';
@@ -21,6 +21,55 @@ describe('StylizedHumanVisual', () => {
     visual.dispose();
   });
 
+  /** A body mesh's rest-pose geometry (bound with identity bind matrices, so its positions are character space). */
+  function meshNamed(visual: StylizedHumanVisual, name: string): SkinnedMesh {
+    const mesh = visual.object.getObjectByName(`Human:${name}`);
+    if (!(mesh instanceof SkinnedMesh)) throw new Error(`no ${name} mesh`);
+    return mesh;
+  }
+
+  it('wears the shirt untucked over the jeans: no part of the jeans pokes out through it', () => {
+    const visual = new StylizedHumanVisual();
+    const shirt = new Mesh(meshNamed(visual, 'shirt').geometry, new MeshBasicMaterial({ side: DoubleSide }));
+    const jeans = meshNamed(visual, 'jeans').geometry.getAttribute('position');
+    const ray = new Raycaster();
+    const p = new Vector3();
+    const dir = new Vector3();
+    let checked = 0;
+    for (let i = 0; i < jeans.count; i++) {
+      p.fromBufferAttribute(jeans, i);
+      // Everything of the jeans above the shirt's tails, toward the front and back (the sleeves hang at the sides).
+      if (p.y < 0.9 || Math.abs(p.x) > Math.abs(p.z) * 1.4) continue;
+      dir.set(p.x, 0, p.z).normalize();
+      ray.set(new Vector3(0, p.y, 0), dir);
+      const hit = ray.intersectObject(shirt, false)[0];
+      expect(hit, `a shirt round the jeans at ${p.toArray()}`).toBeDefined();
+      expect(Math.hypot(p.x, p.z), `jeans inside the shirt at ${p.toArray()}`).toBeLessThan(hit!.distance - 0.002);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(100);
+    visual.dispose();
+  });
+
+  it('has jeans that are one garment: the legs meet down the middle of the seat, and nothing sits below the floor', () => {
+    const visual = new StylizedHumanVisual();
+    const jeans = meshNamed(visual, 'jeans').geometry.getAttribute('position');
+    const p = new Vector3();
+    let seamAtBack = Infinity;
+    for (let i = 0; i < jeans.count; i++) {
+      p.fromBufferAttribute(jeans, i);
+      if (p.y > 0.86 && p.y < 0.98 && p.z < -0.06) seamAtBack = Math.min(seamAtBack, Math.abs(p.x));
+    }
+    // The inner sides of the two legs reach the middle: one continuous seat, no gap or separate buttocks.
+    expect(seamAtBack).toBeLessThan(0.012);
+    visual.object.traverse((o) => {
+      if (!(o instanceof SkinnedMesh)) return;
+      o.geometry.computeBoundingBox();
+      expect(o.geometry.boundingBox!.min.y, o.name).toBeGreaterThan(-0.002);
+    });
+    visual.dispose();
+  });
+
   it('has hands to hold things, and poses from the animation without errors', () => {
     const visual = new StylizedHumanVisual();
     expect(visual.hands.left.parent).not.toBeNull();
@@ -32,6 +81,9 @@ describe('StylizedHumanVisual', () => {
     expect(book?.visible).toBe(true);
     for (let i = 0; i < 5; i++) visual.apply(1 / 30, animation.update(1 / 30, { ...state, prop: null }));
     expect(book?.visible).toBe(false);
+    const laundryState = { ...createVisualState(), pose: 'fold' as const, prop: 'laundry' as const };
+    for (let i = 0; i < 30; i++) visual.apply(1 / 30, animation.update(1 / 30, laundryState));
+    expect(visual.hands.right.getObjectByName('prop:laundry')?.visible).toBe(true);
     visual.dispose();
   });
 

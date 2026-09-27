@@ -22,9 +22,11 @@ export const HUMAN_ANIMATION = {
     headSpeed: 3.2,
     eyeSpeed: 9,
     attentionRate: 2.6,
+    /** A look round the room (no target): this much attention. */
+    glanceWeight: 0.45,
   },
   /** Reaching for something (petting Moke): the arm stays inside this share of its length; the back bends to help. */
-  reach: { comfort: 0.9, maxLean: 1.05 },
+  reach: { comfort: 0.9, maxLean: 1.15 },
   /** Idle life: breathing, and a slow shift of weight every so often. */
   idle: { breathe: 0.014, shiftEvery: [5, 9] as const, shift: 0.02 },
 } as const;

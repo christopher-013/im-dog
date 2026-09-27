@@ -3,7 +3,7 @@ import type { Vec3Like } from '../physics/CharacterBody';
 import { damp, lerp, smoothstep, wrapAngle } from '../utils/math';
 import type { ClearSight } from './HumanAwareness';
 import { createVisualState, HumanAnimationController, type LocalPoint } from './HumanAnimationController';
-import type { HumanBrain, HumanSenses } from './HumanBrain';
+import type { HumanBrain, HumanSenses, SeatSpec } from './HumanBrain';
 import type { HumanController } from './HumanController';
 import type { HumanVisual } from './StylizedHumanVisual';
 
@@ -31,6 +31,23 @@ const DEFAULT_LOOK_WEIGHT = 0.6;
 /** Sitting down: step across onto the seat over the first part of it, lowering from a little before that ends. */
 const SEAT_STEP = 0.55;
 const SEAT_LOWER_FROM = 0.45;
+
+/** A point `t` (0..1) of the way along the step across from where they stand to the seat, via its entry if any. */
+function seatPath(from: Vec3Like, seat: SeatSpec, t: number, out: Vector3): void {
+  const via = seat.entry ?? seat;
+  const first = Math.hypot(via.x - from.x, via.z - from.z);
+  const second = Math.hypot(seat.x - via.x, seat.z - via.z);
+  const along = t * (first + second);
+  if (along <= first || second < 1e-6) {
+    const k = first > 1e-6 ? Math.min(1, along / first) : 1;
+    out.x = lerp(from.x, via.x, k);
+    out.z = lerp(from.z, via.z, k);
+  } else {
+    const k = Math.min(1, (along - first) / second);
+    out.x = lerp(via.x, seat.x, k);
+    out.z = lerp(via.z, seat.z, k);
+  }
+}
 
 /**
  * The human, in four parts kept apart like Moke's gameplay and visuals (D7): behaviour (HumanBrain, with the daily
@@ -108,12 +125,8 @@ export class Human {
     // Sitting: a step or two across from where the body stands onto the seat, then lowering onto it (the reverse
     // getting up). The legs step because the animation sees the visual really moving.
     const seat = c.seat;
-    const across = seat ? smoothstep(0, SEAT_STEP, c.seatBlend) : 0;
-    this.visualPosition.set(
-      lerp(this.renderPosition.x, seat?.x ?? this.renderPosition.x, across),
-      this.renderPosition.y,
-      lerp(this.renderPosition.z, seat?.z ?? this.renderPosition.z, across),
-    );
+    this.visualPosition.copy(this.renderPosition);
+    if (seat) seatPath(this.renderPosition, seat, smoothstep(0, SEAT_STEP, c.seatBlend), this.visualPosition);
     const object = this.visual.object;
     object.position.copy(this.visualPosition);
     object.rotation.y = heading;

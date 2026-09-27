@@ -1441,6 +1441,15 @@ html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
 .touch-actions.has-target .touch-interact-label {
   opacity: 1;
   transform: none;
+  /* A button too while it shows something to do: a tap on it is a tap on the paw. */
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.touch-actions.has-target .touch-interact-label.is-pressed {
+  transform: scale(0.95);
+  background: rgba(255, 238, 222, 0.98);
+  box-shadow: 0 2px 0 var(--shadow);
 }
 
 .touch-pause {

@@ -255,6 +255,35 @@ export const crunch: Synth = (ctx, out, t0, pitch, noise) => {
   }
 };
 
+/** Lap, lap, lap: a small dog drinking (little wet clicks with a watery ring, about six a second). */
+export const lap: Synth = (ctx, out, t0, pitch, noise) => {
+  for (let i = 0; i < 14; i++) {
+    const t = t0 + i * (0.16 + Math.random() * 0.03);
+    const src = noiseSource(ctx, noise, t, 0.04);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = (700 + Math.random() * 250) * pitch;
+    filter.Q.value = 4;
+    src.connect(filter).connect(envelope(ctx, t, 0.003, 0.55, 0.05)).connect(out);
+  }
+};
+
+/** Pouring: kibble rattling into a bowl, or water running into one (a soft rushing swell). */
+export const pour: Synth = (ctx, out, t0, pitch, noise) => {
+  const src = noiseSource(ctx, noise, t0, 0.9);
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(900 * pitch, t0);
+  filter.frequency.linearRampToValueAtTime(1400 * pitch, t0 + 0.8);
+  filter.Q.value = 0.8;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.12);
+  g.gain.setValueAtTime(0.35, t0 + 0.65);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.9);
+  src.connect(filter).connect(g).connect(out);
+};
+
 /** Dog Logic discovered: a bright little four-note chime. */
 export const discovery: Synth = (ctx, out, t0, pitch) => {
   const notes = [523.25, 659.25, 783.99, 1046.5];

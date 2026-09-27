@@ -16,15 +16,19 @@ import type { DogActivityContext } from '../activities/DogActivity';
 import { MakeHumanPlay } from '../activities/MakeHumanPlay';
 import { NAP_QUALITIES, PerfectNap, type NapReport } from '../activities/PerfectNap';
 import { TreatHunt } from '../activities/TreatHunt';
-import { MOKE_REACTIONS } from '../config/activities';
+import { BOWL_REFILL, MOKE_REACTIONS } from '../config/activities';
+import { MOKE_ANIMATION } from '../config/animation';
 import { DOG_ACTIVITIES } from '../config/dogActivities';
 import { dogLogicEntry } from '../config/dogLogic';
 import { HEIST } from '../config/heist';
 import { DogLogicMemory } from '../heist/DogLogic';
 import { Treat } from '../heist/Treat';
+import { BowlRefill } from '../human/activities/BowlRefill';
 import { HumanActivityController } from '../human/activities/HumanActivityController';
 import { HumanReactions } from '../human/activities/HumanReactions';
 import { NavGrid } from '../human/NavGrid';
+import { DogBowls, type BowlKind } from '../world/DogBowls';
+import { BOWLS, placeById } from '../world/home/places';
 import { HouseholdEffects } from '../world/HouseholdEffects';
 import { InteractionSystem } from '../interactions/InteractionSystem';
 import { PickupSystem } from '../interactions/PickupSystem';
@@ -118,6 +122,12 @@ export class Game {
   private readonly reactions = new HumanReactions();
   /** The TV glow, the cooking pot, dinner on the table. */
   private readonly household = new HouseholdEffects();
+  /** What's in his bowls, and the human's errand to refill them. */
+  private readonly bowls = new DogBowls(BOWLS);
+  private bowlRefill: BowlRefill | null = null;
+  /** Sounds due a little later in game time (the crunches of a meal), so pausing pauses them too. */
+  private readonly laterSounds: { at: number; name: 'crunch' | 'lap' }[] = [];
+  private gameTime = 0;
   /** Dog Logic: what Moke has learned (remembered in this browser), and the moments he learns it. */
   private readonly dogLogic: DogLogicBook;
   private readonly logicMemory = new DogLogicMemory();
@@ -176,7 +186,7 @@ export class Game {
     );
 
     this.scene.background = new Color(RENDER.background);
-    this.scene.add(new RoomLighting(quality, { ...this.room.bounds, height: 2.7 }).object, this.room.object, this.wisps.object, this.household.object);
+    this.scene.add(new RoomLighting(quality, { ...this.room.bounds, height: 2.7 }).object, this.room.object, this.wisps.object, this.household.object, this.bowls.object);
     this.events.on('DOG_LOGIC_DISCOVERED', ({ id, first }) => {
       this.ui.showDiscovery(first, HEIST.discoveryTime * 1000 - 250, dogLogicEntry(id));
       this.audio.play('discovery');
@@ -421,6 +431,69 @@ export class Game {
       priority: 5,
       interact: () => this.reactions.requestPet(),
     });
+
+    // His bowls: "Eat" and "Drink" when he's at a full one; once he's emptied it, the human comes to refill it.
+    for (const kind of ['food', 'water'] as const) {
+      this.interactions.register({
+        id: `bowl:${kind}`,
+        type: kind === 'food' ? 'EAT' : 'DRINK',
+        label: kind === 'food' ? 'Eat' : 'Drink',
+        interactionDistance: BOWL_REFILL.reach,
+        get enabled() {
+          return game.bowls.has(kind) && !moke.carrying && !moke.animation.eating && !game.rest.holdsMoke;
+        },
+        get position() {
+          return game.bowls.position(kind);
+        },
+        // He's right at it; the bowl's own rim would block a line-of-sight check to its middle.
+        requiresClearPath: false,
+        priority: 6,
+        interact: () => this.eatFromBowl(kind),
+      });
+    }
+    const counter = placeById(BOWLS.sources.food);
+    const sink = placeById(BOWLS.sources.water);
+    this.bowlRefill = new BowlRefill({
+      routine: this.routine,
+      bowls: this.bowls,
+      stand: BOWLS.stand,
+      sources: { food: { stand: counter.stand, facing: counter.facing }, water: { stand: sink.stand, facing: sink.facing } },
+      onPour: () => this.audio.play('pour'),
+    });
+    this.bowls.onEmptied = (kind) => this.bowlRefill?.request(kind);
+  }
+
+  /** Eats his dinner or has a drink at his bowl: he stays put, nose in the bowl, until it's all gone. */
+  private eatFromBowl(kind: BowlKind): void {
+    const moke = this.moke;
+    if (!moke || !this.bowls.has(kind)) return;
+    moke.animation.cancelTrick();
+    if (kind === 'food') {
+      const seconds = MOKE_ANIMATION.bowlEatDuration;
+      moke.animation.eat(seconds);
+      this.bowls.finish('food', seconds);
+      this.audio.play('crunch');
+      for (const later of [1.15, 2.3]) this.laterSounds.push({ at: this.gameTime + later, name: 'crunch' });
+      this.showVoiceBubble('Nom nom!');
+    } else {
+      const seconds = MOKE_ANIMATION.drinkDuration;
+      moke.animation.drink(seconds);
+      this.bowls.finish('water', seconds);
+      this.audio.play('lap');
+      this.laterSounds.push({ at: this.gameTime + 2.4, name: 'lap' });
+    }
+  }
+
+  /** The bowls drain while he eats or drinks; the sounds of the meal carry on (in game time). */
+  private updateBowls(dt: number): void {
+    this.gameTime += dt;
+    this.bowls.update(dt);
+    for (let i = this.laterSounds.length - 1; i >= 0; i--) {
+      const sound = this.laterSounds[i]!;
+      if (this.gameTime < sound.at) continue;
+      this.audio.play(sound.name);
+      this.laterSounds.splice(i, 1);
+    }
   }
 
   /** The human reached down to pet him: he sits, leans in and wags; a little heart. */
@@ -593,6 +666,7 @@ export class Game {
     this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? null);
     this.huntTreat.update();
     this.household.update(dt, { effect: this.routine.effect, place: this.routine.place });
+    this.updateBowls(playing ? dt : 0);
     this.updateNapping(playing ? dt : 0, playing);
     for (const prop of this.props) prop.render(alpha);
     this.updateInteractionPrompt(playing);
@@ -633,6 +707,7 @@ export class Game {
     this.rest.update(step, c);
     this.moke.resting = this.rest.lying;
     this.heist?.fixedUpdate(step);
+    this.bowlRefill?.update(step);
     this.updateDogActivities(step);
     this.physics.step();
     for (const prop of this.props) prop.afterStep();
@@ -939,11 +1014,19 @@ export class Game {
       const c = this.heist?.human.controller;
       return {
         doing: r.role ? `role: ${r.role.id}` : r.activity ? `${r.activity.name} (${r.phase})` : r.phase,
+        animation: this.heist?.human.animation.animState ?? '—',
         place: r.place?.id ?? '—',
+        target: this.heist?.human.brain.intent.goal ? `${this.heist.human.brain.intent.goal.x.toFixed(2)}, ${this.heist.human.brain.intent.goal.z.toFixed(2)}` : '—',
         'time left': r.phase === 'doing' ? `${r.stepLeft.toFixed(0)} s` : '—',
+        'phase elapsed': `${r.phaseElapsed.toFixed(1)} s`,
         room: c ? this.room.roomAt(c.position.x, c.position.z).name : '—',
         seat: c ? `${c.seat ? 'on seat' : 'standing'} (${c.seatBlend.toFixed(2)})${c.stuckFor > 0 ? ` · stuck ${c.stuckFor.toFixed(1)} s` : ''}` : '—',
-        last: r.last ?? '—',
+        attention: this.heist
+          ? `${this.heist.human.brain.intent.lookAt ? 'on a target' : 'free'} · ${this.heist.human.animation.attention.toFixed(2)} · yaw ${Math.round((this.heist.human.animation.gazeYaw * 180) / Math.PI)}°`
+          : '—',
+        'with Moke': this.reactions.kind ?? '—',
+        bowls: `food ${this.bowls.level('food').toFixed(2)} · water ${this.bowls.level('water').toFixed(2)}${this.bowlRefill?.busy ? ` · refilling (${this.bowlRefill.step})` : this.bowlRefill?.pending.length ? ' · refill due' : ''}`,
+        previous: r.last ?? '—',
       };
     });
     this.debug.addSection('Camera', () => this.followCamera.debugInfo());

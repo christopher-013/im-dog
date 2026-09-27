@@ -32,6 +32,9 @@ export const MOKE_ANIMATION = {
   growlDuration: 1.15,
   /** Eating a treat off the floor (s). */
   eatDuration: 1.4,
+  /** A proper meal from his bowl, and a drink from the water bowl (s). */
+  bowlEatDuration: 3.4,
+  drinkDuration: 2.8,
   /** Being petted: he sits, tips his head up into the hand and wags hard (s). */
   petDuration: 2.8,
   petHeadPitch: 0.35,

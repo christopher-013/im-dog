@@ -97,6 +97,8 @@ export interface SeatSpec {
   readonly height: number;
   readonly style: HumanSitStyle;
   readonly facing: number;
+  /** Where they step in from, beside the seat (a chair at a table), if not straight from where they stand. */
+  readonly entry?: { readonly x: number; readonly z: number } | null;
 }
 
 /** What the brain wants the body and visual to do. */
@@ -237,11 +239,16 @@ export class HumanBrain {
     this.timeInState += dt;
     this.stepsInState++;
     this.intent.talking = Math.max(0, this.intent.talking - dt);
+    // Set afresh every step by whoever wants them (a stale weight from a reaction must never outlive it).
+    this.intent.lookWeight = undefined;
+    this.intent.reach = null;
+    this.intent.surface = undefined;
     // Everything but idle is the Sock Heist: on their feet, hands free, eyes on Moke when they can see him.
     if (this.state !== 'idle') {
       this.intent.seat = null;
       this.intent.prop = null;
       this.intent.lookAt = this.seesMoke ? s.moke : null;
+      this.intent.lookWeight = 1;
     }
     this.intent.headYaw = damp(this.intent.headYaw, this.headYawTarget, 6, dt);
     // Under the coffee table he's hidden from standing eyes; only a crouch to peek finds him there.

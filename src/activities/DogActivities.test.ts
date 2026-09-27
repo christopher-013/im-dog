@@ -207,7 +207,7 @@ describe('PerfectNap', () => {
     const run = (seconds: number) => {
       for (let i = 0; i < seconds / DT; i++) director.update(DT, ctx);
     };
-    ctx.moke.napSpot = 'pinkBlanket';
+    ctx.moke.napSpot = 'pinkBed';
     run(2);
     ctx.moke.napSpot = null;
     run(1);

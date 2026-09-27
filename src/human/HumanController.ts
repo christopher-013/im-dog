@@ -32,6 +32,8 @@ export class HumanController {
   private pathIndex = 0;
   private plannedFor: Point2 | null = null;
   private replanIn = 0;
+  /** The last plan found no way to the goal at all. */
+  private noPath = false;
   private checkTime = 0;
   private readonly progressFrom: Point2 = { x: 0, z: 0 };
   private readonly desired: Vec3Like = { x: 0, y: 0, z: 0 };
@@ -60,8 +62,9 @@ export class HumanController {
     let wantHeading = this.heading;
     const goal = intent.goal;
     if (this.updateSeat(dt, intent)) {
-      // Sitting, sitting down or getting up: the body stays put, facing the way the seat faces.
-      this.arrived = !intent.seat || intent.seat === this.seat;
+      // Sitting, sitting down or getting up: the body stays put, facing the way the seat faces. Only sitting on (or
+      // down onto) the seat they asked for counts as arrived: getting up to go somewhere else hasn't got there yet.
+      this.arrived = intent.seat !== null && intent.seat === this.seat;
       wantHeading = this.seat ? this.seat.facing : this.heading;
     } else if (goal) {
       const remaining = Math.hypot(goal.x - this.position.x, goal.z - this.position.z);
@@ -70,8 +73,13 @@ export class HumanController {
       } else {
         this.plan(goal, dt, intent.avoid ?? null);
         const waypoint = this.nextWaypoint();
-        if (!waypoint) {
-          this.arrived = true; // nowhere closer to go
+        if (this.noPath) {
+          // No way there from here at all: not "arrived". Counts as stuck, so whoever sent them gives up and
+          // chooses something else (and it re-plans meanwhile, in case the way opens up).
+          this.arrived = false;
+          this.stuckFor += dt;
+        } else if (!waypoint) {
+          this.arrived = true; // as close as the floor allows
           this.stuckFor = 0;
         } else {
           this.arrived = false;
@@ -123,7 +131,7 @@ export class HumanController {
     const t = this.tuning;
     const want = intent.seat;
     if (this.seat && want !== this.seat) {
-      this.seatBlend = Math.max(0, this.seatBlend - dt / t.standTime);
+      this.seatBlend = Math.max(0, this.seatBlend - dt / (t.standTime + this.seatStep(this.seat)));
       if (this.seatBlend <= 0) this.seat = null;
       return this.seat !== null;
     }
@@ -137,11 +145,18 @@ export class HumanController {
       }
     }
     if (this.seat) {
-      this.seatBlend = Math.min(1, this.seatBlend + dt / t.sitTime);
+      this.seatBlend = Math.min(1, this.seatBlend + dt / (t.sitTime + this.seatStep(this.seat)));
       this.speed = 0;
       return true;
     }
     return false;
+  }
+
+  /** Extra time to step across from where they stand to the seat (via its entry, if it has one). */
+  private seatStep(seat: SeatSpec): number {
+    const via = seat.entry ?? seat;
+    const path = Math.hypot(via.x - this.position.x, via.z - this.position.z) + Math.hypot(seat.x - via.x, seat.z - via.z);
+    return path * this.tuning.seatStepTime;
   }
 
   /** Where to draw the body between the last two fixed steps. */
@@ -177,8 +192,9 @@ export class HumanController {
     // Held up by something that isn't furniture (Moke in the way)? Plan round it, unless it's where they're going.
     const blocking =
       avoid && this.stuckFor > 0 && Math.hypot(avoid.x - this.position.x, avoid.z - this.position.z) < 1.2 && Math.hypot(avoid.x - goal.x, avoid.z - goal.z) > 0.8;
-    const found = this.nav.findPath(this.position, goal, this.path, blocking ? { x: avoid.x, z: avoid.z, r: this.tuning.avoidRadius } : null);
-    if (!found && blocking) this.nav.findPath(this.position, goal, this.path);
+    let found = this.nav.findPath(this.position, goal, this.path, blocking ? { x: avoid.x, z: avoid.z, r: this.tuning.avoidRadius } : null);
+    if (!found && blocking) found = this.nav.findPath(this.position, goal, this.path);
+    this.noPath = !found;
     this.pathIndex = 0;
     this.plannedFor = { x: goal.x, z: goal.z };
     this.replanIn = this.tuning.replanEvery;

@@ -20,6 +20,14 @@ const LINES = {
 
 const distance = (a: Vec3Like, b: Vec3Like) => Math.hypot(a.x - b.x, a.z - b.z);
 
+/** How far round from where they face Moke is (rad, -π..π). */
+function offAngle(s: HumanSenses): number {
+  let off = Math.atan2(s.moke.x - s.position.x, s.moke.z - s.position.z) - s.heading;
+  while (off > Math.PI) off -= Math.PI * 2;
+  while (off < -Math.PI) off += Math.PI * 2;
+  return off;
+}
+
 /**
  * How the human responds to Moke while going about their day: lightweight awareness (how close he is, a bark,
  * a trick, what he's carrying) turned into short reactions: a look, a greeting, "yes, Moke?", praise, pats. Each
@@ -34,6 +42,11 @@ export class HumanReactions implements ReactionLayer {
   private barks: number[] = [];
   private time = 0;
   private nearFor = 0;
+  private readonly petAt = { x: 0, y: 0, z: 0 };
+  /** Petting standing: close enough to kneel and stay put. */
+  private petClose = false;
+  /** Seconds Moke has been out of range or out of sight (for noticing him when he turns up). */
+  private goneFor = Infinity;
   private awayFor = Infinity;
   private petRequested = false;
   private gesturePose: HumanPose = 'shoo';
@@ -90,6 +103,8 @@ export class HumanReactions implements ReactionLayer {
     if (s.mokeBarked && d <= t.hearing) this.barks.push(this.time);
     this.barks = this.barks.filter((b) => this.time - b < t.barkWindow);
     this.nearFor = d < t.nearRange ? this.nearFor + dt : 0;
+    const arrived = sees && d < t.lookRange && this.goneFor >= t.noticeAfterAway;
+    this.goneFor = sees && d < t.lookRange ? 0 : this.goneFor + dt;
     this.awayFor = d > t.awayRange ? this.awayFor + dt : d < t.greetRange ? 0 : this.awayFor;
 
     // Something new to react to? (Stronger reactions win over the one running.)
@@ -105,7 +120,7 @@ export class HumanReactions implements ReactionLayer {
         this.say(gesture.line, 'neutral');
       }
     } else {
-      const next = this.pick(s, d, sees, routine);
+      const next = this.pick(dt, s, d, sees, arrived, routine);
       if (next) this.begin(next, s, intent);
     }
 
@@ -114,20 +129,45 @@ export class HumanReactions implements ReactionLayer {
     if (this.left <= 0) {
       if (this.kind === 'pet') this.cooldowns.set('pet', t.cooldowns.pet);
       this.kind = null;
+      this.petClose = false;
       return null;
     }
     intent.lookAt = s.moke;
+    intent.lookWeight = t.weights[this.kind];
+    // More than a glance and he's behind them: standing, they turn round to him (the head alone can't get there).
+    if (!s.seated && this.kind !== 'look' && Math.abs(offAngle(s)) > t.turnToBeyond) intent.face = s.moke;
     const pose = this.poseFor(this.kind, s);
     if (!pose) return 'look';
     intent.pose = pose;
-    // Petting while standing: turn to him and get down to his level. Seated, they just lean.
-    intent.crouch = this.kind === 'pet' && !s.seated ? 1 : 0;
+    // Petting while standing: turn to him, step over if he's not right there, and get down to his level only once
+    // close (then the hand reaches him without a stretch). Seated, they just lean.
+    const petting = this.kind === 'pet' && !s.seated;
+    if (petting) {
+      // Walk over until close enough, then stay right there (a little slack, so they don't shuffle back and forth).
+      this.petClose = d <= t.petKneelWithin + (this.petClose ? 0.15 : 0);
+      intent.seat = null;
+      intent.goal = this.petClose ? null : s.moke;
+      intent.speed = this.petClose ? 0 : t.petApproachSpeed;
+      intent.stopWithin = t.petKneelWithin - 0.08;
+    } else {
+      this.petClose = false;
+    }
+    intent.crouch = petting && this.petClose ? 1 : 0;
+    // Walking over to pet him: hands free until they're there.
+    if (petting && !this.petClose) intent.pose = 'idle';
     if (!s.seated && (this.kind === 'pet' || this.kind === 'attend' || this.kind === 'praise')) intent.face = s.moke;
     intent.prop = this.kind === 'pet' || this.kind === 'praise' ? null : intent.prop;
+    // The hand goes to his back.
+    if (this.kind === 'pet') {
+      this.petAt.x = s.moke.x;
+      this.petAt.y = s.moke.y + 0.3;
+      this.petAt.z = s.moke.z;
+      intent.reach = this.petAt;
+    }
     return 'pose';
   }
 
-  private pick(s: HumanSenses, d: number, sees: boolean, routine: HumanActivityController): ReactionKind | null {
+  private pick(dt: number, s: HumanSenses, d: number, sees: boolean, arrived: boolean, routine: HumanActivityController): ReactionKind | null {
     const t = this.tuning;
     const running = this.kind;
     if (this.petRequested) {
@@ -149,8 +189,9 @@ export class HumanReactions implements ReactionLayer {
     if (sees && d < t.greetRange && this.awayFor > t.greetAfterAway && this.ready('greet')) return 'greet';
     // Sitting close by, leaning on them: a spontaneous pat.
     if (s.seated && d < t.petReach && this.nearFor > t.spontaneousPetAfter && (s.mokeLying || s.moke.y > 0.25 || this.nearFor > t.spontaneousPetAfter * 2) && this.ready('pet')) return 'pet';
-    // Just noticed him nearby: a glance.
-    if (sees && d < t.lookRange && this.ready('look')) return 'look';
+    // A glance when he turns up nearby, and now and then while he's about, more often in easy-going activities.
+    const free = routine.activity?.attention ?? 0.6;
+    if (sees && d < t.lookRange && this.ready('look') && (arrived || this.random() < t.glanceChance * free * dt)) return 'look';
     return null;
   }
 
@@ -199,10 +240,6 @@ export class HumanReactions implements ReactionLayer {
   private canSee(s: HumanSenses, d: number): boolean {
     if (d < 1.0) return true;
     if (d > this.tuning.lookRange + 2) return false;
-    const toward = Math.atan2(s.moke.x - s.position.x, s.moke.z - s.position.z);
-    let off = toward - s.heading;
-    while (off > Math.PI) off -= Math.PI * 2;
-    while (off < -Math.PI) off += Math.PI * 2;
-    return Math.abs(off) < 1.3 && s.clear({ x: s.position.x, y: s.position.y + 1.2, z: s.position.z }, { x: s.moke.x, y: s.moke.y + 0.3, z: s.moke.z });
+    return Math.abs(offAngle(s)) < 1.3 && s.clear({ x: s.position.x, y: s.position.y + 1.2, z: s.position.z }, { x: s.moke.x, y: s.moke.y + 0.3, z: s.moke.z });
   }
 }

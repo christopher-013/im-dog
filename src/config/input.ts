@@ -83,6 +83,8 @@ export const TOUCH = {
   /** Holding the paw button this long (s) pops out the other buttons (jump, bark, trick, run); a quicker tap interacts. */
   menuHoldTime: 0.3,
   /** Popped-out buttons tuck themselves back into the paw after this long unused (s). */
+  /** The action bubble beside the paw: let go this far (px) outside it and it still counts as a tap. */
+  bubbleSlack: 16,
   menuIdleClose: 2.5,
 } as const;
 

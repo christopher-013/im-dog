@@ -33,7 +33,7 @@ type Tuning = typeof DOG_ACTIVITIES.perfectNap;
 /**
  * Perfect Nap (Phase 4): lie down somewhere, drift off, and the nap is judged by how it feels, not by numbers:
  * sunny, soft, warm, quiet, and whether his human is right there. The house has spots that are good in different
- * ways (his bed in the window's sun, the pink blanket by the fire, the sunny couch, the sofas by his human while they
+ * ways (his bed in the window's sun, his pink bed by the fire, the sunny couch, the sofas by his human while they
  * watch TV…). Four of the five is a perfect nap. Teaches BED = NAP and SUN + SOFT = NAP.
  */
 export class PerfectNap extends DogActivity {

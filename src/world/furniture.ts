@@ -182,16 +182,18 @@ export function pottedPlant(b: StaticSceneBuilder, m: RoomMaterials): void {
 }
 
 /** Moke's bed: a fleece cushion inside a round bolster that's open at the front (+z), so he steps in. */
-export function dogBed(b: StaticSceneBuilder, m: RoomMaterials): void {
-  const R = 0.42;
+export function dogBed(b: StaticSceneBuilder, m: RoomMaterials, style: { cushion?: Material; bolster?: Material; radius?: number } = {}): void {
+  const R = style.radius ?? 0.42;
   const tube = 0.095;
-  b.add(new CylinderGeometry(R - 0.02, R, 0.07, 40), m.bedCushion, [0, 0.035, 0]);
+  const cushion = style.cushion ?? m.bedCushion;
+  const bolster = style.bolster ?? m.bedBolster;
+  b.add(new CylinderGeometry(R - 0.02, R, 0.07, 40), cushion, [0, 0.035, 0]);
   // The torus arc lies flat after the X turn; the Z turn puts its 90° gap at +z.
   const start = (3 * Math.PI) / 4;
   const arc = Math.PI * 1.5;
-  b.add(new TorusGeometry(R, tube, 14, 48, arc), m.bedBolster, [0, tube, 0], { rotation: [Math.PI / 2, 0, start] });
+  b.add(new TorusGeometry(R, tube, 14, 48, arc), bolster, [0, tube, 0], { rotation: [Math.PI / 2, 0, start] });
   const endCap = new SphereGeometry(tube, 14, 10);
-  for (const angle of [start, start + arc]) b.add(endCap, m.bedBolster, [R * Math.cos(angle), tube, R * Math.sin(angle)]);
+  for (const angle of [start, start + arc]) b.add(endCap, bolster, [R * Math.cos(angle), tube, R * Math.sin(angle)]);
 
   // Bolster colliders: segments around the arc. Thin, so the camera ignores them.
   const segments = 5;
@@ -262,15 +264,24 @@ export function laundryBasket(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.add(rbox(W, H, wall, 0.012), m.wicker, [0, H / 2, -D / 2 + wall / 2]);
   b.add(rbox(wall, H, D, 0.012), m.wicker, [W / 2 - wall / 2, H / 2, 0]);
   b.add(rbox(wall, H, D, 0.012), m.wicker, [-W / 2 + wall / 2, H / 2, 0]);
-  // A rim, and the folded pile peeking over it.
+  // Woven bands round the sides, and a rope handle at each end: a laundry basket, not a box.
+  for (const y of [0.07, 0.15, 0.23]) {
+    for (const z of [D / 2 + 0.002, -D / 2 - 0.002]) b.add(rbox(W - 0.01, 0.022, 0.008, 0.004), m.wickerDark, [0, y, z], { cast: false });
+    for (const x of [W / 2 + 0.002, -W / 2 - 0.002]) b.add(rbox(0.008, 0.022, D - 0.01, 0.004), m.wickerDark, [x, y, 0], { cast: false });
+  }
+  for (const x of [W / 2 + 0.012, -W / 2 - 0.012]) b.add(new TorusGeometry(0.045, 0.009, 6, 14, Math.PI), m.wickerDark, [x, H - 0.035, 0], { rotation: [0, Math.PI / 2, 0], cast: false });
+  // A rim, and a heap of washing piled over it (so it reads as laundry, not a box), a shirt hanging over the front.
   b.add(rbox(W + 0.03, 0.03, D + 0.03, 0.012), m.wickerDark, [0, H, 0]);
-  const pile: [RoomMaterials['coral'], number, number, number][] = [
-    [m.linenLight, 0.24, -0.08, 0.02],
-    [m.coral, 0.27, 0.07, -0.03],
-    [m.navy, 0.3, -0.05, -0.04],
-    [m.leaf, 0.33, 0.06, 0.05],
+  const pile: [RoomMaterials['coral'], number, number, number, number][] = [
+    [m.linenLight, 0.27, -0.09, 0.02, 0.2],
+    [m.coral, 0.3, 0.08, -0.03, -0.15],
+    [m.navy, 0.34, -0.05, -0.04, 0.35],
+    [m.leaf, 0.37, 0.07, 0.05, -0.3],
+    [m.mustard, 0.405, -0.02, 0.0, 0.1],
   ];
-  for (const [material, y, x, z] of pile) b.add(rbox(0.3, 0.035, 0.24, 0.012), material, [x, y, z], { rotation: [0, x * 1.5, 0] });
+  for (const [material, y, x, z, turn] of pile) b.add(rbox(0.3, 0.04, 0.24, 0.016), material, [x, y, z], { rotation: [0.06 * turn, turn, 0.05 * x] });
+  b.add(rbox(0.16, 0.15, 0.014, 0.006), m.linenLight, [0.12, H - 0.045, D / 2 + 0.014], { rotation: [0.18, 0, 0.12] });
+  b.add(rbox(0.12, 0.05, 0.03, 0.01), m.linenLight, [0.12, H + 0.02, D / 2 - 0.004], { rotation: [0, 0, 0.12] });
   b.addCollider([0, H / 2, 0], [W, H, D]);
 }
 

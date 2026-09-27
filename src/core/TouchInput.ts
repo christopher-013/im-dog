@@ -17,6 +17,13 @@ const isMenuButton = (button: TouchButton): boolean => MENU_BUTTONS.includes(but
 
 const key = (button: TouchButton | 'sprint'): string => `Touch:${button}`;
 
+/** Is (x, y) on this element, give or take `slack` px? (No layout to measure: yes.) */
+function near(el: Partial<Element>, x: number, y: number, slack: number): boolean {
+  const r = el.getBoundingClientRect?.();
+  if (!r) return true;
+  return x >= r.left - slack && x <= r.right + slack && y >= r.top - slack && y <= r.bottom + slack;
+}
+
 export interface TouchInputOptions {
   /** Accept mouse pointers too (`?input=touch` testing on a desktop). */
   acceptMouse?: boolean;
@@ -31,7 +38,8 @@ export interface TouchInputOptions {
  * - a floating joystick: any touch that starts on the left part of the screen (analog movement; pushed past
  *   its ring, Moke runs);
  * - camera drag: any touch that starts elsewhere, not on a button (look delta, like a mouse);
- * - the paw button: a tap interacts; holding it pops out the other buttons (jump, bark, trick, run).
+ * - the paw button: a tap interacts; holding it pops out the other buttons (jump, bark, trick, run). The action
+ *   bubble beside it ("Pick Up Sock", "Get Pets"…) is a button too while it's showing: a tap on it interacts;
  *   Slide onto one and let go, or let go and tap one. They tuck themselves away again once unused for a moment,
  *   or at once on a tap of the paw or a camera drag;
  * - buttons: virtual `Touch:…` keys (see KEY_BINDINGS), so gameplay never knows it was a touch.
@@ -56,6 +64,8 @@ export class TouchInput {
    */
   private paw: { id: number; since: number; x: number; y: number; radius: number; over: TouchButton | null } | null = null;
   private menuOpen = false;
+  /** A finger on the action bubble beside the paw (it interacts when let go on it). */
+  private bubble: { id: number; el: HTMLElement } | null = null;
   /** When the popped-out buttons were last used (ms), to tuck them away once idle. */
   private menuUsedAt = 0;
 
@@ -145,6 +155,7 @@ export class TouchInput {
     this.held.clear();
     this.look = null;
     this.paw = null;
+    this.bubble = null;
     this.setMenu(false);
     this.setRun(false);
     for (const el of this.root.querySelectorAll('.is-pressed')) el.classList.remove('is-pressed');
@@ -156,6 +167,15 @@ export class TouchInput {
     this.onTouch?.();
     if (!this.enabledNow) return;
     e.preventDefault();
+    // The action bubble, while it's showing something to do: pressed like a button (hidden, it's just camera).
+    const bubble = (e.target as Partial<Element> | null)?.closest?.<HTMLElement>('[data-touch-label]') ?? null;
+    if (bubble && this.actions?.classList.contains('has-target')) {
+      if (this.bubble) return;
+      this.capture(e);
+      this.bubble = { id: e.pointerId, el: bubble };
+      bubble.classList.add('is-pressed');
+      return;
+    }
     const target = (e.target as Partial<Element> | null)?.closest?.<HTMLElement>('[data-touch]') ?? null;
     const button = target?.dataset.touch;
     // A tucked-away button can't be pressed (it's hidden; this only guards against stray events).
@@ -216,6 +236,17 @@ export class TouchInput {
   };
 
   private readonly handleUp = (e: PointerEvent): void => {
+    const bubble = this.bubble;
+    if (bubble?.id === e.pointerId) {
+      this.bubble = null;
+      bubble.el.classList.remove('is-pressed');
+      // Let go on it (or just off it, thumbs aren't precise): the same as a quick tap of the paw.
+      if (near(bubble.el, e.clientX, e.clientY, TOUCH.bubbleSlack)) {
+        this.tap('interact');
+        this.setMenu(false);
+      }
+      return;
+    }
     const paw = this.paw;
     if (paw?.id === e.pointerId) {
       const over = this.menuOpen ? this.menuButtonAt(e.clientX, e.clientY) ?? paw.over : null;
@@ -240,6 +271,11 @@ export class TouchInput {
 
   /** The browser took the touch (or capture was lost): let go without doing anything. */
   private readonly handleCancel = (e: PointerEvent): void => {
+    if (this.bubble?.id === e.pointerId) {
+      this.bubble.el.classList.remove('is-pressed');
+      this.bubble = null;
+      return;
+    }
     if (this.paw?.id === e.pointerId) {
       this.letGoOfPaw();
       this.menuUsedAt = this.now();

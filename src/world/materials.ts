@@ -108,6 +108,9 @@ export function createRoomMaterials() {
     creamBoucle: mat('creamBoucle', '#f1ebe0', 1),
     upholstery: mat('upholstery', '#dccfbb', 1),
     blanketPink: mat('blanketPink', '#f1b3bf', 1, { side: DoubleSide }),
+    /** His pink fleece bed by the fire (what was his pink blanket). */
+    bedPinkBolster: mat('bedPinkBolster', '#eea7b5', 1),
+    bedPinkCushion: mat('bedPinkCushion', '#f7d2d9', 1),
     bowlBlue: mat('bowlBlue', '#4d86c4', 0.45),
     roseGold: mat('roseGold', '#d9a592', 0.3, { metalness: 0.7 }),
     black: mat('black', '#222226', 0.55),

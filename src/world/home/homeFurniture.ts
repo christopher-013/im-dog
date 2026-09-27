@@ -11,7 +11,7 @@ import {
   type Material,
 } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { couch, leafGeometry } from '../furniture';
+import { couch, dogBed, leafGeometry } from '../furniture';
 import { TILE_REPEAT, type RoomMaterials } from '../materials';
 import type { StaticSceneBuilder, Vec3Tuple } from '../StaticSceneBuilder';
 
@@ -262,23 +262,13 @@ export function stepStool(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.addCollider([0, 0.2, -0.1], [0.42, 0.4, 0.2]);
 }
 
-/** Moke's pink fleece blanket, rumpled on the floor (a favourite nap spot). No collider: he walks onto it. */
-export function pinkBlanket(b: StaticSceneBuilder, m: RoomMaterials): void {
-  const W = 1.0;
-  const D = 0.78;
-  const geometry = new PlaneGeometry(W, D, 20, 16);
-  const position = geometry.getAttribute('position');
-  for (let i = 0; i < position.count; i++) {
-    const x = position.getX(i);
-    const y = position.getY(i);
-    const edge = Math.max(Math.abs(x) / (W / 2), Math.abs(y) / (D / 2));
-    const ripple = 0.008 * Math.sin(x * 9 + y * 4) + 0.006 * Math.cos(y * 11 - x * 3);
-    position.setZ(i, 0.022 + ripple * (1 - edge * 0.6) - edge * edge * 0.01);
-  }
-  geometry.computeVertexNormals();
-  b.add(geometry, m.blanketPink, [0, 0, 0], { rotation: [-Math.PI / 2, 0, 0], cast: false });
-  // A soft fold along one side.
-  b.add(new CylinderGeometry(0.05, 0.05, W * 0.9, 10), m.blanketPink, [0, 0.045, -D / 2 + 0.06], { rotation: [0, 0, Math.PI / 2], scale: [1, 1, 0.6], cast: false });
+/**
+ * Moke's pink fleece bed (it was his pink blanket), in front of the fire: his round bed in pink, the opening toward
+ * the room (+z) so he can walk in, with the corner of his old blanket tucked in. A nap spot (Perfect Nap).
+ */
+export function pinkDogBed(b: StaticSceneBuilder, m: RoomMaterials): void {
+  dogBed(b, m, { cushion: m.bedPinkCushion, bolster: m.bedPinkBolster, radius: 0.38 });
+  b.add(new CylinderGeometry(0.045, 0.045, 0.34, 10), m.blanketPink, [0.1, 0.085, -0.12], { rotation: [0, 0.5, Math.PI / 2], scale: [1, 1, 0.55], cast: false });
 }
 
 /** Moke's bowls: the blue slow feeder and his steel water bowl, on a little mat. */
@@ -289,7 +279,6 @@ export function dogBowls(b: StaticSceneBuilder, m: RoomMaterials): void {
   // The slow feeder's maze ridges.
   for (let i = 0; i < 3; i++) b.add(new TorusGeometry(0.03 + i * 0.028, 0.006, 4, 16), m.bowlBlue, [-0.15, 0.03, 0], { rotation: [Math.PI / 2, 0, 0], cast: false });
   b.add(new LatheGeometry(profile, 20), m.stainless, [0.15, 0.008, 0], { scale: [0.85, 1, 0.85] });
-  b.add(new CylinderGeometry(0.085, 0.085, 0.004, 16), m.glass, [0.15, 0.045, 0], { cast: false, receive: false });
   b.addCollider([-0.15, 0.035, 0], [0.25, 0.07, 0.25], { thin: true });
   b.addCollider([0.15, 0.035, 0], [0.21, 0.07, 0.21], { thin: true });
 }

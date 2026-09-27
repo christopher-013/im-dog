@@ -18,8 +18,8 @@ export const HUMAN = {
     hurrySpeed: 2.05,
     acceleration: 3.2,
     braking: 5,
-    /** Turn rate (rad/s): people pivot slowly compared with a small dog. */
-    turnRate: 4.2,
+    /** Turn rate (rad/s): people pivot slowly compared with a small dog (the legs step round as they turn). */
+    turnRate: 3,
     /** Close enough to a target point (m). */
     arriveDistance: 0.12,
     /** Re-plan a path at least this often (s) while the goal moves. */
@@ -28,8 +28,10 @@ export const HUMAN = {
     stuckProgress: 0.05,
     stuckTime: 0.8,
     /** Sitting down and getting up (s), close enough to a seat's stand point (m), and facing its way (rad). */
-    sitTime: 1.1,
-    standTime: 0.8,
+    sitTime: 1.2,
+    standTime: 0.9,
+    /** ...plus this long per metre they step across from where they stand to the seat (s/m). */
+    seatStepTime: 1.0,
     seatReach: 0.22,
     seatAlign: 0.3,
     /** Held up by Moke: re-plan keeping this far from where he stands (m, centre to centre). */

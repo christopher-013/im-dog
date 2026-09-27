@@ -8,6 +8,8 @@ import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { MokeController } from '../player/MokeController';
 import { Home } from './Home';
 import { roomAt } from './home/layout';
+import { BOWLS, placeById } from './home/places';
+import { BOWL_REFILL } from '../config/activities';
 
 // The whole house with the real Rapier world: Moke can get everywhere he should (and nowhere he shouldn't),
 // the human can reach every place their routine uses, and every nap and treat spot is reachable.
@@ -194,6 +196,21 @@ describe('Home', () => {
     }
   }, 60_000);
 
+  it('lets Moke get to both his bowls, and the human to where they kneel to fill them', async () => {
+    for (const bowl of [BOWLS.food, BOWLS.water]) {
+      // Into the family room, then up to the bowl from the open floor in front of it (they're in a nook by the hearth).
+      const { travel, walkTo, moke } = await setup();
+      expect(travel(bowl.x, bowl.z - 0.8, 0.2)).toBe(true);
+      walkTo(bowl.x, bowl.z - 0.3, 3, 0.05);
+      expect(Math.hypot(moke.position.x - bowl.x, moke.position.z - bowl.z)).toBeLessThan(BOWL_REFILL.reach);
+    }
+    const path: Point2[] = [];
+    expect(humanNav.isWalkable(BOWLS.stand.x, BOWLS.stand.z)).toBe(true);
+    for (const from of [placeById(BOWLS.sources.food).stand, placeById(BOWLS.sources.water).stand, home.landmarks.laundry]) {
+      expect(humanNav.findPath(from, BOWLS.stand, path)).toBe(true);
+    }
+  }, 30_000);
+
   it('can reach every treat hiding spot close enough to eat, and so can the human (to hide it)', async () => {
     const humanPath: Point2[] = [];
     for (const spot of home.treatHidingSpots) {
@@ -221,6 +238,42 @@ describe('Home', () => {
       expect(humanNav.findPath(home.landmarks.laundry, place.stand, path), place.id).toBe(true);
       for (const other of home.places) expect(humanNav.findPath(place.stand, other.stand, path), `${place.id} → ${other.id}`).toBe(true);
     }
+  });
+
+  it('lines every interaction point up with what it is for: facing the counter or table, stepping straight into seats', () => {
+    for (const place of home.places) {
+      const forward = { x: Math.sin(place.facing), z: Math.cos(place.facing) };
+      if (place.surface) {
+        const toward = Math.atan2(place.surface.x - place.stand.x, place.surface.z - place.stand.z);
+        const off = Math.abs(Math.atan2(Math.sin(toward - place.facing), Math.cos(toward - place.facing)));
+        expect(off, `${place.id} faces its surface`).toBeLessThan(0.7);
+      }
+      if (!place.seat) continue;
+      // The last step onto the seat is straight back (a sofa) or straight sideways (a chair or stool at a table):
+      // never a diagonal slide.
+      const from = place.seat.entry ?? place.stand;
+      const dx = place.seat.x - from.x;
+      const dz = place.seat.z - from.z;
+      const along = dx * forward.x + dz * forward.z;
+      const across = dx * forward.z - dz * forward.x;
+      expect(Math.min(Math.abs(along), Math.abs(across)), `${place.id} steps straight in`).toBeLessThan(0.1);
+      // Stood behind the seat (a chair tucked under the table)? Then they come in from beside it, not through its back.
+      const standBehind = (place.stand.x - place.seat.x) * forward.x + (place.stand.z - place.seat.z) * forward.z < -0.1;
+      if (standBehind) {
+        expect(place.seat.entry, `${place.id} has a way in beside it`).toBeDefined();
+        const e = place.seat.entry!;
+        expect(Math.abs((e.x - place.seat.x) * forward.z - (e.z - place.seat.z) * forward.x), `${place.id} entry is beside it`).toBeGreaterThan(0.3);
+      }
+    }
+  });
+
+  it('never smooths the human into a squeeze it cannot plan out of (between the chaise and the coffee table)', () => {
+    const path: Point2[] = [];
+    // A straight line may not slip diagonally between two blocked cells...
+    expect(humanNav.lineOfSight({ x: 13.2, z: 2.5 }, { x: 13.4, z: 2.3 })).toBe(false);
+    // ...and standing right in the squeeze, there's still a way out to anywhere.
+    expect(humanNav.findPath({ x: 13.3, z: 2.4 }, { x: 8.08, z: 2.95 }, path)).toBe(true);
+    expect(humanNav.findPath({ x: 13.3, z: 2.4 }, { x: 13.75, z: 1.85 }, path)).toBe(true);
   });
 
   it("keeps the human out of dog-sized gaps: under the dining table and between the chairs", () => {

@@ -57,7 +57,7 @@ touch ────────────┘
 | Move | Left thumb, anywhere in the left 42% of the screen | A floating stick appears under the thumb; analog: partial push walks slowly, full push trots |
 | Run | Push the stick past its ring (it turns coral), or **RUN** from the paw's buttons | Pushing past the ring needs no second finger; RUN is a toggle (on until tapped again), and the stick stays coral while it's on |
 | Look | Right thumb: drag anywhere on the right that isn't a button | Mouse-like; the pause screen's Look sensitivity and Invert settings apply |
-| Interact | **Tap** the paw button | Lights up coral with its label beside it ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…). Fires on release, so a hold can't also interact. |
+| Interact | **Tap** the paw button, or the action bubble beside it | Lights up coral with its label beside it ("Pick Up Sock", "Give Sock", "Eat Treat", "Lie Down"…). Fires on release, so a hold can't also interact. The bubble is a button too while it shows an action (release on it, `TOUCH.bubbleSlack` 16 px of slack; hidden, that spot is camera). |
 | Jump · Bark · Trick · Run | **Hold** the paw button (`TOUCH.menuHoldTime`, 0.3 s): they pop out of it along an arc | Slide onto one and let go, or let go and tap them. They tuck back in after `TOUCH.menuIdleClose` (2.5 s) unused, at once on a paw tap or a camera drag, and on pause, rotation or focus loss. Moving with the stick keeps them out. 58 px targets (the paw is 86 px). |
 | Pause | **II**, top-right | |
 | Fullscreen | Menu and pause screens | Only where the browser supports it (not iPhone Safari) and not when already installed |

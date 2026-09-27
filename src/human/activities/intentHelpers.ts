@@ -15,6 +15,7 @@ export function walkTo(intent: HumanIntent, to: Vec3Like, speed: number = HUMAN.
   intent.pose = 'idle';
   intent.crouch = 0;
   intent.prop = null;
+  intent.lookAt = null;
 }
 
 /** Stay put, doing `pose`, facing `face` (if given), crouched `crouch`, eyes on `look`. */

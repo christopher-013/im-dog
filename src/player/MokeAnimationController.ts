@@ -61,8 +61,10 @@ export interface MokeAnimationState {
   bark: number;
   /** 0..1: a playful growl pose in progress. */
   growl: number;
-  /** 0..1: eating something off the floor (a treat): nose down, chewing. */
+  /** 0..1: eating something off the floor (a treat, his bowl): nose down, chewing. */
   eat: number;
+  /** 0..1: drinking from his water bowl: nose down, lapping. */
+  drink: number;
   /** 0..1: in the air (a jump, or a drop off the couch): legs reaching, not walking. */
   air: number;
   /** −1..1: going up (+) or coming down (−) while in the air. */
@@ -102,6 +104,7 @@ export class MokeAnimationController {
     bark: 0,
     growl: 0,
     eat: 0,
+    drink: 0,
     air: 0,
     rise: 0,
     land: 0,
@@ -127,6 +130,9 @@ export class MokeAnimationController {
   private sinceBark = Infinity;
   private sinceGrowl = Infinity;
   private sinceEat = Infinity;
+  private eatFor: number = MOKE_ANIMATION.eatDuration;
+  private sinceDrink = Infinity;
+  private drinkFor: number = MOKE_ANIMATION.drinkDuration;
   private sincePet = Infinity;
   private sinceLand = Infinity;
   private wasAirborne = false;
@@ -181,8 +187,12 @@ export class MokeAnimationController {
     s.growl = g >= 1 ? 0 : Math.min(1, g * 9) * Math.min(1, (1 - g) * 5);
     // Eating: straight down to it, a good chew, and back up.
     this.sinceEat += dt;
-    const e = this.sinceEat / a.eatDuration;
-    s.eat = e >= 1 ? 0 : Math.min(1, e * 7) * Math.min(1, (1 - e) * 6);
+    const e = this.sinceEat / this.eatFor;
+    s.eat = e >= 1 ? 0 : Math.min(1, e * 7 * (this.eatFor / a.eatDuration)) * Math.min(1, (1 - e) * 6 * (this.eatFor / a.eatDuration));
+    // Drinking: down to the water, lapping, and back up.
+    this.sinceDrink += dt;
+    const d = this.sinceDrink / this.drinkFor;
+    s.drink = d >= 1 ? 0 : Math.min(1, d * 12) * Math.min(1, (1 - d) * 10);
     this.sincePet += dt;
     const petted = this.petting ? Math.min(1, this.sincePet * 4) * Math.min(1, (a.petDuration - this.sincePet) * 3) : 0;
     this.updateAir(dt, sample);
@@ -226,13 +236,21 @@ export class MokeAnimationController {
     this.sinceGrowl = 0;
   }
 
-  /** Eats something off the floor (a treat). He stays put while he chews. */
-  eat(): void {
+  /** Eats something off the floor (a treat, or a meal from his bowl: longer). He stays put while he chews. */
+  eat(seconds: number = MOKE_ANIMATION.eatDuration): void {
     this.sinceEat = 0;
+    this.eatFor = seconds;
   }
 
+  /** Laps up water from his bowl. He stays put while he drinks. */
+  drink(seconds: number = MOKE_ANIMATION.drinkDuration): void {
+    this.sinceDrink = 0;
+    this.drinkFor = seconds;
+  }
+
+  /** Eating or drinking: he holds still for it. */
   get eating(): boolean {
-    return this.sinceEat < MOKE_ANIMATION.eatDuration;
+    return this.sinceEat < this.eatFor || this.sinceDrink < this.drinkFor;
   }
 
   /** A hand on his head: he sits, leans his head up into it and wags. He stays put for it. */
@@ -319,7 +337,7 @@ export class MokeAnimationController {
   private updateSitting(dt: number, sample: MokeMotionSample): void {
     const a = MOKE_ANIMATION;
     const s = this.state;
-    const busy = s.gait !== 'idle' || s.trick !== null || sample.sniffing || sample.resting || s.eat > 0 || s.air > 0.05;
+    const busy = s.gait !== 'idle' || s.trick !== null || sample.sniffing || sample.resting || s.eat > 0 || s.drink > 0 || s.air > 0.05;
     if (busy) {
       this.sitting = false;
       this.stretchLeft = 0;

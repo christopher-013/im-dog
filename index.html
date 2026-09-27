@@ -24,6 +24,7 @@
       body {
         margin: 0;
         height: 100%;
+        overflow: hidden;
         background: #fbf1e4;
       }
       .screen {
@@ -36,6 +37,10 @@
       .screen-loading .stack,
       #hud {
         visibility: hidden;
+      }
+      /* The touch buttons too (big unstyled icons otherwise): the stylesheet shows them only in touch play. */
+      .touch-controls {
+        display: none;
       }
     </style>
   </head>
@@ -228,7 +233,7 @@
         </div>
         <div class="touch-look-hint" aria-hidden="true"><span class="touch-hint">Drag to look</span></div>
         <div class="touch-actions">
-          <span id="touch-interact-label" class="touch-interact-label" aria-hidden="true"></span>
+          <span id="touch-interact-label" class="touch-interact-label" data-touch-label aria-hidden="true"></span>
           <button class="touch-btn touch-interact" type="button" data-touch="interact" aria-label="Interact (hold for more)">
             <svg aria-hidden="true"><use href="#paw" /></svg>
           </button>

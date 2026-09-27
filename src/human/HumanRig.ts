@@ -155,7 +155,7 @@ export type HumanAnimState =
   | 'HEIST';
 
 /** Something in their hands for an activity (shown by the visual; the Sock Heist's sock and treat are separate). */
-export type HumanProp = 'book' | 'phone' | 'mug' | 'fork' | 'remote' | 'spoon' | 'knife';
+export type HumanProp = 'book' | 'phone' | 'mug' | 'fork' | 'remote' | 'spoon' | 'knife' | 'laundry' | 'scoop' | 'pitcher';
 
 /** How they sit (see HomePlace): upright on a chair or sofa, perched on a tall stool, or lounging, legs up. */
 export type HumanSitStyle = 'upright' | 'stool' | 'lounge';

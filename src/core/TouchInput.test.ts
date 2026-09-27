@@ -16,11 +16,12 @@ interface FakePointer {
 }
 
 /** A class list that really toggles, to check the popped-out state. */
-function classes(): Set<string> & { toggle(name: string, force?: boolean): void; remove(name: string): void } {
+function classes(): Set<string> & { toggle(name: string, force?: boolean): void; remove(name: string): void; contains(name: string): boolean } {
   const set = new Set<string>();
   return Object.assign(set, {
     toggle: (name: string, force?: boolean) => void ((force ?? !set.has(name)) ? set.add(name) : set.delete(name)),
     remove: (name: string) => void set.delete(name),
+    contains: (name: string) => set.has(name),
   });
 }
 
@@ -155,6 +156,37 @@ describe('TouchInput (touch controls feeding the shared input state)', () => {
     root.press('jump', 4);
     frame();
     expect(state.wasPressed('jump')).toBe(true);
+  });
+
+  it('interacts on a tap of the action bubble beside the paw, while it shows something to do', () => {
+    const { root, state, frame } = setup();
+    // The bubble ("Pick Up Sock"): 120 × 40 px, left of the paw.
+    const bubble = { classList: classes(), getBoundingClientRect: () => ({ left: 440, top: 280, right: 560, bottom: 320, width: 120, height: 40 }) };
+    const onBubble = { closest: (selector: string) => (selector === '[data-touch-label]' ? bubble : null) };
+    // Nothing to do: it's hidden, and a touch there just looks around.
+    root.fire('pointerdown', 1, 500, 300, onBubble);
+    root.fire('pointermove', 1, 520, 300);
+    root.fire('pointerup', 1, 520, 300);
+    frame();
+    expect(state.wasPressed('interact')).toBe(false);
+    expect(state.getLookDelta({ x: 0, y: 0 }).x).not.toBe(0);
+    // Something to do: pressed like a button, and let go on it (or just off it) it interacts, once.
+    root.actions.classList.add('has-target');
+    root.fire('pointerdown', 2, 500, 300, onBubble);
+    expect(bubble.classList.has('is-pressed')).toBe(true);
+    frame();
+    expect(state.wasPressed('interact')).toBe(false);
+    root.fire('pointerup', 2, 565, 310);
+    frame();
+    expect(state.wasPressed('interact')).toBe(true);
+    expect(bubble.classList.has('is-pressed')).toBe(false);
+    frame();
+    expect(state.wasPressed('interact')).toBe(false);
+    // Dragged well away before letting go: changed their mind, nothing happens.
+    root.fire('pointerdown', 3, 500, 300, onBubble);
+    root.fire('pointerup', 3, 300, 150);
+    frame();
+    expect(state.wasPressed('interact')).toBe(false);
   });
 
   it('keeps the other buttons tucked inside the paw: hidden ones do nothing', () => {

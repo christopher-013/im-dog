@@ -116,7 +116,7 @@ export class NavGrid {
 
   private search2(from: Point2, to: Point2, out: Point2[]): boolean {
     out.length = 0;
-    const start = this.nearestWalkable(from.x, from.z);
+    let start = this.nearestWalkable(from.x, from.z);
     const goal = this.nearestWalkable(to.x, to.z);
     if (!start || !goal) return false;
     // Starting off the walkable area (squeezed against something, or inside what to avoid): step out first.
@@ -126,9 +126,17 @@ export class NavGrid {
       out.push(goal);
       return true;
     }
-    const s = this.index(start.x, start.z);
+    let s = this.index(start.x, start.z);
     const g = this.index(goal.x, goal.z);
-    if (!this.search(s, g)) return false;
+    if (!this.search(s, g)) {
+      // Standing on a walkable scrap cut off from the rest (a squeeze between two pieces of furniture): step onto
+      // the nearest neighbouring cell that does connect, then go from there.
+      const out2 = this.connectedNear(start, g);
+      if (!out2) return false;
+      out.push(out2);
+      start = out2;
+      s = this.index(out2.x, out2.z);
+    }
 
     // Walk back from the goal, then string-pull: keep only the corners needed to stay clear.
     const cells: number[] = [];
@@ -154,15 +162,53 @@ export class NavGrid {
     return true;
   }
 
-  /** Can the walker go straight from a to b? (Samples the grid along the segment.) */
+  /**
+   * Can the walker go straight from a to b? Samples the grid along the segment, and a little to either side of it,
+   * so a straight line can't slip diagonally between two blocked cells where the path search itself won't go (it
+   * never cuts corners): smoothing must never take the walker somewhere the search can't plan from.
+   */
   lineOfSight(a: Point2, b: Point2): boolean {
     const distance = Math.hypot(b.x - a.x, b.z - a.z);
-    const steps = Math.max(1, Math.ceil(distance / (this.options.cell * 0.5)));
+    const { cell } = this.options;
+    const steps = Math.max(1, Math.ceil(distance / (cell * 0.25)));
+    const side = distance > 1e-6 ? (cell * 0.45) / distance : 0;
+    const px = -(b.z - a.z) * side;
+    const pz = (b.x - a.x) * side;
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
-      if (!this.isWalkable(a.x + (b.x - a.x) * t, a.z + (b.z - a.z) * t)) return false;
+      const x = a.x + (b.x - a.x) * t;
+      const z = a.z + (b.z - a.z) * t;
+      if (!this.isWalkable(x, z)) return false;
+      if (i > 0 && i < steps && (!this.isWalkable(x + px, z + pz) || !this.isWalkable(x - px, z - pz))) return false;
     }
     return true;
+  }
+
+  /** A walkable cell within a few cells of `from` that the search can get from to `goal`, nearest first. */
+  private connectedNear(from: Point2, goal: number): Point2 | null {
+    const c0 = this.col(from.x);
+    const r0 = this.row(from.z);
+    for (let ring = 1; ring <= 4; ring++) {
+      let best: Point2 | null = null;
+      let bestDistance = Infinity;
+      for (let dr = -ring; dr <= ring; dr++) {
+        for (let dc = -ring; dc <= ring; dc++) {
+          if (Math.max(Math.abs(dr), Math.abs(dc)) !== ring || !this.open(c0 + dc, r0 + dr)) continue;
+          const p = this.center(c0 + dc, r0 + dr);
+          const d = Math.hypot(p.x - from.x, p.z - from.z);
+          if (d < bestDistance && this.search(this.index(p.x, p.z), goal)) {
+            bestDistance = d;
+            best = p;
+          }
+        }
+      }
+      if (best) {
+        // Leave the search state for the path the caller reads back.
+        this.search(this.index(best.x, best.z), goal);
+        return best;
+      }
+    }
+    return null;
   }
 
   private search(start: number, goal: number): boolean {

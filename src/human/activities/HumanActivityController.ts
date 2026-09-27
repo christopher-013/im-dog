@@ -61,6 +61,10 @@ export class HumanActivityController implements HumanIdleDriver {
   stepIndex = 0;
   /** Seconds left in the current step (while doing it). */
   stepLeft = 0;
+  /** Seconds in the current phase (debugging and recovery visibility). */
+  get phaseElapsed(): number {
+    return this.phaseTime;
+  }
   /** The last activity finished. */
   last: HumanActivityId | null = null;
   /** Seconds of play so far. */
@@ -87,6 +91,10 @@ export class HumanActivityController implements HumanIdleDriver {
   private held = false;
   private mokeAt: Vec3Like = { x: 0, y: 0, z: 0 };
   private mokeSeated = false;
+  /** Where the last activity was (the next one prefers somewhere else). */
+  private lastPlace: HomePlace | null = null;
+  /** Activities in a row in the same seat. */
+  private carriedOn = 0;
 
   constructor(
     private readonly places: readonly HomePlace[],
@@ -201,9 +209,13 @@ export class HumanActivityController implements HumanIdleDriver {
         intent.prop = null;
         intent.seat = null;
         intent.lookAt = null;
-        const there = s.arrived && distance(s.position, place.stand) < 0.35 && this.phaseTime > 0.1;
+        const remaining = distance(s.position, place.stand);
+        const there = s.arrived && remaining < 0.35 && this.phaseTime > 0.1;
         if (there) this.enter('settling');
-        else if ((s.stuck ?? 0) > this.tuning.stuckTimeout || this.phaseTime > this.tuning.walkTimeout) this.giveUp(s);
+        // NavGrid may correctly stop at the nearest walkable point when an interaction anchor is accidentally
+        // inside furniture. That is "arrived" for locomotion but not for the activity: recover quickly instead of
+        // standing at the obstacle for the full walk timeout.
+        else if ((s.arrived && this.phaseTime > 1) || (s.stuck ?? 0) > this.tuning.stuckTimeout || this.phaseTime > this.tuning.walkTimeout) this.giveUp(s);
         break;
       }
       case 'settling': {
@@ -225,6 +237,8 @@ export class HumanActivityController implements HumanIdleDriver {
         intent.pose = step.pose;
         intent.prop = step.prop ?? null;
         intent.lookAt = step.lookAtFocus && place.look ? place.look : null;
+        intent.lookWeight = this.tuning.focusWeight;
+        intent.surface = place.surface?.y;
         if (!this.held) this.stepLeft -= dt;
         if (this.stepLeft <= 0 && !this.carryOn(s)) this.enter('leaving');
         break;
@@ -243,6 +257,7 @@ export class HumanActivityController implements HumanIdleDriver {
       room: roomAt(s.position.x, s.position.z).id,
       now: this.now,
       last: this.last,
+      lastPlace: this.lastPlace,
       isFree: (p) => this.isFree(p),
     });
     if (!choice) {
@@ -274,7 +289,10 @@ export class HumanActivityController implements HumanIdleDriver {
   private carryOn(s: HumanSenses): boolean {
     const activity = this.activity;
     const place = this.place;
-    if (!activity || !place?.seat || this.stepIndex + 1 < activity.steps.length || this.random() > 0.7) return false;
+    if (!activity || !place?.seat || this.stepIndex + 1 < activity.steps.length) return false;
+    // Not all day in one seat: now and then, and never more than a couple of times running, then up and about.
+    if (this.carriedOn >= this.tuning.carryOnMax || this.random() > this.tuning.carryOnChance) return false;
+    this.carriedOn++;
     this.scheduler.markDone(activity.id, this.now);
     this.stats.finished++;
     this.last = activity.id;
@@ -310,6 +328,7 @@ export class HumanActivityController implements HumanIdleDriver {
   }
 
   private finish(): void {
+    this.lastPlace = this.place;
     if (this.activity) {
       this.stats.finished++;
       this.scheduler.markDone(this.activity.id, this.now);
@@ -330,6 +349,7 @@ export class HumanActivityController implements HumanIdleDriver {
   }
 
   private pause(): void {
+    this.carriedOn = 0;
     this.activity = null;
     this.place = null;
     this.seatSpec = null;
@@ -434,7 +454,7 @@ export class HumanActivityController implements HumanIdleDriver {
   }
 
   private specFor(place: HomePlace): SeatSpec | null {
-    return place.seat ? { x: place.seat.x, z: place.seat.z, height: place.seat.height, style: place.seat.style, facing: place.facing } : null;
+    return place.seat ? { x: place.seat.x, z: place.seat.z, height: place.seat.height, style: place.seat.style, facing: place.facing, entry: place.seat.entry ?? null } : null;
   }
 
   private duration(step: ActivityStep): number {
@@ -449,7 +469,7 @@ export class HumanActivityController implements HumanIdleDriver {
       this.glanceLeft -= dt;
       return this.glanceLeft > 0 ? this.glanceYaw : 0;
     }
-    this.glanceIn -= dt * (0.3 + attention);
+    this.glanceIn -= dt * (0.15 + attention);
     if (this.glanceIn <= 0) {
       const [min, max] = this.tuning.glanceEvery;
       this.glanceIn = min + this.random() * (max - min);
@@ -457,7 +477,9 @@ export class HumanActivityController implements HumanIdleDriver {
       // A look round the room they're in (that's when a sneaky dog gets spotted), as far as the neck turns.
       const room = roomAt(s.position.x, s.position.z);
       const toRoom = angleDelta(s.heading, Math.atan2((room.minX + room.maxX) / 2 - s.position.x, (room.minZ + room.maxZ) / 2 - s.position.z));
-      this.glanceYaw = clamp(toRoom + (this.random() - 0.5) * 0.8, -HUMAN.glance.angle, HUMAN.glance.angle);
+      const [least, most] = this.tuning.glanceAngle;
+      const reach = Math.min(HUMAN.glance.angle, least + (most - least) * attention);
+      this.glanceYaw = clamp(toRoom + (this.random() - 0.5) * 0.8, -reach, reach);
       return this.glanceYaw;
     }
     return 0;

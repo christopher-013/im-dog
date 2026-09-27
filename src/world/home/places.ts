@@ -41,8 +41,10 @@ export const FURNITURE = {
   windowCouch: { x: 16.415, z: 2.9 },
   fireplace: { x: 14.55 },
   builtIns: { x: 15.9, width: 0.9 },
-  coffeeTable: { x: 14.2, z: 2.95 },
-  pinkBlanket: { x: 12.72, z: 2.72, rotation: 0.25 },
+  // A little east of centre, so there is a proper way past its west end (the pink bed fills the gap by the hearth).
+  coffeeTable: { x: 14.35, z: 2.95 },
+  /** His pink bed on the floor in front of the hearth, its opening toward the room. */
+  pinkBed: { x: 14.55, z: 4.18, rotation: Math.PI },
   bowls: { x: 13.15, z: 5.12 },
   kitchenTreatJar: { x: 6.98, z: 4.6 },
 } as const;
@@ -73,7 +75,11 @@ export interface HomePlace {
   /** Where the body stands (walkable floor): in front of a seat, or at the counter. */
   readonly stand: Spot;
   readonly facing: number;
-  readonly seat?: { readonly x: number; readonly z: number; readonly height: number; readonly style: SeatStyle };
+  /**
+   * Where the hips go, how high, and how they sit. `entry` is where they step in from when the stand point is behind
+   * the seat (a chair tucked under the table, a stool at the island): beside it, so they never pass through its back.
+   */
+  readonly seat?: { readonly x: number; readonly z: number; readonly height: number; readonly style: SeatStyle; readonly entry?: Spot };
   readonly look?: Spot;
   /** Somewhere on a surface in front of them for a plate or a mug (the table, the counter). */
   readonly surface?: Spot;
@@ -92,13 +98,12 @@ const diningEast = f.diningChairs.filter((c) => c.rotation === WEST);
 /** Every place the human can use, across the house. */
 export const HOME_PLACES: readonly HomePlace[] = [
   // Living room: the couch (facing the TV console) and the laundry.
-  place('living.couch.left', 'couchSeat', at(-0.6, -1.65), SOUTH, { seat: { x: -0.3, z: -2.38, height: 0.45, style: 'upright' }, look: LIVING_TV }),
-  place('living.couch.right', 'couchSeat', at(1.2, -1.65), SOUTH, { seat: { x: 0.9, z: -2.38, height: 0.45, style: 'upright' }, look: LIVING_TV }),
-  place('living.laundry', 'laundry', at(-1.35, -1.45), toward(-1.35, -1.45, -2.0, -1.85)),
+  place('living.couch.left', 'couchSeat', at(-0.6, -1.65), SOUTH, { seat: { x: -0.52, z: -2.38, height: 0.45, style: 'upright' }, look: LIVING_TV }),
+  place('living.couch.right', 'couchSeat', at(1.2, -1.65), SOUTH, { seat: { x: 1.12, z: -2.38, height: 0.45, style: 'upright' }, look: LIVING_TV }),
+  place('living.laundry', 'laundry', at(-1.52, -1.56), toward(-1.52, -1.56, -2.0, -1.85)),
   // Family room: the sectional (facing the fireplace TV), the chaise, the beige couch under the windows.
   place('family.sectional.middle', 'couchSeat', at(13.75, 1.85), SOUTH, { seat: { x: 13.75, z: 0.98, height: 0.45, style: 'upright' }, look: FAMILY_TV }),
   place('family.sectional.east', 'couchSeat', at(14.8, 1.85), SOUTH, { seat: { x: 14.8, z: 0.98, height: 0.45, style: 'upright' }, look: FAMILY_TV }),
-  place('family.chaise', 'readingSeat', at(13.45, 1.85), SOUTH, { seat: { x: 12.72, z: 1.3, height: 0.45, style: 'lounge' }, look: FAMILY_TV }),
   place('family.windowCouch.north', 'readingSeat', at(15.6, 2.45), WEST, { seat: { x: 16.52, z: 2.45, height: 0.45, style: 'upright' } }),
   place('family.windowCouch.south', 'couchSeat', at(15.6, 3.35), WEST, { seat: { x: 16.52, z: 3.35, height: 0.45, style: 'upright' } }),
   // Kitchen.
@@ -106,11 +111,12 @@ export const HOME_PLACES: readonly HomePlace[] = [
   place('kitchen.counter', 'kitchenCounter', at(7.72, 2.35), WEST, { surface: at(7.05, 2.35, 0.92) }),
   place('kitchen.sink', 'sink', at(8.08, f.island.z), EAST, { surface: at(8.75, f.island.z - 0.5, 0.92) }),
   place('kitchen.fridge', 'fridge', at(10.32, 4.3), SOUTH),
-  place('kitchen.stool', 'stool', at(10.45, f.island.z), WEST, { seat: { x: 9.97, z: f.island.z, height: 0.65, style: 'stool' }, surface: at(9.55, f.island.z, 0.92) }),
+  place('kitchen.stool', 'stool', at(10.45, f.island.z + 0.4), WEST, { seat: { x: 9.97, z: f.island.z, height: 0.65, style: 'stool', entry: at(9.97, f.island.z + 0.4) }, surface: at(9.55, f.island.z, 0.92) }),
   // Dining room: the chairs on the slider side of the table.
   ...diningEast.map((c, i) =>
-    place(`dining.chair.${i}`, 'diningChair', at(10.2, c.z), WEST, {
-      seat: { x: c.x, z: c.z, height: 0.46, style: 'upright' },
+    place(`dining.chair.${i}`, 'diningChair', at(10.2, c.z + 0.42), WEST, {
+      // In from the gap beside the chair (the table's ends are open now), not through its back.
+      seat: { x: c.x, z: c.z, height: 0.46, style: 'upright', entry: at(c.x, c.z + 0.42) },
       surface: at(9.18, c.z, 0.76),
     }),
   ),
@@ -145,13 +151,25 @@ export interface NapSpot {
 
 export const NAP_SPOTS: readonly NapSpot[] = [
   { id: 'dogBed', label: 'his bed', position: at(-2.25, 0.05), facing: EAST, soft: true, sunny: true, warm: false, bed: true },
-  { id: 'pinkBlanket', label: 'the pink blanket', position: at(f.pinkBlanket.x, f.pinkBlanket.z), facing: toward(12.72, 2.72, 14.2, 3.4), soft: true, sunny: false, warm: true, bed: true },
+  { id: 'pinkBed', label: 'his pink bed by the fire', position: at(f.pinkBed.x, f.pinkBed.z), facing: NORTH, soft: true, sunny: false, warm: true, bed: true },
   { id: 'windowCouch', label: 'the sunny couch', position: at(16.38, 2.9, 0.45), facing: WEST, soft: true, sunny: true, warm: false, bed: false },
   { id: 'chaise', label: 'the chaise', position: at(12.72, 1.9, 0.45), facing: SOUTH, soft: true, sunny: false, warm: false, bed: false },
   { id: 'sectional', label: 'the sectional', position: at(14.3, 1.15, 0.45), facing: SOUTH, soft: true, sunny: false, warm: false, bed: false },
   { id: 'livingCouch', label: 'the couch', position: at(0.3, -2.3, 0.45), facing: SOUTH, soft: true, sunny: false, warm: false, bed: false },
   { id: 'hearth', label: 'the hearth', position: at(14.1, 4.92, 0.3), facing: NORTH, soft: false, sunny: false, warm: true, bed: false },
 ];
+
+/**
+ * His bowls (the blue slow feeder and the steel water bowl, see homeFurniture's dogBowls): where each one is, where
+ * the human kneels to fill them, and where they fetch from (the kibble at the counter, water at the island sink).
+ */
+export const BOWLS = {
+  food: at(f.bowls.x - 0.15, f.bowls.z, 0.03),
+  water: at(f.bowls.x + 0.15, f.bowls.z, 0.03),
+  stand: at(f.bowls.x, f.bowls.z - 0.52),
+  facing: SOUTH,
+  sources: { food: 'kitchen.counter', water: 'kitchen.sink' },
+} as const;
 
 /** The fire's warmth reaches this far (m), for nap spots and the Dog Logic "warm" feeling. */
 export const FIRE = { position: at(f.fireplace.x, WING.south - 0.4), warmRadius: 3.4 } as const;
@@ -177,7 +195,7 @@ export const TREAT_HIDING_SPOTS: readonly Spot[] = [
   at(11.2, 4.45), // at the end of the tall cabinets
   at(7.62, 4.55), // in the corner by the range
   // Family room.
-  at(13.2, 3.1), // at the end of the pink blanket
+  at(13.2, 3.1), // at the west end of the coffee table
   at(14.2, 2.45), // behind the coffee table
   at(15.75, 1.75), // by the step stool
   at(13.45, 4.6), // by the hearth

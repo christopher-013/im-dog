@@ -21,23 +21,27 @@ Each activity is plain data, so a new one needs no code:
 - **interruptible:** how willing they are to stop for Moke's barking (`always`, `sometimes`, `rarely`).
 - **attention:** how often they glance round the room while doing it (and so notice Moke).
 - **follows:** much likelier straight after another (dinner after cooking).
+- **requires:** only possible within so long after another was done (no dinner without cooking it).
 
 | Activity | Where | Pose / prop | Time | Notes |
 |---|---|---|---|---|
 | Watch TV | Living room couch, the sectional | watch, remote | 45–90 s | The screen glows; noisy for naps nearby |
-| Read | The chaise, the window couch, sofas | read, book | 40–80 s | Engrossed (rare glances) |
+| Read | The window couch, sofas | read, book | 40–80 s | Engrossed (rare glances) |
 | Phone | Island stool, sofas, dining chair | phone | 20–40 s | |
 | Coffee at the table | Dining chairs | sip, mug | 30–55 s | |
 | Make dinner | Fridge → counter → stove | fridge; prep, knife; cook, spoon | 3–5 + 12–18 + 18–28 s | Steam and a FOOD smell while cooking |
-| Eat dinner | Dining chairs | eat, fork | 25–45 s | Usually straight after cooking; a plate on the table |
-| Relax | Sofas, chaise | relax (hands behind head) | 20–40 s | |
+| Eat dinner | Dining chairs | eat, fork | 25–45 s | Only within 7 minutes of cooking it, and usually straight after; a plate on the table |
+| Relax | Sofas | relax (hands behind head) | 20–40 s | |
 | Coffee at the counter | Counter, island sink | sip, mug | 12–25 s | |
-| Fold laundry | The living room laundry basket | fold | 30–60 s | Where Sock Heist starts; glances round the room often |
+| Fold laundry | The living room laundry basket | fold, laundry cloth | 30–60 s | Where Sock Heist starts: bending into the (visibly full) basket, shaking each piece out and folding it; glances round the room often |
 
 **The scheduler** (`human/activities/ActivityScheduler.ts`) runs when an activity ends: among those off cooldown with
 a free place, it picks at random by weight × location (the same room ×1.5, and weight / (1 + distance / 9)) × follows
-bonus, with the one just done very unlikely. Between activities: a 1.5–4 s breather (or, sitting, carrying straight
-on in the same seat). Tuning: `ROUTINE`.
+bonus, with the one just done very unlikely and somewhere other than where they just were preferred. Between
+activities: a 1.5–4 s breather, or, sitting, the next thing in the same seat (half the time, at most twice running,
+then up and about). An interaction point that snaps to an unreachable nearby NavGrid cell is abandoned after one
+second once pathing reports arrival, and no path at all counts as stuck: either way they give up and choose
+something else instead of standing at the furniture. Tuning: `ROUTINE`.
 
 ## Dog activities (`src/activities/`)
 **Lifecycle** (`DogActivity.ts`): `AVAILABLE → STARTING → ACTIVE → SUCCESS | CANCELLED → COOLDOWN → READY_AGAIN →
@@ -65,7 +69,7 @@ shows the running one's objective when the heist has nothing to say. Tuning: `co
   the hunt treat to storage, so it cannot coexist with the heist reward.
 
 ### Perfect Nap (`PerfectNap.ts`)
-1. **Nap spots** (`NAP_SPOTS`): his bed (in the window's sun), the pink blanket (by the fire), the sunny couch (sun
+1. **Nap spots** (`NAP_SPOTS`): his bed (in the window's sun), his pink bed (in front of the fire), the sunny couch (sun
    through the family room windows), the chaise, the sectional, the living room couch, the hearth. "Lie Down" (his
    bed) or "Nap Here" (the rest); the sofas are a hop up.
 2. Lying down: the screen's edges dim softly and little "z…"s float over him.
@@ -93,13 +97,27 @@ Unchanged in its rules. Now the human might be anywhere: steal the sock from the
 the moment they see him with it, wherever they are (the chase can cross the house). Folding laundry, they glance
 round the room as before. Afterwards they carry on with their day.
 
+## Moke's bowls and the refill errand
+His bowls in the family room (by the hearth) start full: kibble in the blue slow feeder, water in the steel bowl
+(`world/DogBowls.ts`; the bowls themselves are part of the house). At a full bowl Moke gets **Eat** or **Drink**: he
+stays put, nose in the bowl (chewing, or lapping), and it drains over that time. Once a bowl is empty the human comes
+to refill it (`human/activities/BowlRefill.ts`): 3 s later, as soon as they're free (not during the heist, another
+errand or a pat), it borrows them from the routine like a dog activity's role: walk to the kitchen (the counter for
+kibble, the island sink for water), get it (a scoop, a jug), carry it over, kneel and pour ("There you go, Moke."), then
+back to what they were doing. Both empty: one trip after the other. Taken off it by the heist, they come back to it.
+Tuning: `BOWL_REFILL` in `config/activities.ts`.
+
 ## Interruptions: ACTIVITY → MOKE → RESPONSE → (a dog activity) → RESUME
 Reactions (a look, a pat…) only pause the activity's clock. A dog activity or the heist saves the activity and time
 left; afterwards the routine walks back and carries on, or picks something new if too much time has passed.
 
 ## Tests
-`human/activities/HumanActivityController.test.ts` (a 20-minute simulated day in the real house: variety, rooms,
-sitting, no stuck, no give-ups; cooking → dinner; cooldowns and location; resume; Moke in the seat),
+`human/activities/HumanActivityController.test.ts` (a 20-minute simulated day in the real house: all seven major
+household activities, variety, rooms, sitting, no stuck, no give-ups; four more 20-minute days with Moke barking every
+45 s: no give-ups, never stuck, hands empty between activities, no repeats, at most three things running in one seat,
+dinner only after cooking, barks answered; cooking → dinner; cooldowns and location; resume; Moke in the seat;
+invalid interaction-point recovery), `human/activities/HumanReactions.test.ts` (not a security camera; attention
+weights; walking over to pet),
 `activities/DogActivities.test.ts` (the lifecycle; Dog Logic; nap judging and timing; a full Treat Hunt in the
 house, its hints and cancellation before and after hiding; Sock Heist priority; queued-reaction cleanup; Make Human
 Play from asking to a real thrown ball, and keep-away),

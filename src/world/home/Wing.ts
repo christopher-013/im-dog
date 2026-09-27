@@ -17,7 +17,7 @@ import {
   gardenWindow,
   island,
   monstera,
-  pinkBlanket,
+  pinkDogBed,
   range,
   rangeHood,
   rectChandelier,
@@ -338,7 +338,7 @@ function familyRoom(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.at([f.bowls.x, 0, f.bowls.z], 0, () => dogBowls(b, m));
 
   b.at([f.coffeeTable.x, 0, f.coffeeTable.z], 0, () => rusticCoffeeTable(b, m));
-  b.at([f.pinkBlanket.x, 0, f.pinkBlanket.z], f.pinkBlanket.rotation, () => pinkBlanket(b, m));
+  b.at([f.pinkBed.x, 0, f.pinkBed.z], f.pinkBed.rotation, () => pinkDogBed(b, m));
   b.at([16.6, 0, 5.05], 0.4, () => monstera(b, m, 1.1));
   b.at([16.55, 0, 0.9], 1.3, () => monstera(b, m, 1));
   b.at([15.98, 0, 0.78], 0, () => towerFan(b, m));

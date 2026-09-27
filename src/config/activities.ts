@@ -44,6 +44,8 @@ export interface HumanActivityDef {
   readonly attention: number;
   /** Much more likely straight after this one (dinner after cooking). */
   readonly follows?: { readonly after: HumanActivityId; readonly bonus: number };
+  /** Only possible within this many seconds after that activity was done (no dinner without cooking it). */
+  readonly requires?: { readonly after: HumanActivityId; readonly within: number };
   /** A line now and then as it starts (not every time). */
   readonly lines?: readonly string[];
 }
@@ -107,11 +109,12 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     id: 'eatMeal',
     name: 'eating dinner',
     steps: [{ places: ['diningChair'], pose: 'eat', prop: 'fork', seconds: [25, 45], effect: 'meal' }],
-    weight: 0.3,
+    weight: 1,
     cooldown: 300,
     interruptible: 'sometimes',
     attention: 0.45,
-    follows: { after: 'prepareDinner', bonus: 150 },
+    follows: { after: 'prepareDinner', bonus: 60 },
+    requires: { after: 'prepareDinner', within: 420 },
   },
   {
     id: 'relaxOnCouch',
@@ -134,7 +137,7 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
   {
     id: 'foldLaundry',
     name: 'folding laundry',
-    steps: [{ places: ['laundry'], pose: 'fold', seconds: [30, 60] }],
+    steps: [{ places: ['laundry'], pose: 'fold', prop: 'laundry', seconds: [30, 60] }],
     weight: 2.2,
     cooldown: 150,
     interruptible: 'always',
@@ -162,11 +165,46 @@ export const MOKE_REACTIONS = {
   petReach: 1.0,
   nearRange: 1.1,
   spontaneousPetAfter: 4,
-  durations: { look: 2.2, greet: 2.2, answerBark: 1.8, attend: 5, praise: 2.2, pet: 2.8, gesture: 1.6 },
-  cooldowns: { look: 7, greet: 60, answerBark: 6, attend: 25, praise: 10, pet: 10, gesture: 0 },
+  durations: { look: 1.8, greet: 2.2, answerBark: 1.8, attend: 5, praise: 2.2, pet: 3.8, gesture: 1.6 },
+  /** Petting, standing: step over to him at this pace, and kneel once within this distance (m). */
+  petApproachSpeed: 0.7,
+  petKneelWithin: 0.5,
+  cooldowns: { look: 12, greet: 60, answerBark: 6, attend: 25, praise: 10, pet: 10, gesture: 0 },
+  /**
+   * How much of them turns to Moke (0.3: eyes and a little head … 1: head and upper body; standing, they turn round
+   * to face him if he's behind them for anything more than a glance).
+   */
+  weights: { look: 0.3, greet: 0.65, answerBark: 0.5, attend: 1, praise: 0.85, pet: 1, gesture: 0.8 },
+  /**
+   * Not a security camera: a glance when he turns up (after this long out of range), otherwise only now and then
+   * (this chance per second, times how much the activity leaves them free to look about).
+   */
+  noticeAfterAway: 4,
+  glanceChance: 0.1,
+  /** Moke this far behind them (rad off their facing) and they turn round to him, if standing and he's calling. */
+  turnToBeyond: 1.3,
   /** Lines are rare: at most one every this many seconds, and only sometimes. */
   lineGap: 7,
   lineChance: 0.5,
+} as const;
+
+/**
+ * Moke's bowls: how close he must be to eat or drink, and the human's refill errand (after he empties one, they come
+ * and fill it: fetch from the kitchen, carry it over, kneel and pour). Seconds and metres.
+ */
+export const BOWL_REFILL = {
+  /** Moke's feet within this of a bowl to eat or drink from it. */
+  reach: 0.5,
+  /** After a bowl's emptied, they come this long after (as soon as they're free); busy, they try again this often. */
+  delay: 3,
+  retry: 4,
+  walkTimeout: 40,
+  /** Getting the kibble or the water at the kitchen. */
+  fetchTime: 1.6,
+  /** Kneeling at the bowl: poured this far in, done at pourTime; the hand this high over the bowl. */
+  pourAt: 0.9,
+  pourTime: 2.2,
+  pourHeight: 0.17,
 } as const;
 
 /** The routine's timing. */
@@ -184,6 +222,14 @@ export const ROUTINE = {
   /** Glancing round the room while busy: every so often (s, scaled down by an activity's attention), for this long. */
   glanceEvery: [5, 8] as const,
   glanceTime: 2.2,
+  /** How far a look round the room turns (rad, at attention 0 … 1), and how much of them it moves (see HumanIntent). */
+  glanceAngle: [0.55, 1.3] as const,
+  glanceWeight: 0.45,
+  /** Looking at what they're doing (the TV): head and eyes on it, the body already faces it. */
+  focusWeight: 0.55,
+  /** Sitting, the next activity often happens in the same seat (a book after the TV): this often, this many times running. */
+  carryOnChance: 0.5,
+  carryOnMax: 2,
   /** How often a start line is said (0..1). */
   lineChance: 0.35,
 } as const;

@@ -72,6 +72,10 @@ In the game, walking out of the hallway: the dining room is on your left (north)
   corner.
 - Middle: **dark rustic wood coffee table** with drawers and a lower shelf of books.
 - Colours: soft **sage-grey walls** (#a9b7ad), white trim and crown moulding, grey-beige wood-look plank floor.
+  *In the game (owner's request, 2026-09-26): the same grey plank floor runs through the whole house, the starting
+  living room and hallway included; Moke's pink blanket became a pink dog bed on the floor in front of the fireplace
+  (a nap spot), and the coffee table sits a little east of centre so there's still a way past it; his bowls have
+  kibble and water he can eat and drink, and the human refills them.*
 
 ### Kitchen (x 6.6…11.6)
 - **Tall wall** (game south): microwave built in above a stack of drawers, stainless French-door fridge, stainless

@@ -105,6 +105,37 @@ const ELBOW_POLE = { L: new Vector3(0.55, -0.55, -0.5), R: new Vector3(-0.55, -0
 const OUT_POLE = { L: new Vector3(0.9, -0.2, -0.35), R: new Vector3(-0.9, -0.2, -0.35) };
 const UP_POLE = { L: new Vector3(0.9, 0.4, -0.2), R: new Vector3(-0.9, 0.4, -0.2) };
 
+/**
+ * Folding laundry, as key poses through one cycle (0..1): where the hands are (half the gap between them, height and
+ * reach in front, character space), how far the back bends and the head nods, and how much the shoulders lift.
+ */
+const FOLD_KEYS: readonly (readonly [at: number, spread: number, y: number, z: number, bend: number, nod: number, lift: number])[] = [
+  [0.0, 0.09, 0.46, 0.5, 0.75, 0.3, 0],
+  [0.13, 0.1, 0.48, 0.5, 0.75, 0.3, 0],
+  [0.3, 0.27, 1.18, 0.37, 0.06, 0.12, 1],
+  [0.38, 0.25, 1.12, 0.4, 0.08, 0.16, 0.8],
+  [0.44, 0.27, 1.17, 0.38, 0.07, 0.14, 1],
+  [0.6, 0.07, 1.08, 0.36, 0.12, 0.3, 0.4],
+  [0.74, 0.1, 0.98, 0.39, 0.16, 0.36, 0.2],
+  [0.86, 0.07, 1.0, 0.36, 0.16, 0.36, 0.2],
+  [1.0, 0.09, 0.46, 0.5, 0.75, 0.3, 0],
+];
+const foldPose = { spread: 0, y: 0, z: 0, bend: 0, nod: 0, lift: 0 };
+function foldKey(cycle: number): typeof foldPose {
+  let i = 0;
+  while (i < FOLD_KEYS.length - 2 && FOLD_KEYS[i + 1]![0] <= cycle) i++;
+  const a = FOLD_KEYS[i]!;
+  const b = FOLD_KEYS[i + 1]!;
+  const t = smoothstep(0, 1, (cycle - a[0]) / (b[0] - a[0]));
+  foldPose.spread = lerp(a[1], b[1], t);
+  foldPose.y = lerp(a[2], b[2], t);
+  foldPose.z = lerp(a[3], b[3], t);
+  foldPose.bend = lerp(a[4], b[4], t);
+  foldPose.nod = lerp(a[5], b[5], t);
+  foldPose.lift = lerp(a[6], b[6], t);
+  return foldPose;
+}
+
 const MOOD_KEYS = ['smile', 'brows', 'jawOpen', 'mouthWide', 'lids', 'eyesDown'] as const;
 
 /**
@@ -142,6 +173,8 @@ export class HumanAnimationController {
   private readonly mood: Mood = { smile: 0.4, brows: 0, jawOpen: 0, mouthWide: 0.4, lids: 0, eyesDown: 0 };
   private readonly moodSum: Mood = { smile: 0.4, brows: 0, jawOpen: 0, mouthWide: 0.4, lids: 0, eyesDown: 0 };
   private time = 0;
+  private foldCycle = 0.3;
+  private foldLength = 6.4;
   private walkPhase = 0;
   private stepPhase = 0;
   private walkWeight = 0;
@@ -153,6 +186,8 @@ export class HumanAnimationController {
   private blinkLeft = 0;
   private dartIn = 2;
   private dartYaw = 0;
+  /** How much the eyes follow the gaze target (they lead: full at a fairly light attention). */
+  private eyeWeight = 0;
   private shiftIn = 6;
   private shift = 0;
   private shiftTarget = 0;
@@ -175,6 +210,13 @@ export class HumanAnimationController {
 
   update(dt: number, s: HumanVisualState): HumanAnimationState {
     this.time += dt;
+    if (s.pose === 'fold' || this.weights.has('fold')) {
+      this.foldCycle += dt / this.foldLength;
+      if (this.foldCycle >= 1) {
+        this.foldCycle -= 1;
+        this.foldLength = 5.8 + this.random() * 1.8;
+      }
+    }
     this.updateWeights(dt, s.pose);
     this.buildPosture(dt, s);
 
@@ -340,12 +382,24 @@ export class HumanAnimationController {
       p.spine.x = lerp(p.spine.x, style === 'lounge' ? -0.35 : -0.06, sit);
       hips.y = lerp(hips.y, s.seatHeight + HIP_ABOVE_SEAT, sit);
     }
-    // Standing still: knees soft, not locked.
+    // Standing still: a relaxed stance, not a mannequin's. Knees soft, feet a little apart and turned out, a gentle S
+    // through the back (the lower back in, the upper back rounded), the head carried a touch forward.
     const still = (1 - this.walkWeight) * (1 - sit) * (1 - kneel) * (1 - this.stepWeight);
-    p.kneeL.x += 0.04 * still;
-    p.kneeR.x += 0.04 * still;
-    p.hipL.x -= 0.02 * still;
-    p.hipR.x -= 0.02 * still;
+    p.kneeL.x += 0.05 * still;
+    p.kneeR.x += 0.05 * still;
+    p.hipL.x -= 0.025 * still;
+    p.hipR.x -= 0.025 * still;
+    p.hipL.z += 0.035 * still;
+    p.hipR.z -= 0.035 * still;
+    p.ankleL.z -= 0.035 * still;
+    p.ankleR.z += 0.035 * still;
+    p.hipL.y += 0.09 * still;
+    p.hipR.y -= 0.09 * still;
+    const upright = 1 - sit;
+    p.spine.x -= 0.035 * upright;
+    p.chest.x += 0.06 * upright;
+    p.neck.x += 0.05 * upright;
+    p.head.x -= 0.03 * upright;
   }
 
   // ---------------------------------------------------------------- actions: the upper body
@@ -354,10 +408,10 @@ export class HumanAnimationController {
   private relaxedArms(t: JointAngles): void {
     t.shoulderL.z = 0.1;
     t.shoulderR.z = -0.1;
-    t.shoulderL.x = 0.03;
-    t.shoulderR.x = 0.03;
-    t.elbowL.x = -0.18;
-    t.elbowR.x = -0.18;
+    t.shoulderL.x = -0.04;
+    t.shoulderR.x = -0.04;
+    t.elbowL.x = -0.24;
+    t.elbowR.x = -0.24;
     t.wristL.z = -0.05;
     t.wristR.z = 0.05;
     t.fingersL.x = -0.4;
@@ -366,10 +420,15 @@ export class HumanAnimationController {
     t.thumbR.x = -0.2;
   }
 
-  /** Spread a bend over the lower and upper back. */
+  /**
+   * Spread a bend over the lower and upper back. Hanging arms swing forward by as much, so they still hang toward
+   * the floor rather than following the back round behind them (an arm the action places by IK is solved after).
+   */
   private back(t: JointAngles, x: number, y = 0, z = 0): void {
     t.spine.x += x * 0.55;
     t.chest.x += x * 0.45;
+    t.shoulderL.x -= x;
+    t.shoulderR.x -= x;
     t.spine.y += y * 0.45;
     t.chest.y += y * 0.55;
     t.spine.z += z * 0.6;
@@ -420,13 +479,21 @@ export class HumanAnimationController {
       case 'idle':
         break;
       case 'fold': {
-        // Folding clothes at the basket: bent a little, hands working together at waist height.
-        const fold = Math.sin(time * 2.2);
-        this.back(t, 0.28);
-        t.neck.x += 0.25;
-        this.hand(t, hips, 'L', v.set(0.13 + 0.05 * fold, 0.86 + 0.04 * Math.abs(fold), 0.38));
-        this.hand(t, hips, 'R', v.set(-0.13 - 0.05 * fold, 0.86 + 0.04 * Math.abs(fold), 0.38));
-        this.setMood(0.3, 0, 0, 0.4, 0.1, 0.35);
+        // Folding from the basket at his feet, a readable cycle even from behind: bend down and put the last one
+        // on the pile / take the next, straighten up and shake it out wide at chest height, fold it in half, and
+        // in half again, then back down. Each cycle takes a slightly different time.
+        const k = foldKey(this.foldCycle);
+        hips.z -= 0.07 * k.bend;
+        this.back(t, k.bend);
+        t.neck.x += k.nod;
+        t.clavicleL.z += 0.1 * k.lift;
+        t.clavicleR.z -= 0.1 * k.lift;
+        v.set(k.spread, k.y, k.z);
+        this.leanToReach(t, hips, v, 'L');
+        this.hand(t, hips, 'L', v, OUT_POLE.L);
+        this.hand(t, hips, 'R', v.set(-k.spread, k.y, k.z), OUT_POLE.R);
+        t.wristL.x = t.wristR.x = 0.25 * k.lift;
+        this.setMood(0.3, 0, 0, 0.4, 0.1, 0.25 + 0.3 * k.bend);
         break;
       }
       case 'surprised':
@@ -528,11 +595,14 @@ export class HumanAnimationController {
         this.setMood(0.9, 0.3, 0.1, 0.7, 0);
         break;
       case 'place': {
-        // Putting something down on the floor in front.
-        v.set(-0.08, 0.14, 0.5);
+        // Putting something down on the floor in front, or, given a spot, pouring into it (Moke's bowl): the hand
+        // over it, tipped.
+        const to = s.reach;
+        v.set(to ? to.x : -0.08, to ? to.y : 0.14, to ? to.z : 0.5);
         this.leanToReach(t, hips, v);
         this.hand(t, hips, 'R', v, OUT_POLE.R);
         t.fingersR.x = -0.2;
+        if (to) t.wristR.z = -0.55 - 0.1 * Math.sin(time * 3);
         this.setMood(0.7, 0.2, 0, 0.5, 0, 0.5);
         break;
       }
@@ -653,15 +723,27 @@ export class HumanAnimationController {
         break;
       case 'pet': {
         // A hand down onto Moke's back, patting and scritching; the back bends (or they kneel) to get there.
+        // With the hand on his side (no reaching across the body), the chest turned a little toward him.
         const pat = Math.sin(time * 6.5);
         const to = s.reach ?? { x: -0.05, y: 0.34, z: 0.45 };
+        const petSide: Side = to.x > 0.06 ? 'L' : 'R';
+        const free: Side = petSide === 'L' ? 'R' : 'L';
+        this.back(t, 0, clamp(Math.atan2(to.x, Math.max(0.1, to.z)) * 0.5, -0.35, 0.35));
         v.set(to.x, to.y + 0.02 + Math.max(0, pat) * 0.035, to.z + pat * 0.03);
-        this.leanToReach(t, hips, v);
+        this.leanToReach(t, hips, v, petSide);
         t.neck.x += 0.2;
-        this.hand(t, hips, 'R', v, OUT_POLE.R);
-        t.wristR.x = 0.25;
-        t.fingersR.x = -0.3 - Math.max(0, -pat) * 0.35;
-        if (seated > 0.5) this.handsOnThighs(t, hips, this.w, 'L');
+        this.hand(t, hips, petSide, v, OUT_POLE[petSide]);
+        (petSide === 'L' ? t.wristL : t.wristR).x = 0.25;
+        (petSide === 'L' ? t.fingersL : t.fingersR).x = -0.3 - Math.max(0, -pat) * 0.35;
+        if (seated > 0.5) this.handsOnThighs(t, hips, this.w, free);
+        else if (this.kneel > 0.5) {
+          // Down on one knee: the free hand rests on the raised (left) knee, or on the right thigh.
+          jointPosition(t, hips, free === 'L' ? 'kneeL' : 'hipR', this.w);
+          if (free === 'L') this.w.set(this.w.x - 0.01, this.w.y + 0.07, this.w.z + 0.03);
+          else this.w.set(this.w.x - 0.04, this.w.y - 0.12, this.w.z + 0.1);
+          this.hand(t, hips, free, this.w, OUT_POLE[free]);
+          (free === 'L' ? t.wristL : t.wristR).x = 0.3;
+        }
         this.setMood(1, 0.45, 0.2, 0.8, 0.3, 0.3);
         break;
       }
@@ -798,8 +880,9 @@ export class HumanAnimationController {
       wantPitch = Math.atan2(dy, Math.max(0.2, Math.hypot(dx, dz)));
       wantWeight = s.lookWeight;
     } else if (Math.abs(s.headYaw) > 0.02) {
+      // A look round the room: eyes and head, the shoulders only a little.
       wantYaw = s.headYaw;
-      wantWeight = 1;
+      wantWeight = HUMAN_ANIMATION.look.glanceWeight;
     }
     this.attention = damp(this.attention, wantWeight, L.attentionRate, dt);
     // The gaze turns at a human speed: never a snap.
@@ -810,27 +893,33 @@ export class HumanAnimationController {
     if (w < 1e-3) {
       this.eyeYawWant = 0;
       this.eyePitchWant = 0;
+      this.eyeWeight = 0;
       return;
     }
+    // A glance is mostly the eyes; interest brings the head round; full attention the upper body too.
+    const wEyes = Math.min(1, w * 3);
+    const wHead = Math.min(1, w * 1.6);
+    const wTorso = smoothstep(0.55, 1, w);
+    this.eyeWeight = wEyes;
 
     // Yaw: eyes first, then head and neck, then the upper body; what's left over is out of reach.
     const yaw = this.gazeYaw;
     const eyesYaw = clamp(yaw, -L.eyes.yaw, L.eyes.yaw) * 0.6;
     const headYaw = clamp(yaw - eyesYaw, -L.headNeck.yaw, L.headNeck.yaw);
     const torsoYaw = clamp(yaw - eyesYaw - headYaw, -L.torso.yaw, L.torso.yaw);
-    t.neck.y += headYaw * 0.55 * w;
-    t.head.y += headYaw * 0.45 * w;
-    t.chest.y += torsoYaw * 0.6 * w;
-    t.spine.y += torsoYaw * 0.4 * w;
+    t.neck.y += headYaw * 0.55 * wHead;
+    t.head.y += headYaw * 0.45 * wHead;
+    t.chest.y += torsoYaw * 0.6 * wTorso;
+    t.spine.y += torsoYaw * 0.4 * wTorso;
     // Pitch: nod (x positive is down), then bend the back to look well down at something small and close.
     const pitch = this.gazePitch;
     const eyesPitch = clamp(pitch, -L.eyes.pitch, L.eyes.pitch) * 0.5;
     const nod = clamp(pitch - eyesPitch, -L.headNeck.down, L.headNeck.up);
     const bend = clamp(pitch - eyesPitch - nod, -L.torso.down, 0);
-    t.neck.x = lerp(t.neck.x, -nod * 0.55, w);
-    t.head.x = lerp(t.head.x, -nod * 0.45, w);
-    t.chest.x += -bend * 0.6 * w;
-    t.spine.x += -bend * 0.4 * w;
+    t.neck.x = lerp(t.neck.x, -nod * 0.55, wHead);
+    t.head.x = lerp(t.head.x, -nod * 0.45, wHead);
+    t.chest.x += -bend * 0.6 * wTorso;
+    t.spine.x += -bend * 0.4 * wTorso;
     this.eyeYawWant = eyesYaw / 0.6;
     this.eyePitchWant = eyesPitch / 0.5;
   }
@@ -884,7 +973,7 @@ export class HumanAnimationController {
       this.dartYaw = (this.random() * 2 - 1) * 0.15;
     }
     const L = HUMAN_ANIMATION.look;
-    const w = this.attention;
+    const w = this.eyeWeight;
     const yaw = lerp(this.dartYaw, this.eyeYawWant, w);
     const pitch = lerp(-m.eyesDown * L.eyes.pitch * 2, this.eyePitchWant, w);
     f.eyeYaw = damp(f.eyeYaw, clamp(yaw, -L.eyes.yaw, L.eyes.yaw), L.eyeSpeed, dt);

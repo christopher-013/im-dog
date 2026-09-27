@@ -103,10 +103,21 @@ export function solveArm(angles: JointAngles, hips: { x: number; y: number; z: n
   worldQuat.setFromRotationMatrix(basis);
   const localQuat = parentQuat.clone().invert().multiply(worldQuat);
   shoulderEuler.setFromQuaternion(localQuat, JOINT_ORDER[shoulder] ?? 'XYZ');
+  // Every rotation has two sets of Euler angles (the middle angle θ or π − θ, the outer two turned half round).
+  // Take the one nearest the arm's resting angles, so blending and smoothing, which work angle by angle, never
+  // swing the arm round the long way (a reach down past a deeply bent back lands on the far set otherwise).
   const s = angles[shoulder];
-  s.x = shoulderEuler.x;
-  s.y = shoulderEuler.y;
-  s.z = shoulderEuler.z;
+  const near = (a: number, ref: number) => a + Math.round((ref - a) / (Math.PI * 2)) * Math.PI * 2;
+  const ax = near(shoulderEuler.x, s.x);
+  const ay = near(shoulderEuler.y, s.y);
+  const az = near(shoulderEuler.z, s.z);
+  const bx = near(Math.PI - shoulderEuler.x, s.x);
+  const by = near(shoulderEuler.y + Math.PI, s.y);
+  const bz = near(shoulderEuler.z + Math.PI, s.z);
+  const useB = (bx - s.x) ** 2 + (by - s.y) ** 2 + (bz - s.z) ** 2 < (ax - s.x) ** 2 + (ay - s.y) ** 2 + (az - s.z) ** 2;
+  s.x = useB ? bx : ax;
+  s.y = useB ? by : ay;
+  s.z = useB ? bz : az;
   const e = angles[elbow];
   e.x = -Math.acos(Math.min(1, Math.max(-1, upper.dot(fore))));
   e.y = 0;

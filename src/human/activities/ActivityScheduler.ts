@@ -11,6 +11,8 @@ export interface ScheduleContext {
   readonly now: number;
   /** The activity just finished (or null). */
   readonly last: HumanActivityId | null;
+  /** Where they just were: somewhere else is preferred, when there is somewhere else (no getting up to sit back down). */
+  readonly lastPlace?: HomePlace | null;
   /** Is this place free right now (Moke isn't lying in it)? */
   readonly isFree: (place: HomePlace) => boolean;
 }
@@ -56,7 +58,12 @@ export class ActivityScheduler {
     let total = 0;
     for (const activity of this.activities) {
       if (!this.ready(activity, ctx.now)) continue;
-      const place = this.nearestPlace(activity.steps[0]!.places, ctx.position, ctx.isFree);
+      if (activity.requires) {
+        const done = this.lastDone.get(activity.requires.after);
+        if (done === undefined || ctx.now - done > activity.requires.within) continue;
+      }
+      const kinds = activity.steps[0]!.places;
+      const place = this.nearestPlace(kinds, ctx.position, ctx.isFree, ctx.lastPlace ?? undefined) ?? this.nearestPlace(kinds, ctx.position, ctx.isFree);
       if (!place) continue;
       const d = distance(place.stand, ctx.position);
       let weight = activity.weight / (1 + d / this.tuning.distanceFalloff);

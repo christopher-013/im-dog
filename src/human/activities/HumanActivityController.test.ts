@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HUMAN_ACTIVITIES, type HumanActivityId } from '../../config/activities';
+import { HUMAN_ACTIVITIES, ROUTINE, type HumanActivityId } from '../../config/activities';
 import { HUMAN } from '../../config/human';
 import { GameEvents } from '../../core/GameEvents';
 import { CharacterBody, type Vec3Like } from '../../physics/CharacterBody';
@@ -14,6 +14,7 @@ import { HumanController } from '../HumanController';
 import { NavGrid } from '../NavGrid';
 import { ActivityScheduler } from './ActivityScheduler';
 import { HumanActivityController } from './HumanActivityController';
+import { HumanReactions } from './HumanReactions';
 
 // The routine in the real house with the real bodies: the human walks between rooms, sits and stands, does a range
 // of things, and never gets lost or stuck for long.
@@ -79,6 +80,9 @@ describe('HumanActivityController (the daily routine)', () => {
       worstStuck = Math.max(worstStuck, human.controller.stuckFor);
     }
     expect(done.size).toBeGreaterThanOrEqual(6);
+    for (const expected of ['watchTV', 'readBook', 'usePhone', 'sitAtDiningTable', 'prepareDinner', 'eatMeal', 'relaxOnCouch'] as const) {
+      expect(done.has(expected), `twenty-minute routine never selected ${expected}`).toBe(true);
+    }
     expect(rooms.size).toBeGreaterThanOrEqual(4);
     expect(seatedSeconds).toBeGreaterThan(120);
     expect(worstStuck).toBeLessThan(5);
@@ -90,6 +94,7 @@ describe('HumanActivityController (the daily routine)', () => {
 
   it('cooks, then usually eats', async () => {
     const scheduler = new ActivityScheduler(home.places, HUMAN_ACTIVITIES, mulberry32(3));
+    scheduler.markDone('prepareDinner', 990);
     let eatAfter = 0;
     for (let k = 0; k < 50; k++) {
       const choice = scheduler.choose({ position: { x: 7.7, y: 0, z: 3.5 }, room: 'kitchen', now: 1000, last: 'prepareDinner', isFree: () => true });
@@ -133,4 +138,76 @@ describe('HumanActivityController (the daily routine)', () => {
       if (routine.phase === 'doing' && routine.place?.id === 'family.sectional.middle') throw new Error('sat on Moke');
     }
   }, 40_000);
+
+  it('keeps living for hours without breaking down: 4 × 20 minutes, Moke barking at them now and then', async () => {
+    for (const seed of [1, 2, 3, 11]) {
+      const { routine, human, world, step } = await setup(seed);
+      const reactions = new HumanReactions(mulberry32(seed + 50));
+      routine.reactions = reactions;
+      let last: HumanActivityId | null = null;
+      let lastPlace: string | null = null;
+      let inSeat = 0;
+      let cookedAt = -Infinity;
+      let barks = 0;
+      let answered = 0;
+      let answeredThisBark = true;
+      for (let i = 0; i < (20 * 60) / DT; i++) {
+        const t = i * DT;
+        // Every 45 s Moke comes and barks at them, two metres in front.
+        const bark = i > 0 && i % Math.round(45 / DT) === 0;
+        if (bark) {
+          const p = human.controller.position;
+          world.moke = { x: p.x + Math.sin(human.controller.heading) * 2, y: 0, z: p.z + Math.cos(human.controller.heading) * 2 };
+          barks++;
+          answeredThisBark = false;
+        }
+        world.mokeBarked = bark;
+        step();
+        if (!answeredThisBark && (reactions.kind === 'answerBark' || reactions.kind === 'attend')) {
+          answeredThisBark = true;
+          answered++;
+        }
+        // Hands are empty while they walk or pause between things: no phone or book left in hand.
+        if (routine.phase === 'walking' || routine.phase === 'pause') expect(human.brain.intent.prop, `${seed} ${t.toFixed(1)}s ${routine.phase}`).toBeNull();
+        expect(human.controller.stuckFor, `${seed} stuck at ${t.toFixed(0)}s`).toBeLessThan(5);
+        const a = routine.activity;
+        if (a && routine.phase === 'doing' && a.id !== last) {
+          // No doing the same thing twice running; dinner only after cooking it; not all day in one seat.
+          expect(a.id, `${seed} repeats ${a.id}`).not.toBe(last);
+          if (a.id === 'eatMeal') expect(t - cookedAt, `${seed} dinner without cooking`).toBeLessThan(420 + 120);
+          inSeat = routine.place?.seat && routine.place.id === lastPlace ? inSeat + 1 : 1;
+          expect(inSeat, `${seed} too long in ${routine.place?.id}`).toBeLessThanOrEqual(ROUTINE.carryOnMax + 1);
+          last = a.id;
+          lastPlace = routine.place?.id ?? null;
+        }
+        if (a?.id === 'prepareDinner') cookedAt = t;
+      }
+      expect(routine.stats.gaveUp, `${seed} gave up`).toBe(0);
+      expect(routine.stats.finished, `${seed} finished`).toBeGreaterThan(10);
+      // They keep answering him all day (a bark heard from another room can go unanswered, not most of them).
+      expect(answered / barks, `${seed} answered ${answered}/${barks}`).toBeGreaterThan(0.7);
+    }
+  }, 180_000);
+
+  it('abandons an interaction point that navigation can only approach, instead of idling there for 45 seconds', () => {
+    const events = new GameEvents();
+    const unreachable = {
+      id: 'test.blocked',
+      kind: 'kitchenCounter' as const,
+      room: 'kitchen' as const,
+      stand: { x: 99, y: 0, z: 99 },
+      facing: 0,
+    };
+    const onlyActivity = [{ ...HUMAN_ACTIVITIES[7]!, steps: [{ places: ['kitchenCounter' as const], pose: 'sip' as const, prop: 'mug' as const, seconds: [12, 12] as const }] }];
+    const routine = new HumanActivityController([unreachable], events, () => 0, onlyActivity);
+    const intent = { goal: null, speed: 0, stopWithin: 0.12, face: null, headYaw: 0, crouch: 0, pose: 'idle' as const, seat: null, prop: null, lookAt: null, talking: 0 };
+    const senses = {
+      position: { x: 0, y: 0, z: 0 }, heading: 0, arrived: true, seated: false, stuck: 0,
+      moke: { x: 5, y: 0, z: 5 }, mokeCarryingSock: false, mokeSpeed: 0, mokeUnderFurniture: false,
+      mokeBarked: false, looseSock: null, clear: () => true,
+    };
+    for (let i = 0; i < 4 / DT; i++) routine.drive(DT, senses, intent);
+    expect(routine.stats.gaveUp).toBeGreaterThan(0);
+    expect(routine.phaseElapsed).toBeLessThan(ROUTINE.walkTimeout);
+  });
 });

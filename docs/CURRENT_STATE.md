@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-25. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phases 1–3 are complete** (tags `phase-1-complete`, `phase-2-complete`, `phase-3-complete`). **Phase 4, "Moke's Home & Family Life", is built, committed to `main`, and independently audited, but not yet closed by the owner:** the whole home from the owner's photos, a new stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and Dog Logic. The audit fixes described below remain uncommitted for owner review._
+_Last updated: 2026-09-26. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phases 1–3 are complete** (tags `phase-1-complete`, `phase-2-complete`, `phase-3-complete`). **Phase 4, "Moke's Home & Family Life", is built, committed to `main`, and independently audited, but not yet closed by the owner:** the whole home from the owner's photos, a stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and Dog Logic. The prior audit fixes are committed at `6dd0e0b`; the human reconstruction described below remains uncommitted for owner review._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -39,8 +39,12 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-OpenAI Codex: independent Phase 4 audit (2026-09-25), with narrow uncommitted fixes for Sock Heist/Treat Hunt
-priority, reaction cleanup, regression tests and stale Phase 4 documentation. Claude Code: all of Phase 4
+Claude Code: reviewed and continued the human NPC reconstruction (2026-09-26): lofted jeans and shirt, sculpted hair,
+the laundry scene, the NavGrid squeeze and false-arrival fixes, seat entries, attention weights, petting, and a
+multi-day stability test (see Verification Status). Uncommitted. Before that, OpenAI Codex: human NPC reconstruction
+(2026-09-26), with a rebuilt rear silhouette, clothing and hair, readable laundry action, invalid-anchor recovery and
+stronger long-run coverage; also uncommitted. Before that,
+Codex's independent Phase 4 audit fixes were committed and pushed at `6dd0e0b`. Claude Code: all of Phase 4
 (committed and pushed before the audit). Before that, Claude Code: the jump, the combined bark/growl button and the touch paw menu (committed and pushed at the owner's
 request), after all of Phase 3 (committed and pushed
 at the owner's request for phone testing) and committing, tagging and pushing Phase 2.
@@ -58,7 +62,8 @@ collar refit.
   kitchen and family room (one great room) and the dining room, plus the sunroom through glass (`world/home/`). Built
   in code, no photo textures. Whole-house colliders, NavGrid and fitted sun shadows; props kept inside the house.
 - **4.3 The human:** `StylizedHumanVisual` (a skinned, code-built stylized adult: face with moving eyes, blinks,
-  brows and mouth; hands with fingers; props), animated by `HumanAnimationController` over the `HumanRig` contract.
+  brows and mouth; close layered hair; untucked sage long-sleeve button-down; continuous jeans silhouette; hands
+  with fingers; props including visible laundry), animated by `HumanAnimationController` over the `HumanRig` contract.
   `ToonHumanVisual` removed.
 - **4.4 Daily life:** `HumanActivityController` + `ActivityScheduler` + activities as data (`config/activities.ts`)
   at interaction points (`world/home/places.ts`): TV, reading, phone, coffee, cooking then dinner, relaxing, the
@@ -470,11 +475,15 @@ From Milestone 4, verified in the browser (dev server and a production-build loa
 
 ## Known Issues
 New with Phase 4:
-- **Nobody but Claude has looked at it.** The home's likeness to the real one, the human's look and animation, and
-  whether the house "feels inhabited" need the owner's eye. The human's poses were tuned from screenshots only.
-- **The human's body:** stylized and smooth-skinned, but simple: long tube arms and legs, a boxy sweater torso, cap
-  spheres at the joints that can show at extreme bends; no clothing folds; a few poses (reading, sipping) have hands
-  that don't quite meet the prop.
+- **The owner still needs to judge the human and home's likeness.** Codex reviewed the reconstructed human live from
+  rear, side and front views, but this is still a code-built stylized character rather than a bespoke authored model.
+- **The human remains deliberately simple:** lofted garments with skinning only (no cloth simulation), so deep bends
+  crease the shirt simply; a few prop poses can show small hand-to-prop gaps at extreme angles. The former sphere-like
+  rear silhouette and smooth cap-like hair were reconstructed on 2026-09-26.
+- **Close-up details:** the fringe's edge is a little ragged in a close-up (fine at gameplay distance); with the top
+  button open, a small uneven patch of neck shows below the collar from some angles.
+- **Moke can block the hallway:** standing in the narrow hall, he leaves no way round for the human, who gives up and
+  chooses something else after 4 s rather than stepping over him.
 - **No shadows in the wing:** the sun can't reach it (by design, and its furniture no longer casts), so the human and
   Moke have no ground shadow there; point lights don't cast. A blob shadow would help.
 - **The family room's sun is drawn on** (an additive patch on the couch and floor), not real light.
@@ -520,8 +529,8 @@ New in Phase 3:
   scripted play (`config/human.ts`, `config/heist.ts`). Played
   straight, a heist takes about a minute, shorter than the brief's 3–5 minutes; it runs longer only when Moke
   hides or keeps away. It wasn't padded.
-- The human is a code-built placeholder: ~48 more draw calls (166 vs 118 at 1280×720) and ~11.8k triangles. Merging
-  its parts would cut the calls if phones need it.
+- The human is code-built: it adds rendering cost compared with Phase 2, though its parts are already merged per
+  material. Measure on physical phones before doing a broader optimization pass.
 - Desktop frame time rose a little (see Verification Status: roughly 1.3–1.6 → 2.0–2.3 ms per stepped frame at
   1280×720, noisy). The heist's own logic is ~0.014 ms per fixed step; the rest is drawing, mostly the human.
 - The human's pathing is grid A* with simple steering: he can look a bit robotic round corners, and in the
@@ -584,6 +593,88 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+Owner request, 2026-09-26 (uncommitted): one floor, Moke's bowls, and a pink bed by the fire.
+- The starting living room and the hallway now use the grey plank floor of the rest of the house.
+- His bowls (family room, by the hearth) hold kibble and water (`world/DogBowls.ts`). At a full bowl: **Eat** (a
+  3.4 s meal, crunching) or **Drink** (2.8 s, lapping, the tongue flicking); he stays put and the bowl drains. Once
+  one is empty the human refills it (`human/activities/BowlRefill.ts`): the counter for kibble or the island sink for
+  water, a scoop or a jug, kneel and pour, then back to their day. New synthesized sounds: lapping and pouring.
+- The pink blanket became a pink dog bed on the floor in front of the fireplace (a "Nap Here" spot, warm, bed-like for
+  BED = NAP). The family-room coffee table moved 0.15 m east: with the bed there, the human's only other way past
+  the table was a one-cell squeeze, and the routine tests caught the room splitting in two.
+- Verification: typecheck pass; **53 files / 387 tests pass** (new: the bowls drain and refill; the refill errand in
+  the real house, both bowls, and after an interruption; Moke can reach both bowls and the human their kneeling spot;
+  eating and drinking hold him still); `npm run build` and `verify-dist` pass. Development browser (stepped via
+  `imdog`): the grey floor from the opening camera; "Eat" and "Drink" prompts at the bowls, Moke eating and drinking,
+  both bowls emptying; the human fetching kibble and water, carrying the scoop and jug, kneeling and refilling (food
+  and water full again, then back to folding); "Nap Here" on the pink bed and Moke asleep in it; no console errors.
+  Not checked on a phone or by hand with real input (the prompts were triggered through the interaction system).
+
+Human NPC reconstruction on 2026-09-26 (uncommitted; no physical device used):
+- Baseline at `6dd0e0b`: typecheck pass; **50 files / 369 tests pass**; production build and private-reference leak
+  check pass; no lint script is configured.
+- Root causes confirmed in the browser: separate hip spheres created the malformed jeans/rear silhouette; the single
+  smooth hair shell read as a cap; the opening laundry activity intentionally kept the human at the basket but its
+  waist-level empty-hand animation was unreadable from Moke's low rear camera. An additional invalid-anchor path
+  could report arrival short of an interaction point and then wait for the general timeout.
+- Reconstruction: continuous jeans seat/pelvis, untucked sage long-sleeve button-down, close hair base with layered
+  swept locks, a visible two-handed laundry cloth and larger folding action, and fast recovery from invalid snapped
+  interaction points. Debug output now exposes routine animation, target, phase time and gaze.
+- A deterministic **20-minute accelerated simulation** runs the real home navigation and physics at 60 fixed steps
+  per second (72,000 steps). It requires all seven major household activities, at least four rooms, more than 120
+  seated seconds, no give-ups, and no stuck interval over five seconds.
+- Development browser at 1440×900 HIGH: folding was visibly readable; the human transitioned from laundry through a
+  pause, walked to the couch, sat and used the phone. Rear and front/three-quarter views showed the corrected clothes,
+  jeans and hair. Browser-reported performance remained about **165 FPS / 6.1 ms**, 146–150 calls and 263k triangles.
+  Phone viewport checks at 390×844 and 844×390 had no overflow or clipped menu controls; landscape gameplay rendered
+  correctly. These checks did not emulate a coarse pointer, so touch behavior is covered by automated tests rather
+  than a new physical-device run. The console's only warning was the documented missing final `moke.glb` fallback.
+- Final verification: `npm run typecheck` pass; **50 files / 370 tests pass**; `npm run build` pass (main bundle
+  1,005.15 kB / 282.82 kB gzip; Rapier 2,853.74 / 1,094.44); `verify-dist` checked 20 build files against all
+  **18 private reference files** and found no leak; `git diff --check` pass. No lint script is configured.
+
+Human NPC reconstruction, continued by Claude Code on 2026-09-26 (still uncommitted; no physical device used):
+- Review of the Codex pass above found, from behind at dog height: the "continuous" jeans were still a separate
+  pelvis volume plus two round tubes (a rounded seat bulge between the legs; jeans poking through the shirt at the
+  hem's sides); the hair "locks" were flattened spheres sitting on the crown (a beret); the shirt's shoulders rose
+  into points; the placket, collar and yoke were flat boxes crossing the curved torso. Rebuilt: lofted garments
+  (`loftRings`): the shirt as one roomy shell with curved tails, a placket and buttons that follow its surface, a
+  closed collar band and points; the jeans as two lofted legs whose flat inner sides meet down the middle (one
+  waist and seat, a soft seam, parting below the crotch, faded thighs and knees); hair as one sculpted shell with locks
+  radiating from the crown, a sheen along each, and lock tips making the hairline. Eyes now turn with the face.
+- **The "standing at the box" root causes:** (1) the opening activity is folding at the laundry basket, which read as
+  a plain low box, with the human 0.76 m from it at its corner and a waist-level fold hidden by his body; now the basket
+  is woven, full and turned to him, he stands 0.56 m from it, and folding is a cycle (bend into the basket, shake the
+  piece out at chest height, fold twice, back down). (2) A NavGrid inconsistency: path smoothing could slip
+  diagonally between two blocked cells (between the family-room chaise and coffee table) that A* never crosses; once
+  there, planning failed and the controller called it "arrived", so the routine stood him there until the walk
+  timeout (Codex's one-second give-up masked this). Fixed at the source: strict line of sight, stepping out of an
+  isolated cell, and "no path" counts as stuck, not arrival. (3) Codex's one-second rule also fired while he was still
+  getting up from a seat (the controller reported "arrived" while standing up); arrival now requires actually being
+  there.
+- **Other fixes:** seats stepped into straight (couch seats aligned; dining chairs and the island stool entered from
+  beside them, never through their backs; the chaise no longer a human seat); sitting takes longer the further the step
+  across. Attention is weighted (eyes → head/neck → upper body): a glance 0.3, a bark reply 0.5, hello 0.65, praise
+  0.85, attention and pats 1; looks at Moke happen when he turns up (then rarely), not every 7 s; standing, anything
+  more than a glance with Moke behind turns the body round. Petting walks over first and kneels close, with the hand on
+  his side (the palm reaches his back). The free arm no longer swings behind the back on a deep bend (hanging arms keep
+  hanging down; the arm IK picks the Euler solution nearest the rest pose). A natural standing stance (S-curve, soft
+  knees, feet apart). Turning at 3 rad/s. Dinner only within 7 minutes of cooking it; at most two carry-ons in one seat,
+  and the next activity prefers somewhere else. Debug panel adds the Moke reaction and the previous activity.
+- Verification: typecheck pass; **51 files / 380 tests pass** (new: jeans stay inside the shirt, one continuous seat,
+  nothing below the floor, the attention hierarchy and limits, petting from a kneel, seat alignment, the chaise squeeze,
+  reactions not staring, walking over to pet, and four more 20-minute days with Moke barking every 45 s: no give-ups,
+  never stuck over 5 s, hands empty between activities, no repeats, dinner only after cooking, barks answered);
+  `npm run build` pass (main bundle 1,012.68 kB / 285.67 kB gzip); `verify-dist` found no leak; `git diff --check`
+  pass. No lint script is configured.
+- Development browser (desktop pane, frames stepped via `imdog`): front, back, side and three-quarter views, and
+  Moke-height views from behind (standing, walking); folding from Moke's opening camera; watching TV on the sectional;
+  reading and the phone on the couch and island stool; cooking at the stove; eating at the dining table; the petting
+  sequence (turn, walk over, kneel, pat). Human: 11 skinned draw calls, about 24,000 triangles, 33 bones. Opening view
+  116 draw calls, about 1.2 ms CPU per stepped frame; a 375×812 emulated phone viewport 147 calls, 1.5 ms. No console
+  errors. The Sock Heist, Treat Hunt, Perfect Nap and Make Human Play were covered by their automated suites (all
+  pass), not replayed by hand in the browser. No physical phone or pointer-lock play.
+
 Independent Phase 4 Codex audit on 2026-09-25 (no physical device used by Codex):
 - Baseline before fixes: typecheck pass; **50 files / 366 tests pass**; production build pass; no lint script is
   configured. Review covered the Phase 4 diff from `phase-3-complete`, the connected-home collision/navigation tests,
@@ -827,7 +918,7 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-1. **Owner review and sign-off of Phase 4:** use `npm run dev` on this machine (the audit fixes are uncommitted), walk the house, watch the human's day,
+1. **Owner review and sign-off of Phase 4:** use `npm run dev` on this machine (the human reconstruction is uncommitted), walk the house, watch the human's day,
    pet them, do a trick near them (Treat Hunt), nap in a few spots, bring them the ball. Is it recognisably home? Does
    it feel inhabited? Then tune (`config/activities.ts`, `config/dogActivities.ts`, the human's poses in
    `HumanAnimationController.ts`). Commit or push only when the owner asks: a push to `main` publishes the game.

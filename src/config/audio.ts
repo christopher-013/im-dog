@@ -11,6 +11,9 @@ export const AUDIO = {
   whoosh: 0.28,
   treatBag: 0.3,
   crunch: 0.4,
+  // Drinking at his bowl, and the human topping it up.
+  lap: 0.28,
+  pour: 0.3,
   discovery: 0.35,
   /**
    * Mid-range layers for the two low sounds, so they survive a phone's small speaker (which plays almost nothing

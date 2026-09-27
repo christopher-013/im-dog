@@ -10,6 +10,7 @@ import {
 } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { HOUSE_SCALE } from '../config/world';
+import { addLoosePillow } from './CouchPillows';
 import type { Material } from 'three';
 import type { RoomMaterials } from './materials';
 import type { StaticSceneBuilder, Vec3Tuple } from './StaticSceneBuilder';
@@ -54,9 +55,9 @@ export function couch(b: StaticSceneBuilder, m: RoomMaterials, style?: CouchStyl
   for (const side of [-1, 1]) b.add(rbox(0.24, 0.56, D + 0.02, 0.08), frame, [side * (W / 2 - 0.12), 0.36, 0]);
 
   const pillow = rbox(0.44, 0.42, 0.13, 0.06);
-  b.add(pillow, pillowA, [-0.6, 0.67, -0.02], { rotation: [-0.25, 0.25, 0.07] });
-  b.add(pillow, pillowB, [-0.2, 0.64, 0.0], { rotation: [-0.22, 0.05, -0.05], scale: [0.9, 0.9, 0.9] });
-  b.add(pillow, pillowC, [0.62, 0.67, -0.02], { rotation: [-0.25, -0.2, -0.06] });
+  addLoosePillow(b, pillow, pillowA, [-0.6, 0.67, -0.02], { rotation: [-0.25, 0.25, 0.07] });
+  addLoosePillow(b, pillow, pillowB, [-0.2, 0.64, 0.0], { rotation: [-0.22, 0.05, -0.05], scale: [0.9, 0.9, 0.9] });
+  addLoosePillow(b, pillow, pillowC, [0.62, 0.67, -0.02], { rotation: [-0.25, -0.2, -0.06] });
 
   b.addCollider([0, seatTop / 2, 0.01], [W, seatTop, D + 0.02]);
   b.addCollider([0, backTop / 2, -D / 2 + 0.125], [W, backTop, 0.25]);

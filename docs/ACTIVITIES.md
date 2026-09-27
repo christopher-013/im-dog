@@ -29,7 +29,8 @@ Each activity is plain data, so a new one needs no code:
 | Read | The window couch, sofas | read, book | 40–80 s | Engrossed (rare glances) |
 | Phone | Island stool, sofas, dining chair | phone | 20–40 s | |
 | Coffee at the table | Dining chairs | sip, mug | 30–55 s | |
-| Make dinner | Fridge → counter → stove | fridge; prep, knife; cook, spoon | 3–5 + 12–18 + 18–28 s | Steam and a FOOD smell while cooking |
+| Make dinner | Fridge → island → stove | fridge; prep, knife; cook, spoon | 3–5 + 30–45 + 18–28 s | Carrots on a chopping board, then steam and a FOOD smell |
+| Meal prep | Kitchen island | prep, knife | 35–55 s | Rotates into daily life; Moke can wait nearby and beg for a carrot |
 | Eat dinner | Dining chairs | eat, fork | 25–45 s | Only within 7 minutes of cooking it, and usually straight after; a plate on the table |
 | Relax | Sofas | relax (hands behind head) | 20–40 s | |
 | Coffee at the counter | Counter, island sink | sip, mug | 12–25 s | |
@@ -103,6 +104,63 @@ shows the running one's objective when the heist has nothing to say. Tuning: `co
 Unchanged in its rules. Now the human might be anywhere: steal the sock from the living room rug and they'll notice
 the moment they see him with it, wherever they are (the chase can cross the house). Folding laundry, they glance
 round the room as before. Afterwards they carry on with their day.
+
+### Protect the House (`DoorDelivery.ts`, owner-requested addition, 2026-09-27)
+An exterior door **to the left of the window**, viewed from inside the original TV living room, has a small,
+non-playable doorstep on the exterior west wall. A temporary delivery visitor arrives after a random 25–45 seconds
+of play; a louder original two-tone DING-DONG chime repeats every 2 seconds until Moke barks
+within 1.25 m of the door's inside interaction point. **Bark at the Door** uses the normal interaction action;
+the ordinary Bark action also works there (it chooses a bark, not a random growl, while the bell is ringing).
+The bell stops immediately when Moke answers, even if the household human must finish another dog activity first.
+If unanswered for 10 seconds, the visitor leaves quietly, the bell/light/prompt turn off, and another visit is
+scheduled without granting a discovery. Ringing alone does not borrow the human or prevent other activities.
+
+One bark action starts Moke's automatic **bark → growl → bark → growl → bark → growl** routine, spaced 1.25 seconds
+apart. The human waits for its 7.5-second performance before walking over and opening the door. Repeated input
+does not restart the performance or shorten it. Pause freezes both the bell deadline and the guard routine.
+Once free, the human walks to the door, opens it outward, takes an Amazon-labelled parcel from the blue-uniformed
+visitor, closes the door and praises Moke. **BARK = PROTECTOR** is earned only after the handoff, not from a remote
+bark. Moke declares that he defended the house. The human resumes the saved routine; another visitor is possible
+after a random **10–15 minutes** of game time (plus brief success feedback), never sooner than ten minutes after
+a successful handoff. Unanswered visits retry after a random 50–110 seconds. Pausing consumes neither delay.
+Only one parcel remains by the door (replaced next
+delivery), never an accumulating pile. The threshold stays collision-blocked: this is not an outdoor expansion.
+Sock Heist cancels an in-progress handoff safely; unreachable approach times out without false success.
+
+### Dinner Helper (`KitchenBeg.ts`, owner-requested addition, 2026-09-27)
+While the human chops carrots at the island (meal prep or the prep stage of dinner), stand within 1.15 m with an
+empty mouth for 4 seconds. Leaving, running or carrying something clears that wait. The objective explains it,
+then **Beg for a Carrot** appears on the normal interaction action. The Trick action also chooses this contextual
+beg when ready. This is an explicit action: merely waiting never grants food.
+
+Moke begs; the knife is put away, the human reaches to the board for a small carrot bite, crouches and offers it.
+If Moke stays nearby with an empty mouth, he is fed automatically and learns **BEG + KITCHEN = FOOD**. If he
+wanders off, the human leaves one bite on reachable floor by the island, with **Eat Carrot**. Uneaten food clears
+after 60 seconds, and Sock Heist cancels it. One consumption earns one discovery; repeated input cannot duplicate
+food or rewards. A 35-second cooldown and another wait/explicit beg permit repeat play during later prep (or a
+long enough remaining prep session). The human returns to chopping afterwards. Tuning for both new moments:
+`config/homeActivities.ts`; no new device-specific input or dependencies.
+
+### Pillow Mischief (`PillowDig.ts`, owner-requested addition, 2026-09-27)
+On any of the three pillow-bearing sofas, with feet planted, mouth empty and not napping, use **Dig & Toss
+Pillows** (E / controller A / touch paw). Moke digs with alternating front paws for 2.2 seconds, then tosses
+that sofa's three existing throw pillows onto the floor. He learns **PILLOWS = FUN TO MOVE** and declares
+"Pillows are fun to move!" The human says **"Moke don't mess up the pillows!"**, walks to each pillow, bends to
+pick it up, carries it back, and puts it on the sofa. Other sofas stay untouched. After cleanup and an eight-second
+cooldown, another explicit dig is possible. Held input cannot duplicate pillows or queue multiple cleanups.
+The throw pillows alone are movable meshes (`world/CouchPillows.ts`); all other scenery remains merged.
+Short toss/return arcs use game time and pause correctly. Cancellation/reset restores the original pillows and
+releases the digging pose; Sock Heist retains priority. Existing back-cushion collisions and jump limits remain.
+
+### Moke, Get Down (`TableManners.ts`, owner-requested addition, 2026-09-27)
+Landing on either coffee table automatically borrows the human when they're free. They come to a walkable
+table edge, say **"Moke get down"** once, look irritated and stand with both hands on their hips. They keep
+watching until Moke jumps or walks off; hopping in place does not satisfy it. Moke's movement is never forced or
+locked by the scolding. The human says "Thank you, Moke." and resumes their saved routine. Landing on a table
+again can start another response after a short cooldown. Walking underneath or flying past a table does not
+trigger it. The dining table is also described but remains above the existing absolute jump-height cap.
+Unreachable approaches time out without trapping the human; heist interruptions and reset clear the role safely.
+Furniture/timing/pose tuning: `config/mischief.ts`; no new keys, assets or dependencies.
 
 ## Moke's bowls and the refill errand
 His bowls in the family room (by the hearth) start full: kibble in the blue slow feeder, water in the steel bowl

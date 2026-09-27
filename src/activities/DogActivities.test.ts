@@ -24,6 +24,12 @@ import { DogActivityDirector, DogLogicBook } from './DogActivityDirector';
 import { MakeHumanPlay } from './MakeHumanPlay';
 import { PerfectNap } from './PerfectNap';
 import { TreatHunt } from './TreatHunt';
+import { DoorDelivery } from './DoorDelivery';
+import { KitchenBeg } from './KitchenBeg';
+import { HUMAN_ACTIVITIES } from '../config/activities';
+import { placeById } from '../world/home/places';
+import { HOME_ACTIVITIES } from '../config/homeActivities';
+import { MOKE_BODY } from '../config/movement';
 
 const DT = 1 / 60;
 const home = new Home();
@@ -104,6 +110,253 @@ class Probe extends DogActivity {
 class HumanProbe extends Probe {
   override readonly needsHuman = true;
 }
+
+describe('Door delivery (real home and household human)', () => {
+  async function deliveryWorld(seed = 41, random: () => number = () => 0) {
+    const w = await world(seed);
+    let rings = 0, rewards = 0, exchanges = 0, opens = 0, cancels = 0;
+    const voices: string[] = [];
+    const delivery = new DoorDelivery({
+      routine: w.routine, hand: w.human.visual.hands.right,
+      view: { arrive() {}, acknowledge() {}, open(on) { if (on) opens++; }, takePackage() { exchanges++; }, finish() {}, cancel() { cancels++; } },
+      onRing: () => rings++, onBark: () => { voices.push('bark'); delivery.noteBark(w.moke); },
+      onGuardVoice: (kind) => voices.push(kind), onDefended: () => rewards++, random,
+    });
+    const director = new DogActivityDirector([delivery]);
+    const tick = (seconds: number) => { for (let i = 0; i < seconds / DT; i++) w.step(director); };
+    const waitForRing = (maxSeconds = 160) => {
+      for (let i = 0; i < maxSeconds / DT && !delivery.ringing; i++) w.step(director);
+      expect(delivery.ringing).toBe(true);
+    };
+    return { ...w, delivery, director, tick, waitForRing, voices, counts: () => ({ rings, rewards, exchanges, opens, cancels }) };
+  }
+
+  it('rings until a bark at the door, accepts one package, resumes the routine, and repeats', async () => {
+    const w = await deliveryWorld();
+    w.tick(31);
+    expect(w.delivery.ringing).toBe(true);
+    expect(w.counts().rings).toBeGreaterThanOrEqual(3);
+    expect(w.routine.available).toBe(true); // ringing doesn't monopolize the human
+    w.delivery.noteBark({ x: 0, y: 0, z: 0 });
+    expect(w.delivery.ringing).toBe(true);
+    Object.assign(w.moke, { ...HOME_ACTIVITIES.delivery.stand, x: -2.2 });
+    w.delivery.interactable.interact();
+    expect(w.delivery.ringing).toBe(false);
+    const rings = w.counts().rings;
+    w.tick(6.5);
+    expect(w.voices).toEqual(['bark', 'growl', 'bark', 'growl', 'bark', 'growl']);
+    expect(w.delivery.guarding).toBe(true);
+    expect(w.counts().opens).toBe(0);
+    expect(w.counts().exchanges).toBe(0);
+    w.tick(43.5);
+    expect(w.counts().rings).toBe(rings);
+    expect(w.counts().exchanges).toBe(1);
+    expect(w.counts().rewards).toBe(1);
+    expect(w.counts().opens).toBeGreaterThan(0);
+    expect(w.routine.available).toBe(true);
+    w.tick(540); // Even with the handoff already finished, no successful repeat before ten minutes.
+    expect(w.delivery.ringing).toBe(false);
+    expect(w.counts().rings).toBe(rings);
+    w.waitForRing(350);
+    expect(w.delivery.ringing).toBe(true);
+    w.delivery.noteBark(w.moke);
+    w.tick(50);
+    expect(w.counts().exchanges).toBe(2);
+    expect(w.counts().rewards).toBe(2);
+  }, 60_000);
+
+  it('queues a bark while the human is busy and cleans up an interrupted handoff without a false reward', async () => {
+    const w = await deliveryWorld(42);
+    w.waitForRing();
+    Object.assign(w.moke, { ...HOME_ACTIVITIES.delivery.stand, x: -2.2 });
+    w.ctx.human.available = false;
+    w.delivery.noteBark(w.moke);
+    w.director.update(DT, w.ctx);
+    expect(w.delivery.state).toBe('AVAILABLE');
+    w.tick(0.2);
+    expect(w.delivery.running).toBe(true);
+    w.ctx.heistRunning = true;
+    w.tick(2);
+    expect(w.delivery.running).toBe(false);
+    expect(w.counts().rewards).toBe(0);
+    expect(w.counts().cancels).toBeGreaterThan(0);
+    w.delivery.resetAll();
+    expect(w.delivery.ringing).toBe(false);
+    expect(w.delivery.interactable.enabled).toBe(false);
+  });
+
+  it('can answer even when Moke occupies the preferred human approach point', async () => {
+    const w = await deliveryWorld(44);
+    w.waitForRing();
+    Object.assign(w.moke, HOME_ACTIVITIES.delivery.stand);
+    const body = new CharacterBody(w.physics, w.moke, MOKE_BODY);
+    body.move({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 });
+    w.delivery.noteBark(w.moke);
+    for (let i = 0; i < 10; i++) w.delivery.noteBark(w.moke);
+    w.tick(50);
+    expect(w.counts().exchanges).toBe(1);
+    expect(w.counts().rewards).toBe(1);
+  });
+
+  it('rings every two seconds, leaves after ten unanswered seconds, then visits again without rewards', async () => {
+    const w = await deliveryWorld(45);
+    w.waitForRing();
+    w.tick(9.8);
+    expect(w.delivery.ringing).toBe(true);
+    expect(w.counts().rings).toBe(5);
+    w.tick(0.25);
+    expect(w.delivery.ringing).toBe(false);
+    expect(w.delivery.objective).toBe(null);
+    expect(w.delivery.interactable.enabled).toBe(false);
+    expect(w.counts().rewards).toBe(0);
+    expect(w.counts().exchanges).toBe(0);
+    expect(w.routine.available).toBe(true);
+    w.tick(49);
+    expect(w.counts().rings).toBe(5);
+    w.waitForRing();
+    expect(w.counts().rings).toBe(6);
+    w.tick(10.1);
+    expect(w.delivery.ringing).toBe(false);
+    expect(w.counts().rewards).toBe(0);
+  });
+
+  it('randomizes the initial visit and repeat delay, rather than relying on a fixed cooldown', async () => {
+    const w = await deliveryWorld(46, () => 1);
+    w.tick(44.8); expect(w.delivery.ringing).toBe(false);
+    w.waitForRing(); // initial delay at the long end: 45 s
+    w.tick(10.1); expect(w.delivery.ringing).toBe(false);
+    w.tick(109); expect(w.delivery.ringing).toBe(false);
+    w.waitForRing(); // repeat delay at the long end: 110 s
+    expect(w.counts().rings).toBe(6);
+  });
+
+  it('pauses its ringing and guard timers and cannot restart the guard performance by spamming barks', async () => {
+    const w = await deliveryWorld(47);
+    w.waitForRing();
+    const rings = w.counts().rings;
+    for (let i = 0; i < 100; i++) w.director.update(0, w.ctx);
+    expect(w.counts().rings).toBe(rings);
+    Object.assign(w.moke, { ...HOME_ACTIVITIES.delivery.stand, x: -2.2 });
+    w.delivery.noteBark(w.moke);
+    w.tick(2.6);
+    const heard = [...w.voices];
+    for (let i = 0; i < 100; i++) { w.director.update(0, w.ctx); w.delivery.noteBark(w.moke); }
+    expect(w.voices).toEqual(heard);
+    w.tick(5.1);
+    expect(w.voices).toEqual(['growl', 'bark', 'growl', 'bark', 'growl']);
+    expect(w.delivery.guarding).toBe(false);
+    expect(w.counts().rewards).toBe(0); // hasn't exchanged the package yet
+  });
+
+  it('randomizes successful repeat visits between ten and fifteen minutes, with pause not consuming the delay', async () => {
+    const w = await deliveryWorld(48, () => 1);
+    w.waitForRing();
+    Object.assign(w.moke, { ...HOME_ACTIVITIES.delivery.stand, x: -2.2 });
+    w.delivery.noteBark(w.moke);
+    for (let i = 0; i < 60 / DT && w.counts().rewards === 0; i++) w.step(w.director);
+    expect(w.counts().rewards).toBe(1);
+    const rings = w.counts().rings;
+    // Advance only the independent event clock: the handoff is finished and the human is free.
+    w.director.update(2, w.ctx); w.director.update(DT, w.ctx); w.director.update(DT, w.ctx);
+    for (let i = 0; i < 1000; i++) w.director.update(0, w.ctx);
+    w.director.update(899, w.ctx);
+    expect(w.delivery.ringing).toBe(false); expect(w.counts().rings).toBe(rings);
+    w.director.update(1, w.ctx);
+    expect(w.delivery.ringing).toBe(true); expect(w.counts().rings).toBe(rings + 1);
+  });
+});
+
+describe('Kitchen begging (real island and household human)', () => {
+  async function kitchenWorld() {
+    const w = await world(50);
+    const place = placeById('kitchen.islandPrep');
+    w.human.controller.teleport(place.stand, place.facing);
+    w.routine.activity = HUMAN_ACTIVITIES.find((a) => a.id === 'mealPrep')!;
+    w.routine.place = place; w.routine.phase = 'doing'; w.routine.stepIndex = 0; w.routine.stepLeft = 55;
+    Object.assign(w.moke, { x: 8.08, y: 0, z: 4.35 });
+    let begs = 0, fed = 0;
+    const treat = new Treat('kitchen-test', 3, 'carrot');
+    const beg = new KitchenBeg({ routine: w.routine, hand: w.human.visual.hands.right,
+      humanPosition: () => w.human.controller.position, treat, scene: home.object,
+      openFloor: (x, z) => nav.isWalkable(x, z),
+      clearPath: (from, to) => w.physics.lineOfSight({ x: from.x, y: 0.2, z: from.z }, { x: to.x, y: 0.2, z: to.z }),
+      onBeg: () => begs++, onFed: () => fed++ });
+    const director = new DogActivityDirector([beg]);
+    const tick = (seconds: number) => { for (let i = 0; i < seconds / DT; i++) w.step(director); };
+    return { ...w, beg, treat, director, tick, counts: () => ({ begs, fed }) };
+  }
+
+  it('requires waiting AND an explicit beg, takes a carrot from the board, feeds once, and can replay', async () => {
+    const w = await kitchenWorld();
+    expect(w.beg.requestBeg()).toBe(false);
+    w.tick(3);
+    expect(w.beg.canBeg).toBe(false);
+    w.tick(2);
+    expect(w.beg.canBeg).toBe(true);
+    expect(w.counts().fed).toBe(0);
+    for (let i = 0; i < 10; i++) w.beg.interactable.interact();
+    w.tick(1.4);
+    expect(w.treat.state).toBe('held');
+    w.tick(2);
+    expect(w.counts()).toEqual({ begs: 1, fed: 1 });
+    w.treat.feed(); w.treat.eat();
+    expect(w.counts().fed).toBe(1);
+    expect(w.routine.available).toBe(true);
+    expect(w.routine.activity?.id).toBe('mealPrep');
+    // Still the same prep session, but cooldown plus another explicit action is required.
+    w.routine.stepLeft = 55;
+    w.tick(39);
+    expect(w.beg.canBeg).toBe(true);
+    w.beg.requestBeg(); w.tick(4);
+    expect(w.counts()).toEqual({ begs: 2, fed: 2 });
+  });
+
+  it('clears waiting when Moke leaves, runs or carries something', async () => {
+    const w = await kitchenWorld();
+    w.tick(3);
+    w.moke.z = 5.3; w.tick(0.1); w.moke.z = 4.35; w.tick(2);
+    expect(w.beg.canBeg).toBe(false);
+    w.ctx.moke.speed = 1; w.tick(2); w.ctx.moke.speed = 0;
+    w.tick(3); expect(w.beg.canBeg).toBe(false);
+    w.ctx.moke.carrying = 'toy'; w.tick(2); w.ctx.moke.carrying = null;
+    w.tick(3); expect(w.beg.canBeg).toBe(false);
+    w.tick(2); expect(w.beg.canBeg).toBe(true);
+  });
+
+  it('leaves a single reachable bite if Moke wanders off and cancels it for Sock Heist', async () => {
+    const w = await kitchenWorld();
+    w.tick(5); w.beg.requestBeg(); w.tick(1.5);
+    Object.assign(w.moke, { x: 14, z: 3 });
+    w.tick(12);
+    expect(w.treat.state).toBe('placed');
+    expect(nav.isWalkable(w.treat.position.x, w.treat.position.z)).toBe(true);
+    expect(w.counts().fed).toBe(0);
+    expect(w.routine.available).toBe(true);
+    w.ctx.heistRunning = true; w.tick(0.1);
+    expect(w.treat.state).toBe('stored');
+    w.treat.eat(); expect(w.counts().fed).toBe(0);
+  });
+
+  it('does not soft-lock on an uneaten floor reward or a replay', async () => {
+    const w = await kitchenWorld();
+    w.tick(5); w.beg.requestBeg(); w.tick(1.5); w.moke.x = 14;
+    w.tick(74);
+    expect(w.treat.state).toBe('stored');
+    expect(w.beg.running).toBe(false);
+    w.beg.resetAll();
+    expect(w.beg.state).toBe('AVAILABLE');
+    expect(w.counts().fed).toBe(0);
+  });
+
+  it('cannot beg or receive food through the island, even with the Trick action', async () => {
+    const w = await kitchenWorld();
+    Object.assign(w.moke, { x: 9.15, z: 3.6 });
+    w.tick(5);
+    expect(w.beg.canBeg).toBe(false);
+    expect(w.beg.requestBeg()).toBe(false);
+    expect(w.counts()).toEqual({ begs: 0, fed: 0 });
+  });
+});
 
 describe('DogActivity lifecycle', () => {
   it('goes AVAILABLE → STARTING → ACTIVE → SUCCESS → COOLDOWN → READY_AGAIN → AVAILABLE, and can be replayed', () => {

@@ -15,6 +15,16 @@ export const AUDIO = {
   lap: 0.28,
   pour: 0.3,
   discovery: 0.35,
+  doorbell: 0.75,
+  /** Classic descending DING-DONG; the whole chime ends before the one-second audio cleanup. */
+  doorbellChime: {
+    notes: [659.25, 523.25],
+    gap: 0.38,
+    attack: 0.006,
+    decay: 0.55,
+    duration: 0.58,
+    layers: [[1, 0.65], [2.76, 0.08]],
+  },
   /**
    * Mid-range layers for the two low sounds, so they survive a phone's small speaker (which plays almost nothing
    * below ~400 Hz): the growl's throaty rasp (gain of a 1.15 kHz band) and a soft "tock" on the drop (peak; 0 = none).

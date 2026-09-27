@@ -7,6 +7,20 @@ const SPEAKER_PRESENCE = AUDIO.speakerPresence;
 /** Schedules one sound into `out` starting at `t0`. `pitch` is a multiplier around 1. */
 export type Synth = (ctx: AudioContext, out: AudioNode, t0: number, pitch: number, noise: AudioBuffer) => void;
 
+/** A clear high DING followed by a lower DONG, with soft bell harmonics (under one second). */
+export const doorbell: Synth = (ctx, out, t0) => {
+  const chime = AUDIO.doorbellChime;
+  for (const [index, frequency] of chime.notes.entries()) {
+    for (const [multiple, gain] of chime.layers) {
+      const voice = ctx.createOscillator();
+      voice.frequency.value = frequency * multiple;
+      const start = t0 + index * chime.gap;
+      voice.connect(envelope(ctx, start, chime.attack, gain, chime.decay)).connect(out);
+      voice.start(start); voice.stop(start + chime.duration);
+    }
+  }
+};
+
 function envelope(ctx: AudioContext, t0: number, attack: number, peak: number, decay: number): GainNode {
   const g = ctx.createGain();
   g.gain.setValueAtTime(0.0001, t0);

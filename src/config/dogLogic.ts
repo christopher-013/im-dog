@@ -48,6 +48,9 @@ export const DOG_LOGIC: readonly DogLogicEntry[] = [
   { id: 'moke=strongest', left: [T.moke], right: T.strongest, how: 'Hold onto the rope until the human gives up.' },
   { id: 'bark=attention', left: [T.bark], right: T.attention, how: 'Bark at the human until they give in.' },
   { id: 'kitchen=food?', left: [T.kitchen], right: T.food, how: 'Hang about the kitchen while dinner cooks.' },
+  { id: 'bark=protector', left: [T.bark], right: { word: 'PROTECTOR', icon: 'strong' }, how: 'Bark at the ringing door, then watch your human accept the delivery.' },
+  { id: 'beg+prep=food', left: [{ word: 'BEG', icon: 'dog' }, T.kitchen], right: { word: 'FOOD', icon: 'food' }, how: 'Wait beside the chopping human, beg, and eat the carrot they offer.' },
+  { id: 'pillows=fun', left: [{ word: 'PILLOWS', icon: 'soft' }], right: { word: 'FUN TO MOVE', icon: 'play' }, how: 'Dig under the couch pillows and toss them onto the floor.' },
 ];
 
 export function dogLogicEntry(id: string): DogLogicEntry | undefined {

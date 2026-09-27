@@ -112,6 +112,8 @@ export function selectClips(s: Readonly<MokeAnimationState>, ctx: ClipContext, o
   add('sit', s.sit);
   add('stretch', s.stretch);
   add('sniff', s.sniff);
+  // A future model may supply its optional scratch clip; otherwise use nose-down sniff as a safe fallback.
+  add(has('scratch') ? 'scratch' : 'sniff', s.dig);
   add('growl', Math.max(s.growl, s.tug * 0.7));
   // No drinking clip in the spec: a drink uses the eating clip (nose down at the bowl).
   add('eat', Math.max(s.eat, s.drink));

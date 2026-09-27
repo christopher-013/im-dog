@@ -37,6 +37,13 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 | Bark, growl, sniff, pickup and drop sounds; Sock Heist sounds (surprise whistle, grab whoosh, treat-bag rustle, crunch, discovery chime); lapping at the water bowl and pouring (the human refilling it) | `src/audio/synth.ts` | **Original, synthesized with Web Audio at play time** (oscillators, formant filters and generated noise). No recordings or sample files. Placeholder until the owner picks a final bark (see below). |
 
 ## Temporary assets that must be replaced before release
+
+Owner-requested household additions (2026-09-27): the front door, doorstep, parcel (plain canvas "amazon"
+lettering, not a downloaded logo), blue-uniform variant of the original stylized human, chopping board, carrots
+and reward bite are original code-built assets (`world/FrontDoor.ts`, `world/HouseholdEffects.ts`, `heist/Treat.ts`).
+The louder repeating two-tone DING-DONG chime is synthesized in `audio/synth.ts`. No external files, recordings or private references
+were added or transmitted. The visitor reuses the existing rig and animation contract.
+
 | Temporary asset | Replaced by | Status |
 |---|---|---|
 | `ToonMokeVisual` (procedural stand-in Moke) | The final rigged, animated `moke.glb` (`docs/MOKE_3D_SPEC.md`) | **Carried forward from Phase 2.** Not made yet. The stand-in stays in code as the fallback only. |

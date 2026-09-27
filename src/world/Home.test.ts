@@ -10,6 +10,7 @@ import { Home } from './Home';
 import { roomAt } from './home/layout';
 import { BOWLS, placeById } from './home/places';
 import { BOWL_REFILL } from '../config/activities';
+import { HOME_ACTIVITIES } from '../config/homeActivities';
 
 // The whole house with the real Rapier world: Moke can get everywhere he should (and nowhere he shouldn't),
 // the human can reach every place their routine uses, and every nap and treat spot is reachable.
@@ -80,6 +81,15 @@ async function setup(start: { x: number; z: number } = home.spawn.position, head
 }
 
 describe('Home', () => {
+  it('lets Moke reach the delivery door, but not escape across its doorstep threshold', async () => {
+    const w = await setup();
+    const { stand, door } = HOME_ACTIVITIES.delivery;
+    expect(w.travel(stand.x, stand.z)).toBe(true);
+    expect(w.walkTo(door.x - 0.65, door.z, 3)).toBe(false);
+    expect(w.moke.position.x).toBeGreaterThan(door.x);
+    w.jumpToward(door.x - 0.65, door.z, 0.9);
+    expect(w.moke.position.x).toBeGreaterThan(door.x);
+  });
   it('builds the whole house as a few merged meshes with its colliders', () => {
     expect(home.colliders.length).toBeGreaterThan(150);
     let meshes = 0;

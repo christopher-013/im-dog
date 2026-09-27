@@ -18,6 +18,15 @@ function sequence(...values: number[]): () => number {
 }
 
 describe('MokeAnimationController', () => {
+  it('can replace a fading random trick with an explicit contextual beg', () => {
+    const anim = new MokeAnimationController(MOVEMENT);
+    anim.trick('spin');
+    anim.cancelTrick();
+    expect(anim.trick('beg')).toBe(false);
+    expect(anim.trick('beg', true)).toBe(true);
+    expect(anim.state.trick).toBe('beg');
+    expect(anim.state.trickTime).toBe(0);
+  });
   it('goes into the air pose for a jump (nose up, then down), then squashes a little on landing', () => {
     const anim = new MokeAnimationController(MOVEMENT);
     const up = simulate(anim, { speed: 1.8, turnRate: 0, headroom: OPEN_SKY, airborne: true, verticalSpeed: 3 }, 0.2);

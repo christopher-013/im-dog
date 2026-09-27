@@ -1,5 +1,6 @@
 import {
   AdditiveBlending,
+  BoxGeometry,
   CylinderGeometry,
   Group,
   Mesh,
@@ -17,7 +18,7 @@ import { WING } from './home/layout';
 
 /** What the human is doing that shows (or smells): from HumanActivityController.effect and its place. */
 export interface HouseholdActivity {
-  readonly effect: 'cooking' | 'meal' | 'tv' | null | undefined;
+  readonly effect: 'cooking' | 'meal' | 'tv' | 'prep' | null | undefined;
   readonly place: HomePlace | null;
 }
 
@@ -43,6 +44,7 @@ export class HouseholdEffects {
   private readonly steam: Mesh[] = [];
   private readonly steamMaterial = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, depthWrite: false });
   private readonly plate = new Group();
+  private readonly chopping = new Group();
   private readonly geometries: BufferGeometry[] = [];
   private readonly materials: (MeshBasicMaterial | MeshStandardMaterial)[] = [];
   private readonly food = new Vector3();
@@ -107,6 +109,18 @@ export class HouseholdEffects {
     this.plate.visible = false;
     this.object.add(this.plate);
 
+    const board = new Mesh(g(new BoxGeometry(0.36, 0.022, 0.42)), m('#b58b58', 0.85));
+    this.chopping.add(board);
+    const carrotMaterial = m('#f39a38', 0.8);
+    for (let i = 0; i < 5; i++) {
+      const carrot = new Mesh(g(new CylinderGeometry(0.022, 0.022, 0.035, 10)), carrotMaterial);
+      carrot.rotation.z = Math.PI / 2;
+      carrot.position.set((i % 3 - 1) * 0.065, 0.035, Math.floor(i / 3) * 0.09 - 0.04);
+      this.chopping.add(carrot);
+    }
+    this.chopping.visible = false;
+    this.object.add(this.chopping);
+
     const effects = this;
     this.foodScent = {
       id: 'food:dinner',
@@ -162,9 +176,14 @@ export class HouseholdEffects {
     this.plate.visible = !!eating;
     if (eating && place.surface) this.plate.position.set(place.surface.x, place.surface.y + 0.008, place.surface.z);
 
-    this.foodOn = cooking || !!eating;
+    const prepping = effect === 'prep' && place?.surface;
+    this.chopping.visible = !!prepping;
+    if (prepping && place.surface) this.chopping.position.set(place.surface.x, place.surface.y + 0.016, place.surface.z);
+
+    this.foodOn = cooking || !!eating || !!prepping;
     if (cooking) this.food.copy(STOVE).setY(0);
     else if (eating && place.surface) this.food.set(place.surface.x, 0, place.surface.z);
+    else if (prepping && place.surface) this.food.set(place.surface.x, 0, place.surface.z);
   }
 
   dispose(): void {

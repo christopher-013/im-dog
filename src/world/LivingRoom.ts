@@ -1,5 +1,6 @@
 import { BoxGeometry, CylinderGeometry, PlaneGeometry, PointLight, Vector3, type Group } from 'three';
 import { HOUSE_SCALE } from '../config/world';
+import { HOME_ACTIVITIES } from '../config/homeActivities';
 import type { StaticBox } from '../physics/PhysicsWorld';
 import {
   coffeeTable,
@@ -91,14 +92,22 @@ export class LivingRoom {
     b.add(new BoxGeometry(W + 2 * T, H, T), m.accentWall, [0, H / 2, -hd - T / 2], solid);
     b.add(new BoxGeometry(W + 2 * T, H, T), m.wall, [0, H / 2, hd + T / 2], solid);
 
-    // Left wall, built around the window so the sun only gets in through the glass.
+    // Exterior west wall: window and a door to its left when viewed from inside.
     const xl = -hw - T / 2;
     const w = WINDOW;
-    const midY = (w.yMin + w.yMax) / 2;
-    b.add(new BoxGeometry(T, w.yMin, D), m.wall, [xl, w.yMin / 2, 0], solid);
-    b.add(new BoxGeometry(T, H - w.yMax, D), m.wall, [xl, (H + w.yMax) / 2, 0], solid);
-    b.add(new BoxGeometry(T, w.yMax - w.yMin, w.zMin + hd), m.wall, [xl, midY, (w.zMin - hd) / 2], solid);
-    b.add(new BoxGeometry(T, w.yMax - w.yMin, hd - w.zMax), m.wall, [xl, midY, (w.zMax + hd) / 2], solid);
+    const front = HOME_ACTIVITIES.delivery.door;
+    const lo = front.z - front.width / 2;
+    const hi = front.z + front.width / 2;
+    b.add(new BoxGeometry(T, w.yMin, w.zMax - w.zMin), m.wall, [xl, w.yMin / 2, (w.zMin + w.zMax) / 2], solid);
+    b.add(new BoxGeometry(T, H - w.yMax, w.zMax - w.zMin), m.wall, [xl, (H + w.yMax) / 2, (w.zMin + w.zMax) / 2], solid);
+    for (const [start, end] of [[-hd, w.zMin], [w.zMax, lo], [hi, hd]] as const) {
+      b.add(new BoxGeometry(T, H, end - start), m.wall, [xl, H / 2, (start + end) / 2], solid);
+    }
+    b.add(new BoxGeometry(T, H - front.height, front.width), m.wall, [xl, (H + front.height) / 2, front.z], solid);
+    // The doorstep remains scenery, not a playable outdoors extension.
+    b.addCollider([xl, front.height / 2, front.z], [T, front.height, front.width]);
+    for (const z of [lo - 0.035, hi + 0.035]) b.add(new BoxGeometry(0.03, front.height + 0.07, 0.07), m.trim, [-hw + 0.015, (front.height + 0.07) / 2, z]);
+    b.add(new BoxGeometry(0.03, 0.07, front.width + 0.14), m.trim, [-hw + 0.015, front.height + 0.035, front.z]);
 
     // Right wall, built around the doorway.
     const xr = hw + T / 2;
@@ -118,7 +127,8 @@ export class LivingRoom {
     const bt = 0.02;
     b.add(new BoxGeometry(W, bh, bt), m.trim, [0, bh / 2, -hd + bt / 2]);
     b.add(new BoxGeometry(W, bh, bt), m.trim, [0, bh / 2, hd - bt / 2]);
-    b.add(new BoxGeometry(bt, bh, D), m.trim, [-hw + bt / 2, bh / 2, 0]);
+    b.add(new BoxGeometry(bt, bh, lo + hd), m.trim, [-hw + bt / 2, bh / 2, (lo - hd) / 2]);
+    b.add(new BoxGeometry(bt, bh, hd - hi), m.trim, [-hw + bt / 2, bh / 2, (hi + hd) / 2]);
     b.add(new BoxGeometry(bt, bh, d.zMin + hd), m.trim, [hw - bt / 2, bh / 2, (d.zMin - hd) / 2]);
     b.add(new BoxGeometry(bt, bh, hd - d.zMax), m.trim, [hw - bt / 2, bh / 2, (d.zMax + hd) / 2]);
   }

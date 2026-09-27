@@ -39,6 +39,70 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+OpenAI Codex (2026-09-27): added the owner's **Pillow Mischief** and **Moke, Get Down** activities. All three
+pillow-bearing sofas offer **Dig & Toss Pillows** through E / controller A / touch paw while Moke stands on them
+with an empty mouth. He alternates digging paws, tosses that sofa's existing pillows and earns **PILLOWS = FUN
+TO MOVE**. The human says "Moke don't mess up the pillows!", picks up each pillow and puts it back, then resumes
+the routine. Explicit replay is available after cleanup/cooldown. Landing on a coffee table makes the human
+come over, say "Moke get down", look irritated and stand hands-on-hips until Moke leaves it. Passing underneath
+or jumping past does not trigger this. No forced movement, higher jump, new dependencies or external assets.
+Both activities use existing role arbitration, pause with game time and clean up on heist interruption/reset.
+Only nine throw pillows are unmerged; other scenery stays batched. Behavior/animation remain separate.
+Also reduced successful delivery recurrence at the owner's request to a random **600–900 seconds** (10–15
+minutes), never sooner than ten minutes; missed deliveries retain the 50–110-second retry and ten-second ring
+cutoff. Included in the owner's requested household-activity commit on `main`.
+
+Verification: `npm test` **415 tests / 56 files passed**; `npm run build` passed, including strict typecheck and
+the production guard (all 18 private reference files excluded); `git diff --check` clean. Tests run complete
+repeat pillow cleanup in all three sofas/chaise with the real human body/navigation, held-pillow reset,
+pause/interruption cleanup, table scolding through repeated visits, floor/airborne rejection, digging paws,
+hands-on-hips placement/frowning and the 10–15-minute successful delivery timer. Browser smoke: startup,
+rendering of the existing pillows, live initial bell objective, pause and console checked—no runtime errors,
+only the known missing-final-Moke-model warning. Held movement is not exposed by the available browser controls,
+so the full new sequences were verified in automation, not a hands-on browser or physical-device playthrough.
+
+Files for this refinement (delivery/kitchen work included in the same commit):
+- Activities/input: `activities/PillowDig.ts`, `activities/TableManners.ts`, `activities/DogActivity.ts`,
+  `activities/DoorDelivery.ts`, `interactions/Interactable.ts`, `core/Game.ts` (under `src/`).
+- Furniture/config: `world/CouchPillows.ts`, `world/furniture.ts`, `world/home/homeFurniture.ts`,
+  `config/mischief.ts`, `config/homeActivities.ts`, `config/dogLogic.ts` (under `src/`).
+- Poses/tests: `human/HumanRig.ts`, `human/HumanAnimationController.ts`, `player/MokeAnimationController.ts`,
+  `player/ToonMokeVisual.ts`, `player/gltf/clips.ts`, `activities/Mischief.test.ts`,
+  `activities/DogActivities.test.ts`, `human/HumanAnimationController.test.ts` (under `src/`).
+- Docs: `CURRENT_STATE.md`, `ACTIVITIES.md`, `CONTROLS.md`, `DOG_LOGIC.md`, `HUMAN_SYSTEM.md` (under `docs/`).
+
+OpenAI Codex: added the owner's requested **Protect the House** delivery event and **Dinner Helper** kitchen
+begging activity (2026-09-27). Per the owner's follow-up, the exterior door is now **left of the window** on the
+original TV living room's exterior west wall. A louder two-tone DING-DONG chime rings every two seconds for at most ten
+unanswered seconds, then leaves silently and reschedules. A nearby bark starts three alternating barks and three
+growls before the human answers, accepts an Amazon-labelled package from a temporary doorstep visitor,
+and Moke learns **BARK = PROTECTOR**. The outside remains non-playable. Island carrot chopping rotates into the
+human's routine (also dinner prep); waiting nearby with an empty mouth for four seconds unlocks **Beg for a
+Carrot**. The human reaches to the board and feeds him, earning **BEG + KITCHEN = FOOD**. Both use the existing
+human-role arbitration and unified E / controller A / touch paw actions, have replay/cooldown cleanup, and defer
+to Sock Heist. No dependencies or external assets; scope recorded in D21. Included in the owner's requested
+household-activity commit on `main`.
+The first delivery is randomized 25–45 seconds into play; successful visits now wait 10–15 minutes, while
+unanswered visits retry after 50–110 seconds (plus brief feedback after a success). Timers freeze on pause; repeated barks cannot restart or
+skip the guard routine. The visitor/door/package positions and threshold collision moved with the door.
+
+Verification for this addition: strict typecheck and production build passed (all 18 private reference files
+excluded). Full regression suite: **407 tests across 55 files passed**. Coverage includes repeated deliveries
+and begging, distant barks, occupied door approach (real Rapier bodies), duplicate input/rewards, walking away,
+timeout cleanup, heist interruption, food blocked by the island, explicit beg replacing a fading trick, and
+Moke reaching—but not walking/jumping through—the exterior threshold, unanswered cutoff at ten seconds,
+random repeat timing, the six-voice guard routine, outward door opening/package placement, and chime scheduling.
+Browser smoke testing at localhost:
+startup, new closed-door rendering, live doorbell objective, distant bark not answering the door, pausing during
+the event, and console inspection (no runtime errors; only the known missing-final-Moke-model warning).
+Follow-up browser check confirmed the relocated door renders to the left of the window and pause still works.
+The owner's subsequent audio refinement replaces the three-note sound with a louder descending two-tone
+DING-DONG (659.25 → 523.25 Hz); the two-second repeats and ten-second unanswered cutoff are unchanged.
+Rechecked the chime and activity tests (**27 tests / 2 files passed**) and strict typecheck/production build with
+the private-reference guard. Subjective speaker loudness remains an owner listening check.
+Full interactive handoff/feeding animation and
+physical-phone/gamepad play remain owner playtest items; the complete state sequences were tested in automation.
+
 OpenAI Codex: verified and refined rope-specific tug-of-war (2026-09-27): Moke can bring the rope back for repeated
 matches without an automatic loop; he plants and pulls more visibly while the human leans into a staggered tugging
 stance. Before that, OpenAI Codex added the rope branch (2026-09-26): Moke braces, pulls and growls; the human visibly

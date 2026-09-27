@@ -1,4 +1,4 @@
-import { CapsuleGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3, type Object3D } from 'three';
+import { CapsuleGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3, type Object3D } from 'three';
 import { HEIST } from '../config/heist';
 import type { Interactable } from '../interactions/Interactable';
 import type { AttentionTarget } from '../player/AttentionSystem';
@@ -13,7 +13,6 @@ export type TreatState = 'stored' | 'held' | 'placed' | 'eaten';
  * floor. The game decides what eating it means (`onEat`). No treat economy: one treat, one moment.
  */
 export class Treat {
-  readonly type = 'biscuit';
   readonly rewardValue = 1;
   state: TreatState = 'stored';
   readonly view: Group;
@@ -29,15 +28,16 @@ export class Treat {
     readonly id = 'treat',
     /** How far its smell carries (m): further for a hidden one (Treat Hunt). */
     scentRadius = 6,
+    readonly type: 'biscuit' | 'carrot' = 'biscuit',
   ) {
-    this.view = createTreatView();
+    this.view = type === 'carrot' ? createCarrotView() : createTreatView();
     this.view.visible = false;
     const treat = this;
     const smelly = () => treat.state === 'held' || treat.state === 'placed';
     this.scent = {
       id: `treat:${id}`,
       category: 'TREAT',
-      label: 'Treat',
+      label: type === 'carrot' ? 'Carrot' : 'Treat',
       strength: 1,
       radius: scentRadius,
       get position() {
@@ -61,7 +61,7 @@ export class Treat {
     this.interactable = {
       id: `eat:${id}`,
       type: 'EAT',
-      label: 'Eat Treat',
+      label: type === 'carrot' ? 'Eat Carrot' : 'Eat Treat',
       interactionDistance: HEIST.eatReach,
       get enabled() {
         return treat.state === 'placed';
@@ -95,6 +95,14 @@ export class Treat {
 
   eat(): void {
     if (this.state !== 'placed') return;
+    this.state = 'eaten';
+    this.view.visible = false;
+    this.onEat?.();
+  }
+
+  /** A reward passed directly from the human's hand to Moke. No double consumption. */
+  feed(): void {
+    if (this.state !== 'held') return;
     this.state = 'eaten';
     this.view.visible = false;
     this.onEat?.();
@@ -140,5 +148,14 @@ function createTreatView(): Group {
       root.add(knob);
     }
   }
+  return root;
+}
+
+function createCarrotView(): Group {
+  const root = new Group();
+  root.name = 'Carrot bite';
+  const bite = new Mesh(new CylinderGeometry(0.018, 0.018, 0.028, 10), new MeshStandardMaterial({ color: '#f39a38', roughness: 0.8 }));
+  bite.rotation.z = Math.PI / 2;
+  root.add(bite);
   return root;
 }

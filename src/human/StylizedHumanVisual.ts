@@ -122,12 +122,17 @@ export class StylizedHumanVisual implements HumanVisual {
   private readonly handR = new Vector3();
   private readonly eyes = new Vector3();
 
-  constructor() {
+  constructor(deliveryUniform = false) {
     this.object.name = 'Human';
     const root = this.buildSkeleton();
     this.object.add(root);
     root.updateMatrixWorld(true);
-    this.buildMeshes([...torso(), ...arms(), ...legs(), ...head(), ...hands()]);
+    const parts = [...torso(), ...arms(), ...legs(), ...head(), ...hands()];
+    if (deliveryUniform) {
+      const uniform = new Map<string, string>([[COLORS.shirt, '#4a9bc8'], [COLORS.shirtRib, '#26749b'], [COLORS.denim, '#34414b'], [COLORS.denimSeam, '#55616b']]);
+      for (const part of parts) part.color = uniform.get(part.color) ?? part.color;
+    }
+    this.buildMeshes(parts);
     // The skeleton is bound in the rest pose (lids shut, scale 1); open the eyes to their resting look.
     for (const side of ['L', 'R'] as const) this.bones.get(`lid${side}`)!.scale.y = LID.open;
     this.hands = { left: this.anchor('wristL', 0, -0.075, 0.01), right: this.anchor('wristR', 0, -0.075, 0.01) };

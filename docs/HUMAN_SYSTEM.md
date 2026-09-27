@@ -40,6 +40,9 @@ Human (src/human/Human.ts): ties it together each fixed step and frame
 - **Roles:** a dog activity can `claim()` the human (refused during the heist, another role, or a pat). The role
   fills the intent each step until it's done; the routine then resumes (`HumanRole` in
   `HumanActivityController.ts`, helpers in `intentHelpers.ts`).
+  Owner-requested pillow cleanup and table manners use the same roles: picking up/replacing the real throw
+  pillows, or walking to a table and holding an irritated `handsOnHips` pose until Moke gets down. No mesh access
+  in the table behavior; pillow movement is delegated to its presentation object. Both resume the saved routine.
 
 ## Places: interaction points
 `world/home/places.ts` → `HOME_PLACES`: each has a kind (`couchSeat`, `readingSeat`, `diningChair`, `stool`,

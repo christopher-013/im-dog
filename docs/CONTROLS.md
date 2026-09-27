@@ -101,3 +101,15 @@ After that, a one-line reminder when play starts.
 - **Make Human Play:** bring the ball or rope toy to the human and keep at it (drop it at their feet, bark, do a trick)
   until they give in.
 - **Get their attention:** bark (F / Y / the paw menu's Bark) at them three times.
+- **Protect the house:** when the bell rings, run to the exterior door left of the window in the original TV room.
+  Use **Bark at the Door** (E / A / paw), or Bark (F / Y / paw menu), once: Moke automatically alternates three
+  barks and three growls before the human answers. Remote barks don't count. An unanswered bell stops after
+  10 seconds. Successful deliveries wait a random **10–15 minutes** before recurring; missed visits retry
+  after 50–110 seconds. Both use game time, so pausing doesn't shorten the wait.
+- **Dinner helper:** wait still beside the human while they chop at the kitchen island, mouth empty, for four
+  seconds. Use **Beg for a Carrot** (E / A / paw), or Trick (Q / X / paw menu) once ready. Stay nearby to be fed;
+  if you wander off, use **Eat Carrot** on the bite they leave by the island. Both activities repeat naturally.
+- **Pillow mischief:** jump onto a pillow-bearing couch with an empty mouth, then use **Dig & Toss Pillows**
+  (E / A / paw). Moke digs and throws the pillows; the human puts them back. After cleanup, you can do it again.
+- **Table manners:** jump onto a coffee table. The human comes over and says "Moke get down", with an irritated
+  hands-on-hips pose until you jump or walk off. No additional button is needed; normal movement stays available.

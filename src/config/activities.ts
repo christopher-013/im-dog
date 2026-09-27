@@ -8,6 +8,7 @@ export type HumanActivityId =
   | 'usePhone'
   | 'sitAtDiningTable'
   | 'prepareDinner'
+  | 'mealPrep'
   | 'eatMeal'
   | 'relaxOnCouch'
   | 'standAtKitchenCounter'
@@ -24,7 +25,7 @@ export interface ActivityStep {
   /** Look at the place's focus (the TV) rather than about the room. */
   readonly lookAtFocus?: boolean;
   /** Something the game shows or smells while this step runs. */
-  readonly effect?: 'cooking' | 'meal' | 'tv';
+  readonly effect?: 'cooking' | 'meal' | 'tv' | 'prep';
 }
 
 /** How they respond when Moke wants attention. */
@@ -96,7 +97,7 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     name: 'making dinner',
     steps: [
       { places: ['fridge'], pose: 'fridge', seconds: [3, 5] },
-      { places: ['kitchenCounter'], pose: 'prep', prop: 'knife', seconds: [12, 18] },
+      { places: ['islandPrep'], pose: 'prep', prop: 'knife', seconds: [30, 45], effect: 'prep' },
       { places: ['stove'], pose: 'cook', prop: 'spoon', seconds: [18, 28], effect: 'cooking' },
     ],
     weight: 1.8,
@@ -104,6 +105,16 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     interruptible: 'sometimes',
     attention: 0.4,
     lines: ['Dinner time…', 'What should I make?'],
+  },
+  {
+    id: 'mealPrep',
+    name: 'chopping vegetables at the island',
+    steps: [{ places: ['islandPrep'], pose: 'prep', prop: 'knife', seconds: [35, 55], effect: 'prep' }],
+    weight: 2.2,
+    cooldown: 120,
+    interruptible: 'sometimes',
+    attention: 0.4,
+    lines: ['Chopping some carrots for dinner…'],
   },
   {
     id: 'eatMeal',

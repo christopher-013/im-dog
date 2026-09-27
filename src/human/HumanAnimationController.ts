@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
 import { HUMAN_ANIMATION } from '../config/humanAnimation';
+import { MISCHIEF } from '../config/mischief';
 import { clamp, damp, lerp, smoothstep } from '../utils/math';
 import { jointPosition, solveArm, type JointAngles, type Side } from './humanIK';
 import {
@@ -100,7 +101,7 @@ const BLEND_TIME: Partial<Record<HumanPose, number>> = {
 };
 
 /** Actions whose hands are busy (no walking arm swing). */
-const HANDS_BUSY = new Set<HumanPose>(['read', 'phone', 'sip', 'cook', 'prep', 'eat', 'fold', 'rummage', 'tidy', 'fridge', 'offer', 'take', 'place', 'tug']);
+const HANDS_BUSY = new Set<HumanPose>(['read', 'phone', 'sip', 'cook', 'prep', 'eat', 'fold', 'rummage', 'tidy', 'fridge', 'offer', 'take', 'place', 'tug', 'handsOnHips']);
 
 const ELBOW_POLE = { L: new Vector3(0.55, -0.55, -0.5), R: new Vector3(-0.55, -0.55, -0.5) };
 const OUT_POLE = { L: new Vector3(0.9, -0.2, -0.35), R: new Vector3(-0.9, -0.2, -0.35) };
@@ -610,6 +611,16 @@ export class HumanAnimationController {
         this.setMood(0.7, 0.2, 0, 0.5, 0, 0.5);
         break;
       }
+      case 'handsOnHips': {
+        const h = MISCHIEF.hipsPose;
+        // Palms at the waist, elbows out. Frowning, but still a cozy, non-threatening response.
+        this.hand(t, hips, 'L', v.set(hips.x + h.handX, hips.y + h.handY, hips.z + h.handZ), OUT_POLE.L);
+        this.hand(t, hips, 'R', v.set(hips.x - h.handX, hips.y + h.handY, hips.z + h.handZ), OUT_POLE.R);
+        t.fingersL.x = t.fingersR.x = -0.25;
+        t.wristL.z = -0.35; t.wristR.z = 0.35;
+        this.setMood(0, -0.65, 0, 0.15, 0.08);
+        break;
+      }
       case 'tidy':
         this.back(t, 0.45);
         t.neck.x += 0.2;
@@ -1040,6 +1051,8 @@ export class HumanAnimationController {
         return 'PET_MOKE';
       case 'call':
         return 'CALL_MOKE';
+      case 'handsOnHips':
+        return 'SCOLD_MOKE';
       case 'windup':
       case 'throw':
       case 'laugh':

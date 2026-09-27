@@ -29,6 +29,7 @@ import { MOKE_LOOK } from '../config/mokeLook';
 import { clamp, lerp, smoothstep, TAU } from '../utils/math';
 import { mulberry32 } from '../utils/random';
 import type { MokeAnimationState } from './MokeAnimationController';
+import { MISCHIEF } from '../config/mischief';
 import type { MokeAttachments, MokeVisual } from './MokeVisual';
 import { eyeTexture } from './toon/faceTextures';
 import { tagNameTexture } from './toon/tagTexture';
@@ -751,7 +752,8 @@ export class ToonMokeVisual implements MokeVisual {
       // Lying: a sphinx pose, front paws stretched forward, hind legs tucked alongside.
       const tugPulse = 0.5 + 0.5 * Math.sin(s.time * 7.5);
       const tugBrace = s.tug * (leg.front ? -0.42 - 0.06 * tugPulse : 0.28 + 0.04 * tugPulse);
-      leg.pivot.rotation.x = swing * Math.sin(a) - lie * (leg.front ? 1.35 : 1.15) + trick.legX[i]! + leap + tugBrace;
+      const digPaw = leg.front ? s.dig * (-0.5 + MISCHIEF.digAnimation.pawSwing * Math.sin(s.time * MISCHIEF.digAnimation.rate + (leg.side > 0 ? Math.PI : 0))) : s.dig * 0.12;
+      leg.pivot.rotation.x = swing * Math.sin(a) - lie * (leg.front ? 1.35 : 1.15) + trick.legX[i]! + leap + tugBrace + digPaw;
       leg.pivot.rotation.z = lie * (leg.front ? 0 : leg.side * 0.35) + trick.legZ[i]!;
       // Lift the paw while it swings forward, so feet step instead of sliding.
       leg.pivot.position.y = HIP_HEIGHT + Math.max(0, -Math.cos(a)) * 0.022 * moving;
@@ -767,7 +769,7 @@ export class ToonMokeVisual implements MokeVisual {
     const tugPull = s.tug * (0.5 + 0.5 * Math.sin(s.time * 7.5));
     const tugRock = -s.tug * 0.045 - tugPull * 0.025;
     this.rig.position.set(0, -s.crouch * 0.03 + s.bark * 0.018 - s.growl * 0.008 - lie * 0.105 + trick.lift - s.land * 0.035, RIG_Z + tugRock);
-    this.rig.rotation.set(-s.bark * 0.08 + s.growl * 0.045 - s.tug * 0.14 - tugPull * 0.04 + trick.pitch - s.air * s.rise * 0.28, trick.spin, -s.lean + trick.roll);
+    this.rig.rotation.set(-s.bark * 0.08 + s.growl * 0.045 - s.tug * 0.14 - tugPull * 0.04 + s.dig * MISCHIEF.digAnimation.bodyPitch + trick.pitch - s.air * s.rise * 0.28, trick.spin, -s.lean + trick.roll);
     // Tricks pitch him about his hind hips and roll him about his middle, not about his feet.
     const [py, pz] = trick.pitchPivot;
     this.rig.position.y += py - (py * Math.cos(trick.pitch) - pz * Math.sin(trick.pitch));
@@ -788,7 +790,7 @@ export class ToonMokeVisual implements MokeVisual {
     this.neck.rotation.x =
       s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch + eatDip - s.bark * 0.35 + s.growl * 0.16 - s.tug * 0.13 - tugPull * 0.04 + lie * 0.22 + trick.neckX + s.land * 0.18 -
       s.headPitch * 0.8; // glancing up at something, or down at a scent
-    this.neck.rotation.z = trick.neckZ;
+    this.neck.rotation.z = trick.neckZ + s.dig * 0.04 * Math.sin(s.time * MISCHIEF.digAnimation.rate);
     this.head.rotation.y = s.headYaw * (1 - 0.5 * s.sniff) + s.sniff * 0.25 * Math.sin(s.time * 1.7);
     this.head.rotation.z = -s.headTilt + (s.growl * 0.018 + s.tug * 0.025) * Math.sin(s.time * 28) + trick.headZ;
 

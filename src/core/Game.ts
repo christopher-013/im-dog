@@ -16,6 +16,12 @@ import type { DogActivityContext } from '../activities/DogActivity';
 import { MakeHumanPlay } from '../activities/MakeHumanPlay';
 import { NAP_QUALITIES, PerfectNap, type NapReport } from '../activities/PerfectNap';
 import { TreatHunt } from '../activities/TreatHunt';
+import { DoorDelivery } from '../activities/DoorDelivery';
+import { KitchenBeg } from '../activities/KitchenBeg';
+import { PillowDig } from '../activities/PillowDig';
+import { TableManners } from '../activities/TableManners';
+import { CouchPillows } from '../world/CouchPillows';
+import { FrontDoor } from '../world/FrontDoor';
 import { BOWL_REFILL, MOKE_REACTIONS } from '../config/activities';
 import { MOKE_ANIMATION } from '../config/animation';
 import { DOG_ACTIVITIES } from '../config/dogActivities';
@@ -135,6 +141,13 @@ export class Game {
   private director: DogActivityDirector | null = null;
   private hunt: TreatHunt | null = null;
   private readonly huntTreat = new Treat('hunt', DOG_ACTIVITIES.treatHunt.scentRadius);
+  private readonly kitchenTreat = new Treat('kitchen', 3, 'carrot');
+  private readonly frontDoor = new FrontDoor();
+  private delivery: DoorDelivery | null = null;
+  private kitchenBeg: KitchenBeg | null = null;
+  private pillowDig: PillowDig | null = null;
+  private tableManners: TableManners | null = null;
+  private pillows: CouchPillows | null = null;
   /** The human's walkable grid over the whole house. */
   private nav: NavGrid | null = null;
   /** Set by a bark or growl, read once by the dog activities in the next fixed step. */
@@ -286,6 +299,13 @@ export class Game {
     this.audio.dispose();
     this.wisps.dispose();
     this.moke?.visual.dispose();
+    this.delivery?.resetAll();
+    this.kitchenBeg?.resetAll();
+    this.pillowDig?.resetAll();
+    this.tableManners?.resetAll();
+    this.pillows?.reset();
+    this.frontDoor.dispose();
+    this.kitchenTreat.dispose();
     this.gfx.dispose();
   }
 
@@ -423,7 +443,51 @@ export class Game {
         this.showVoiceBubble('I win! Strongest in the house!');
       },
     });
-    this.director = new DogActivityDirector([hunt, nap, play]);
+    this.scene.add(this.frontDoor.object);
+    this.delivery = new DoorDelivery({
+      routine: this.routine, hand: human.visual.hands.right, view: this.frontDoor,
+      onRing: () => this.audio.play('doorbell'), onBark: () => this.bark(),
+      onGuardVoice: (kind) => {
+        if (kind === 'bark') {
+          moke.animation.bark();
+          this.barkedThisFrame = true;
+          heist.noteBark();
+        } else {
+          moke.animation.growl();
+          this.growledThisFrame = true;
+        }
+        this.audio.play(kind);
+        this.barkForActivities = true;
+      },
+      onDefended: () => {
+        this.dogLogic.discover('bark=protector');
+        this.showVoiceBubble('House defended! I am the protector!');
+      },
+    });
+    this.interactions.register(this.delivery.interactable);
+    this.scent.register(this.kitchenTreat.scent);
+    this.attention.register(this.kitchenTreat.attention);
+    this.interactions.register(this.kitchenTreat.interactable);
+    this.kitchenBeg = new KitchenBeg({
+      routine: this.routine, hand: human.visual.hands.right, humanPosition: () => human.controller.position,
+      treat: this.kitchenTreat, scene: this.scene, openFloor: (x, z) => nav.isWalkable(x, z),
+      clearPath: (from, to) => physics.lineOfSight({ x: from.x, y: from.y + 0.2, z: from.z }, { x: to.x, y: to.y + 0.2, z: to.z }),
+      onBeg: () => { moke.animation.trick('beg', true); },
+      onFed: () => {
+        moke.animation.cancelTrick(); moke.animation.eat(); this.audio.play('crunch');
+        this.showVoiceBubble('Begging + dinner prep = snacks!'); this.dogLogic.discover('beg+prep=food');
+      },
+    });
+    this.interactions.register(this.kitchenBeg.interactable);
+    this.pillows = new CouchPillows(this.room.object);
+    this.pillowDig = new PillowDig({ routine: this.routine, pillows: this.pillows, nav,
+      hand: human.visual.hands.right, grounded: () => moke.controller.grounded,
+      onDigging: (active) => moke.animation.dig(active),
+      onFun: () => { this.showVoiceBubble('Pillows are fun to move!'); this.dogLogic.discover('pillows=fun', true); },
+    });
+    this.tableManners = new TableManners({ routine: this.routine, nav, grounded: () => moke.controller.grounded });
+    this.interactions.register(this.pillowDig.interactable);
+    this.director = new DogActivityDirector([this.delivery, this.kitchenBeg, this.pillowDig, this.tableManners, hunt, nap, play]);
 
     // "Get Pets": close to the human while they're free.
     const game = this;
@@ -552,6 +616,11 @@ export class Game {
     if (this.state !== 'complete') return;
     this.director?.cancelAll();
     this.hunt?.resetAll();
+    this.delivery?.resetAll();
+    this.kitchenBeg?.resetAll();
+    this.pillowDig?.resetAll();
+    this.tableManners?.resetAll();
+    this.pillows?.reset();
     this.heist?.heist.reset();
     this.ui.clearHeist();
     this.audio.unlock();
@@ -674,8 +743,10 @@ export class Game {
     const alpha = this.fixedStep.advance(playing ? dt : 0, this.fixedUpdate);
     this.updateAttention(dt);
     this.moke?.update(dt, alpha);
-    this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? null);
+    this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? this.delivery?.objective ?? this.kitchenBeg?.objective ?? null);
     this.huntTreat.update();
+    this.kitchenTreat.update();
+    this.frontDoor.update(playing ? dt : 0);
     this.household.update(dt, { effect: this.routine.effect, place: this.routine.place });
     this.updateBowls(playing ? dt : 0);
     this.updateNapping(playing ? dt : 0, playing);
@@ -717,7 +788,7 @@ export class Game {
         this.moke.animation.holdsStillForTrick ||
         this.moke.animation.eating ||
         this.moke.animation.petting ||
-        this.moke.animation.tugging;
+        this.moke.animation.tugging || this.moke.animation.digging;
       this.moke.fixedUpdate(step, stayPut ? this.stillIntent : this.moveIntent);
     }
     this.rest.update(step, c);
@@ -725,6 +796,7 @@ export class Game {
     this.heist?.fixedUpdate(step);
     this.bowlRefill?.update(step);
     this.updateDogActivities(step);
+    this.pillows?.update(step);
     this.physics.step();
     for (const prop of this.props) prop.afterStep();
   };
@@ -760,8 +832,9 @@ export class Game {
     const wasResting = this.rest.holdsMoke;
     if (wasResting && (input.wasMoveStarted() || moved.some((a) => input.wasPressed(a)))) this.rest.standUp();
     if (input.wasPressed('jump') && !wasResting) this.jump();
-    if (input.wasPressed('bark') && this.moke) {
-      if (barkOrGrowl() === 'growl') this.growl();
+    if (input.wasPressed('bark') && this.moke && !this.delivery?.guarding) {
+      if (this.delivery?.ringing) this.bark();
+      else if (barkOrGrowl() === 'growl') this.growl();
       else this.bark();
     }
     if (input.wasPressed('trick')) this.startTrick();
@@ -782,6 +855,7 @@ export class Game {
     this.audio.play('bark');
     this.barkedThisFrame = true;
     this.heist?.noteBark();
+    this.delivery?.noteBark(this.moke.controller.position);
     this.barkForActivities = true;
   }
 
@@ -797,6 +871,7 @@ export class Game {
   private startTrick(): void {
     const moke = this.moke;
     if (!moke || this.rest.holdsMoke || this.scent.active || moke.animation.performingTrick) return;
+    if (this.kitchenBeg?.requestBeg()) return;
     const trick = pickTrick(Math.random, this.lastTrick, { carrying: moke.carrying, headroom: moke.controller.headroom });
     if (trick && moke.animation.trick(trick)) this.lastTrick = trick;
   }

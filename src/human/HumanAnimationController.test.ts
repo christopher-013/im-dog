@@ -7,7 +7,7 @@ import { FOREARM_TO_PALM, HIP_ABOVE_SEAT, HIP_HEIGHT, HUMAN_JOINTS, type HumanPo
 
 const POSES: HumanPose[] = [
   'fold', 'idle', 'surprised', 'chase', 'lunge', 'stumble', 'shrug', 'search', 'peek', 'rummage', 'offer', 'take', 'place', 'tidy',
-  'read', 'phone', 'watch', 'relax', 'sip', 'cook', 'prep', 'eat', 'fridge', 'pet', 'call', 'shoo', 'laugh', 'tug', 'windup', 'throw', 'point', 'cheer',
+  'read', 'phone', 'watch', 'relax', 'sip', 'cook', 'prep', 'eat', 'fridge', 'pet', 'call', 'shoo', 'handsOnHips', 'laugh', 'tug', 'windup', 'throw', 'point', 'cheer',
 ];
 
 function run(animation: HumanAnimationController, state = createVisualState(), seconds = 1) {
@@ -16,6 +16,17 @@ function run(animation: HumanAnimationController, state = createVisualState(), s
 }
 
 describe('HumanAnimationController', () => {
+  it('scolds with both palms near the hips, elbows out, and an irritated brow', () => {
+    const animation = new HumanAnimationController(() => 0.5);
+    const out = run(animation, { ...createVisualState(), pose: 'handsOnHips' }, 2);
+    const hips = { x: out.hipsX, y: out.hipsY, z: out.hipsZ };
+    const left = jointPosition(out.joints, hips, 'wristL', new Vector3());
+    const right = jointPosition(out.joints, hips, 'wristR', new Vector3());
+    expect(left.x).toBeGreaterThan(0.12); expect(right.x).toBeLessThan(-0.12);
+    expect(Math.abs(left.y - hips.y)).toBeLessThan(0.18); expect(Math.abs(right.y - hips.y)).toBeLessThan(0.18);
+    expect(out.face.brows).toBeLessThan(-0.4); expect(out.face.smile).toBeLessThan(0.05);
+    expect(animation.animState).toBe('SCOLD_MOKE');
+  });
   it('gives every pose finite joint angles, standing and sitting', () => {
     for (const pose of POSES) {
       for (const sit of [0, 1]) {

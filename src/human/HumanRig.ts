@@ -120,6 +120,7 @@ export type HumanPose =
   | 'pet'
   | 'call'
   | 'shoo'
+  | 'handsOnHips'
   | 'laugh'
   | 'tug'
   | 'windup'
@@ -152,6 +153,7 @@ export type HumanAnimState =
   | 'LOOK_AT_MOKE'
   | 'PET_MOKE'
   | 'CALL_MOKE'
+  | 'SCOLD_MOKE'
   | 'PLAY_WITH_MOKE'
   | 'HEIST';
 

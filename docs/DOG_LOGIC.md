@@ -15,6 +15,9 @@ a score, and there's no menu of them to grind.
 | MOKE = STRONGEST | Hold the rope until the human gives up | `MakeHumanPlay` |
 | BARK = ATTENTION | Bark at the human until they give in | `HumanReactions` → `Game` |
 | KITCHEN = FOOD? | Hang about the stove while dinner cooks (3 s within 2.2 m) | `Game.updateDogActivities` |
+| BARK = PROTECTOR | Bark at the ringing door and let the human receive the delivery | `DoorDelivery` → `Game` |
+| BEG + KITCHEN = FOOD | Wait beside the chopping human, beg, then eat their carrot reward | `KitchenBeg` → `Game` |
+| PILLOWS = FUN TO MOVE | Dig under the couch's throw pillows and toss them onto the floor | `PillowDig` → `Game` |
 
 ## How it works
 - **Registry:** `config/dogLogic.ts` → `DOG_LOGIC`: an id (`'sun+soft=nap'`), the terms (word + icon) left of the

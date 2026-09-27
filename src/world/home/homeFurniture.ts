@@ -12,6 +12,7 @@ import {
 } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { couch, dogBed, leafGeometry } from '../furniture';
+import { addLoosePillow } from '../CouchPillows';
 import { TILE_REPEAT, type RoomMaterials } from '../materials';
 import type { StaticSceneBuilder, Vec3Tuple } from '../StaticSceneBuilder';
 
@@ -80,9 +81,9 @@ export function sectional(b: StaticSceneBuilder, m: RoomMaterials, length = 3.4)
   b.add(rbox(0.24, 0.6, D + 0.02, 0.08), m.creamBoucle, [L / 2 - 0.12, 0.36, 0]);
   // Fluffy pillows and a throw draped over the chaise.
   const pillow = rbox(0.46, 0.44, 0.15, 0.08, 3);
-  b.add(pillow, m.cream, [runX0 + 0.35, SEAT + 0.24, -0.12], { rotation: [-0.25, 0.3, 0.06] });
-  b.add(pillow, m.linenLight, [L / 2 - 0.55, SEAT + 0.24, -0.12], { rotation: [-0.25, -0.3, -0.06] });
-  b.add(pillow, m.pillowLattice, [x0 + 0.42, SEAT + 0.24, -0.14], { rotation: [-0.22, 0.1, 0.04], scale: [0.9, 0.9, 0.9] });
+  addLoosePillow(b, pillow, m.cream, [runX0 + 0.35, SEAT + 0.24, -0.12], { rotation: [-0.25, 0.3, 0.06] });
+  addLoosePillow(b, pillow, m.linenLight, [L / 2 - 0.55, SEAT + 0.24, -0.12], { rotation: [-0.25, -0.3, -0.06] });
+  addLoosePillow(b, pillow, m.pillowLattice, [x0 + 0.42, SEAT + 0.24, -0.14], { rotation: [-0.22, 0.1, 0.04], scale: [0.9, 0.9, 0.9] });
   b.add(rbox(chaiseW + 0.08, 0.05, 0.7, 0.025, 2), m.linenLight, [chaiseX, SEAT + 0.03, chaiseD - D / 2 - 0.45], { rotation: [0.04, 0.05, 0] });
 
   b.addCollider([0, SEAT / 2, 0.01], [L, SEAT, D + 0.02]);

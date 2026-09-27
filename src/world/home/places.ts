@@ -59,6 +59,7 @@ export type PlaceKind =
   | 'diningChair'
   | 'stool'
   | 'kitchenCounter'
+  | 'islandPrep'
   | 'stove'
   | 'sink'
   | 'fridge'
@@ -110,6 +111,7 @@ export const HOME_PLACES: readonly HomePlace[] = [
   place('kitchen.stove', 'stove', at(7.72, f.range.z), WEST, { surface: at(7.0, f.range.z, 0.95) }),
   place('kitchen.counter', 'kitchenCounter', at(7.72, 2.35), WEST, { surface: at(7.05, 2.35, 0.92) }),
   place('kitchen.sink', 'sink', at(8.08, f.island.z), EAST, { surface: at(8.75, f.island.z - 0.5, 0.92) }),
+  place('kitchen.islandPrep', 'islandPrep', at(8.08, 3.6), EAST, { surface: at(8.62, 3.6, 0.92) }),
   place('kitchen.fridge', 'fridge', at(10.32, 4.3), SOUTH),
   place('kitchen.stool', 'stool', at(10.45, f.island.z + 0.4), WEST, { seat: { x: 9.97, z: f.island.z, height: 0.65, style: 'stool', entry: at(9.97, f.island.z + 0.4) }, surface: at(9.55, f.island.z, 0.92) }),
   // Dining room: the chairs on the slider side of the table.

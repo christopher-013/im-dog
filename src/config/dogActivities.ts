@@ -67,6 +67,14 @@ export const DOG_ACTIVITIES = {
     keepAwayRange: 3.5,
     chaseSpeed: 1.35,
     chaseTime: 4,
+    /** Rope toy only: close enough to take the other end, how long the contest lasts, and growl cadence. */
+    tugReach: 0.9,
+    tugDuration: [6, 8] as const,
+    tugGrowlEvery: 1.8,
+    tugLoseTime: 1.2,
+    /** Rope can be replayed quickly, but only after Moke drops it or carries it away and brings it back. */
+    tugReplayCooldown: 2,
+    tugReplayResetRange: 2.6,
     cooldown: 60,
     settleTime: 2,
   },

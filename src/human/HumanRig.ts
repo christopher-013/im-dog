@@ -121,6 +121,7 @@ export type HumanPose =
   | 'call'
   | 'shoo'
   | 'laugh'
+  | 'tug'
   | 'windup'
   | 'throw'
   | 'point'

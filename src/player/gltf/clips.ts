@@ -112,7 +112,7 @@ export function selectClips(s: Readonly<MokeAnimationState>, ctx: ClipContext, o
   add('sit', s.sit);
   add('stretch', s.stretch);
   add('sniff', s.sniff);
-  add('growl', s.growl);
+  add('growl', Math.max(s.growl, s.tug * 0.7));
   // No drinking clip in the spec: a drink uses the eating clip (nose down at the bowl).
   add('eat', Math.max(s.eat, s.drink));
   add('jump', s.air);

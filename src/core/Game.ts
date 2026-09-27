@@ -411,6 +411,17 @@ export class Game {
         this.audio.play('whoosh');
         this.dogLogic.discover(toy.id === 'ball' ? 'human+ball=play' : 'human+toy=play', !first);
       },
+      onTugChange: (active) => moke.animation.tug(active),
+      onTugGrowl: () => {
+        moke.animation.growl();
+        this.audio.play('growl');
+        this.growledThisFrame = true;
+      },
+      onTugWin: (_toy, first) => {
+        this.dogLogic.discover('human+toy=play', !first);
+        this.dogLogic.discover('moke=strongest', !first);
+        this.showVoiceBubble('I win! Strongest in the house!');
+      },
     });
     this.director = new DogActivityDirector([hunt, nap, play]);
 
@@ -701,7 +712,12 @@ export class Game {
       // A trick holds him in place; heading off somewhere cuts it short.
       const tricking = this.moke.animation.holdsStillForTrick;
       if (tricking && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.moke.animation.cancelTrick();
-      const stayPut = this.rest.holdsMoke || this.moke.animation.holdsStillForTrick || this.moke.animation.eating || this.moke.animation.petting;
+      const stayPut =
+        this.rest.holdsMoke ||
+        this.moke.animation.holdsStillForTrick ||
+        this.moke.animation.eating ||
+        this.moke.animation.petting ||
+        this.moke.animation.tugging;
       this.moke.fixedUpdate(step, stayPut ? this.stillIntent : this.moveIntent);
     }
     this.rest.update(step, c);

@@ -11,7 +11,8 @@ a score, and there's no menu of them to grind.
 | BED = NAP | Nap in his bed or his pink bed by the fire | `PerfectNap` |
 | SUN + SOFT = NAP | Nap somewhere sunny and soft (his bed, the sunny couch) | `PerfectNap` |
 | HUMAN + BALL = PLAY | Get the human to throw the ball (Make Human Play) | `MakeHumanPlay` |
-| HUMAN + TOY = PLAY | Get the human to throw the rope toy | `MakeHumanPlay` |
+| HUMAN + TOY = PLAY | Win tug-of-war with the rope toy | `MakeHumanPlay` |
+| MOKE = STRONGEST | Hold the rope until the human gives up | `MakeHumanPlay` |
 | BARK = ATTENTION | Bark at the human until they give in | `HumanReactions` → `Game` |
 | KITCHEN = FOOD? | Hang about the stove while dinner cooks (3 s within 2.2 m) | `Game.updateDogActivities` |
 

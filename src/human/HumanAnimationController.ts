@@ -91,6 +91,7 @@ const BLEND_TIME: Partial<Record<HumanPose, number>> = {
   surprised: HUMAN_ANIMATION.blend.quick,
   lunge: HUMAN_ANIMATION.blend.quick,
   stumble: HUMAN_ANIMATION.blend.quick,
+  tug: HUMAN_ANIMATION.blend.quick,
   windup: HUMAN_ANIMATION.blend.quick,
   throw: 0.12,
   pet: 0.4,
@@ -99,7 +100,7 @@ const BLEND_TIME: Partial<Record<HumanPose, number>> = {
 };
 
 /** Actions whose hands are busy (no walking arm swing). */
-const HANDS_BUSY = new Set<HumanPose>(['read', 'phone', 'sip', 'cook', 'prep', 'eat', 'fold', 'rummage', 'tidy', 'fridge', 'offer', 'take', 'place']);
+const HANDS_BUSY = new Set<HumanPose>(['read', 'phone', 'sip', 'cook', 'prep', 'eat', 'fold', 'rummage', 'tidy', 'fridge', 'offer', 'take', 'place', 'tug']);
 
 const ELBOW_POLE = { L: new Vector3(0.55, -0.55, -0.5), R: new Vector3(-0.55, -0.55, -0.5) };
 const OUT_POLE = { L: new Vector3(0.9, -0.2, -0.35), R: new Vector3(-0.9, -0.2, -0.35) };
@@ -224,6 +225,7 @@ export class HumanAnimationController {
     const t = this.target;
     for (const j of HUMAN_JOINTS) t[j].x = t[j].y = t[j].z = 0;
     let hipsForward = 0;
+    let hipsVertical = 0;
     let total = 0;
     const m = this.moodSum;
     for (const k of MOOD_KEYS) m[k] = 0;
@@ -241,6 +243,7 @@ export class HumanAnimationController {
         t[j].z += this.scratch[j].z * weight;
       }
       hipsForward += (this.actionHips.z - this.hips.z) * weight;
+      hipsVertical += (this.actionHips.y - this.hips.y) * weight;
       for (const k of MOOD_KEYS) m[k] += this.mood[k] * weight;
       total += weight;
     }
@@ -251,6 +254,7 @@ export class HumanAnimationController {
         t[j].z /= total;
       }
       hipsForward /= total;
+      hipsVertical /= total;
       for (const k of MOOD_KEYS) m[k] /= total;
     }
 
@@ -268,7 +272,7 @@ export class HumanAnimationController {
       c.z = damp(c.z, t[j].z, rate, dt);
     }
     this.state.hipsX = damp(this.state.hipsX, this.hips.x, 12, dt);
-    this.state.hipsY = damp(this.state.hipsY, this.hips.y, 16, dt);
+    this.state.hipsY = damp(this.state.hipsY, this.hips.y + hipsVertical, 16, dt);
     this.state.hipsZ = damp(this.state.hipsZ, this.hips.z + hipsForward, 12, dt);
     this.face(dt, s);
     this.state.prop = s.prop;
@@ -784,6 +788,33 @@ export class HumanAnimationController {
         this.setMood(1, 0.5, 0.45 + Math.abs(Math.sin(time * 11)) * 0.25, 1, 0.55);
         break;
       }
+      case 'tug': {
+        // A low, staggered stance with the whole body driving into the rope, then hauling back through both arms.
+        const pull = 0.5 + 0.5 * Math.sin(time * 5.5);
+        const strain = Math.sin(time * 11) * 0.025;
+        const to = s.reach ?? { x: 0, y: 0.34, z: 0.58 };
+        const side = clamp(to.x, -0.28, 0.28);
+        const height = clamp(to.y + 0.02, 0.28, 0.58);
+        const forward = clamp(to.z - 0.07 * pull, 0.34, 0.64);
+        this.back(t, 0.48 + 0.16 * pull, clamp(Math.atan2(side, Math.max(0.2, to.z)) * 0.45, -0.3, 0.3), strain);
+        hips.y -= 0.035 + 0.018 * pull;
+        hips.z += 0.055 + 0.035 * (1 - pull);
+        // Left foot planted forward, right foot behind: visibly resisting Moke instead of standing upright.
+        t.hipL.x -= 0.42;
+        t.kneeL.x += 0.52;
+        t.ankleL.x -= 0.16;
+        t.hipR.x += 0.18;
+        t.kneeR.x += 0.15;
+        t.ankleR.x += 0.08;
+        t.clavicleL.z += 0.08 + strain;
+        t.clavicleR.z -= 0.08 + strain;
+        this.hand(t, hips, 'L', v.set(side + 0.045, height + 0.018, forward), OUT_POLE.L);
+        this.hand(t, hips, 'R', this.w.set(side - 0.045, height - 0.018, forward - 0.012), OUT_POLE.R);
+        t.wristL.x = t.wristR.x = 0.25;
+        t.fingersL.x = t.fingersR.x = -1.05;
+        this.setMood(0.9, 0.55, 0.28, 0.8, 0.12);
+        break;
+      }
       case 'windup':
         // Arm back, ready to throw, the other hand pointing where it'll go.
         this.back(t, 0.05, -0.4);
@@ -1012,6 +1043,7 @@ export class HumanAnimationController {
       case 'windup':
       case 'throw':
       case 'laugh':
+      case 'tug':
         return 'PLAY_WITH_MOKE';
       case 'idle':
         if (this.walkWeight > 0.3) return 'WALK';

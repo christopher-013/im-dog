@@ -61,6 +61,8 @@ export interface MokeAnimationState {
   bark: number;
   /** 0..1: a playful growl pose in progress. */
   growl: number;
+  /** 0..1: braced backward while holding the rope in a tug-of-war. */
+  tug: number;
   /** 0..1: eating something off the floor (a treat, his bowl): nose down, chewing. */
   eat: number;
   /** 0..1: drinking from his water bowl: nose down, lapping. */
@@ -103,6 +105,7 @@ export class MokeAnimationController {
     sniff: 0,
     bark: 0,
     growl: 0,
+    tug: 0,
     eat: 0,
     drink: 0,
     air: 0,
@@ -129,6 +132,7 @@ export class MokeAnimationController {
   private tiltTimeLeft = 0;
   private sinceBark = Infinity;
   private sinceGrowl = Infinity;
+  private tuggingNow = false;
   private sinceEat = Infinity;
   private eatFor: number = MOKE_ANIMATION.eatDuration;
   private sinceDrink = Infinity;
@@ -185,6 +189,7 @@ export class MokeAnimationController {
     this.sinceGrowl += dt;
     const g = this.sinceGrowl / a.growlDuration;
     s.growl = g >= 1 ? 0 : Math.min(1, g * 9) * Math.min(1, (1 - g) * 5);
+    s.tug = damp(s.tug, this.tuggingNow ? 1 : 0, this.tuggingNow ? 10 : 7, dt);
     // Eating: straight down to it, a good chew, and back up.
     this.sinceEat += dt;
     const e = this.sinceEat / this.eatFor;
@@ -199,7 +204,7 @@ export class MokeAnimationController {
     this.updateTrick(dt);
     this.updateSitting(dt, sample);
     const wag = s.gait === 'idle' ? a.idleTailWag : a.movingTailWag;
-    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8, s.trickBlend * a.tricks.tailWag, s.eat, petted * 1.4), petted > 0 ? 8 : 3, dt);
+    s.tailWag = damp(s.tailWag, Math.max(wag, s.carry * a.carryTailWag, s.bark, s.growl * 0.8, s.tug, s.trickBlend * a.tricks.tailWag, s.eat, petted * 1.4), petted > 0 ? 8 : 3, dt);
     if (petted > 0) {
       // Head up into the hand, a happy tilt, sitting for it.
       s.headPitch = Math.max(s.headPitch, a.petHeadPitch * petted);
@@ -234,6 +239,20 @@ export class MokeAnimationController {
   /** A tiny dog doing his very best to look intimidating. */
   growl(): void {
     this.sinceGrowl = 0;
+  }
+
+  /** The rope contest holds a braced pull-back pose until the human lets go. */
+  tug(active: boolean): void {
+    this.tuggingNow = active;
+    if (active) {
+      this.cancelTrick();
+      this.sitting = false;
+      this.stretchLeft = 0;
+    }
+  }
+
+  get tugging(): boolean {
+    return this.tuggingNow;
   }
 
   /** Eats something off the floor (a treat, or a meal from his bowl: longer). He stays put while he chews. */
@@ -337,7 +356,7 @@ export class MokeAnimationController {
   private updateSitting(dt: number, sample: MokeMotionSample): void {
     const a = MOKE_ANIMATION;
     const s = this.state;
-    const busy = s.gait !== 'idle' || s.trick !== null || sample.sniffing || sample.resting || s.eat > 0 || s.drink > 0 || s.air > 0.05;
+    const busy = s.gait !== 'idle' || s.trick !== null || sample.sniffing || sample.resting || s.eat > 0 || s.drink > 0 || s.air > 0.05 || this.tuggingNow;
     if (busy) {
       this.sitting = false;
       this.stretchLeft = 0;

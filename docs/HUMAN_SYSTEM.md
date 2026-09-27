@@ -94,8 +94,8 @@ straight into its seat.
   and throws, slower for lounging). On top: a walk cycle, breathing and weight shifts, blinks, eye darts, eyes that
   follow what they look at (the head helps), and a moving mouth while a speech bubble is up.
 - **Poses:** the heist's 14 (fold, surprised, chase, lunge, stumble, shrug, search, peek, rummage, offer, take,
-  place, tidy, idle) and 17 new: read, phone, watch, relax, sip, cook, prep, eat, fridge, pet, call, shoo, laugh,
-  windup, throw, point, cheer. Each works standing or seated (legs come from sitting/kneeling).
+  place, tidy, idle) and 18 new: read, phone, watch, relax, sip, cook, prep, eat, fridge, pet, call, shoo, laugh,
+  tug, windup, throw, point, cheer. Each works standing or seated (legs come from sitting/kneeling).
 - **Folding laundry** is a readable cycle (bend into the basket, straighten and shake a piece out wide at chest
   height, fold it in half twice, back down), 5.8–7.6 s per piece. **Petting** uses the hand on Moke's side, the other
   resting on the knee or thigh; the palm lands on his back.

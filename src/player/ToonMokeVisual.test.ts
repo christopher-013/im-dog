@@ -107,6 +107,16 @@ describe('ToonMokeVisual', () => {
     visual.dispose();
   });
 
+  it('braces backward during tug-of-war while keeping the rope clamped in his mouth', () => {
+    const visual = new ToonMokeVisual();
+    visual.update(DT, pose({ carry: 1, tug: 1, time: 0.5 }));
+    const rig = visual.object.getObjectByName('mokeRig');
+    expect(rig?.rotation.x).toBeLessThan(-0.14);
+    expect(rig?.position.z).toBeLessThan(-0.06);
+    expect(visual.object.getObjectByName('growlTeeth')?.visible).toBe(false);
+    visual.dispose();
+  });
+
   it('wears his collar with the name tag hanging at the front of his neck', () => {
     const visual = new ToonMokeVisual();
     visual.update(DT, pose());

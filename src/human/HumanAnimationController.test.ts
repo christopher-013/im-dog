@@ -7,7 +7,7 @@ import { FOREARM_TO_PALM, HIP_ABOVE_SEAT, HIP_HEIGHT, HUMAN_JOINTS, type HumanPo
 
 const POSES: HumanPose[] = [
   'fold', 'idle', 'surprised', 'chase', 'lunge', 'stumble', 'shrug', 'search', 'peek', 'rummage', 'offer', 'take', 'place', 'tidy',
-  'read', 'phone', 'watch', 'relax', 'sip', 'cook', 'prep', 'eat', 'fridge', 'pet', 'call', 'shoo', 'laugh', 'windup', 'throw', 'point', 'cheer',
+  'read', 'phone', 'watch', 'relax', 'sip', 'cook', 'prep', 'eat', 'fridge', 'pet', 'call', 'shoo', 'laugh', 'tug', 'windup', 'throw', 'point', 'cheer',
 ];
 
 function run(animation: HumanAnimationController, state = createVisualState(), seconds = 1) {
@@ -119,5 +119,25 @@ describe('HumanAnimationController', () => {
     const a = new HumanAnimationController();
     expect(run(a, { ...createVisualState(), pose: 'read', prop: 'book' }, 0.1).prop).toBe('book');
     expect(run(a, { ...createVisualState(), prop: null }, 0.1).prop).toBeNull();
+  });
+
+  it('leans into tug-of-war with a low staggered stance and a visible pulling rhythm', () => {
+    const a = new HumanAnimationController();
+    const tug = { ...createVisualState(), pose: 'tug' as const, reach: { x: 0, y: 0.32, z: 0.58 } };
+    let minHipsZ = Infinity;
+    let maxHipsZ = -Infinity;
+    let out = a.state;
+    for (let i = 0; i < 2 / (1 / 60); i++) {
+      out = a.update(1 / 60, tug);
+      if (i > 30) {
+        minHipsZ = Math.min(minHipsZ, out.hipsZ);
+        maxHipsZ = Math.max(maxHipsZ, out.hipsZ);
+      }
+    }
+    expect(out.joints.spine.x + out.joints.chest.x).toBeGreaterThan(0.4);
+    expect(out.hipsY).toBeLessThan(HIP_HEIGHT - 0.02);
+    expect(out.joints.hipL.x).toBeLessThan(-0.3);
+    expect(out.joints.kneeL.x).toBeGreaterThan(0.35);
+    expect(maxHipsZ - minHipsZ).toBeGreaterThan(0.015);
   });
 });

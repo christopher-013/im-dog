@@ -122,6 +122,18 @@ describe('MokeAnimationController', () => {
     expect(simulate(anim, idle, 1.2).growl).toBe(0);
   });
 
+  it('holds a braced tug pose until the rope contest ends, without sitting down', () => {
+    const anim = new MokeAnimationController(MOVEMENT, () => 0.99);
+    const idle = { speed: 0, turnRate: 0, headroom: OPEN_SKY, carrying: true };
+    anim.tug(true);
+    expect(simulate(anim, idle, MOKE_ANIMATION.idleSitAfter + 2).tug).toBeGreaterThan(0.99);
+    expect(anim.state.sit).toBeLessThan(0.01);
+    expect(anim.tugging).toBe(true);
+    anim.tug(false);
+    expect(simulate(anim, idle, 0.8).tug).toBeLessThan(0.01);
+    expect(anim.tugging).toBe(false);
+  });
+
   it('sits down after standing still a while, and hops straight up when he moves', () => {
     const anim = new MokeAnimationController(MOVEMENT, () => 0.99); // no stretch first
     const idle = { speed: 0, turnRate: 0, headroom: OPEN_SKY };

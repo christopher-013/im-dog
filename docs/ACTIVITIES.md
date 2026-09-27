@@ -82,15 +82,22 @@ shows the running one's objective when the heist has nothing to say. Tuning: `co
 ### Make Human Play (`MakeHumanPlay.ts`)
 1. **Trigger:** Moke brings the ball or the rope toy (not the sock: that's the Sock Heist) within 1.8 m of the free
    human.
-2. **Asking:** they're busy: "Not now, Moke…" with a wave. Each ask counts (2.2 s apart): dropping it at their feet,
+2. **Ball — asking:** they're busy: "Not now, Moke…" with a wave. Each ask counts (2.2 s apart): dropping it at their feet,
    coming back over with it, barking, a trick, hanging about with it for 5 s. They give in after 2–4 asks ("Okay,
    okay! You win."). Wander off for 10 s and it's forgotten.
-3. **Playing:** they get up and face him. If he has it: "Drop it!". Dropped near them: they pick it up, wind up
+3. **Ball — fetch:** they get up and face him. If he has it: "Drop it!". Dropped near them: they pick it up, wind up
    ("Ready…?") and **throw** it 2.4–4.4 m onto open floor (a clear line, aimed roughly the way they face) → "Go get it!".
 4. Then Moke's choice: **bring it back** (another throw), **drop it nearby** (they fetch it), **keep it** (they call
    "Bring it here!", then "Fine, keep it."), or **run off with it**: a few laughing steps after him ("Hey! Come back
    here, you!"), then "You little rascal.". After 3–5 throws: "Okay, that's enough for now. Good boy!".
-5. The first throw of each toy: **HUMAN + BALL = PLAY** / **HUMAN + TOY = PLAY**. Cooldown 60 s.
+5. **Rope — tug-of-war:** bringing the rope makes them get up immediately and take the other end. Moke braces,
+   plants all four paws, actively pulls backward and growls while the human leans into a low, staggered tugging
+   stance. After 6–8 seconds the human always gives up; Moke keeps the rope and decides he is the strongest dog in
+   the house. After the win feedback and a 2-second rope cooldown, a rematch starts once Moke drops the rope or
+   carries it away and brings it back; standing beside the human with it does not immediately loop into another
+   contest.
+6. Discoveries: first ball throw → **HUMAN + BALL = PLAY**; first tug win → **HUMAN + TOY = PLAY** and
+   **MOKE = STRONGEST**. Ball cooldown 60 s.
 
 ### Sock Heist (Phase 3, kept; `SOCK_HEIST.md`)
 Unchanged in its rules. Now the human might be anywhere: steal the sock from the living room rug and they'll notice
@@ -120,5 +127,6 @@ invalid interaction-point recovery), `human/activities/HumanReactions.test.ts` (
 weights; walking over to pet),
 `activities/DogActivities.test.ts` (the lifecycle; Dog Logic; nap judging and timing; a full Treat Hunt in the
 house, its hints and cancellation before and after hiding; Sock Heist priority; queued-reaction cleanup; Make Human
-Play from asking to a real thrown ball, and keep-away),
+Play from asking to a real thrown ball, keep-away, and repeatable rope tug contests with automatic growls and a
+guaranteed Moke win),
 `world/Home.test.ts` (every nap and hiding spot reachable).

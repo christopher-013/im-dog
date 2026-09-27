@@ -326,12 +326,15 @@ describe('Human reactions', () => {
   });
 });
 
-describe('MakeHumanPlay (in the house, with the real human and a real ball)', () => {
-  async function setup(seed = 8) {
+describe('MakeHumanPlay (in the house, with the real human and real toys)', () => {
+  async function setup(seed = 8, propId: 'ball' | 'toy' = 'ball') {
     const w = await world(seed);
-    const def = PROPS.ball;
-    const ball = new Prop(def, new PropBody(w.physics, def.physics, { x: -0.5, y: def.restHeight, z: -0.3 }, 0), createPropView('ball'), { x: -0.5, y: 0, z: -0.3 }, 0, home.bounds);
+    const def = PROPS[propId];
+    const ball = new Prop(def, new PropBody(w.physics, def.physics, { x: -0.5, y: def.restHeight, z: -0.3 }, 0), createPropView(propId), { x: -0.5, y: 0, z: -0.3 }, 0, home.bounds);
     const throws: boolean[] = [];
+    const tugChanges: boolean[] = [];
+    const tugWins: boolean[] = [];
+    let tugGrowls = 0;
     const play = new MakeHumanPlay({
       routine: w.routine,
       reactions: w.reactions,
@@ -341,6 +344,9 @@ describe('MakeHumanPlay (in the house, with the real human and a real ball)', ()
       clearDistance: (from, direction, max) => w.physics.sweepWorldSphere(from, direction, 0.08, max),
       openFloor: (x, z) => nav.isWalkable(x, z),
       onThrow: (_toy, first) => throws.push(first),
+      onTugChange: (active) => tugChanges.push(active),
+      onTugGrowl: () => tugGrowls++,
+      onTugWin: (_toy, first) => tugWins.push(first),
       random: mulberry32(seed),
     });
     const director = new DogActivityDirector([play]);
@@ -351,14 +357,14 @@ describe('MakeHumanPlay (in the house, with the real human and a real ball)', ()
     /** Moke has it in his mouth (as the pickup system would). */
     const grab = () => {
       ball.pickUp();
-      w.ctx.moke.carrying = 'ball';
+      w.ctx.moke.carrying = propId;
     };
     /** He lets go of it at (x, z). */
     const drop = (x: number, z: number) => {
       ball.drop({ x, y: 0.1, z }, 0, { x: 0, y: 0, z: 0 });
       w.ctx.moke.carrying = null;
     };
-    return { ...w, ball, play, director, tick, grab, drop, throws };
+    return { ...w, ball, play, director, tick, grab, drop, throws, tugChanges, tugWins, tugGrowls: () => tugGrowls };
   }
 
   it('ignored at first, then (after pestering) they give in, get up and throw it, and teach HUMAN + BALL = PLAY', async () => {
@@ -410,4 +416,39 @@ describe('MakeHumanPlay (in the house, with the real human and a real ball)', ()
     expect(said.some((l) => /keep it|yours/i.test(l))).toBe(true);
     expect(play.running).toBe(false);
   }, 90_000);
+
+  it('turns the rope into replayable tug-of-war, growls while pulling, and always lets Moke win with the rope still in his mouth', async () => {
+    const { ctx, tick, play, grab, drop, tugChanges, tugWins, tugGrowls, said } = await setup(10, 'toy');
+    grab();
+    ctx.moke.position.x = -1;
+    ctx.moke.position.z = -0.9;
+    tick();
+    expect(play.state).toBe('STARTING');
+    for (let i = 0; i < 20 / DT && play.running; i++) tick();
+    expect(play.outcome).toBe('tugWin');
+    expect(play.successes).toBe(1);
+    expect(play.throws).toBe(0);
+    expect(ctx.moke.carrying).toBe('toy');
+    expect(tugChanges).toEqual([true, false]);
+    expect(tugGrowls()).toBeGreaterThanOrEqual(3);
+    expect(tugWins).toEqual([true]);
+    expect(said.some((line) => /you win|too strong|strongest dog/i.test(line))).toBe(true);
+
+    // Standing beside the human with the rope must not immediately loop into another game.
+    for (let i = 0; i < 6 / DT; i++) tick();
+    expect(play.successes).toBe(1);
+    expect(play.state).toBe('AVAILABLE');
+
+    // Dropping and presenting the rope again re-arms it, with the short rope-specific cooldown already elapsed.
+    drop(ctx.moke.position.x, ctx.moke.position.z);
+    tick();
+    grab();
+    tick();
+    expect(play.running).toBe(true);
+    for (let i = 0; i < 20 / DT && play.running; i++) tick();
+    expect(play.successes).toBe(2);
+    expect(ctx.moke.carrying).toBe('toy');
+    expect(tugChanges).toEqual([true, false, true, false]);
+    expect(tugWins).toEqual([true, false]);
+  }, 60_000);
 });

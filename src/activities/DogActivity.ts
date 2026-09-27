@@ -98,7 +98,7 @@ export abstract class DogActivity {
         if (this.stateTime >= this.settleTime) this.enter('COOLDOWN');
         break;
       case 'COOLDOWN':
-        if (this.stateTime >= this.cooldown) this.enter('READY_AGAIN');
+        if (this.stateTime >= this.cooldownFor()) this.enter('READY_AGAIN');
         break;
       case 'READY_AGAIN':
         this.enter('AVAILABLE');
@@ -123,6 +123,11 @@ export abstract class DogActivity {
     if (!this.running) return;
     this.successes++;
     this.enter('SUCCESS');
+  }
+
+  /** Activities with distinct variants may shorten or lengthen the next replay delay. */
+  protected cooldownFor(): number {
+    return this.cooldown;
   }
 
   protected enter(state: DogActivityState): void {

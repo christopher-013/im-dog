@@ -21,21 +21,42 @@ export interface MakeHumanPlayDeps {
   readonly clearDistance: (from: Vec3Like, direction: Vec3Like, max: number) => number;
   /** Open floor where a toy can land and be fetched. */
   readonly openFloor: (x: number, z: number) => boolean;
-  /** A throw happened (sound; the first one of each toy teaches HUMAN + BALL/TOY = PLAY). */
+  /** A ball throw happened (sound; the first one teaches HUMAN + BALL = PLAY). */
   readonly onThrow: (toy: Prop, first: boolean) => void;
+  /** Rope tug presentation on Moke, including cleanup when the activity is interrupted. */
+  readonly onTugChange: (active: boolean) => void;
+  /** Moke's automatic playful growl during the contest. */
+  readonly onTugGrowl: () => void;
+  /** The human conceded while Moke still held the rope. */
+  readonly onTugWin: (toy: Prop, first: boolean) => void;
   readonly random?: () => number;
 }
 
 type Tuning = typeof DOG_ACTIVITIES.makeHumanPlay;
-type Step = 'getUp' | 'decide' | 'callDrop' | 'callBring' | 'fetchToy' | 'pickUp' | 'windup' | 'throw' | 'watch' | 'chase' | 'laughOff' | 'done';
+type Step =
+  | 'getUp'
+  | 'tugApproach'
+  | 'tug'
+  | 'tugLose'
+  | 'decide'
+  | 'callDrop'
+  | 'callBring'
+  | 'fetchToy'
+  | 'pickUp'
+  | 'windup'
+  | 'throw'
+  | 'watch'
+  | 'chase'
+  | 'laughOff'
+  | 'done';
 
 const GRAVITY = 9.81;
 
 /**
  * Make Human Play (Phase 4): bring a toy to a busy human. They ignore it ("not now, Moke…"). Keep at it: drop it at
- * their feet, bark, do a trick, hang about with it. Eventually they give in ("okay, okay!"), get up and throw it.
- * Then it's up to Moke: bring it back (another throw), drop it nearby, keep it, or run off with it (they give chase
- * for a few laughing steps). Being uncooperative is half the fun. Teaches HUMAN + BALL = PLAY (or TOY).
+ * their feet, bark, do a trick, hang about with it. The ball becomes fetch. The rope is different: they take the
+ * other end immediately, Moke braces and growls, and after a short contest the human always lets him win. Teaches
+ * HUMAN + BALL = PLAY for fetch, and HUMAN + TOY = PLAY / MOKE = STRONGEST for tug.
  */
 export class MakeHumanPlay extends DogActivity {
   readonly id = 'makeHumanPlay' as const;
@@ -43,8 +64,8 @@ export class MakeHumanPlay extends DogActivity {
   readonly needsHuman = true;
   throws = 0;
   asks = 0;
-  /** How it ended, for debugging: fetched back, kept, ran off. */
-  outcome: 'played' | 'kept' | 'wandered' | null = null;
+  /** How it ended, for debugging: fetched back, kept, ran off, or won tug. */
+  outcome: 'played' | 'kept' | 'wandered' | 'tugWin' | null = null;
   private toy: Prop | null = null;
   private need = 3;
   private sinceAsk = Infinity;
@@ -56,8 +77,14 @@ export class MakeHumanPlay extends DogActivity {
   private stepTime = 0;
   private targetThrows = 4;
   private kept = 0;
+  private tugFor = 0;
+  private nextTugGrowl = 0;
+  private tugging = false;
+  /** Prevents an automatic rematch while Moke is still beside the human after winning. */
+  private ropeNeedsReturn = false;
   private said = new Set<string>();
   private readonly thrown = new Set<string>();
+  private readonly tugged = new Set<string>();
   private readonly aim = new Vector3();
   private readonly handAt = new Vector3();
   private readonly random: () => number;
@@ -76,6 +103,10 @@ export class MakeHumanPlay extends DogActivity {
   }
 
   override get objective(): string | null {
+    if (this.toy?.id === 'toy' && this.state === 'ACTIVE') {
+      if (this.step === 'tug') return 'Tug-of-war! Moke is pulling back!';
+      if (this.step === 'tugApproach') return 'Hold onto the rope!';
+    }
     if (this.state === 'STARTING') return this.asks > 0 ? 'Keep asking! (bark, drop it at their feet, a trick…)' : null;
     return null;
   }
@@ -83,25 +114,35 @@ export class MakeHumanPlay extends DogActivity {
   protected wants(ctx: DogActivityContext): boolean {
     if (!ctx.human.available || ctx.heistRunning) return false;
     const toy = this.toyCarried(ctx);
+    if (toy?.id === 'toy' && this.ropeNeedsReturn) return false;
     return !!toy && flatDistance(ctx.moke.position, ctx.human.position) <= this.tuning.askRange;
   }
 
   protected onStart(ctx: DogActivityContext): void {
     this.toy = this.toyCarried(ctx);
     const [min, max] = this.tuning.asks;
-    this.need = min + Math.floor(this.random() * (max - min + 1));
+    this.need = this.toy?.id === 'toy' ? 1 : min + Math.floor(this.random() * (max - min + 1));
     this.asks = 0;
     this.throws = 0;
     this.outcome = null;
     this.sinceAsk = Infinity;
     this.waitNear = 0;
     this.awayFor = 0;
+    this.tugFor = 0;
+    this.nextTugGrowl = 0;
+    this.setTugging(false);
     this.said.clear();
     this.ask(); // bringing it over is the first ask
   }
 
   protected override observe(ctx: DogActivityContext): void {
     this.sinceAsk += 1 / 60;
+    if (
+      this.ropeNeedsReturn &&
+      (ctx.moke.carrying !== 'toy' || flatDistance(ctx.moke.position, ctx.human.position) >= this.tuning.tugReplayResetRange)
+    ) {
+      this.ropeNeedsReturn = false;
+    }
     if (this.state !== 'STARTING') {
       this.wasCarrying = ctx.moke.carrying;
       return;
@@ -140,17 +181,23 @@ export class MakeHumanPlay extends DogActivity {
         return;
       }
       if (this.asks >= this.need && this.deps.routine.claim(this.role)) {
-        const [min, max] = this.tuning.throws;
-        this.targetThrows = min + Math.floor(this.random() * (max - min + 1));
+        const [throwMin, throwMax] = this.tuning.throws;
+        this.targetThrows = throwMin + Math.floor(this.random() * (throwMax - throwMin + 1));
         this.kept = 0;
         this.goStep('getUp');
-        this.deps.routine.say(pick(this.random, ['Okay, okay! You win.', 'Fine… one throw!', 'Alright, you pest. Come here!']), 'happy');
+        this.deps.routine.say(
+          this.toy.id === 'toy'
+            ? pick(this.random, ['Tug-of-war? Oh, you’re on!', 'You want to tug? Come here, tough guy!'])
+            : pick(this.random, ['Okay, okay! You win.', 'Fine… one throw!', 'Alright, you pest. Come here!']),
+          'happy',
+        );
         this.activate();
       }
     }
   }
 
   protected onCancel(): void {
+    this.setTugging(false);
     // If it's in their hand, it goes back down at their feet.
     const toy = this.toy;
     if (toy && this.step !== 'done' && toy.carried && toy.view.parent === this.deps.hand) this.letGo(toy, 0, null);
@@ -183,7 +230,41 @@ export class MakeHumanPlay extends DogActivity {
     switch (this.step) {
       case 'getUp':
         hold(intent, 'idle', moke, 0, moke);
-        if (!s.seated && this.stepTime > 0.4) this.goStep('decide');
+        if (!s.seated && this.stepTime > 0.4) this.goStep(toy.id === 'toy' ? 'tugApproach' : 'decide');
+        return true;
+      case 'tugApproach':
+        if (!mokeHasIt) return this.cancelTug('You dropped it! We’ll tug later.');
+        walkTo(intent, moke, HUMAN.move.walkSpeed, t.tugReach);
+        intent.lookAt = moke;
+        if (dMoke <= t.tugReach + 0.08 && this.stepTime > 0.25) {
+          const [min, max] = t.tugDuration;
+          this.tugFor = min + this.random() * (max - min);
+          this.nextTugGrowl = 0.15;
+          this.setTugging(true);
+          this.goStep('tug');
+        }
+        return true;
+      case 'tug':
+        if (!mokeHasIt) return this.cancelTug('Oops—you let go!');
+        hold(intent, 'tug', moke, 0.18, moke);
+        intent.reach = { x: moke.x, y: moke.y + 0.31, z: moke.z };
+        this.nextTugGrowl -= dt;
+        if (this.nextTugGrowl <= 0) {
+          this.nextTugGrowl += t.tugGrowlEvery;
+          this.deps.onTugGrowl();
+        }
+        if (this.stepTime >= this.tugFor) {
+          this.setTugging(false);
+          const first = !this.tugged.has(toy.id);
+          this.tugged.add(toy.id);
+          this.deps.onTugWin(toy, first);
+          this.deps.routine.say(pick(this.random, ['Whoa! You win!', 'Okay, okay! Too strong for me!']), 'happy');
+          this.goStep('tugLose');
+        }
+        return true;
+      case 'tugLose':
+        hold(intent, 'stumble', moke, 0, moke);
+        if (this.stepTime >= t.tugLoseTime) return this.finishTug();
         return true;
       case 'decide':
         hold(intent, 'idle', moke, 0, moke);
@@ -278,6 +359,27 @@ export class MakeHumanPlay extends DogActivity {
     return this.finish('kept', pick(this.random, ['Fine, keep it.', 'Okay, it\'s yours. Enjoy.']));
   }
 
+  private cancelTug(line: string): boolean {
+    this.setTugging(false);
+    this.deps.routine.say(line, 'happy');
+    this.goStep('done');
+    this.cancel();
+    return false;
+  }
+
+  private finishTug(): boolean {
+    this.outcome = 'tugWin';
+    this.ropeNeedsReturn = true;
+    this.deps.routine.say(pick(this.random, ['Strongest dog in the house!', 'You win, champion. The rope is yours!']), 'happy');
+    this.goStep('done');
+    this.succeed();
+    return false;
+  }
+
+  protected override cooldownFor(): number {
+    return this.toy?.id === 'toy' ? this.tuning.tugReplayCooldown : super.cooldownFor();
+  }
+
   private finish(outcome: 'played' | 'kept', line: string): boolean {
     this.outcome = outcome;
     this.deps.routine.say(line, 'happy');
@@ -297,6 +399,12 @@ export class MakeHumanPlay extends DogActivity {
   private goStep(step: Step): void {
     this.step = step;
     this.stepTime = 0;
+  }
+
+  private setTugging(active: boolean): void {
+    if (this.tugging === active) return;
+    this.tugging = active;
+    this.deps.onTugChange(active);
   }
 
   /** Where to throw: open floor 2.4–4.4 m away, roughly the way they face, with nothing in between. */

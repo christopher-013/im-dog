@@ -213,7 +213,7 @@ export class GltfMokeVisual implements MokeVisual {
     const dip = this.hasDuckClip ? 0 : s.crouch;
     // Head held a little higher while carrying (the same lift as the stand-in), plus glancing and tilting:
     // the neck takes some of the turn, the head the rest.
-    const pitch = dip * DUCK_HEAD_DIP - s.carry * MOKE_ANIMATION.carryHeadLift - s.headPitch;
+    const pitch = dip * DUCK_HEAD_DIP - s.carry * MOKE_ANIMATION.carryHeadLift - s.tug * 0.1 - s.headPitch;
     const look = (share: number) => this.euler.set(pitch * share, s.headYaw * share, -s.headTilt * share);
     if (this.neck) this.turnInModelSpace(this.neck.bone, look(0.4));
     if (this.head) this.turnInModelSpace(this.head.bone, look(this.neck ? 0.6 : 1));

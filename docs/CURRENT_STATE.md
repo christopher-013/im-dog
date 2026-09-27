@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-26. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phases 1–3 are complete** (tags `phase-1-complete`, `phase-2-complete`, `phase-3-complete`). **Phase 4, "Moke's Home & Family Life", is built, committed to `main`, and independently audited, but not yet closed by the owner:** the whole home from the owner's photos, a stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and Dog Logic. The prior audit fixes are committed at `6dd0e0b`; the human reconstruction described below remains uncommitted for owner review._
+_Last updated: 2026-09-27. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phases 1–3 are complete** (tags `phase-1-complete`, `phase-2-complete`, `phase-3-complete`). **Phase 4, "Moke's Home & Family Life", is built, committed to `main`, and independently audited, but not yet closed by the owner:** the whole home from the owner's photos, a stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and Dog Logic. The prior audit fixes are committed at `6dd0e0b`; the human reconstruction and household updates at `6fc0f8f`. The rope tug-of-war and replay refinement are committed on `main` at the owner's request._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -39,11 +39,15 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code: reviewed and continued the human NPC reconstruction (2026-09-26): lofted jeans and shirt, sculpted hair,
+OpenAI Codex: verified and refined rope-specific tug-of-war (2026-09-27): Moke can bring the rope back for repeated
+matches without an automatic loop; he plants and pulls more visibly while the human leans into a staggered tugging
+stance. Before that, OpenAI Codex added the rope branch (2026-09-26): Moke braces, pulls and growls; the human visibly
+tugs, always concedes after a short contest, and Moke learns that he is the strongest in the house.
+Committed on `main` at the owner's request. Before that, Claude Code: reviewed and continued the human NPC reconstruction (2026-09-26): lofted jeans and shirt, sculpted hair,
 the laundry scene, the NavGrid squeeze and false-arrival fixes, seat entries, attention weights, petting, and a
-multi-day stability test (see Verification Status). Uncommitted. Before that, OpenAI Codex: human NPC reconstruction
+multi-day stability test (see Verification Status), committed at `6fc0f8f`. Before that, OpenAI Codex: human NPC reconstruction
 (2026-09-26), with a rebuilt rear silhouette, clothing and hair, readable laundry action, invalid-anchor recovery and
-stronger long-run coverage; also uncommitted. Before that,
+stronger long-run coverage, included in `6fc0f8f`. Before that,
 Codex's independent Phase 4 audit fixes were committed and pushed at `6dd0e0b`. Claude Code: all of Phase 4
 (committed and pushed before the audit). Before that, Claude Code: the jump, the combined bark/growl button and the touch paw menu (committed and pushed at the owner's
 request), after all of Phase 3 (committed and pushed
@@ -73,8 +77,22 @@ collar refit.
   Moke's petted reaction (sit, head up into the hand, wag, a heart).
 - **4.6–4.8:** Treat Hunt, Perfect Nap (seven nap spots; "Nap Here"), Make Human Play, on one lifecycle
   (`activities/`). E / the paw sniffs when there's nothing to interact with.
-- **4.9 Dog Logic:** eight equations (`config/dogLogic.ts`), the card draws any of them, queued, remembered.
+- **4.9 Dog Logic:** nine equations (`config/dogLogic.ts`), the card draws any of them, queued, remembered.
 - **4.10:** browser play-throughs (desktop, emulated phone), performance vs. the baseline, the build's privacy check.
+
+**Owner requests, 2026-09-26–27 (committed on `main`): rope tug-of-war and replay refinement.** Carrying the rope toy to the human now starts a
+rope-specific branch of Make Human Play rather than fetch. The human approaches, grips the other end and visibly
+leans into a low, staggered stance for 6–8 seconds. Moke plants all four legs, pulls backward and growls automatically;
+the human always concedes, Moke keeps the rope, and the win teaches **HUMAN + TOY = PLAY** and **MOKE = STRONGEST**.
+After the short win feedback, dropping the rope or carrying it away and bringing it back starts another match; simply
+remaining beside the human does not auto-loop. The ball retains its existing fetch loop. Dropping the rope during a
+contest or a higher-priority interruption cancels and cleans up the tug pose.
+- Verification: focused activity/animation/visual tests pass (**5 files / 66 tests**), including two consecutive tug
+  matches; full typecheck and **53 files / 392 tests** pass; production build passes (main bundle 1,025.13 kB /
+  289.55 kB gzip); `verify-dist` checked 20
+  output files against all 18 private references and found no leak; `git diff --check` passes. The development game
+  reloads and enters play; the only browser warning is the documented missing final `moke.glb` fallback. The complete
+  tug was exercised in the real-home integration test, not manually navigated in the browser in this pass.
 
 **Owner requests, 2026-09-25 (committed and pushed): Moke can jump; one button barks or growls; the paw menu on touch.** The owner asked for nothing
 else to change in the game's look and feel.
@@ -918,7 +936,7 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-1. **Owner review and sign-off of Phase 4:** use `npm run dev` on this machine (the human reconstruction is uncommitted), walk the house, watch the human's day,
+1. **Owner review and sign-off of Phase 4:** use `npm run dev` on this machine or the published game, walk the house, watch the human's day,
    pet them, do a trick near them (Treat Hunt), nap in a few spots, bring them the ball. Is it recognisably home? Does
    it feel inhabited? Then tune (`config/activities.ts`, `config/dogActivities.ts`, the human's poses in
    `HumanAnimationController.ts`). Commit or push only when the owner asks: a push to `main` publishes the game.

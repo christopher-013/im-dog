@@ -2,7 +2,7 @@
  * Dog Logic (Phase 4): the things Moke works out about the world, each backed by something he actually did. Shown
  * as a little equation the first time ("Moke has learned something very important"), and again, checked, later.
  */
-export type DogLogicIcon = 'sock' | 'treat' | 'nose' | 'bed' | 'sun' | 'soft' | 'human' | 'ball' | 'toy' | 'kitchen' | 'food' | 'bark' | 'heart' | 'nap' | 'play';
+export type DogLogicIcon = 'sock' | 'treat' | 'nose' | 'bed' | 'sun' | 'soft' | 'human' | 'dog' | 'ball' | 'toy' | 'kitchen' | 'food' | 'bark' | 'heart' | 'nap' | 'play' | 'strong';
 
 export interface DogLogicTerm {
   readonly word: string;
@@ -27,9 +27,11 @@ const T = {
   soft: { word: 'SOFT', icon: 'soft' },
   nap: { word: 'NAP', icon: 'nap' },
   human: { word: 'HUMAN', icon: 'human' },
+  moke: { word: 'MOKE', icon: 'dog' },
   ball: { word: 'BALL', icon: 'ball' },
   toy: { word: 'TOY', icon: 'toy' },
   play: { word: 'PLAY', icon: 'play' },
+  strongest: { word: 'STRONGEST', icon: 'strong' },
   bark: { word: 'BARK', icon: 'bark' },
   attention: { word: 'ATTENTION', icon: 'heart' },
   kitchen: { word: 'KITCHEN', icon: 'kitchen' },
@@ -42,7 +44,8 @@ export const DOG_LOGIC: readonly DogLogicEntry[] = [
   { id: 'bed=nap', left: [T.bed], right: T.nap, how: 'Nap in his bed or on his blanket.' },
   { id: 'sun+soft=nap', left: [T.sun, T.soft], right: T.nap, how: 'Nap somewhere sunny and soft.' },
   { id: 'human+ball=play', left: [T.human, T.ball], right: T.play, how: 'Get the human to throw the ball.' },
-  { id: 'human+toy=play', left: [T.human, T.toy], right: T.play, how: 'Get the human to throw the rope toy.' },
+  { id: 'human+toy=play', left: [T.human, T.toy], right: T.play, how: 'Win tug-of-war with the rope toy.' },
+  { id: 'moke=strongest', left: [T.moke], right: T.strongest, how: 'Hold onto the rope until the human gives up.' },
   { id: 'bark=attention', left: [T.bark], right: T.attention, how: 'Bark at the human until they give in.' },
   { id: 'kitchen=food?', left: [T.kitchen], right: T.food, how: 'Hang about the kitchen while dinner cooks.' },
 ];

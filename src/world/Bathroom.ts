@@ -136,13 +136,19 @@ export class BathroomView {
   get visibleStrips(): number { return this.drawnSegments; }
   get trailEndsOutside(): boolean { return this.points.some((p) => p.z >= HALL.zMin) || (this.tip?.z ?? -Infinity) >= HALL.zMin; }
 
+  /** Moke has the paper in his mouth, or his trail of it still reaches out through the doorway. */
+  get paperOut(): boolean {
+    return this.mouth !== null || (this.drawnSegments > 0 && this.trailEndsOutside);
+  }
+
   /**
-   * The door rests ajar. It swings open while Moke (or the human) walks through the doorway, and back to ajar once
-   * they're through, whichever way they went.
+   * The door rests ajar. It swings open while someone walks through the doorway, and stays open while Moke is in
+   * the bathroom or his toilet-paper trail runs out through it. Once he's left and the human has cleaned the trail
+   * up, it swings back to ajar.
    */
   update(dt: number, moke: Vec3Like, human: Vec3Like | null = null): void {
     this.inside = moke.x > BATHROOM.xMin && moke.x < BATHROOM.xMax && moke.z < HALL.zMin - 0.04;
-    this.open = passingThrough(moke) || (human !== null && passingThrough(human));
+    this.open = this.inside || this.paperOut || passingThrough(moke) || (human !== null && passingThrough(human));
     const d = BATHROOM_DOOR;
     const wanted = this.open ? d.open : d.ajar;
     this.opening += Math.sign(wanted - this.opening) * Math.min(Math.abs(wanted - this.opening), dt * d.swingSpeed);

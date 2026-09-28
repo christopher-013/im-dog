@@ -72,9 +72,9 @@ describe('hall bathroom toilet-paper activity', () => {
   it('lets Moke make a long trail from inside the bathroom, scolds and cleans it, learns once, then repeats', async () => {
     const w = await setup();
     w.tick(0.1);
-    // In the bathroom, past the doorway: the door has swung back to ajar.
+    // In the bathroom: the door stays open while he's in there.
     expect(w.view.mokeInside).toBe(true);
-    expect(w.view.isOpen).toBe(false);
+    expect(w.view.isOpen).toBe(true);
     expect(w.paper.interactable.enabled).toBe(true);
     for (let i = 0; i < 5; i++) w.paper.interactable.interact();
     w.tick(1);
@@ -88,11 +88,14 @@ describe('hall bathroom toilet-paper activity', () => {
     expect(w.paper.holdingPaper).toBe(false);
     expect(w.held).toContain(false);
     expect(w.mouth.children).toHaveLength(0);
-    expect(w.view.isOpen).toBe(false);
+    // Moke's out in the hallway, but his trail runs out through the door: it stays open…
+    expect(w.view.isOpen).toBe(true);
     expect(w.paper.running).toBe(true);
     w.tick(25);
     expect(w.said).toContain("No, Moke! Don't make a mess!");
     expect(w.view.visibleStrips).toBe(0);
+    // …until the human has cleaned it all up.
+    expect(w.view.isOpen).toBe(false);
     expect(w.paper.successes).toBe(1);
     expect(w.learned()).toBe(1);
     w.tick(30);

@@ -589,8 +589,9 @@ not on GitHub and is **not** covered.
 
   The test now fails with the two materials and the location if a new overlap appears.
 - **Owner requests, 2026-09-28 (Claude Code):**
-  - **Bathroom door:** it rests ajar, swings open only while Moke (or the human) walks through the doorway, and
-    back to ajar once they're through, either way. Tuning: `BATHROOM_DOOR` in `config/bathroom.ts`.
+  - **Bathroom door:** it rests ajar. It opens as anyone walks through the doorway, stays open while Moke is in
+    the bathroom or his toilet-paper trail runs out through it, and goes back to ajar once he's left and the human
+    has cleaned the trail up (`BathroomView.paperOut`). Tuning: `BATHROOM_DOOR` in `config/bathroom.ts`.
     `BathroomView.mokeInside` (not `isOpen`) now gates the toilet-paper prompt. Tests in `world/Bathroom.test.ts`.
     The bathroom ceiling no longer overlaps the hallway's.
   - **Delivery driver:** now a different person, built from `COURIER_LOOK` (the old version was the household human

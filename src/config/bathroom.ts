@@ -15,8 +15,8 @@ export const BATHROOM_ACTIVITY = {
 } as const;
 
 /**
- * The hall bathroom door rests ajar and swings open only while someone walks through the doorway: within this
- * zone round the threshold (m). Beyond it, on either side, it swings back to ajar.
+ * The hall bathroom door rests ajar. It opens while someone walks through the doorway (within this zone round the
+ * threshold, m), and stays open while Moke is in the bathroom or his toilet-paper trail runs out through it.
  */
 export const BATHROOM_DOOR = {
   /** Resting (ajar) and fully open angles (rad), and how fast it swings (rad/s). */

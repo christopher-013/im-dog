@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { Object3D } from 'three';
 import { BATHROOM_DOOR } from '../config/bathroom';
 import { BathroomView } from './Bathroom';
 import { BATHROOM, HALL } from './home/layout';
@@ -16,22 +17,41 @@ function hold(view: BathroomView, seconds: number, moke: ReturnType<typeof at>, 
 }
 
 describe('hall bathroom door', () => {
-  it('rests ajar, opens while Moke walks through, and swings back to ajar once he is through, either way', () => {
+  it('rests ajar, opens as Moke comes in, stays open while he is inside, and goes back to ajar once he leaves', () => {
     const view = new BathroomView();
     expect(hold(view, 0.5, HALLWAY)).toBeCloseTo(BATHROOM_DOOR.ajar);
     expect(view.isOpen).toBe(false);
 
-    // Walking in: open at the threshold…
     expect(hold(view, 0.5, THRESHOLD)).toBeCloseTo(BATHROOM_DOOR.open);
-    expect(view.isOpen).toBe(true);
-    // …and back to ajar once he's inside.
-    expect(hold(view, 0.5, INSIDE)).toBeCloseTo(BATHROOM_DOOR.ajar);
+    // Inside, anywhere in the room: it stays open.
+    expect(hold(view, 1, INSIDE)).toBeCloseTo(BATHROOM_DOOR.open);
     expect(view.mokeInside).toBe(true);
+    expect(view.isOpen).toBe(true);
 
-    // Walking out: open again at the threshold, ajar once he's back in the hallway.
+    // Out again: back to ajar.
     expect(hold(view, 0.5, THRESHOLD)).toBeCloseTo(BATHROOM_DOOR.open);
     expect(hold(view, 0.5, HALLWAY)).toBeCloseTo(BATHROOM_DOOR.ajar);
     expect(view.mokeInside).toBe(false);
+  });
+
+  it('stays open while his toilet-paper trail runs out through it, and goes back to ajar once it is cleaned up', () => {
+    const view = new BathroomView();
+    const mouth = new Object3D();
+    hold(view, 0.5, INSIDE);
+    view.startPull(mouth, INSIDE);
+    // He pulls the paper out into the hallway, and lets go there.
+    for (const [x, z] of [[5.2, -0.4], [4.9, -0.2], [4.8, 0.15], [4.8, 0.55], [4.8, 1.0], [4.8, 1.4]] as const) {
+      view.extendTrail(at(x, z));
+      hold(view, 0.1, at(x, z));
+    }
+    view.releasePaper();
+    expect(view.trailEndsOutside).toBe(true);
+    expect(hold(view, 2, at(3.9, 1.1))).toBeCloseTo(BATHROOM_DOOR.open);
+    // The human cleans it up bit by bit: still open until it's all gone.
+    view.setCleanup(0.6);
+    expect(hold(view, 1, at(3.9, 1.1))).toBeCloseTo(BATHROOM_DOOR.open);
+    view.setCleanup(1);
+    expect(hold(view, 1, at(3.9, 1.1))).toBeCloseTo(BATHROOM_DOOR.ajar);
   });
 
   it("doesn't open for Moke trotting along the hallway past it", () => {

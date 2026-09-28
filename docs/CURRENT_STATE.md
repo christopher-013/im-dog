@@ -664,6 +664,14 @@ not on GitHub and is **not** covered.
   - Tests: random start (varied, never cooking, gets straight on with it), the answered-but-cut-short doorbell wait,
     the unanswered wait, getting up with Moke in the way. Checked in the browser (the table, basket and the folding
     pose; four reloads, four different starts).
+- **Sitting on the couches, 2026-09-28 (owner report, Claude Code):**
+  - The human's shins went through the front of the couch (hips set 0.39–0.58 m back from its front edge; seated,
+    the knees are 0.44 m ahead of the hips). Every couch seat now puts the hips 0.33 m in from the front edge: the
+    living-room couch, the sectional and the window couch.
+  - "No room in front of them": the body left standing in front of the couch while they sat (fixed on this branch
+    by moving the body onto the seat, see "Room round the dining table") blocked the way to the coffee table.
+  - Tests (Home.test): the shins are clear of all furniture on every couch seat; Moke walks between each seated
+    human and the coffee table and back (these fail without the body-onto-seat change).
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

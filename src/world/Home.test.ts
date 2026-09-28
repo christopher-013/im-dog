@@ -1,3 +1,4 @@
+import { Quaternion, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { HEIST } from '../config/heist';
 import { HUMAN } from '../config/human';
@@ -378,6 +379,52 @@ describe('Home', () => {
         run(12);
         expect(human.seat).toBeNull();
         expect(Math.hypot(human.position.x - 8.85, human.position.z - 0.1)).toBeLessThan(0.3);
+      });
+    }
+  });
+
+  describe('with the human sitting on a couch', () => {
+    const inside = (p: Vector3) => home.colliders.some((box) => {
+      const q = new Quaternion(...box.rotation).invert();
+      const local = p.clone().sub(new Vector3(...box.center)).applyQuaternion(q);
+      return Math.abs(local.x) < box.halfExtents[0] && Math.abs(local.y) < box.halfExtents[1] && Math.abs(local.z) < box.halfExtents[2];
+    });
+    const couchSeats = HOME_PLACES.filter((p) => p.kind === 'couchSeat' || p.kind === 'readingSeat');
+
+    it('seats them far enough forward that their shins come down in front of the couch, not through it', () => {
+      for (const place of couchSeats) {
+        const s = place.seat!;
+        const f = { x: Math.sin(place.facing), z: Math.cos(place.facing) };
+        // Sitting, the knees are 0.44 m in front of the hips and the shins hang down from them (about 6 cm thick).
+        for (const [ahead, y] of [[0.44, 0.45], [0.38, 0.3], [0.38, 0.15]] as const) {
+          const p = new Vector3(s.x + f.x * ahead, y, s.z + f.z * ahead);
+          expect(inside(p), `${place.id}: ${ahead} m ahead at ${y} m`).toBe(false);
+        }
+      }
+    });
+
+    const lanes: Record<string, [Point2, Point2]> = {
+      'living.couch': [{ x: -1.05, z: -1.72 }, { x: 1.65, z: -1.72 }],
+      'family.sectional': [{ x: 13.45, z: 1.95 }, { x: 15.5, z: 1.95 }],
+      'family.windowCouch': [{ x: 15.45, z: 1.6 }, { x: 15.45, z: 4.2 }],
+    };
+    for (const place of couchSeats) {
+      const lane = lanes[place.id.replace(/\.[a-z]+$/, '')];
+      if (!lane) continue;
+      it(`leaves room to walk past in front of them on ${place.id}, between the couch and the coffee table`, async () => {
+        const [a, b] = lane;
+        const w = await setup(a, Math.atan2(b.x - a.x, b.z - a.z));
+        const human = new HumanController(new CharacterBody(w.physics, { x: place.stand.x, y: 0, z: place.stand.z }, HUMAN.body), humanNav, place.facing);
+        const s = place.seat!;
+        const seat: SeatSpec = { x: s.x, z: s.z, height: s.height, style: s.style, facing: place.facing, entry: s.entry ?? null };
+        const intent: HumanIntent = { goal: place.stand, speed: HUMAN.move.walkSpeed, stopWithin: 0.15, face: null, headYaw: 0, crouch: 0, pose: 'idle', seat, prop: null, lookAt: null, talking: 0 };
+        for (let i = 0; i < 6 / DT && !human.seated; i++) {
+          human.fixedUpdate(DT, intent);
+          w.physics.step();
+        }
+        expect(human.seated).toBe(true);
+        expect(w.walkTo(b.x, b.z)).toBe(true);
+        expect(w.walkTo(a.x, a.z)).toBe(true);
       });
     }
   });

@@ -98,15 +98,17 @@ const diningEast = f.diningChairs.filter((c) => c.rotation === WEST);
 
 /** Every place the human can use, across the house. */
 export const HOME_PLACES: readonly HomePlace[] = [
+  // Seats on couches: the hips 0.33 m in from the front edge (sitting, the knees are 0.44 m in front of the hips), so
+  // the shins come down in front of the couch, not through it.
   // Living room: the couch (facing the TV console) and the laundry.
-  place('living.couch.left', 'couchSeat', at(-0.6, -1.65), SOUTH, { seat: { x: -0.52, z: -2.38, height: 0.45, style: 'upright' }, look: LIVING_TV }),
-  place('living.couch.right', 'couchSeat', at(1.2, -1.65), SOUTH, { seat: { x: 1.12, z: -2.38, height: 0.45, style: 'upright' }, look: LIVING_TV }),
+  place('living.couch.left', 'couchSeat', at(-0.6, -1.65), SOUTH, { seat: { x: -0.52, z: -2.32, height: 0.45, style: 'upright' }, look: LIVING_TV }),
+  place('living.couch.right', 'couchSeat', at(1.2, -1.65), SOUTH, { seat: { x: 1.12, z: -2.32, height: 0.45, style: 'upright' }, look: LIVING_TV }),
   place('living.laundry', 'laundry', at(-1.52, -1.56), toward(-1.52, -1.56, -2.0, -1.85)),
   // Family room: the sectional (facing the fireplace TV), the chaise, the beige couch under the windows.
-  place('family.sectional.middle', 'couchSeat', at(13.75, 1.85), SOUTH, { seat: { x: 13.75, z: 0.98, height: 0.45, style: 'upright' }, look: FAMILY_TV }),
-  place('family.sectional.east', 'couchSeat', at(14.8, 1.85), SOUTH, { seat: { x: 14.8, z: 0.98, height: 0.45, style: 'upright' }, look: FAMILY_TV }),
-  place('family.windowCouch.north', 'readingSeat', at(15.6, 2.45), WEST, { seat: { x: 16.52, z: 2.45, height: 0.45, style: 'upright' } }),
-  place('family.windowCouch.south', 'couchSeat', at(15.6, 3.35), WEST, { seat: { x: 16.52, z: 3.35, height: 0.45, style: 'upright' } }),
+  place('family.sectional.middle', 'couchSeat', at(13.75, 1.85), SOUTH, { seat: { x: 13.75, z: 1.14, height: 0.45, style: 'upright' }, look: FAMILY_TV }),
+  place('family.sectional.east', 'couchSeat', at(14.8, 1.85), SOUTH, { seat: { x: 14.8, z: 1.14, height: 0.45, style: 'upright' }, look: FAMILY_TV }),
+  place('family.windowCouch.north', 'readingSeat', at(15.6, 2.45), WEST, { seat: { x: 16.27, z: 2.45, height: 0.45, style: 'upright' } }),
+  place('family.windowCouch.south', 'couchSeat', at(15.6, 3.35), WEST, { seat: { x: 16.27, z: 3.35, height: 0.45, style: 'upright' } }),
   // Kitchen.
   place('kitchen.stove', 'stove', at(7.72, f.range.z), WEST, { surface: at(7.0, f.range.z, 0.95) }),
   place('kitchen.counter', 'kitchenCounter', at(7.72, 2.35), WEST, { surface: at(7.05, 2.35, 0.92) }),

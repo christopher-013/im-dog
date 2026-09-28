@@ -53,7 +53,9 @@ Seats are **stepped into straight**: a sofa straight back from its stand point; 
 whose stand point is behind it, from an `entry` beside it (the gap between chairs), so the body never passes through
 a chair back or slides in sideways. Once they're halfway down, their physical body (the capsule Moke bumps into)
 moves onto the seat with them and comes back as they get up (`CharacterBody.offsetCollider`), so the floor they
-stood on, such as the passage behind the gym-side dining chairs, stays free for Moke. The chaise is not a human seat (it can only be reached from its side); it stays a
+stood on, such as the passage behind the gym-side dining chairs, stays free for Moke. On couches the hips sit
+0.33 m in from the front edge (seated, the knees are 0.44 m in front of the hips), so the shins hang in front of the
+couch, not through it; a test checks every couch seat. The chaise is not a human seat (it can only be reached from its side); it stays a
 nap spot. Tests check every stand point is walkable and reachable from every other, faces its surface, and steps
 straight into its seat.
 

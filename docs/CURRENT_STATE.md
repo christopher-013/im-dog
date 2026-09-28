@@ -578,6 +578,16 @@ not on GitHub and is **not** covered.
   him go. Every such hold is bounded today (the longest is a tug, at most 8 s), so this only catches a future bug.
 - **Fixed: flicker at the hallway → kitchen opening.** With the hallway open, its side walls ran 12 cm into the
   kitchen's west wall: two differently painted faces in the same place (z-fighting). They now stop at the kitchen wall.
+- **Flicker (z-fighting) sweep, 2026-09-28, after the bathroom landed:** new `src/world/ZFighting.test.ts` scans every flat
+  static surface of the house for visible overlapping faces. It found and fixed:
+  - the bathroom-side hallway wall running into the kitchen wall again (the wall split for the bathroom door);
+  - the bathroom's side walls running through the hallway wall;
+  - all three TV screens flush with their bodies (now 4 mm proud);
+  - three plant pots with the soil level with the rim;
+  - two books on the TV console;
+  - the corner counter's quartz poking 1 cm into the oven column.
+
+  The test now fails with the two materials and the location if a new overlap appears.
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

@@ -16,8 +16,11 @@ export function buildBathroom(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.add(new BoxGeometry(width, 0.1, depth), m.arabesque, [midX, -0.05, midZ], { cast: false, solid: true, worldUV: TILE_REPEAT });
   b.add(new BoxGeometry(width + WALL, 0.1, depth + WALL), m.ceiling, [midX, CEILING + 0.05, midZ], { cast: false });
   b.add(new BoxGeometry(width, CEILING, WALL), m.wallGreige, [midX, CEILING / 2, r.zMin - WALL / 2], solid);
+  // The side walls stop at the hallway wall's back face (HALL.zMin - WALL): running on through it would put their
+  // ends in the hallway wall's face, two paints in one place, which flicker (z-fighting).
+  const sideDepth = HALL.zMin - WALL - r.zMin;
   for (const x of [r.xMin + WALL / 2, r.xMax - WALL / 2]) {
-    b.add(new BoxGeometry(WALL, CEILING, depth), m.wallGreige, [x, CEILING / 2, midZ], solid);
+    b.add(new BoxGeometry(WALL, CEILING, sideDepth), m.wallGreige, [x, CEILING / 2, r.zMin + sideDepth / 2], solid);
   }
   // Casing on both sides of the hallway opening.
   for (const x of [r.doorMin, r.doorMax]) {

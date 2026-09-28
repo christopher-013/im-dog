@@ -263,9 +263,12 @@ function kitchen(b: StaticSceneBuilder, m: RoomMaterials): void {
   const sz = WING.south;
   const cornerX = x + 0.62;
   const ovensX = 9.1;
-  b.at([(cornerX + ovensX) / 2, 0, sz], Math.PI, () => {
-    baseCabinets(b, m, ovensX - cornerX);
-    b.at([0, 0.92, 0], 0, () => backsplash(b, m.subway, ovensX - cornerX, 0.53));
+  // The counter's quartz overhangs its cabinets by 1 cm; end the run 1 cm short so the top meets the oven column
+  // instead of poking into its front (two faces in one place flicker; ZFighting.test.ts).
+  const cornerEnd = ovensX - 0.01;
+  b.at([(cornerX + cornerEnd) / 2, 0, sz], Math.PI, () => {
+    baseCabinets(b, m, cornerEnd - cornerX);
+    b.at([0, 0.92, 0], 0, () => backsplash(b, m.subway, cornerEnd - cornerX, 0.53));
   });
   b.at([(x + 0.34 + ovensX) / 2, 0, sz], Math.PI, () => upperCabinets(b, m, ovensX - x - 0.34));
   b.at([ovensX + 0.38, 0, sz], Math.PI, () => tallColumn(b, m, 'ovens', H));

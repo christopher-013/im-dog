@@ -188,7 +188,9 @@ export class LivingRoom {
 const sideLength = this.options.hallwayOpen ? length : length + T;
 const sideX = x0 + sideLength / 2;
 // The left wall opens into the bathroom; keep an actual navigable doorway, not a decorative door over a collider.
-for (const [start, end] of [[x0, BATHROOM.doorMin], [BATHROOM.doorMax, x1 + T]] as const) {
+// Open, stop at the kitchen's own wall (x1): running on into it puts two differently painted faces in the same
+// place, which flicker (z-fighting). ZFighting.test.ts guards this.
+for (const [start, end] of [[x0, BATHROOM.doorMin], [BATHROOM.doorMax, x0 + sideLength]] as const) {
   b.add(new BoxGeometry(end - start, H, T), m.wall, [(start + end) / 2, H / 2, zMin - T / 2], solid);
 }
 b.add(new BoxGeometry(BATHROOM.doorMax - BATHROOM.doorMin, H - BATHROOM.doorHeight, T), m.wall,

@@ -148,9 +148,9 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
   {
     id: 'foldLaundry',
     name: 'folding laundry',
-    steps: [{ places: ['laundry'], pose: 'fold', prop: 'laundry', seconds: [30, 60] }],
-    weight: 2.2,
-    cooldown: 150,
+    steps: [{ places: ['laundry'], pose: 'fold', prop: 'laundry', seconds: [12, 22] }],
+    weight: 0.8,
+    cooldown: 300,
     interruptible: 'always',
     // As in the Sock Heist: folding, with a look round the room every few seconds.
     attention: 0.75,
@@ -220,6 +220,12 @@ export const BOWL_REFILL = {
 
 /** The routine's timing. */
 export const ROUTINE = {
+  /** Chopping gets a shared appointment (meal prep OR dinner), not a weighted chance that can miss forever.
+   * Leave time for the current activity and the walk so the first prep happens within ten minutes normally.
+   * Repeat at least ten minutes after chopping starts, with a random offset, never during another human role.
+   */
+  prepFirst: [45, 420] as const,
+  prepRepeat: [600, 900] as const,
   /** A breather between activities, standing (s). Keeps them from flitting about. */
   pause: [1.5, 4] as const,
   /** Places in the room they're in are this much more likely; far ones fade (weight × 1 / (1 + distance / falloff)). */

@@ -40,6 +40,8 @@ export const MISCHIEF = {
   returnTime: 0.7,
   pillowCooldown: 8,
   tableCooldown: 2,
+  tableReminderEvery: [4, 5] as const,
+  tableReminders: ['Moke, get down!', 'Off the table, Moke.', 'Come on, Moke, feet on the floor.', 'Moke, that is not your spot!'] as const,
   walkTimeout: 45,
   stuckTimeout: 4,
   approachGap: 0.55,

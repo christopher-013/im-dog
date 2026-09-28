@@ -1,4 +1,4 @@
-import { Object3D, Vector3 } from 'three';
+import { MeshBasicMaterial, MeshStandardMaterial, Object3D, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
 import { FrontDoor } from './FrontDoor';
@@ -30,6 +30,36 @@ describe('Exterior delivery door presentation', () => {
     front.arrive(); front.cancel();
     expect(box.visible).toBe(false);
     expect(hinge.rotation.y).toBe(0);
+    front.dispose();
+  });
+
+  it('pulses the full doorway only during ringing, pauses with game time and turns off immediately afterwards', () => {
+    const front = new FrontDoor();
+    const glow = front.object.getObjectByName('Doorbell glow')!;
+    const edge = (glow.children[0] as Object3D & { material: MeshBasicMaterial }).material;
+    const panel = ((front.object.getObjectByName('Exterior door hinge')!.children[0] as Object3D & { material: MeshStandardMaterial }).material);
+    const inset = ((front.object.getObjectByName('Exterior door hinge')!.children[1] as Object3D & { material: MeshStandardMaterial }).material);
+    expect(glow.visible).toBe(false);
+    expect(panel.emissiveIntensity).toBe(0);
+    front.arrive(); front.update(0);
+    expect(glow.visible).toBe(true);
+    expect(edge.opacity).toBeGreaterThan(0);
+    expect(inset.emissiveIntensity).toBeGreaterThan(0);
+    const first = edge.opacity;
+    front.update(0.2);
+    expect(edge.opacity).not.toBeCloseTo(first);
+    const paused = edge.opacity;
+    front.update(0);
+    expect(edge.opacity).toBe(paused);
+    front.acknowledge();
+    expect(glow.visible).toBe(false);
+    expect(edge.opacity).toBe(0);
+    expect(panel.emissiveIntensity).toBe(0);
+    expect(inset.emissiveIntensity).toBe(0);
+    front.arrive(); front.cancel();
+    expect(glow.visible).toBe(false);
+    front.arrive(); front.finish();
+    expect(glow.visible).toBe(false);
     front.dispose();
   });
 });

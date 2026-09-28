@@ -20,9 +20,13 @@ import { DoorDelivery } from '../activities/DoorDelivery';
 import { KitchenBeg } from '../activities/KitchenBeg';
 import { PillowDig } from '../activities/PillowDig';
 import { TableManners } from '../activities/TableManners';
+import { ToiletPaperMischief } from '../activities/ToiletPaperMischief';
 import { CouchPillows } from '../world/CouchPillows';
 import { FrontDoor } from '../world/FrontDoor';
+import { BathroomView } from '../world/Bathroom';
+import { BATHROOM } from '../world/home/layout';
 import { BOWL_REFILL, MOKE_REACTIONS } from '../config/activities';
+import { BATHROOM_ACTIVITY } from '../config/bathroom';
 import { MOKE_ANIMATION } from '../config/animation';
 import { DOG_ACTIVITIES } from '../config/dogActivities';
 import { dogLogicEntry } from '../config/dogLogic';
@@ -91,7 +95,7 @@ export class Game {
   private readonly loop: GameLoop;
   private readonly fixedStep = new FixedStep();
   private readonly frameStats = new FrameStats();
-  /** The whole house: the living room and hallway, the kitchen, the family room and the dining room. */
+  /** The whole house: living room, hall bathroom, kitchen, family room and dining room. */
   private readonly room = new Home();
   private readonly followCamera: ThirdPersonCamera;
   private readonly moveBasis = new MoveBasis();
@@ -143,10 +147,12 @@ export class Game {
   private readonly huntTreat = new Treat('hunt', DOG_ACTIVITIES.treatHunt.scentRadius);
   private readonly kitchenTreat = new Treat('kitchen', 3, 'carrot');
   private readonly frontDoor = new FrontDoor();
+  private readonly bathroom = new BathroomView();
   private delivery: DoorDelivery | null = null;
   private kitchenBeg: KitchenBeg | null = null;
   private pillowDig: PillowDig | null = null;
   private tableManners: TableManners | null = null;
+  private toiletPaper: ToiletPaperMischief | null = null;
   private pillows: CouchPillows | null = null;
   /** The human's walkable grid over the whole house. */
   private nav: NavGrid | null = null;
@@ -298,6 +304,7 @@ export class Game {
     this.input.dispose();
     this.audio.dispose();
     this.wisps.dispose();
+    this.toiletPaper?.resetAll();
     this.moke?.visual.dispose();
     this.delivery?.resetAll();
     this.kitchenBeg?.resetAll();
@@ -305,6 +312,7 @@ export class Game {
     this.tableManners?.resetAll();
     this.pillows?.reset();
     this.frontDoor.dispose();
+    this.bathroom.dispose();
     this.kitchenTreat.dispose();
     this.gfx.dispose();
   }
@@ -444,6 +452,7 @@ export class Game {
       },
     });
     this.scene.add(this.frontDoor.object);
+    this.scene.add(this.bathroom.object);
     this.delivery = new DoorDelivery({
       routine: this.routine, hand: human.visual.hands.right, view: this.frontDoor,
       onRing: () => this.audio.play('doorbell'), onBark: () => this.bark(),
@@ -486,8 +495,14 @@ export class Game {
       onFun: () => { this.showVoiceBubble('Pillows are fun to move!'); this.dogLogic.discover('pillows=fun', true); },
     });
     this.tableManners = new TableManners({ routine: this.routine, nav, grounded: () => moke.controller.grounded });
+    this.toiletPaper = new ToiletPaperMischief({ routine: this.routine, nav, view: this.bathroom,
+      mouth: moke.visual.attachments.mouth,
+      onHoldChange: (holding) => { moke.carrying = holding || !!this.pickup?.carried; },
+      onLearn: () => { this.showVoiceBubble('Toilet paper is fun—and my human notices!'); this.dogLogic.discover('paper=fun+attention', true); },
+    });
     this.interactions.register(this.pillowDig.interactable);
-    this.director = new DogActivityDirector([this.delivery, this.kitchenBeg, this.pillowDig, this.tableManners, hunt, nap, play]);
+    this.interactions.register(this.toiletPaper.interactable);
+    this.director = new DogActivityDirector([this.delivery, this.kitchenBeg, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
 
     // "Get Pets": close to the human while they're free.
     const game = this;
@@ -620,7 +635,9 @@ export class Game {
     this.kitchenBeg?.resetAll();
     this.pillowDig?.resetAll();
     this.tableManners?.resetAll();
+    this.toiletPaper?.resetAll();
     this.pillows?.reset();
+    this.bathroom.reset();
     this.heist?.heist.reset();
     this.ui.clearHeist();
     this.audio.unlock();
@@ -742,7 +759,12 @@ export class Game {
     // The world only advances while playing; menus and pause freeze it.
     const alpha = this.fixedStep.advance(playing ? dt : 0, this.fixedUpdate);
     this.updateAttention(dt);
+    if (this.toiletPaper?.grabbing && this.moke) {
+      this.moke.lookAt = BATHROOM.paper;
+      this.moke.sniffing = true;
+    }
     this.moke?.update(dt, alpha);
+    this.bathroom.updateMouthLink();
     this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? this.delivery?.objective ?? this.kitchenBeg?.objective ?? null);
     this.huntTreat.update();
     this.kitchenTreat.update();
@@ -777,14 +799,18 @@ export class Game {
     const c = this.moke.controller;
     this.updateMoveIntent();
     const glideTarget = this.rest.glideTarget;
+    const paperTarget = this.toiletPaper?.approachTarget;
     if (glideTarget) {
       c.glideTo(step, glideTarget, this.rest.glideHeading(c), REST.settleSpeed, REST.settleTurnRate);
+    } else if (paperTarget) {
+      c.glideTo(step, paperTarget, Math.atan2(BATHROOM.paper.x - c.position.x, BATHROOM.paper.z - c.position.z),
+        BATHROOM_ACTIVITY.approachSpeed, BATHROOM_ACTIVITY.approachTurnRate);
     } else {
       // A trick holds him in place; heading off somewhere cuts it short.
       const tricking = this.moke.animation.holdsStillForTrick;
       if (tricking && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.moke.animation.cancelTrick();
       const stayPut =
-        this.rest.holdsMoke ||
+        this.rest.holdsMoke || this.toiletPaper?.grabbing ||
         this.moke.animation.holdsStillForTrick ||
         this.moke.animation.eating ||
         this.moke.animation.petting ||
@@ -792,6 +818,7 @@ export class Game {
       this.moke.fixedUpdate(step, stayPut ? this.stillIntent : this.moveIntent);
     }
     this.rest.update(step, c);
+    this.bathroom.update(step, c.position);
     this.moke.resting = this.rest.lying;
     this.heist?.fixedUpdate(step);
     this.bowlRefill?.update(step);
@@ -822,7 +849,7 @@ export class Game {
   /** The discrete action keys, once per rendered frame while playing: E interact, Space jump, F bark or growl, Q trick, R sniff. */
   private handleActions(): void {
     const input = this.input.state;
-    if (input.wasPressed('interact')) {
+    if (input.wasPressed('interact') && !this.toiletPaper?.grabbing && !this.toiletPaper?.holdingPaper) {
       this.moke?.animation.cancelTrick();
       // Nothing to use here: the paw (or E) sniffs instead, so a phone can hunt for treats without a sniff button.
       if (!this.interactions.interact() && !this.rest.holdsMoke && !this.moke?.animation.performingTrick && this.scent.start()) this.audio.play('sniff');
@@ -912,7 +939,8 @@ export class Game {
 
   /** Chooses what E would do now and shows it as "E — …" (hidden outside play). */
   private updateInteractionPrompt(playing: boolean): void {
-    const current = playing && this.moke ? this.interactions.update(this.moke.controller) : null;
+    const current = playing && this.moke && !this.toiletPaper?.grabbing && !this.toiletPaper?.holdingPaper
+      ? this.interactions.update(this.moke.controller) : null;
     this.ui.setPrompt(current ? 'interact' : null, current?.label ?? null);
   }
 
@@ -944,7 +972,7 @@ export class Game {
       moke: {
         position: c.position,
         speed: c.actualSpeed,
-        carrying: this.pickup?.carried?.id ?? null,
+        carrying: this.toiletPaper?.holdingPaper ? 'paper' : this.pickup?.carried?.id ?? null,
         barked: this.barkForActivities,
         trick: moke.animation.performingTrick,
         sniffing: this.scent.active,

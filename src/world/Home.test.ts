@@ -11,6 +11,7 @@ import { roomAt } from './home/layout';
 import { BOWLS, placeById } from './home/places';
 import { BOWL_REFILL } from '../config/activities';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
+import { BATHROOM } from './home/layout';
 
 // The whole house with the real Rapier world: Moke can get everywhere he should (and nowhere he shouldn't),
 // the human can reach every place their routine uses, and every nap and treat spot is reachable.
@@ -102,6 +103,7 @@ describe('Home', () => {
   it('knows which room a point is in', () => {
     expect(roomAt(0, 0).id).toBe('livingRoom');
     expect(roomAt(5, 1.1).id).toBe('hallway');
+    expect(roomAt(5, -0.4).id).toBe('bathroom');
     expect(roomAt(9, 3).id).toBe('kitchen');
     expect(roomAt(14, 3).id).toBe('familyRoom');
     expect(roomAt(8.8, -2).id).toBe('diningRoom');
@@ -121,6 +123,18 @@ describe('Home', () => {
       expect(travel(x, z), `to ${x}, ${z}`).toBe(true);
       expect(moke.position.y).toBeLessThan(0.05);
     }
+  });
+
+  it('lets Moke push through the hall-side bathroom opening and reach the paper, while the human can reach its cleanup point', async () => {
+    const w = await setup();
+    expect(w.travel(BATHROOM.doorway.x, 0.15)).toBe(true);
+    expect(w.travel(BATHROOM.paperApproach.x, BATHROOM.paperApproach.z)).toBe(true);
+    expect(Math.hypot(w.moke.position.x - BATHROOM.paper.x, w.moke.position.z - BATHROOM.paper.z)).toBeLessThan(1.15);
+    expect(w.travel(BATHROOM.doorway.x, 1.2)).toBe(true);
+    expect(w.travel(8, 1.2)).toBe(true);
+    expect(humanNav.findPath(home.landmarks.laundry, BATHROOM.cleanup, [])).toBe(true);
+    expect(humanNav.findPath(home.landmarks.familyRoom, BATHROOM.cleanup, [])).toBe(true);
+    w.physics.world.free();
   });
 
   it('lets him walk under the dining table, ducking under nothing (the table is high)', async () => {

@@ -20,6 +20,8 @@ import {
 } from './furniture';
 import { createRoomMaterials, FLOOR_TILE, type RoomMaterials } from './materials';
 import { StaticSceneBuilder } from './StaticSceneBuilder';
+import { BATHROOM, HALL } from './home/layout';
+import { buildBathroom } from './Bathroom';
 
 /** Room interior spans x -3.5..3.5 and z -3..3. */
 const ROOM = { width: 7, depth: 6, wall: 0.12 };
@@ -75,6 +77,7 @@ export class LivingRoom {
     this.shell(b, m);
     this.windowAndView(b, m);
     this.hallway(b, m);
+    buildBathroom(b, m);
     this.furnish(b, m);
     this.colliders = b.colliders;
     this.object = b.build('LivingRoom');
@@ -182,7 +185,12 @@ export class LivingRoom {
 
     b.add(new BoxGeometry(length, 0.1, width), m.floorGrey, [midX, -0.05, midZ], { cast: false, solid: true, worldUV: FLOOR_TILE });
     b.add(new BoxGeometry(length + T, 0.1, width + 2 * T), m.ceiling, [midX + T / 2, H + 0.05, midZ], { receive: false });
-    b.add(new BoxGeometry(length + T, H, T), m.wall, [midX + T / 2, H / 2, zMin - T / 2], solid);
+    // The left wall opens into the bathroom; keep an actual navigable doorway, not a decorative door over a collider.
+    for (const [start, end] of [[x0, BATHROOM.doorMin], [BATHROOM.doorMax, x1 + T]] as const) {
+      b.add(new BoxGeometry(end - start, H, T), m.wall, [(start + end) / 2, H / 2, zMin - T / 2], solid);
+    }
+    b.add(new BoxGeometry(BATHROOM.doorMax - BATHROOM.doorMin, H - BATHROOM.doorHeight, T), m.wall,
+      [(BATHROOM.doorMin + BATHROOM.doorMax) / 2, (H + BATHROOM.doorHeight) / 2, HALL.zMin - T / 2], solid);
     b.add(new BoxGeometry(length + T, H, T), m.wall, [midX + T / 2, H / 2, zMax + T / 2], solid);
     b.add(new BoxGeometry(length - 0.6, 0.008, 0.55), m.runner, [midX + 0.15, 0.004, midZ], { cast: false });
     if (!this.options.hallwayOpen) {

@@ -304,6 +304,7 @@
               <svg class="btn-icon" aria-hidden="true"><use href="#paw" /></svg>PLAY
             </button>
             <button class="btn btn-secondary" type="button" data-open-controls>CONTROLS</button>
+            <button class="btn btn-secondary" type="button" data-open-about>ABOUT I'M DOG?</button>
             <button class="btn btn-link" type="button" data-fullscreen hidden>FULLSCREEN</button>
           </div>
         </div>
@@ -341,6 +342,7 @@
           <div class="menu-buttons">
             <button id="btn-resume" class="btn btn-primary" type="button">RESUME</button>
             <button class="btn btn-secondary" type="button" data-open-controls>CONTROLS</button>
+            <button class="btn btn-secondary" type="button" data-open-about>ABOUT I'M DOG?</button>
             <button class="btn btn-link" type="button" data-fullscreen hidden>FULLSCREEN</button>
           </div>
         </div>
@@ -377,6 +379,20 @@
           <p class="controls-note">Controller support uses the standard browser gamepad layout. Press a controller button after connecting it so the browser can detect it.</p>
           <p class="controls-note">Items marked <span class="soon">soon</span> arrive in later milestones.</p>
           <button id="btn-controls-close" class="btn btn-secondary" type="button">GOT IT</button>
+        </div>
+      </dialog>
+      <dialog id="about-dialog" class="controls-dialog about-dialog" aria-labelledby="about-title">
+        <div class="card about-card">
+          <div class="about-portrait">
+            <img src="/moke-about.png" alt="Moke, the real white Maltipoo who inspired the game" width="1031" height="1374" loading="lazy" decoding="async" />
+          </div>
+          <div class="about-copy">
+            <h2 id="about-title" class="card-title">About I'M DOG?</h2>
+            <p>I'M DOG? is inspired by Moke, a real white Maltipoo with a curious nose and a very big personality.</p>
+            <p>See home from his point of view. Explore, play with toys, get to know the family, and follow a few dog-sized adventures. Moke may have his own ideas about how the world works.</p>
+            <p class="about-note">Meet the real Moke. The rest is yours to discover!</p>
+            <button id="btn-about-close" class="btn btn-secondary" type="button">BACK</button>
+          </div>
         </div>
       </dialog>
     </div>

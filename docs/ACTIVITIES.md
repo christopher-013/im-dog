@@ -34,7 +34,7 @@ Each activity is plain data, so a new one needs no code:
 | Eat dinner | Dining chairs | eat, fork | 25–45 s | Only within 7 minutes of cooking it, and usually straight after; a plate on the table |
 | Relax | Sofas | relax (hands behind head) | 20–40 s | |
 | Coffee at the counter | Counter, island sink | sip, mug | 12–25 s | |
-| Fold laundry | The living room laundry basket | fold, laundry cloth | 30–60 s | Where Sock Heist starts: bending into the (visibly full) basket, shaking each piece out and folding it; glances round the room often |
+| Fold laundry | The living room laundry basket | fold, laundry cloth | 12–22 s | Starts here for Sock Heist; lower selection weight (0.8), five-minute cooldown; glances round the room often |
 
 **The scheduler** (`human/activities/ActivityScheduler.ts`) runs when an activity ends: among those off cooldown with
 a free place, it picks at random by weight × location (the same room ×1.5, and weight / (1 + distance / 9)) × follows
@@ -43,6 +43,15 @@ activities: a 1.5–4 s breather, or, sitting, the next thing in the same seat (
 then up and about). An interaction point that snaps to an unreachable nearby NavGrid cell is abandoned after one
 second once pathing reports arrival, and no path at all counts as stuck: either way they give up and choose
 something else instead of standing at the furniture. Tuning: `ROUTINE`.
+
+**Chopping appointments:** meal prep and the island step of dinner share one schedule. The first appointment is
+randomly due after 45–420 seconds of active routine time, with time allowed for finishing the current activity
+and walking to the island (verified to start within ten minutes in the normal routine). Due prep takes the next
+free routine slot rather than relying on weighted luck. Once actual chopping starts, the next appointment is
+randomly due 600–900 seconds later; neither dinner nor meal prep can bypass that interval. Pause freezes the
+clock; Sock Heist, dog activities and blocked prep places defer it until the human is available. A failed walk
+doesn't consume the appointment. Begging/resuming the same prep doesn't restart its timer. A game reset clears
+the schedule. Tunable ranges: `ROUTINE.prepFirst` / `prepRepeat`.
 
 ## Dog activities (`src/activities/`)
 **Lifecycle** (`DogActivity.ts`): `AVAILABLE → STARTING → ACTIVE → SUCCESS | CANCELLED → COOLDOWN → READY_AGAIN →
@@ -112,7 +121,8 @@ of play; a louder original two-tone DING-DONG chime repeats every 2 seconds unti
 within 1.25 m of the door's inside interaction point. **Bark at the Door** uses the normal interaction action;
 the ordinary Bark action also works there (it chooses a bark, not a random growl, while the bell is ringing).
 The bell stops immediately when Moke answers, even if the household human must finish another dog activity first.
-If unanswered for 10 seconds, the visitor leaves quietly, the bell/light/prompt turn off, and another visit is
+While the bell rings, the door's panel and outline pulse with a warm glow so the objective is visible as well as
+audible. The glow stops immediately when Moke answers or the visitor leaves. If unanswered for 30 seconds, the visitor leaves quietly, the bell/glow/prompt turn off, and another visit is
 scheduled without granting a discovery. Ringing alone does not borrow the human or prevent other activities.
 
 One bark action starts Moke's automatic **bark → growl → bark → growl → bark → growl** routine, spaced 1.25 seconds
@@ -149,18 +159,35 @@ that sofa's three existing throw pillows onto the floor. He learns **PILLOWS = F
 pick it up, carries it back, and puts it on the sofa. Other sofas stay untouched. After cleanup and an eight-second
 cooldown, another explicit dig is possible. Held input cannot duplicate pillows or queue multiple cleanups.
 The throw pillows alone are movable meshes (`world/CouchPillows.ts`); all other scenery remains merged.
+The long L-shaped sectional has three visible throw pillows in front of its back cushions, including one at
+the chaise; digging from either its long seat or chaise tosses those same pillows, and cleanup restores them.
 Short toss/return arcs use game time and pause correctly. Cancellation/reset restores the original pillows and
 releases the digging pose; Sock Heist retains priority. Existing back-cushion collisions and jump limits remain.
 
 ### Moke, Get Down (`TableManners.ts`, owner-requested addition, 2026-09-27)
 Landing on either coffee table automatically borrows the human when they're free. They come to a walkable
-table edge, say **"Moke get down"** once, look irritated and stand with both hands on their hips. They keep
+table edge, say **"Moke, get down!"**, look irritated and stand with both hands on their hips. While Moke stays
+there, they repeat that reminder and gentle variations every 4–5 seconds, with their eyes on him. They keep
 watching until Moke jumps or walks off; hopping in place does not satisfy it. Moke's movement is never forced or
 locked by the scolding. The human says "Thank you, Moke." and resumes their saved routine. Landing on a table
 again can start another response after a short cooldown. Walking underneath or flying past a table does not
 trigger it. The dining table is also described but remains above the existing absolute jump-height cap.
 Unreachable approaches time out without trapping the human; heist interruptions and reset clear the role safely.
 Furniture/timing/pose tuning: `config/mischief.ts`; no new keys, assets or dependencies.
+
+### Bathroom Paper Mischief (`ToiletPaperMischief.ts`, owner-requested addition, 2026-09-27)
+The first hallway's left wall, heading toward the kitchen, now opens into a compact bathroom. Its door starts
+slightly ajar and swings open when Moke approaches from the hall. Inside are a vanity/sink, mirror, toilet and a
+wall-mounted paper-roll holder to the toilet's right. With an empty mouth, Moke can use **Pull Toilet Paper** (the
+normal E / controller A / touch-paw interaction). He moves to the loose end, lowers his head and takes it in his
+mouth. Normal movement then resumes: back him through the doorway and pull the sheet down the hall. The paper
+follows his actual route and remains attached to his animated mouth until he has traveled far enough outside the
+bathroom. Only then does the human walk to the trail, say **"No, Moke! Don't make a mess!"**, and gather it up before
+returning to their routine. Moke learns **TOILET PAPER = FUN + ATTENTION** after cleanup. The door returns to ajar
+when Moke leaves and opens again when he approaches, so the sequence can be repeated after cooldown. Spam cannot
+make duplicate trails or rewards. Heist interruption/reset, an unreachable approach, or an unavailable human
+timeout clear loose paper safely. The panel is a visual proximity door, not a physics blocker; the surrounding
+doorway and fixtures have colliders, and navigation tests confirm dog and human access in both directions.
 
 ## Moke's bowls and the refill errand
 His bowls in the family room (by the hearth) start full: kibble in the blue slow feeder, water in the steel bowl

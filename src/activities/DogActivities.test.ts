@@ -198,12 +198,12 @@ describe('Door delivery (real home and household human)', () => {
     expect(w.counts().rewards).toBe(1);
   });
 
-  it('rings every two seconds, leaves after ten unanswered seconds, then visits again without rewards', async () => {
+  it('rings every two seconds, leaves after thirty unanswered seconds, then visits again without rewards', async () => {
     const w = await deliveryWorld(45);
     w.waitForRing();
-    w.tick(9.8);
+    w.tick(29.8);
     expect(w.delivery.ringing).toBe(true);
-    expect(w.counts().rings).toBe(5);
+    expect(w.counts().rings).toBe(15);
     w.tick(0.25);
     expect(w.delivery.ringing).toBe(false);
     expect(w.delivery.objective).toBe(null);
@@ -212,22 +212,34 @@ describe('Door delivery (real home and household human)', () => {
     expect(w.counts().exchanges).toBe(0);
     expect(w.routine.available).toBe(true);
     w.tick(49);
-    expect(w.counts().rings).toBe(5);
+    expect(w.counts().rings).toBe(15);
     w.waitForRing();
-    expect(w.counts().rings).toBe(6);
-    w.tick(10.1);
+    expect(w.counts().rings).toBe(16);
+    w.tick(30.1);
     expect(w.delivery.ringing).toBe(false);
     expect(w.counts().rewards).toBe(0);
+  });
+
+  it('still accepts Moke answering just before the longer ring deadline', async () => {
+    const w = await deliveryWorld(49);
+    w.waitForRing();
+    w.tick(29.7);
+    Object.assign(w.moke, { ...HOME_ACTIVITIES.delivery.stand, x: -2.2 });
+    w.delivery.noteBark(w.moke);
+    expect(w.delivery.ringing).toBe(false);
+    w.tick(50);
+    expect(w.counts().exchanges).toBe(1);
+    expect(w.counts().rewards).toBe(1);
   });
 
   it('randomizes the initial visit and repeat delay, rather than relying on a fixed cooldown', async () => {
     const w = await deliveryWorld(46, () => 1);
     w.tick(44.8); expect(w.delivery.ringing).toBe(false);
     w.waitForRing(); // initial delay at the long end: 45 s
-    w.tick(10.1); expect(w.delivery.ringing).toBe(false);
+    w.tick(30.1); expect(w.delivery.ringing).toBe(false);
     w.tick(109); expect(w.delivery.ringing).toBe(false);
     w.waitForRing(); // repeat delay at the long end: 110 s
-    expect(w.counts().rings).toBe(6);
+    expect(w.counts().rings).toBe(16);
   });
 
   it('pauses its ringing and guard timers and cannot restart the guard performance by spamming barks', async () => {

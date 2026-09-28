@@ -11,6 +11,11 @@ No ripped assets, no copyrighted characters, nothing from the I'M DONUT? brand.
 Libraries (not assets): three.js (MIT), Rapier `@dimforge/rapier3d-compat` (Apache-2.0). Their license texts also ship in production as `THIRD_PARTY_NOTICES.txt`.
 Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 
+## Owner-approved public photo
+| Asset | Purpose | Source and permission | Notes |
+|---|---|---|---|
+| `public/moke-about.png` | Real Moke portrait in the About dialog | The owner supplied this exact photo in chat and explicitly approved its public use on 2026-09-27 | 1031×1374 PNG; checked to contain only image-data PNG chunks, with no embedded location or camera metadata. This exception applies only to this photo, not to the private reference folders. |
+
 ## Original assets (made in this project)
 | Asset | Where | Notes |
 |---|---|---|
@@ -49,13 +54,13 @@ were added or transmitted. The visitor reuses the existing rig and animation con
 | `ToonMokeVisual` (procedural stand-in Moke) | The final rigged, animated `moke.glb` (`docs/MOKE_3D_SPEC.md`) | **Carried forward from Phase 2.** Not made yet. The stand-in stays in code as the fallback only. |
 | Synthesized bark, growl, sniff, pickup and drop sounds, and the Sock Heist sounds | The owner's chosen final sounds (ideally Moke's real bark) | Placeholders (original, so no licence problem), pending the owner's choice |
 
-Everything else in the tables above is original and can ship as is. It could still be improved (for example
+Everything else in the tables above is original or owner-approved and can ship as is. It could still be improved (for example
 nicer furniture models), but nothing else has to be replaced.
 
 ## Private references (never distributed)
 | Asset | Where | Notes |
 |---|---|---|
-| Photos of the real Moke | `reference/moke/` | Git-ignored, blocked from bundling and dev serving, checked out of `dist/` on every build |
+| Other photos of the real Moke | `reference/moke/` | Git-ignored, blocked from bundling and dev serving, checked out of `dist/` on every build; the separately supplied `public/moke-about.png` is the sole approved exception |
 | Photos of the real home | `reference/home/` | Git-ignored, blocked from bundling and dev serving, checked out of `dist/` on every build |
 
 ## Needed later (not sourced yet)

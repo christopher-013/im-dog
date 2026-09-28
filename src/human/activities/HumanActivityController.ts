@@ -40,6 +40,7 @@ interface Saved {
   readonly stepIndex: number;
   readonly stepLeft: number;
   readonly at: number;
+  readonly prepStarted: boolean;
 }
 
 type Tuning = typeof ROUTINE;
@@ -95,6 +96,7 @@ export class HumanActivityController implements HumanIdleDriver {
   private lastPlace: HomePlace | null = null;
   /** Activities in a row in the same seat. */
   private carriedOn = 0;
+  private prepStarted = false;
 
   constructor(
     private readonly places: readonly HomePlace[],
@@ -163,6 +165,10 @@ export class HumanActivityController implements HumanIdleDriver {
     this.role = null;
     this.reactions?.reset();
     this.saved = null;
+    this.now = 0;
+    this.last = null;
+    this.lastPlace = null;
+    this.scheduler.reset();
     this.driving = true;
     const laundry = this.places.find((p) => p.kind === 'laundry');
     const fold = HUMAN_ACTIVITIES.find((a) => a.id === 'foldLaundry');
@@ -233,6 +239,10 @@ export class HumanActivityController implements HumanIdleDriver {
       case 'doing': {
         const place = this.place!;
         const step = this.step!;
+        if (step.effect === 'prep' && !this.prepStarted) {
+          this.scheduler.prepStarted(this.now);
+          this.prepStarted = true;
+        }
         this.holdPlace(intent, place);
         intent.pose = step.pose;
         intent.prop = step.prop ?? null;
@@ -273,6 +283,7 @@ export class HumanActivityController implements HumanIdleDriver {
     this.stats.started++;
     const samePlace = place === this.place && this.seatSpec !== null;
     this.activity = activity;
+    this.prepStarted = false;
     this.stepIndex = 0;
     this.place = place;
     this.stepLeft = this.duration(activity.steps[0]!);
@@ -367,7 +378,7 @@ export class HumanActivityController implements HumanIdleDriver {
 
   private save(): void {
     if (this.activity && this.place && (this.phase === 'doing' || this.phase === 'settling' || this.phase === 'walking')) {
-      this.saved = { activity: this.activity, stepIndex: this.stepIndex, stepLeft: Math.max(this.stepLeft, 8), at: this.now };
+      this.saved = { activity: this.activity, stepIndex: this.stepIndex, stepLeft: Math.max(this.stepLeft, 8), at: this.now, prepStarted: this.prepStarted };
     }
   }
 
@@ -380,6 +391,7 @@ export class HumanActivityController implements HumanIdleDriver {
       const place = this.scheduler.nearestPlace(step.places, s.position, (p) => this.isFree(p));
       if (place) {
         this.activity = saved.activity;
+        this.prepStarted = saved.prepStarted;
         this.stepIndex = saved.stepIndex;
         this.stepLeft = saved.stepLeft;
         this.place = place;

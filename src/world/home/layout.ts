@@ -12,6 +12,16 @@ export const CEILING = HOUSE_SCALE.ceilingHeight;
 /** The hallway from the living room: its end opens into the kitchen (where the real front hall meets it). */
 export const HALL = { x0: 3.5, x1: 6.74, zMin: 0.6, zMax: 1.6, height: 2.05 } as const;
 
+/** Small bathroom opening off the left (north) hallway wall when heading toward the kitchen. */
+export const BATHROOM = {
+  xMin: 3.62, xMax: 6.55, zMin: -1.62, zMax: HALL.zMin,
+  doorMin: 4.35, doorMax: 5.25, doorHeight: 2.08,
+  doorway: { x: 4.8, y: 0, z: HALL.zMin },
+  paper: { x: 6.28, y: 0.68, z: -0.93 },
+  paperApproach: { x: 5.45, y: 0, z: -0.45 },
+  cleanup: { x: 4.6, y: 0, z: 1.13 },
+} as const;
+
 export const WING = {
   /** West wall's inner face (the wall stands where the hallway's end wall used to). */
   west: 6.74,
@@ -42,7 +52,7 @@ export const OPENINGS = {
   diningWindow: { center: 8.85, width: 1.3, sill: 0.95, height: 1.2 },
 } as const;
 
-export type RoomId = 'livingRoom' | 'hallway' | 'kitchen' | 'familyRoom' | 'diningRoom';
+export type RoomId = 'livingRoom' | 'hallway' | 'bathroom' | 'kitchen' | 'familyRoom' | 'diningRoom';
 
 export interface RoomArea {
   readonly id: RoomId;
@@ -57,6 +67,7 @@ export interface RoomArea {
 export const ROOMS: readonly RoomArea[] = [
   { id: 'livingRoom', name: 'living room', minX: -3.5, maxX: 3.5, minZ: -3, maxZ: 3 },
   { id: 'hallway', name: 'hallway', minX: 3.5, maxX: WING.west, minZ: HALL.zMin, maxZ: HALL.zMax },
+  { id: 'bathroom', name: 'bathroom', minX: BATHROOM.xMin, maxX: BATHROOM.xMax, minZ: BATHROOM.zMin, maxZ: BATHROOM.zMax },
   { id: 'diningRoom', name: 'dining room', minX: WING.west, maxX: WING.diningEast, minZ: WING.north, maxZ: WING.divider },
   { id: 'kitchen', name: 'kitchen', minX: WING.west, maxX: WING.kitchenFamily, minZ: WING.divider, maxZ: WING.south },
   { id: 'familyRoom', name: 'family room', minX: WING.kitchenFamily, maxX: WING.east, minZ: WING.divider, maxZ: WING.south },

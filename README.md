@@ -9,7 +9,7 @@ a small white Maltipoo. No combat, no death: just socks, smells, naps and a very
 ([docs/PHASE_4.md](docs/PHASE_4.md)): the whole house, a human with a daily routine, and new things to do together. The game is ready for a final rigged, animated `moke.glb`, which still has
 to be made. Until then, a soft, stylized stand-in Moke modelled on the real dog (curly white
 coat, dark eyes, black button nose, blue collar) trots, runs and sneaks around a cozy, true-scale living room: linen couch, rug, coffee table he can
-duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway. He can jump up onto the couch and coffee table, bark, growl, do tricks, sniff,
+duck under, TV console, lamp, plant, and his bed in the window's sun, plus a short hallway with a small bathroom. He can jump up onto the couch and coffee table, bark, growl, do tricks, sniff,
 carry his sock and toys, and nap in his bed. A low dog-height camera follows him and avoids walls and furniture.
 
 **Phase 3 (complete, [docs/PHASE_3.md](docs/PHASE_3.md)):** **Sock Heist**, the
@@ -27,6 +27,8 @@ See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 **Play it:** https://christopher-013.github.io/im-dog/ (desktop Chrome or Edge; keyboard + mouse or a standard controller). Every push to `main`
 rebuilds and republishes it through GitHub Actions (`.github/workflows/deploy-pages.yml`). Since Phase 3 it
 also runs in phone and tablet browsers (touch controls, portrait or landscape).
+The start and pause menus include **About I'M DOG?**, with an owner-approved photo of the real Moke and a spoiler-light
+introduction. Other private reference photos remain excluded from the public build.
 
 ## Requirements
 - Node.js **22.12+** (tested with Node 24) and npm

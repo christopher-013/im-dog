@@ -8,7 +8,7 @@ import type { Vec3Like } from '../physics/CharacterBody';
 export const DOG_ACTIVITY_STATES = ['AVAILABLE', 'STARTING', 'ACTIVE', 'SUCCESS', 'CANCELLED', 'COOLDOWN', 'READY_AGAIN'] as const;
 export type DogActivityState = (typeof DOG_ACTIVITY_STATES)[number];
 
-export type DogActivityId = 'treatHunt' | 'perfectNap' | 'makeHumanPlay' | 'doorDelivery' | 'kitchenBeg' | 'pillowDig' | 'tableManners';
+export type DogActivityId = 'treatHunt' | 'perfectNap' | 'makeHumanPlay' | 'doorDelivery' | 'kitchenBeg' | 'pillowDig' | 'tableManners' | 'toiletPaper';
 
 /** What every dog activity can see each fixed step (built by the director from the game). */
 export interface DogActivityContext {

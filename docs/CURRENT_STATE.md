@@ -39,6 +39,82 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+OpenAI Codex (2026-09-27, public-preview readiness work, **uncommitted**): the bathroom roll is now wall-mounted
+to the toilet's right. Pull Toilet Paper glides Moke to the loose end, attaches paper to his mouth, then returns
+movement control so the trail follows his route out of the bathroom. The human responds only after sufficient
+distance outside; the door returns ajar on exit and the activity can replay. An unavailable-human timeout clears
+the trail rather than leaving it indefinitely. The start and pause menus now include an accessible, spoiler-light
+**About I'M DOG?** lightbox. The owner subsequently approved one specific Moke photo for that panel; it is now
+`public/moke-about.png`, with no embedded metadata. All other reference photos remain private. A public-release
+review found no confirmed navigation soft-lock in the tested routes, but public release remains subject to owner
+privacy sign-off; no commit or push has been made. Final verification: 426 tests in 59 files pass, production
+typecheck/build pass, and `git diff --check` is clean. The production build's privacy guard found no reference photo
+in output; live npm advisories currently report no known dependency vulnerabilities. Development touch and built
+desktop browser smoke tests passed without runtime errors. No physical-device or sustained mobile performance test
+was performed. A public source document already describes the real home's layout in detail; owner confirmation of
+that disclosure is pending.
+
+OpenAI Codex (2026-09-27, newest follow-up, **uncommitted**): added a small bathroom off the north/left wall of
+the first hallway toward the kitchen, with an initially ajar door Moke nudges open by approaching, a tiled floor,
+vanity/sink, mirror, toilet and accessible paper roll/holder. **Pull Toilet Paper** creates a visible trail into
+the hall and living room. The human walks over, says "No, Moke! Don't make a mess!", cleans it up and resumes
+their routine; Moke learns **TOILET PAPER = FUN + ATTENTION**. The activity can be replayed after cooldown and
+cleans up on heist interruption/reset. Existing uncommitted doorbell, sectional, laundry, meal-prep and table
+changes were preserved. No new dependency or external asset. Verification: `npm test` **425 tests / 59 files
+passed**; `npm run build` passed strict typecheck, production build and the private-reference guard (20 output
+files checked against 18 private reference files). Focused tests verify bathroom/roll reachability, NPC routes,
+trail into the living room, exact scolding, cleanup, learning, replay and heist interruption. In the in-app
+browser's emulated touch layout, Moke walked from the living room into the bathroom, the door swung open, the
+fixtures and paper roll rendered, the paw action unrolled paper, and the NPC cleanup completed with the Dog
+Logic discovery. No new browser console errors; only the known missing-final-`moke.glb` warning. No physical-device
+test. `git diff --check` clean. No files committed or pushed.
+
+OpenAI Codex (2026-09-27, previous follow-up, **uncommitted**): extended an unanswered delivery bell from **10 to 30
+seconds** without changing its two-second DING-DONG cadence or random recurrence. During ringing, the full door
+panel, both inset panels, door outline and small bell glow pulse warmly; they switch off immediately on an
+answer, timeout, cancellation or handoff. The door glow is a light-weight emissive/additive visual, not a new
+post-processing pass or gameplay collider. The household human now repeats varied, gentle **"Moke, get down!"**
+reminders every **4–5 seconds** after reaching a table, remaining hands-on-hips until Moke gets off. Speech
+stops immediately on leaving, reset or interruption. No new controls, dependencies or later-phase scope.
+Verification: full `npm test` **422 tests / 58 files passed**; `npm run build` passed strict typecheck,
+production build and the private-reference guard (all 18 private files excluded). Focused tests cover the
+30-second unanswered deadline, late bark, two-second chime cadence, random retry, pause, pulsing door materials,
+immediate glow shutdown, varied 4–5-second table reminders, stopping on exit and replay. Browser: started a new
+local game session, observed the bell objective and clearly glowing door panels/outline at multiple pulse phases,
+then saw the objective clear and the door return to its normal blue after the unanswered event. Browser console
+showed no new error; only the known missing-final-Moke-model warning. No physical-device test. `git diff --check`
+clean. No files committed or pushed.
+Files for this follow-up: `src/config/homeActivities.ts`, `src/world/FrontDoor.ts` and `FrontDoor.test.ts`,
+`src/activities/DoorDelivery.ts` (reviewed, unchanged), `DogActivities.test.ts`, `TableManners.ts`,
+`Mischief.test.ts`, `src/config/mischief.ts`, `docs/ACTIVITIES.md`, `docs/CONTROLS.md`,
+`docs/CURRENT_STATE.md`. Earlier uncommitted sectional/laundry/prep changes below are preserved.
+
+OpenAI Codex (2026-09-27, follow-up, **uncommitted**): fixed the family-room L-shaped sectional's three throw
+pillows, which were embedded in its thick back cushions. They now sit visibly forward on the seat, including
+the chaise pillow. Existing Dig & Toss Pillows uses those same meshes; repeat toss/carry/return restores their
+corrected positions and rotations. No furniture footprint/collision or Moke appearance changes.
+Also shortened folding laundry from 30–60 to **12–22 seconds**, lowered its routine weight to **0.8** and
+increased its cooldown to **300 seconds**. Meal prep and dinner chopping share an appointment: first due
+randomly at **45–420 seconds**, taking the next free routine slot; subsequent appointments **600–900 seconds**
+after actual chopping begins. The first normal routine starts chopping within ten minutes; busy human roles,
+Sock Heist or blocked island access defer it. Pause freezes timing; failed walks don't consume appointments,
+begging/resuming the same prep doesn't restart them, and reset clears them. Tuning remains in `config/activities.ts`.
+
+Verification: full `npm test` **420 tests / 58 files passed**; `npm run build` passed strict typecheck, production
+build and private-reference guard (18 private files excluded). New tests check front visibility/seat support
+for all three sectional pillows, repeated carry/return transforms, randomized first/repeat appointments,
+shared dinner/prep gating, unavailable prep places and reset. Real-house twenty-minute simulation confirms
+first chopping before ten minutes, repeat spacing of at least ten minutes, and shorter initial laundry.
+Browser: used a temporary local playtest page with the existing dev teleport helper to inspect the sectional,
+start its digging action, observe the NPC cleanup/restored pillows and complete a second dig/cleanup from the chaise.
+Normal game console had no errors, only the known missing-final-Moke-model warning. The temporary iframe
+playtest logged a tooling MutationObserver error at startup; the game still loaded/played normally. The local
+playtest page was removed afterwards. No physical-device test or ten-minute browser timing wait performed;
+routine cadence was verified with the real-house automated simulation. `git diff --check` clean.
+Files: `world/home/homeFurniture.ts`, `world/CouchPillows.test.ts`, `config/activities.ts`,
+`human/activities/ActivityScheduler.ts`, `ActivityScheduler.test.ts`, `HumanActivityController.ts`,
+`HumanActivityController.test.ts` (under `src/`); `docs/ACTIVITIES.md`, `docs/CURRENT_STATE.md`.
+
 OpenAI Codex (2026-09-27): added the owner's **Pillow Mischief** and **Moke, Get Down** activities. All three
 pillow-bearing sofas offer **Dig & Toss Pillows** through E / controller A / touch paw while Moke stands on them
 with an empty mouth. He alternates digging paws, tosses that sofa's existing pillows and earns **PILLOWS = FUN

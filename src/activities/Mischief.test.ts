@@ -40,7 +40,7 @@ async function setup() {
   const pillows = new CouchPillows(home.object);
   const dig = new PillowDig({ routine, pillows, nav, hand: human.visual.hands.right,
     grounded: () => grounded, onDigging: (on) => { digging = on; }, onFun: () => fun++ });
-  const table = new TableManners({ routine, nav, grounded: () => grounded });
+  const table = new TableManners({ routine, nav, grounded: () => grounded, random: () => 0.5 });
   const ctx: DogActivityContext = { moke: { position: moke, speed: 0, carrying: null, barked: false, trick: false, sniffing: false, napSpot: null },
     human: { position: human.controller.position, available: true, seesMoke: true, engaged: false }, heistRunning: false };
   const director = new DogActivityDirector([dig, table]);
@@ -92,20 +92,36 @@ describe('Pillow mischief and table manners (real house and human)', () => {
     w.physics.world.free(); w.human.visual.dispose();
   });
 
-  it('ignores floor/airborne Moke, comes over, scolds once and holds hands on hips until he leaves; then repeats', async () => {
+  it('ignores floor/airborne Moke, repeats varied 4–5-second scolds while standing on hips, then stops when he leaves', async () => {
     const w = await setup(); Object.assign(w.moke, { x: 0.3, y: 0, z: -1.15 });
     w.tick(3); expect(w.table.running).toBe(false);
     w.moke.y = 0.45; w.airborne(true); w.tick(2); expect(w.table.running).toBe(false);
     w.airborne(false); w.tick(20);
     expect(w.table.running).toBe(true); expect(w.human.brain.intent.pose).toBe('handsOnHips');
-    expect(w.said.filter((s) => s === 'Moke get down')).toHaveLength(1);
-    w.tick(60); expect(w.human.brain.intent.pose).toBe('handsOnHips'); expect(w.table.successes).toBe(0);
+    const reminders = () => w.said.filter((s) => MISCHIEF.tableReminders.includes(s as typeof MISCHIEF.tableReminders[number]));
+    expect(reminders()[0]).toBe('Moke, get down!');
+    expect(reminders().length).toBeGreaterThan(1);
+    expect(new Set(reminders()).size).toBeGreaterThan(1);
+    const times: number[] = [];
+    let heard = reminders().length;
+    for (let i = 0; i < 60 / DT; i++) {
+      w.step();
+      if (reminders().length > heard) { times.push(w.routine.now); heard = reminders().length; }
+    }
+    expect(times.length).toBeGreaterThan(10);
+    for (let i = 1; i < times.length; i++) {
+      expect(times[i]! - times[i - 1]!).toBeGreaterThanOrEqual(4 - DT);
+      expect(times[i]! - times[i - 1]!).toBeLessThanOrEqual(5 + DT);
+    }
+    expect(w.human.brain.intent.pose).toBe('handsOnHips'); expect(w.table.successes).toBe(0);
     w.airborne(true); w.moke.y = 0.5; w.tick(0.2); expect(w.table.running).toBe(true); // hopping in place isn't getting down
     Object.assign(w.moke, { x: -0.8, y: 0, z: -0.6 }); w.airborne(false); w.tick(5);
     expect(w.table.successes).toBe(1); expect(w.routine.available).toBe(true);
+    const stopped = reminders().length;
+    w.tick(6); expect(reminders()).toHaveLength(stopped);
     Object.assign(w.moke, { x: 0.3, y: 0.45, z: -1.15 }); w.tick(20);
     expect(w.human.brain.intent.pose).toBe('handsOnHips');
-    expect(w.said.filter((s) => s === 'Moke get down')).toHaveLength(2);
+    expect(reminders()[stopped]).toBe('Moke, get down!');
     (w.ctx as { heistRunning: boolean }).heistRunning = true; w.tick(0.1);
     expect(w.table.running).toBe(false); w.table.resetAll(); expect(w.table.state).toBe('AVAILABLE');
     w.physics.world.free(); w.human.visual.dispose();

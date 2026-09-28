@@ -511,6 +511,35 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
   flex-shrink: 0;
 }
 
+.about-dialog .about-card {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  width: min(680px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+
+.about-portrait {
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #d8e9d7;
+  box-shadow: inset 0 0 0 3px #a2bd9a;
+}
+
+.about-portrait img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.about-copy { min-width: 0; }
+.about-copy p { margin: 10px 0; line-height: 1.5; }
+.about-copy .about-note { color: var(--ink-soft); font-size: 0.9rem; }
+.about-copy .btn { margin-top: 8px; }
+
+@media (max-width: 560px) {
+  .about-dialog .about-card { grid-template-columns: 1fr; gap: 10px; }
+  .about-portrait { width: 110px; margin-inline: auto; }
+}
+
 .controls-list {
   display: grid;
   gap: 10px;
@@ -1511,8 +1540,13 @@ html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
   .tag-jp {
     display: none;
   }
+  .screen-menu { padding-block: 8px; }
+  .screen-menu .stack { gap: 6px; }
+  .screen-menu .subtitle { font-size: 0.95rem; }
+  .screen-menu .menu-buttons { gap: 6px; margin-top: 0; }
   .screen-menu .btn {
-    padding: 0.6em 1.4em;
+    padding: 0.48em 1.2em;
+    font-size: 1rem;
   }
 }
 

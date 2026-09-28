@@ -53,6 +53,9 @@ describe('HumanActivityController (the daily routine)', () => {
     expect(routine.activity?.id).toBe('foldLaundry');
     expect(routine.phase).toBe('doing');
     expect(human.brain.intent.pose).toBe('fold');
+    expect(routine.stepLeft).toBeLessThanOrEqual(22);
+    for (let i = 0; i < 25 / DT; i++) step();
+    expect(routine.activity?.id).not.toBe('foldLaundry');
   });
 
   it('lives a believable twenty minutes: many activities, several rooms, sitting and standing, never stuck', async () => {
@@ -63,8 +66,13 @@ describe('HumanActivityController (the daily routine)', () => {
     let worstStuck = 0;
     let switches = 0;
     let last: string | null = null;
+    const prepStarts: number[] = [];
+    let prepping = false;
     for (let i = 0; i < (20 * 60) / DT; i++) {
       step();
+      const prep = routine.effect === 'prep';
+      if (prep && !prepping) prepStarts.push(routine.now);
+      prepping = prep;
       const p = human.controller.position;
       expect(p.x).toBeGreaterThan(home.bounds.minX);
       expect(p.x).toBeLessThan(home.bounds.maxX);
@@ -90,10 +98,14 @@ describe('HumanActivityController (the daily routine)', () => {
     // Believable pacing: activities last, rather than flitting (≈ a minute each, not seconds).
     expect(switches).toBeLessThan(30);
     expect(routine.stats.finished).toBeGreaterThan(8);
+    expect(prepStarts.length).toBeGreaterThanOrEqual(2);
+    expect(prepStarts[0]!).toBeLessThan(600);
+    for (let i = 1; i < prepStarts.length; i++) expect(prepStarts[i]! - prepStarts[i - 1]!).toBeGreaterThanOrEqual(600);
   }, 60_000);
 
   it('cooks, then usually eats', async () => {
     const scheduler = new ActivityScheduler(home.places, HUMAN_ACTIVITIES, mulberry32(3));
+    scheduler.prepStarted(950);
     scheduler.markDone('prepareDinner', 990);
     let eatAfter = 0;
     for (let k = 0; k < 50; k++) {

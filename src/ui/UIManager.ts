@@ -26,6 +26,7 @@ export class UIManager {
   private readonly loadingTrack: HTMLElement;
   private readonly loadingDetail: HTMLElement;
   private readonly controlsDialog: HTMLDialogElement;
+  private readonly aboutDialog: HTMLDialogElement;
   private readonly toast: HTMLElement;
   private readonly pointerHint: HTMLElement;
   private readonly errorDetail: HTMLElement;
@@ -68,6 +69,7 @@ export class UIManager {
     this.loadingTrack = this.el('loading-track');
     this.loadingDetail = this.el('loading-detail');
     this.controlsDialog = this.el<HTMLDialogElement>('controls-dialog');
+    this.aboutDialog = this.el<HTMLDialogElement>('about-dialog');
     this.toast = this.el('toast');
     this.pointerHint = this.el('pointer-hint');
     this.errorDetail = this.el('error-detail');
@@ -88,12 +90,19 @@ export class UIManager {
     this.el('btn-keep-exploring').addEventListener('click', () => this.handlers?.onKeepExploring());
     this.el('btn-retry').addEventListener('click', () => location.reload());
     this.el('btn-controls-close').addEventListener('click', () => this.controlsDialog.close());
+    this.el('btn-about-close').addEventListener('click', () => this.aboutDialog.close());
     for (const button of doc.querySelectorAll('[data-open-controls]')) {
       button.addEventListener('click', () => this.openControls());
+    }
+    for (const button of doc.querySelectorAll('[data-open-about]')) {
+      button.addEventListener('click', () => this.openAbout());
     }
     // Click on the dimmed backdrop closes the dialog.
     this.controlsDialog.addEventListener('click', (e) => {
       if (e.target === this.controlsDialog) this.controlsDialog.close();
+    });
+    this.aboutDialog.addEventListener('click', (e) => {
+      if (e.target === this.aboutDialog) this.aboutDialog.close();
     });
 
     this.renderControls(this.el('controls-list'));
@@ -181,7 +190,7 @@ export class UIManager {
 
   /** Shows one full-screen overlay, or none (null) during play. */
   showScreen(screen: Screen | null): void {
-    if (screen !== 'menu' && screen !== 'paused' && this.controlsDialog.open) this.controlsDialog.close();
+    if (screen !== 'menu' && screen !== 'paused') this.closeControls();
     // Move focus before making the departing screen inert, including during its visual fade.
     for (const [name, element] of Object.entries(this.screens)) {
       if (name !== screen && element.contains(this.doc.activeElement)) {
@@ -484,15 +493,22 @@ export class UIManager {
   }
 
   openControls(): void {
+    if (this.aboutDialog.open) this.aboutDialog.close();
     if (!this.controlsDialog.open) this.controlsDialog.showModal();
   }
 
+  openAbout(): void {
+    if (this.controlsDialog.open) this.controlsDialog.close();
+    if (!this.aboutDialog.open) this.aboutDialog.showModal();
+  }
+
   get controlsOpen(): boolean {
-    return this.controlsDialog.open;
+    return this.controlsDialog.open || this.aboutDialog.open;
   }
 
   closeControls(): void {
     if (this.controlsDialog.open) this.controlsDialog.close();
+    if (this.aboutDialog.open) this.aboutDialog.close();
   }
 
   showFatalError(message: string): void {

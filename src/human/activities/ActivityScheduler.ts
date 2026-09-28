@@ -33,13 +33,26 @@ const distance = (a: Vec3Like, b: Vec3Like) => Math.hypot(a.x - b.x, a.z - b.z);
  */
 export class ActivityScheduler {
   private readonly lastDone = new Map<HumanActivityId, number>();
+  private prepAt = 0;
 
   constructor(
     private readonly places: readonly HomePlace[],
     private readonly activities: readonly HumanActivityDef[] = HUMAN_ACTIVITIES,
     private readonly random: () => number = Math.random,
     private readonly tuning: Tuning = ROUTINE,
-  ) {}
+  ) { this.reset(); }
+
+  reset(): void {
+    this.lastDone.clear();
+    const [min, max] = this.tuning.prepFirst;
+    this.prepAt = min + this.random() * (max - min);
+  }
+
+  /** Start the shared cooldown only when chopping actually begins, not while walking or on a failed errand. */
+  prepStarted(now: number): void {
+    const [min, max] = this.tuning.prepRepeat;
+    this.prepAt = now + min + this.random() * (max - min);
+  }
 
   /** Starts an activity's cooldown (call when it ends, or is given up). */
   markDone(id: HumanActivityId, now: number): void {
@@ -57,6 +70,7 @@ export class ActivityScheduler {
     const options: { activity: HumanActivityDef; place: HomePlace; weight: number }[] = [];
     let total = 0;
     for (const activity of this.activities) {
+      if (this.hasPrep(activity) && ctx.now < this.prepAt) continue;
       if (!this.ready(activity, ctx.now)) continue;
       if (activity.requires) {
         const done = this.lastDone.get(activity.requires.after);
@@ -74,12 +88,20 @@ export class ActivityScheduler {
       total += weight;
     }
     if (options.length === 0) return null;
+    // Due prep takes the next available routine slot; other human roles still retain priority.
+    const prep = options.filter((option) => this.hasPrep(option.activity));
+    const choices = prep.length ? prep : options;
+    if (prep.length) total = prep.reduce((sum, option) => sum + option.weight, 0);
     let roll = this.random() * total;
-    for (const option of options) {
+    for (const option of choices) {
       roll -= option.weight;
       if (roll <= 0) return option;
     }
-    return options[options.length - 1]!;
+    return choices[choices.length - 1]!;
+  }
+
+  private hasPrep(activity: HumanActivityDef): boolean {
+    return activity.steps.some((step) => step.effect === 'prep');
   }
 
   /**

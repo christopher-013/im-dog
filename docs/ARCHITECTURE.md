@@ -438,6 +438,14 @@ with a fake. Cost: about 5–7 µs per frame.
   a new wing built from the home photos: the kitchen and family room (one open great room, a soffit between them) and
   the dining room through a wide cased opening, plus a sunroom seen through glass. The wing is placed rotated 180° from
   real north so the real front hall lines up with the hallway (`world/home/layout.ts`).
+- **Hall bathroom:** the hallway's left/north wall has a 0.9 m opening into a small tiled bathroom, built as
+  static scenery/colliders by `world/Bathroom.ts`. Its light ajar door is a separate proximity-driven visual,
+  not a blocking collider; Moke's approach swings it open before he crosses. The bathroom is in `ROOMS` for
+  location reporting and in the existing whole-home navigation grid. The roll is attached to the right wall of
+  the toilet. Loose paper is one bounded, dynamically updated ribbon (not a mesh per strip); its free end attaches
+  to Moke's model-independent mouth socket and samples his route until he pulls far enough outside. The door resets
+  ajar on exit. `ToiletPaperMischief` owns the reach/hold/release and human cleanup lifecycle, with timeouts for an
+  unreachable approach or unavailable human; the world builder owns only scenery and collisions.
 - **Two scenery groups, one set of materials:** the living room and the wing each merge their parts by material
   (`StaticSceneBuilder`); sharing materials keeps it to ~2 draw calls per material. The wing's furniture doesn't cast
   sun shadows (`castByDefault = false`): no sun reaches it (its walls, windows' directions and ceiling keep the

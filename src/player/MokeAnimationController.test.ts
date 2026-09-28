@@ -1,6 +1,7 @@
 import { MOKE_ANIMATION } from '../config/animation';
 import { describe, expect, it } from 'vitest';
 import { MOVEMENT } from '../config/movement';
+import { CHEW } from '../config/props';
 import { MokeAnimationController, type MokeMotionSample } from './MokeAnimationController';
 
 const DT = 1 / 60;
@@ -18,6 +19,25 @@ function sequence(...values: number[]): () => number {
 }
 
 describe('MokeAnimationController', () => {
+  it('chomps on a toy while told to: a steady bite rate (slower on the move), and no bites once he stops', () => {
+    const anim = new MokeAnimationController(MOVEMENT);
+    const still: MokeMotionSample = { speed: 0, turnRate: 0, headroom: OPEN_SKY, carrying: true };
+    anim.chew(true);
+    simulate(anim, still, 3);
+    expect(anim.state.chew).toBeGreaterThan(0.95);
+    const standing = anim.takeBites();
+    expect(standing).toBeGreaterThanOrEqual(Math.floor(3 * CHEW.rate));
+    expect(standing).toBeLessThanOrEqual(Math.ceil(3 * CHEW.rate) + 1);
+    simulate(anim, { ...still, speed: 1.2 }, 3);
+    const moving = anim.takeBites();
+    expect(moving).toBeLessThan(standing);
+    expect(moving).toBeGreaterThanOrEqual(Math.floor(3 * CHEW.movingRate));
+    anim.chew(false);
+    simulate(anim, still, 2);
+    expect(anim.takeBites()).toBe(0);
+    expect(anim.state.chew).toBeLessThan(0.05);
+  });
+
   it('can replace a fading random trick with an explicit contextual beg', () => {
     const anim = new MokeAnimationController(MOVEMENT);
     anim.trick('spin');

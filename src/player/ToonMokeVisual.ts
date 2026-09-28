@@ -790,7 +790,10 @@ export class ToonMokeVisual implements MokeVisual {
     this.neck.rotation.x =
       s.crouch * 0.3 + moving * 0.06 + s.runBlend * 0.1 - s.carry * a.carryHeadLift + s.sniff * a.sniffHeadDip + twitch + eatDip - s.bark * 0.35 + s.growl * 0.16 - s.tug * 0.13 - tugPull * 0.04 + lie * 0.22 + trick.neckX + s.land * 0.18 -
       s.headPitch * 0.8; // glancing up at something, or down at a scent
-    this.neck.rotation.z = trick.neckZ + s.dig * 0.04 * Math.sin(s.time * MISCHIEF.digAnimation.rate);
+    // Chomping a toy: the jaws work and the head gives a little shake with each bite.
+    const bite = Math.sin(Math.PI * s.chewPhase);
+    this.neck.rotation.x += s.chew * 0.06 * bite;
+    this.neck.rotation.z = trick.neckZ + s.dig * 0.04 * Math.sin(s.time * MISCHIEF.digAnimation.rate) + s.chew * 0.08 * Math.sin(2 * Math.PI * s.chewPhase);
     this.head.rotation.y = s.headYaw * (1 - 0.5 * s.sniff) + s.sniff * 0.25 * Math.sin(s.time * 1.7);
     this.head.rotation.z = -s.headTilt + (s.growl * 0.018 + s.tug * 0.025) * Math.sin(s.time * 28) + trick.headZ;
 
@@ -825,9 +828,9 @@ export class ToonMokeVisual implements MokeVisual {
     for (const lid of this.lids) lid.visible = shut;
 
     // A growl reveals four tiny teeth; bark/panting shows the tongue instead.
-    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0, trick.mouthOpen, s.eat * (0.25 + 0.45 * chew), s.drink * 0.45, s.air * 0.5) : 0;
+    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0, trick.mouthOpen, s.eat * (0.25 + 0.45 * chew), s.drink * 0.45, s.air * 0.5) : s.chew * 0.45 * bite;
     this.mouth.visible = open > 0.05;
-    this.tongue.visible = open > 0.05 && s.growl < 0.2 && s.eat < 0.2;
+    this.tongue.visible = open > 0.05 && s.growl < 0.2 && s.eat < 0.2 && s.chew < 0.2;
     // Lapping: the tongue flicks out and back into the water.
     this.tongue.scale.z = TONGUE_LENGTH * (1 + 1.2 * s.drink * lap);
     this.teeth.visible = s.carry < 0.5 && s.growl > 0.05;

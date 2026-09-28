@@ -78,7 +78,7 @@ describe('room props', () => {
       for (const p of props) {
         p.drop({ x: 30, y: -2, z: 30 }, 0, { x: 0, y: 0, z: 0 });
         p.afterStep();
-        const home = room.landmarks[p.definition.id];
+        const home = (room.landmarks as Record<string, { x: number; z: number }>)[p.definition.id]!;
         expect(p.position.x).toBeCloseTo(home.x);
         expect(p.position.z).toBeCloseTo(home.z);
         expect(p.body.enabled).toBe(true);

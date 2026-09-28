@@ -24,6 +24,8 @@ export class Home {
     readonly diningRoom: Vector3;
     readonly familyRoom: Vector3;
     readonly underDiningTable: Vector3;
+    /** Where the squeaky fish toy starts: on the family-room floor, in front of the sectional's chaise. */
+    readonly fishToy: Vector3;
   };
   readonly rooms: readonly RoomArea[] = ROOMS;
   readonly places: readonly HomePlace[] = HOME_PLACES;
@@ -49,6 +51,7 @@ export class Home {
       diningRoom: new Vector3(7.6, 0, -1.2),
       familyRoom: new Vector3(13.0, 0, 3.4),
       underDiningTable: new Vector3(8.85, 0, -1.75),
+      fishToy: new Vector3(13.05, 0, 3.55),
     };
   }
 

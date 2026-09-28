@@ -1,6 +1,6 @@
 import type { PropPhysics } from '../physics/PropBody';
 
-export type PropId = 'sock' | 'ball' | 'toy';
+export type PropId = 'sock' | 'ball' | 'toy' | 'fish';
 
 export interface PropDefinition {
   id: PropId;
@@ -10,7 +10,7 @@ export interface PropDefinition {
   /** Resting height of the body's centre on the floor (m), for spawning. */
   restHeight: number;
   /** How it sits in Moke's mouth: offset from the mouth socket (m) and turn about y (rad). */
-  carry: { offset: readonly [number, number, number]; turn: number };
+  carry: { offset: readonly [number, number, number]; turn: number; roll?: number };
 }
 
 /**
@@ -68,7 +68,37 @@ export const PROPS: Readonly<Record<PropId, PropDefinition>> = {
     restHeight: 0.03,
     carry: { offset: [0, -0.014, 0.002], turn: Math.PI / 2 },
   },
+  fish: {
+    id: 'fish',
+    name: 'Squeaky Fish',
+    // A soft rubber taiyaki (fish-shaped cake) that squeaks when he chews it: about 15 × 9 × 2.5 cm.
+    physics: {
+      shape: { kind: 'box', halfExtents: [0.045, 0.0125, 0.075] },
+      mass: 0.08,
+      friction: 0.9,
+      restitution: 0.3,
+      linearDamping: 1.2,
+      angularDamping: 2.5,
+      pushable: true,
+      maxSpeed: 3.5,
+    },
+    restHeight: 0.0125,
+    // Held by the middle, crosswise and stood on edge, like a real dog chomping a flat toy: the fish faces forward.
+    carry: { offset: [0, -0.018, 0.006], turn: Math.PI / 2, roll: Math.PI / 2 },
+  },
 };
+
+/** Chewing the squeaky fish: while he holds it he chomps on it, and every bite squeaks. */
+export const CHEW = {
+  /** Bites per second standing still, and while he's on the move (a slower, lazier chomp). */
+  rate: 1.7,
+  movingRate: 1.0,
+  /** Faster than this (m/s) counts as on the move. */
+  movingSpeed: 0.4,
+  /** How much the toy squashes on a bite (fraction of its thickness), and how fast it springs back (1/s). */
+  squash: 0.35,
+  springBack: 9,
+} as const;
 
 /** Carrying and dropping. */
 export const PICKUP = {

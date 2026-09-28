@@ -1,5 +1,6 @@
 import { MOKE_ANIMATION } from '../config/animation';
 import { MISCHIEF } from '../config/mischief';
+import { CHEW } from '../config/props';
 import { MOVEMENT, type MovementTuning } from '../config/movement';
 import { clamp, damp, smoothstep } from '../utils/math';
 import { gaitForSpeed, type Gait } from './Locomotion';
@@ -68,6 +69,9 @@ export interface MokeAnimationState {
   dig: number;
   /** 0..1: eating something off the floor (a treat, his bowl): nose down, chewing. */
   eat: number;
+  /** 0..1: chomping on the toy in his mouth (the squeaky fish), and where he is in the current bite (0..1). */
+  chew: number;
+  chewPhase: number;
   /** 0..1: drinking from his water bowl: nose down, lapping. */
   drink: number;
   /** 0..1: in the air (a jump, or a drop off the couch): legs reaching, not walking. */
@@ -111,6 +115,8 @@ export class MokeAnimationController {
     tug: 0,
     dig: 0,
     eat: 0,
+    chew: 0,
+    chewPhase: 0,
     drink: 0,
     air: 0,
     rise: 0,
@@ -124,6 +130,9 @@ export class MokeAnimationController {
     time: 0,
   };
 
+  private chewingNow = false;
+  private chewClock = 0;
+  private bitesTaken = 0;
   private idleTime = 0;
   private nextIdleAction: number = MOKE_ANIMATION.idleActionEvery[0];
   private lookTarget = 0;
@@ -196,6 +205,14 @@ export class MokeAnimationController {
     s.growl = g >= 1 ? 0 : Math.min(1, g * 9) * Math.min(1, (1 - g) * 5);
     s.tug = damp(s.tug, this.tuggingNow ? 1 : 0, this.tuggingNow ? 10 : 7, dt);
     s.dig = damp(s.dig, this.diggingNow ? 1 : 0, 10, dt);
+    // Chewing a toy: a steady chomp (lazier on the move); each time the jaws close counts as a bite.
+    s.chew = damp(s.chew, this.chewingNow ? 1 : 0, 8, dt);
+    if (this.chewingNow) {
+      const before = Math.floor(this.chewClock);
+      this.chewClock += dt * (sample.speed > CHEW.movingSpeed ? CHEW.movingRate : CHEW.rate);
+      this.bitesTaken += Math.floor(this.chewClock) - before;
+    }
+    s.chewPhase = this.chewClock - Math.floor(this.chewClock);
     if (s.dig > 0.01) s.headPitch = damp(s.headPitch, -MISCHIEF.digAnimation.headDip, 8 * s.dig, dt);
     // Eating: straight down to it, a good chew, and back up.
     this.sinceEat += dt;
@@ -267,6 +284,20 @@ export class MokeAnimationController {
     if (active) { this.cancelTrick(); this.sitting = false; this.stretchLeft = 0; }
   }
   get digging(): boolean { return this.diggingNow; }
+
+  /** Chomps on what's in his mouth (the squeaky fish) while `active`. He can keep moving. */
+  chew(active: boolean): void {
+    if (active && !this.chewingNow) this.chewClock = 0.45; // the first bite comes quickly
+    this.chewingNow = active;
+  }
+  get chewing(): boolean { return this.chewingNow; }
+
+  /** Bites since the last call (each one squeaks). */
+  takeBites(): number {
+    const n = this.bitesTaken;
+    this.bitesTaken = 0;
+    return n;
+  }
 
   /** Eats something off the floor (a treat, or a meal from his bowl: longer). He stays put while he chews. */
   eat(seconds: number = MOKE_ANIMATION.eatDuration): void {

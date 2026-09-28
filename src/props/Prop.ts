@@ -5,6 +5,8 @@ import type { Vec3Like } from '../physics/CharacterBody';
 import type { PropBody } from '../physics/PropBody';
 
 const UP = new Vector3(0, 1, 0);
+const ALONG = new Vector3(0, 0, 1);
+const ROLL = new Quaternion();
 /** Anything below the floor, or outside the house's bounds (plus this margin), has escaped and goes home. */
 const ESCAPE = { belowY: -1, margin: 1 };
 
@@ -109,10 +111,12 @@ export class Prop implements Carryable {
 
   /** Presentation: ride in Moke's mouth socket. */
   holdIn(socket: Object3D): void {
-    const { offset, turn } = this.definition.carry;
+    const { offset, turn, roll = 0 } = this.definition.carry;
     socket.add(this.view);
     this.view.position.set(offset[0], offset[1], offset[2]);
     this.view.quaternion.setFromAxisAngle(UP, turn);
+    // Stood on edge (a flat toy held upright in his jaws): about its own length, after turning it across his mouth.
+    if (roll) this.view.quaternion.multiply(ROLL.setFromAxisAngle(ALONG, roll));
   }
 
   /** In someone's hand (the human, about to throw it): out of the world, riding in `hand`. */

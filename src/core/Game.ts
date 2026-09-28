@@ -29,6 +29,7 @@ import { CAGE } from '../world/home/gymAndYard';
 import { BATHROOM, GYM } from '../world/home/layout';
 import { BOWL_REFILL, MOKE_REACTIONS } from '../config/activities';
 import { BATHROOM_ACTIVITY } from '../config/bathroom';
+import { CHEW } from '../config/props';
 import { MOKE_ANIMATION } from '../config/animation';
 import { DOG_ACTIVITIES } from '../config/dogActivities';
 import { dogLogicEntry } from '../config/dogLogic';
@@ -129,6 +130,8 @@ export class Game {
   private moke: Moke | null = null;
   private props: Prop[] = [];
   private pickup: PickupSystem<Prop> | null = null;
+  /** 1 just after a bite on the squeaky fish, springing back to 0. */
+  private fishSquish = 0;
   private readonly rest: RestSystem;
   /** Gameplay events (Sock Heist publishes; UI, audio and the heist listen). */
   private readonly events = new GameEvents();
@@ -653,9 +656,32 @@ export class Game {
     this.ui.showComplete(seconds, HEIST.completeCardTime * 1000);
   }
 
+  /** The squeaky fish in his mouth: he chomps on it the whole time he holds it. Returns the fish while he does. */
+  private updateChewing(playing: boolean): Prop | null {
+    const fish = this.pickup?.carried?.id === 'fish' ? this.pickup.carried : null;
+    this.moke?.animation.chew(playing && fish !== null);
+    return playing ? fish : null;
+  }
+
+  /** Every bite squeaks and squashes the toy, which springs back. */
+  private afterChewing(fish: Prop | null, dt: number): void {
+    const bites = this.moke?.animation.takeBites() ?? 0;
+    if (fish && bites > 0) {
+      this.audio.play('squeak');
+      this.fishSquish = 1;
+    }
+    this.fishSquish = Math.max(0, this.fishSquish - dt * CHEW.springBack);
+    const view = this.props.find((p) => p.id === 'fish')?.view.getObjectByName('squish');
+    if (view) {
+      // Held on edge, the jaws close across its width (local x): squeezed there, bulging a little through its thickness.
+      const k = this.fishSquish * CHEW.squash;
+      view.scale.set(1 - k * 0.7, 1 + k * 0.5, 1 + k * 0.1);
+    }
+  }
+
   /** What catches Moke's eye: the loose props (not while in his mouth) and his bed. */
   private registerAttention(): void {
-    const kinds: Record<string, AttentionKind> = { sock: 'sock', ball: 'ball', toy: 'toy' };
+    const kinds: Record<string, AttentionKind> = { sock: 'sock', ball: 'ball', toy: 'toy', fish: 'toy' };
     for (const prop of this.props) {
       const kind = kinds[prop.id] ?? 'toy';
       this.attention.register({
@@ -761,7 +787,9 @@ export class Game {
       this.moke.lookAt = BATHROOM.paper;
       this.moke.sniffing = true;
     }
+    const chewing = this.updateChewing(playing);
     this.moke?.update(dt, alpha);
+    this.afterChewing(chewing, playing ? dt : 0);
     this.bathroom.updateMouthLink();
     this.conure.update(this.state === 'playing' ? dt : 0, this.moke?.controller.position ?? null);
     this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? this.delivery?.objective ?? this.kitchenBeg?.objective ?? null);

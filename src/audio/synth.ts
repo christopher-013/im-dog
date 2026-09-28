@@ -233,6 +233,43 @@ export const surprise: Synth = (ctx, out, t0, pitch) => {
   osc.stop(t0 + 0.24);
 };
 
+/**
+ * A rubber squeaky toy being chomped: air forced through the squeaker, a reedy, nasal "eeek" that rises as the jaws
+ * close and sags as they let go. A buzzy voice (sawtooth with a fast wobble) through a narrow resonance, and a
+ * breath of noise.
+ */
+export const squeak: Synth = (ctx, out, t0, pitch, noise) => {
+  const f = (980 + Math.random() * 160) * pitch;
+  const length = 0.17 + Math.random() * 0.08;
+  const voice = ctx.createOscillator();
+  voice.type = 'sawtooth';
+  voice.frequency.setValueAtTime(f * 0.8, t0);
+  voice.frequency.exponentialRampToValueAtTime(f * 1.25, t0 + length * 0.35);
+  voice.frequency.exponentialRampToValueAtTime(f * 0.9, t0 + length);
+  const wobble = ctx.createOscillator();
+  wobble.frequency.value = 38;
+  const depth = ctx.createGain();
+  depth.gain.value = f * 0.05;
+  wobble.connect(depth).connect(voice.frequency);
+  const reed = ctx.createBiquadFilter();
+  reed.type = 'bandpass';
+  reed.frequency.value = f * 2.1;
+  reed.Q.value = 3.5;
+  const amp = ctx.createGain();
+  amp.gain.setValueAtTime(0.0001, t0);
+  amp.gain.exponentialRampToValueAtTime(1, t0 + 0.02);
+  amp.gain.setValueAtTime(0.85, t0 + length * 0.7);
+  amp.gain.exponentialRampToValueAtTime(0.0001, t0 + length);
+  voice.connect(reed).connect(amp).connect(out);
+  const air = noiseSource(ctx, noise, t0, length);
+  const hiss = ctx.createBiquadFilter();
+  hiss.type = 'bandpass';
+  hiss.frequency.value = f * 3;
+  hiss.Q.value = 1.2;
+  air.connect(hiss).connect(envelope(ctx, t0, 0.01, 0.12, length)).connect(out);
+  for (const o of [voice, wobble]) { o.start(t0); o.stop(t0 + length + 0.02); }
+};
+
 /** Malibu's chirp: two or three quick, bright whistles, each flicking up and back down. */
 export const chirp: Synth = (ctx, out, t0, pitch) => {
   const notes = Math.random() < 0.5 ? 2 : 3;

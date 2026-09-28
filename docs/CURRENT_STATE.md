@@ -672,6 +672,17 @@ not on GitHub and is **not** covered.
     by moving the body onto the seat, see "Room round the dining table") blocked the way to the coffee table.
   - Tests (Home.test): the shins are clear of all furniture on every couch seat; Moke walks between each seated
     human and the coffee table and back (these fail without the body-onto-seat change).
+- **Squeaky fish toy, 2026-09-28 (owner request, from a photo of Moke's real toy, Claude Code):**
+  - A new prop, `fish` ("Squeaky Fish"): a rubber taiyaki-shaped toy (`squeakyFish` in `props/propVisuals.ts`),
+    starting on the family-room floor by the sectional's chaise (`Home.landmarks.fishToy`; it only exists in the
+    whole house, so the living-room-only prop tests don't get it).
+  - Picked up, it's held upright across his jaws (`carry.roll`). The whole time he holds it he chews it
+    (`MokeAnimationController.chew`: `chew`/`chewPhase` state, jaws working and a little head shake; lazier on the
+    move), and every bite squeaks (new synthesized `squeak`) and squashes the toy, which springs back
+    (`CHEW` in `config/props.ts`). Dropping it stops the chewing.
+  - Not part of Make Human Play (the human throws the ball and rope toy only).
+  - Tests: the chew rate (standing, moving, stopping) and the fish's start spot, pick-up and drop in the real house.
+    Checked in the browser (on the floor; in his mouth). The squeak wasn't heard (no audio in the headless run).
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

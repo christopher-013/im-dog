@@ -683,6 +683,19 @@ not on GitHub and is **not** covered.
   - Not part of Make Human Play (the human throws the ball and rope toy only).
   - Tests: the chew rate (standing, moving, stopping) and the fish's start spot, pick-up and drop in the real house.
     Checked in the browser (on the floor; in his mouth). The squeak wasn't heard (no audio in the headless run).
+- **Release re-check, 2026-09-28 (Claude Code, against `67015d7`, the live build):**
+  - Stuck spots: the whole-house sweep (979 floor points: every one routes back to the start; 19 raised surfaces)
+    and 600 random hop runs round the new furniture (pet stairs, kettlebells, bird cage, the gym plant, the laundry
+    table): no traps. The sweep's flags (a slit behind the kettlebells, a sliver behind the pet stairs, the stairs'
+    lower step) were checked: he hops out of the slit, and the step "trap" was an impossible start position.
+  - Security: `npm audit` 0 vulnerabilities; no `innerHTML`/`eval`/dynamic code; no network calls; `localStorage`
+    only for local flags; the dev hook `window.imdog` is absent from the production build.
+  - Privacy: verify-dist OK; no emails, phone numbers or addresses in tracked files or `dist/`; only
+    `reference/*/README.md` tracked; every shipped PNG (icons, the approved About photo) has no metadata chunks.
+  - Performance (headless, software GPU: frame times meaningless): ~181 draw calls / 285k triangles, steady across
+    rooms; JS heap 44 → 41 MB over 25 s of play (no leak); no console errors. Main bundle 1.09 MB (308 kB gzipped),
+    Rapier 2.85 MB (1.09 MB gzipped, lazy).
+  - Tests: 64 files, 458 tests pass; typecheck and build pass.
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

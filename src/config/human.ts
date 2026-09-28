@@ -83,7 +83,7 @@ export const HUMAN = {
     missPenalty: 4,
     lostPenalty: 5,
     /** At this much frustration, chasing stops working and they change strategy (a treat). */
-    giveUpAt: 48,
+    giveUpAt: 38,
     /** "Okay… new plan." */
     giveUpTime: 1.6,
   },

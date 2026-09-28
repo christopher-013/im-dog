@@ -635,6 +635,9 @@ not on GitHub and is **not** covered.
   - Removed: the `complete` game/menu state, the completion screen and its buttons, controller A's "play again".
   - Checked headless in Chromium: the card shows with the time, the state stays `playing`, Moke moves, and the card
     hides by itself. Tests and build pass.
+- **Shorter Sock Heist chase, 2026-09-28 (owner request, Claude Code):** the human gives up chasing and fetches the
+  treat 10 s sooner: `HUMAN.chase.giveUpAt` 48 → 38 (chasing adds 1 frustration per second, fumbles and escapes more),
+  so a plain chase now lasts up to about 38 s instead of 48 s.
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

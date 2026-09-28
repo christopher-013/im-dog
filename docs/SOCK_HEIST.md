@@ -10,8 +10,8 @@
 
 The first complete gameplay loop (Phase 3). Moke steals a sock, the human wants it back, chasing him doesn't
 work, a treat does: **SOCK = TREAT**. It's playful rather than stressful: no combat, no damage, no failure, no
-punishment. The human never catches Moke. Played straight (scripted runs), it takes about a minute from the steal
-to the completion card. Keep-away and hiding stretch the chase, which ends after roughly 48 s at most (sooner with
+punishment. The human never catches Moke. Played straight (scripted runs), it took about a minute from the steal
+to the completion card before the chase was cut by 10 s (2026-09-28). Keep-away and hiding stretch the chase, which ends after roughly 38 s at most (sooner with
 each fumbled grab and each time Moke gets away, and twice as fast while he's out of reach under the table). The
 brief's 3–5 minutes for a first play, exploring included, hasn't been timed with a real player.
 
@@ -84,7 +84,7 @@ lies. They wear one charcoal-striped sock; the other foot is bare. Behaviour, bo
   can't reach, and lose patience twice as fast.
 - **Losing him:** out of sight for 1.6 s → search. The hallway is a dead end: no hiding there.
 - **The chase always ends.** Frustration grows 1 per second of chasing or searching (2 in a standoff), plus 4 per
-  fumble and 5 per failed search. At 48, or after any search that doesn't find him, they change strategy and fetch
+  fumble and 5 per failed search. At 38, or after any search that doesn't find him, they change strategy and fetch
   a treat. In playtests: about 25 s hiding under the table, 33–37 s running around in view, about 8 s if he gets
   clean away. All tunable in `src/config/human.ts`.
 

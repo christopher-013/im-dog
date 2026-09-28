@@ -11,14 +11,15 @@ on 2026-09-24, tagged `phase-2-complete` and pushed. Scope and criteria: `docs/P
 and at phone sizes (emulated touch). The owner also played on a physical phone and reported that mobile looks and
 plays great. **Still not documented:** the exact phone/browser, installing the web app and real-device performance.
 The owner judged the desktop Sock Heist chase fun. Scope, criteria and what's carried forward: `docs/PHASE_3.md`.
-**Phase 4: built, independently audited, not closed by the owner** ("Moke's Home & Family Life", from the owner's
-brief of 2026-09-25, with photos of the real home). Milestones 4.1–4.10 are committed to `main`, tested and played
-through in the browser (desktop and phone-sized emulation). **Not done:** the owner's Phase 4 sign-off, a Phase 4
-physical-phone playtest, and sustained real-device profiling. Scope, criteria and status:
-`docs/PHASE_4.md`.
+**Phase 4: complete** ("Moke's Home & Family Life", from the owner's brief of 2026-09-25, with photos of the real
+home), closed by the owner on 2026-09-28 and tagged `phase-4-complete`. Milestones 4.1–4.10 are done; the owner
+played it on the desktop and on their phone (the published game), asked for the additions and fixes listed in
+`docs/PHASE_4.md`, then tested and approved it; a final release check came back clean (see "Release re-check"
+below). **Carried forward:** a recorded device/browser list and measured phone performance. Scope, history and
+what's carried forward: `docs/PHASE_4.md`.
 
 ## Current Milestone
-**Phase 4, Milestone 4.10 (cross-platform polish): done in emulation;** the phase awaits the owner's review.
+**None: Phase 4 is closed.** Phase 5 isn't defined yet: write `docs/PHASE_5.md` for the owner to approve first.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
@@ -1234,10 +1235,8 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-1. **Owner review and sign-off of Phase 4:** use `npm run dev` on this machine or the published game, walk the house, watch the human's day,
-   pet them, do a trick near them (Treat Hunt), nap in a few spots, bring them the ball. Is it recognisably home? Does
-   it feel inhabited? Then tune (`config/activities.ts`, `config/dogActivities.ts`, the human's poses in
-   `HumanAnimationController.ts`). Commit or push only when the owner asks: a push to `main` publishes the game.
+1. **Define Phase 5 with the owner:** write `docs/PHASE_5.md` (scope, milestones, success criteria) for approval
+   before any Phase 5 code. Commit or push only when the owner asks: a push to `main` publishes the game.
 2. **Play it on a real phone** once pushed (or `npm run dev:lan`): the paw for pets, naps and sniffing; frame rate
    and warmth in the big house.
 3. **Owner listens to "Irasshaimase!"** (pause → Music → Japan Stores) and says whether it has the

@@ -1,10 +1,11 @@
 # Phase 4 — Moke's Home & Family Life
 
-> **Status: built, committed to `main`, independently audited, not yet closed by the owner.** Started 2026-09-25
-> from the owner's brief, with nine private photos of the real home. Milestones 4.1–4.10 are implemented, pass
-> automated tests, and were played through in the browser (desktop, and phone sizes with emulated touch).
-> **Not done:** the owner's Phase 4 sign-off, a Phase 4 physical-phone playtest, and sustained real-device profiling. Details:
-> `HOME_REFERENCE.md`, `HUMAN_SYSTEM.md`, `ACTIVITIES.md`, `DOG_LOGIC.md`, `CURRENT_STATE.md`.
+> **Status: complete.** Closed by the owner on 2026-09-28 and tagged `phase-4-complete`. Started 2026-09-25 from the
+> owner's brief, with nine private photos of the real home. Every milestone is done. The owner played it on the
+> desktop and on their phone (the published game), asked for a run of additions and fixes (below), then tested and
+> approved it; an independent audit and a final release check (stuck spots, security, privacy, performance) came
+> back clean. **Carried forward:** a recorded device/browser list and measured phone performance (frame rate, heat,
+> memory). Details: `HOME_REFERENCE.md`, `HUMAN_SYSTEM.md`, `ACTIVITIES.md`, `DOG_LOGIC.md`, `CURRENT_STATE.md`.
 
 **Goal:** turn "Moke in a room" into "Moke living in his home with his family": a connected home drawn from the real
 one, a high-quality stylized human with a believable daily routine, and three new dog activities, without breaking
@@ -36,8 +37,8 @@ Human, Someone's Home, Dinner Time, Backyard Patrol, Squirrel, Laundry Day, Tras
 | 4.6 | Treat Hunt | **Done.** A trick near the human (or barking for their attention) → a kitchen treat, "stay…", hidden out of his sight → found by sniffing (the paw sniffs on touch) → SNIFF = TREAT. Hints if it takes a while. |
 | 4.7 | Perfect Nap | **Done.** Seven nap spots; each nap judged on sunny, soft, warm, quiet and "my human's near", shown as five little signs; four of five is perfect; BED = NAP and SUN + SOFT = NAP. |
 | 4.8 | Make Human Play | **Done.** Bring the ball or rope toy to a busy human; ignored, then pester (drop it at their feet, bark, trick, hang about) until they give in; they throw it; bring it back, keep it, or run off (they give chase, laughing). HUMAN + BALL/TOY = PLAY. |
-| 4.9 | Dog Logic | **Done.** A registry of eight discoveries, each backed by play (`config/dogLogic.ts`); the discovery card draws any of them; they queue; remembered in the browser. |
-| 4.10 | Cross-platform polish | **Done in emulation and independently audited.** Desktop and phone-sized play-throughs, performance against the Phase 3 baseline, privacy build check. **Phase 4 is not verified on a physical phone.** |
+| 4.9 | Dog Logic | **Done.** A registry of discoveries (eight at first, fourteen by the close), each backed by play (`config/dogLogic.ts`); the discovery card draws any of them; they queue; remembered in the browser. |
+| 4.10 | Cross-platform polish | **Done.** Desktop and phone-sized play-throughs, performance against the Phase 3 baseline, privacy build check, an independent audit, then the owner's playtests on the published game, desktop and phone (device and browser not recorded), and a final release check. |
 
 ## Success criteria: where they stand
 Met in automated tests and browser play (desktop and emulated touch) unless noted:
@@ -49,7 +50,8 @@ Met in automated tests and browser play (desktop and emulated touch) unless note
   tests (47 human tests including a 20-minute simulation) and browser play.
 - **Moke ↔ human, petting, the three activities, their replays, Dog Logic:** met in tests (14 activity tests) and
   browser play-throughs.
-- **Sock Heist intact:** met (its 24 tests, and a full browser play-through in the new house, including PLAY AGAIN).
+- **Sock Heist intact:** met (its tests, and full browser play-throughs in the new house). Since 2026-09-28 it ends
+  with a card that fades, not PLAY AGAIN / KEEP EXPLORING (the owner's request).
 - **Mobile first-class:** every new action works from the paw (Get Pets, Nap Here, Drop, Eat Treat; sniff when
   there's nothing else); emulated only. **Not measured on a phone.**
 - **Performance:** measured on this desktop against the baseline (see `CURRENT_STATE.md` → Verification). Real
@@ -57,9 +59,24 @@ Met in automated tests and browser play (desktop and emulated touch) unless note
 - **Privacy:** the build's leak check covers all 18 private photos (Moke's and the home's); nothing from
   `reference/` is imported, served or bundled.
 
+## Added during Phase 4, at the owner's request
+- **Household moments:** the doorbell and delivery driver (bark to protect the house; a distinct courier in a
+  brown uniform), kitchen begging, couch pillows, table manners and the toilet-paper trail, each with its Dog Logic.
+- **The home gym** in place of the sunroom (stationary bike, dumbbell rack, glass doors onto a modelled backyard)
+  and **Malibu**, the green-cheeked conure, to play with (MALIBU = FRIEND).
+- **The squeaky fish toy** in the family room: Moke chews it and it squeaks until he drops it.
+- **The laundry table** and a new basket; the human **starts the day somewhere different** each game; longer gaps
+  between deliveries.
+- **Sock Heist:** ends with a card that fades (no menu), and the human gives up the chase 10 s sooner.
+- **Fixes from the owner's reports:** flickering walls (z-fighting; now guarded by a test), the bathroom door's
+  behaviour, the shirt collar, room to get past a seated human (their body now moves onto the seat), shins through
+  the couches, the family-room windows' painted view.
+- **A release review** (stuck spots, performance, security, privacy) with fixes, re-run on the final build.
+
 ## Carried forward
-- **The owner's review** (desktop and phone), then tuning from it.
-- **Real-device coverage** (from Phase 3, and now the bigger house and the new human): phone frame rate, heat,
-  memory, audio.
+- **Recorded real-device coverage** (from Phase 3, and now the bigger house and the new human): which phone and
+  browser, and measured frame rate, heat and memory. The owner's phone playtest passed, but none of that was noted.
+- **Listening:** no one has yet confirmed Malibu's chirp, the fish's squeak or "Irasshaimase!" by ear; the bark
+  is still a placeholder.
 - **The final `moke.glb`** (from Phase 2).
 - **References that would help** (`HOME_REFERENCE.md`): the real front living room, measurements, the bedroom hall.

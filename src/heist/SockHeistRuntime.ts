@@ -114,13 +114,13 @@ export class SockHeistRuntime {
         return { x: from.x + dx * k, y: 0, z: from.z + dz * k };
       },
       createHuman: (hands) => {
-        const heading = Math.atan2(marks.laundryBasket.x - marks.laundry.x, marks.laundryBasket.z - marks.laundry.z);
-        const body = new CharacterBody(physics, marks.laundry, HUMAN.body);
+        // The routine picks where the day starts (the laundry, unless it starts them somewhere else).
+        deps.routine?.reset();
+        const start = deps.routine?.startSpot ?? null;
+        const heading = start ? start.facing : Math.atan2(marks.laundryBasket.x - marks.laundry.x, marks.laundryBasket.z - marks.laundry.z);
+        const body = new CharacterBody(physics, start ?? marks.laundry, HUMAN.body);
         const brain = new HumanBrain(places, hands, events);
-        if (deps.routine) {
-          brain.driver = deps.routine;
-          deps.routine.reset();
-        }
+        if (deps.routine) brain.driver = deps.routine;
         const human = new Human(brain, new HumanController(body, nav, heading), new StylizedHumanVisual());
         scene.add(human.visual.object);
         return human;

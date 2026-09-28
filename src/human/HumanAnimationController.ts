@@ -112,15 +112,16 @@ const UP_POLE = { L: new Vector3(0.9, 0.4, -0.2), R: new Vector3(-0.9, 0.4, -0.2
  * reach in front, character space), how far the back bends and the head nods, and how much the shoulders lift.
  */
 const FOLD_KEYS: readonly (readonly [at: number, spread: number, y: number, z: number, bend: number, nod: number, lift: number])[] = [
-  [0.0, 0.09, 0.46, 0.5, 0.75, 0.3, 0],
-  [0.13, 0.1, 0.48, 0.5, 0.75, 0.3, 0],
+  // Into the basket on the laundry table (its washing is at about hip height): a slight lean, not a stoop.
+  [0.0, 0.1, 1.0, 0.46, 0.22, 0.42, 0],
+  [0.13, 0.11, 1.02, 0.46, 0.22, 0.42, 0],
   [0.3, 0.27, 1.18, 0.37, 0.06, 0.12, 1],
   [0.38, 0.25, 1.12, 0.4, 0.08, 0.16, 0.8],
   [0.44, 0.27, 1.17, 0.38, 0.07, 0.14, 1],
   [0.6, 0.07, 1.08, 0.36, 0.12, 0.3, 0.4],
   [0.74, 0.1, 0.98, 0.39, 0.16, 0.36, 0.2],
   [0.86, 0.07, 1.0, 0.36, 0.16, 0.36, 0.2],
-  [1.0, 0.09, 0.46, 0.5, 0.75, 0.3, 0],
+  [1.0, 0.1, 1.0, 0.46, 0.22, 0.42, 0],
 ];
 const foldPose = { spread: 0, y: 0, z: 0, bend: 0, nod: 0, lift: 0 };
 function foldKey(cycle: number): typeof foldPose {
@@ -484,8 +485,8 @@ export class HumanAnimationController {
       case 'idle':
         break;
       case 'fold': {
-        // Folding from the basket at his feet, a readable cycle even from behind: bend down and put the last one
-        // on the pile / take the next, straighten up and shake it out wide at chest height, fold it in half, and
+        // Folding from the basket on the laundry table, a readable cycle even from behind: lean in and put the last
+        // one on the pile / take the next, straighten up and shake it out wide at chest height, fold it in half, and
         // in half again, then back down. Each cycle takes a slightly different time.
         const k = foldKey(this.foldCycle);
         hips.z -= 0.07 * k.bend;

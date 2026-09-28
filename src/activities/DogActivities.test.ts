@@ -185,6 +185,24 @@ describe('Door delivery (real home and household human)', () => {
     expect(w.delivery.interactable.enabled).toBe(false);
   });
 
+  it('after Moke answers the door, waits ten minutes before the next visit, even when the handoff is cut short', async () => {
+    const w = await deliveryWorld(43);
+    w.waitForRing();
+    Object.assign(w.moke, { ...HOME_ACTIVITIES.delivery.stand, x: -2.2 });
+    w.delivery.noteBark(w.moke);
+    w.tick(0.5);
+    expect(w.delivery.running).toBe(true);
+    w.ctx.heistRunning = true; // a Sock Heist takes the human away before they reach the door
+    w.tick(2);
+    expect(w.delivery.running).toBe(false);
+    expect(w.counts().rewards).toBe(0);
+    w.ctx.heistRunning = false;
+    const rings = w.counts().rings;
+    w.tick(595);
+    expect(w.counts().rings).toBe(rings);
+    w.waitForRing(320);
+  }, 60_000);
+
   it('can answer even when Moke occupies the preferred human approach point', async () => {
     const w = await deliveryWorld(44);
     w.waitForRing();
@@ -198,7 +216,7 @@ describe('Door delivery (real home and household human)', () => {
     expect(w.counts().rewards).toBe(1);
   });
 
-  it('rings every two seconds, leaves after thirty unanswered seconds, then visits again without rewards', async () => {
+  it('rings every two seconds, leaves after thirty unanswered seconds, then visits again a few minutes later without rewards', async () => {
     const w = await deliveryWorld(45);
     w.waitForRing();
     w.tick(29.8);
@@ -211,7 +229,7 @@ describe('Door delivery (real home and household human)', () => {
     expect(w.counts().rewards).toBe(0);
     expect(w.counts().exchanges).toBe(0);
     expect(w.routine.available).toBe(true);
-    w.tick(49);
+    w.tick(119); // a few minutes before the courier tries again
     expect(w.counts().rings).toBe(15);
     w.waitForRing();
     expect(w.counts().rings).toBe(16);

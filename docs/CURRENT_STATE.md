@@ -646,6 +646,24 @@ not on GitHub and is **not** covered.
   - The plant moved from that corner into the gym's north-west corner (`GYM.plant`), leaves clear of both walls.
   - Tests (Home.test): the human sits on each gym-side dining chair; Moke passes through the corner, behind them and
     into the gym; they get up with Moke standing where they return to, and both walk off. Without the fix these fail.
+- **Laundry table, random start, doorbell gaps, 2026-09-28 (owner request, Claude Code):**
+  - The laundry basket stands on a small walnut table (`laundryTable`, 0.74 m) so the human folds standing up: the
+    fold cycle's reach into the basket is now at hip height, a slight lean (`FOLD_KEYS`), not a stoop to the floor.
+    Moke can walk under the table but not jump onto it.
+  - New basket: an oval, tapered woven basket (ribs, bands, rolled rim, handle slots), heaped with rumpled washing,
+    a towel over the front, and a neat stack of folded clothes beside it on the table.
+  - The human starts each game on a random everyday activity at a random place (TV, a book, the phone, a coffee at
+    the dining table or the counter, the couch, or the laundry; never cooking or a meal):
+    `HumanActivityController.startAnywhere` (the game turns it on; tests keep the laundry start) and `startSpot`,
+    where the runtime puts their body.
+  - Doorbell: after any visit Moke answered, the next is 10–15 minutes away even if the handoff was cut short (it
+    used to be 50–110 s then). Unanswered visits come back after 2–4 minutes (was 50–110 s).
+  - Found and fixed while testing: standing up from a seat could shove the human sideways for one physics step
+    (their body moved back from the chair before the world saw it), wedging them between the dining chairs; and
+    they now wait to stand up while Moke is right where they'd stand.
+  - Tests: random start (varied, never cooking, gets straight on with it), the answered-but-cut-short doorbell wait,
+    the unanswered wait, getting up with Moke in the way. Checked in the browser (the table, basket and the folding
+    pose; four reloads, four different starts).
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).
@@ -774,7 +792,8 @@ New with the jump:
   wasn't changed; nobody has judged whether it bobs too much.
 - On the couch or table, jump is only a small hop (the cap is measured from the floor). To get down, walk off the
   edge.
-- He can also jump onto lower things: the laundry basket (0.32 m) and his bed's bolster. Allowed, since they're
+- He can also jump onto lower things: his bed's bolster (the laundry basket was one until it went up on its table,
+  2026-09-28). Allowed, since they're
   below the couch, but nobody has looked closely at how they look.
 - G is no longer bound (the owner merged bark and growl onto one button).
 - **On touch, jumping is slower now:** hold the paw, slide to Jump, let go (or keep the buttons out and tap Jump

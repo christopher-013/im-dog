@@ -251,39 +251,97 @@ export function door(b: StaticSceneBuilder, m: RoomMaterials, width: number, hei
 }
 
 
+/** The laundry table (living room): a plain walnut table, tall enough to fold at without stooping. */
+export const LAUNDRY_TABLE = { width: 1.0, depth: 0.48, height: 0.74 } as const;
+/** The laundry basket on it: an oval, gently tapered woven basket. */
+export const LAUNDRY_BASKET = { width: 0.52, depth: 0.38, height: 0.27 } as const;
+
 /**
- * A woven laundry basket of folded clothes (Sock Heist: the human folds laundry here, and a sock has
- * escaped). Solid: Moke can't walk through it.
+ * Where the human folds laundry (Sock Heist starts here): a small table with the laundry basket on it, heaped with
+ * rumpled washing, and a neat stack of what's been folded so far beside it. Local +z faces where the human stands.
+ * Moke can walk underneath (only the legs block him); he can't jump up onto it.
+ */
+export function laundryTable(b: StaticSceneBuilder, m: RoomMaterials): void {
+  const { width: W, depth: D, height: H } = LAUNDRY_TABLE;
+  const top = 0.035;
+  b.add(rbox(W, top, D, 0.01), m.walnut, [0, H - top / 2, 0], { solid: true });
+  // An apron under the top, and square legs set in from the corners.
+  for (const z of [D / 2 - 0.04, -D / 2 + 0.04]) b.add(new BoxGeometry(W - 0.12, 0.07, 0.02), m.walnut, [0, H - top - 0.035, z]);
+  for (const x of [W / 2 - 0.04, -W / 2 + 0.04]) b.add(new BoxGeometry(0.02, 0.07, D - 0.1), m.walnut, [x, H - top - 0.035, 0]);
+  for (const x of [W / 2 - 0.045, -W / 2 + 0.045]) {
+    for (const z of [D / 2 - 0.045, -D / 2 + 0.045]) b.add(new BoxGeometry(0.04, H - top, 0.04), m.walnut, [x, (H - top) / 2, z], { thin: true });
+  }
+  b.at([-0.1, H, -0.01], 0, () => laundryBasket(b, m));
+  // What's been folded: a tidy stack of shirts and a towel, each with a fold line down its front.
+  const stack: [RoomMaterials['coral'], number, number][] = [
+    [m.linenLight, 0.3, 0.24],
+    [m.navy, 0.27, 0.21],
+    [m.coral, 0.26, 0.2],
+    [m.leaf, 0.25, 0.2],
+  ];
+  let y = H;
+  stack.forEach(([material, w, d], i) => {
+    const h = i === 0 ? 0.05 : 0.038;
+    b.add(rbox(w, h, d, 0.014), material, [0.34, y + h / 2, 0.02], { rotation: [0, 0.06 * (i % 2 ? 1 : -1), 0] });
+    y += h;
+  });
+}
+
+/**
+ * The laundry basket: an oval, gently tapered basket woven from cane (upright ribs, three woven bands, a rolled rim
+ * and a cut-out handle at each end), heaped with rumpled washing and a towel hanging over the front.
  */
 export function laundryBasket(b: StaticSceneBuilder, m: RoomMaterials): void {
-  const W = 0.56;
-  const D = 0.4;
-  const H = 0.32;
-  const wall = 0.035;
-  b.add(rbox(W, 0.03, D, 0.012), m.wicker, [0, 0.015, 0]);
-  b.add(rbox(W, H, wall, 0.012), m.wicker, [0, H / 2, D / 2 - wall / 2]);
-  b.add(rbox(W, H, wall, 0.012), m.wicker, [0, H / 2, -D / 2 + wall / 2]);
-  b.add(rbox(wall, H, D, 0.012), m.wicker, [W / 2 - wall / 2, H / 2, 0]);
-  b.add(rbox(wall, H, D, 0.012), m.wicker, [-W / 2 + wall / 2, H / 2, 0]);
-  // Woven bands round the sides, and a rope handle at each end: a laundry basket, not a box.
-  for (const y of [0.07, 0.15, 0.23]) {
-    for (const z of [D / 2 + 0.002, -D / 2 - 0.002]) b.add(rbox(W - 0.01, 0.022, 0.008, 0.004), m.wickerDark, [0, y, z], { cast: false });
-    for (const x of [W / 2 + 0.002, -W / 2 - 0.002]) b.add(rbox(0.008, 0.022, D - 0.01, 0.004), m.wickerDark, [x, y, 0], { cast: false });
+  const { width: W, depth: D, height: H } = LAUNDRY_BASKET;
+  const rx = W / 2;
+  const rz = D / 2;
+  const taper = 0.86;
+  // The body, and a rolled rim just proud of it.
+  b.add(new CylinderGeometry(1, taper, H, 40), m.wicker, [0, H / 2, 0], { scale: [rx, 1, rz] });
+  b.add(new CylinderGeometry(1, 1, 0.026, 40), m.wickerDark, [0, H + 0.004, 0], { scale: [rx + 0.012, 1, rz + 0.012] });
+  // Three woven bands round it (each follows the taper at its height).
+  for (const t of [0.22, 0.5, 0.78]) {
+    const k = taper + (1 - taper) * t;
+    b.add(new CylinderGeometry(1, 1, 0.022, 40), m.wickerDark, [0, H * t, 0], { scale: [rx * k + 0.004, 1, rz * k + 0.004], cast: false });
   }
-  for (const x of [W / 2 + 0.012, -W / 2 - 0.012]) b.add(new TorusGeometry(0.045, 0.009, 6, 14, Math.PI), m.wickerDark, [x, H - 0.035, 0], { rotation: [0, Math.PI / 2, 0], cast: false });
-  // A rim, and a heap of washing piled over it (so it reads as laundry, not a box), a shirt hanging over the front.
-  b.add(rbox(W + 0.03, 0.03, D + 0.03, 0.012), m.wickerDark, [0, H, 0]);
-  const pile: [RoomMaterials['coral'], number, number, number, number][] = [
-    [m.linenLight, 0.27, -0.09, 0.02, 0.2],
-    [m.coral, 0.3, 0.08, -0.03, -0.15],
-    [m.navy, 0.34, -0.05, -0.04, 0.35],
-    [m.leaf, 0.37, 0.07, 0.05, -0.3],
-    [m.mustard, 0.405, -0.02, 0.0, 0.1],
+  // Upright ribs, leaning out with the sides.
+  const ribs = 22;
+  const rib = new BoxGeometry(0.012, H * 0.96, 0.006);
+  for (let i = 0; i < ribs; i++) {
+    const a = (i / ribs) * Math.PI * 2;
+    const c = Math.cos(a);
+    const sn = Math.sin(a);
+    const mid = (1 + taper) / 2;
+    const yaw = Math.atan2(c / rx, sn / rz);
+    const reach = Math.hypot(rx * c, rz * sn);
+    const lean = Math.atan(((1 - taper) * reach) / H);
+    b.at([rx * c * mid + Math.sin(yaw) * 0.004, 0, rz * sn * mid + Math.cos(yaw) * 0.004], yaw, () => {
+      b.add(rib, m.wickerDark, [0, H / 2, 0], { rotation: [lean, 0, 0], cast: false });
+    });
+  }
+  // A cut-out handle at each end: a dark slot just under the rim.
+  for (const side of [1, -1]) {
+    b.at([side * (rx + 0.003), 0, 0], side * Math.PI / 2, () => {
+      b.add(rbox(0.1, 0.035, 0.012, 0.012), m.wickerShadow, [0, H - 0.045, 0], { cast: false });
+    });
+  }
+  // The washing: soft, rumpled heaps of clothes, piled up over the rim.
+  const lump = new SphereGeometry(1, 18, 12);
+  const heap: [RoomMaterials['coral'], number, number, number, number, number, number][] = [
+    // material, x, y, z, radius x, radius y, radius z
+    [m.linenLight, -0.1, H + 0.03, -0.04, 0.13, 0.055, 0.11],
+    [m.navy, 0.1, H + 0.025, 0.03, 0.12, 0.05, 0.1],
+    [m.coral, -0.02, H + 0.06, 0.05, 0.11, 0.05, 0.09],
+    [m.mustard, 0.12, H + 0.055, -0.07, 0.09, 0.045, 0.07],
+    [m.leaf, -0.14, H + 0.06, 0.06, 0.08, 0.04, 0.07],
+    [m.linen, 0.02, H + 0.085, -0.03, 0.09, 0.04, 0.08],
   ];
-  for (const [material, y, x, z, turn] of pile) b.add(rbox(0.3, 0.04, 0.24, 0.016), material, [x, y, z], { rotation: [0.06 * turn, turn, 0.05 * x] });
-  b.add(rbox(0.16, 0.15, 0.014, 0.006), m.linenLight, [0.12, H - 0.045, D / 2 + 0.014], { rotation: [0.18, 0, 0.12] });
-  b.add(rbox(0.12, 0.05, 0.03, 0.01), m.linenLight, [0.12, H + 0.02, D / 2 - 0.004], { rotation: [0, 0, 0.12] });
-  b.addCollider([0, H / 2, 0], [W, H, D]);
+  heap.forEach(([material, x, y, z, sx, sy, sz], i) => b.add(lump, material, [x, y, z], { scale: [sx, sy, sz], rotation: [0.15 * (i % 3 - 1), i * 0.7, 0.1 * (i % 2 ? 1 : -1)] }));
+  // A towel hanging over the front rim: lying across the top, then down the outside.
+  b.add(rbox(0.16, 0.012, 0.1, 0.005), m.linenLight, [0.14, H + 0.03, rz - 0.04], { rotation: [0.25, 0, 0] });
+  b.add(rbox(0.16, 0.14, 0.012, 0.005), m.linenLight, [0.14, H - 0.05, rz + 0.012], { rotation: [0.1, 0, 0] });
+  b.add(new BoxGeometry(0.16, 0.012, 0.004), m.coral, [0.14, H - 0.1, rz + 0.02], { rotation: [0.1, 0, 0], cast: false });
+  b.addCollider([0, H / 2 + 0.03, 0], [W + 0.03, H + 0.06, D + 0.03]);
 }
 
 /** A ceramic treat jar with a coral lid, up on the TV console where Moke can only dream of it. */

@@ -34,7 +34,7 @@ Each activity is plain data, so a new one needs no code:
 | Eat dinner | Dining chairs | eat, fork | 25–45 s | Only within 7 minutes of cooking it, and usually straight after; a plate on the table |
 | Relax | Sofas | relax (hands behind head) | 20–40 s | |
 | Coffee at the counter | Counter, island sink | sip, mug | 12–25 s | |
-| Fold laundry | The living room laundry basket | fold, laundry cloth | 12–22 s | Starts here for Sock Heist; lower selection weight (0.8), five-minute cooldown; glances round the room often |
+| Fold laundry | The laundry basket on its table in the living room | fold, laundry cloth | 12–22 s | One of the random starting activities; lower selection weight (0.8), five-minute cooldown; glances round the room often |
 
 **The scheduler** (`human/activities/ActivityScheduler.ts`) runs when an activity ends: among those off cooldown with
 a free place, it picks at random by weight × location (the same room ×1.5, and weight / (1 + distance / 9)) × follows
@@ -132,7 +132,8 @@ Once free, the human walks to the door, opens it outward, takes an Amazon-labell
 visitor, closes the door and praises Moke. **BARK = PROTECTOR** is earned only after the handoff, not from a remote
 bark. Moke declares that he defended the house. The human resumes the saved routine; another visitor is possible
 after a random **10–15 minutes** of game time (plus brief success feedback), never sooner than ten minutes after
-a successful handoff. Unanswered visits retry after a random 50–110 seconds. Pausing consumes neither delay.
+a handoff, and the same after any visit Moke answered by barking at the door, even if it was cut short (a Sock
+Heist, the human couldn't get there). Unanswered visits retry after a random 2–4 minutes. Pausing consumes neither delay.
 Only one parcel remains by the door (replaced next
 delivery), never an accumulating pile. The threshold stays collision-blocked: this is not an outdoor expansion.
 Sock Heist cancels an in-progress handoff safely; unreachable approach times out without false success.

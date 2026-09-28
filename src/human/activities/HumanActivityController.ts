@@ -97,6 +97,13 @@ export class HumanActivityController implements HumanIdleDriver {
   /** Activities in a row in the same seat. */
   private carriedOn = 0;
   private prepStarted = false;
+  /**
+   * Start each game somewhere different: a random everyday activity (TV, a book, the phone, a coffee at the table
+   * or the counter, the couch, the laundry) instead of always the laundry. Off by default (tests rely on the laundry).
+   */
+  startAnywhere = false;
+  /** Where the body should be at the start (after `reset`), facing which way. */
+  startSpot: { readonly x: number; readonly y: number; readonly z: number; readonly facing: number } | null = null;
 
   constructor(
     private readonly places: readonly HomePlace[],
@@ -170,10 +177,23 @@ export class HumanActivityController implements HumanIdleDriver {
     this.lastPlace = null;
     this.scheduler.reset();
     this.driving = true;
+    const first = this.startAnywhere ? this.randomStart() : null;
     const laundry = this.places.find((p) => p.kind === 'laundry');
     const fold = HUMAN_ACTIVITIES.find((a) => a.id === 'foldLaundry');
-    if (laundry && fold) this.start(fold, laundry, 'settling');
+    const start = first ?? (laundry && fold ? { activity: fold, place: laundry } : null);
+    this.startSpot = start ? { ...start.place.stand, facing: start.place.facing } : null;
+    if (start) this.start(start.activity, start.place, 'settling');
     else this.pause();
+  }
+
+  /** A random everyday activity to start the game with, at a random one of its places (not cooking or a meal). */
+  private randomStart(): { activity: HumanActivityDef; place: HomePlace } | null {
+    const options = HUMAN_ACTIVITIES.filter((a) => a.steps.length === 1 && !a.requires && !a.steps[0]!.effect?.match(/prep|meal|cooking/));
+    const activity = options[Math.floor(this.random() * options.length)];
+    if (!activity) return null;
+    const places = this.places.filter((p) => activity.steps[0]!.places.includes(p.kind));
+    const place = places[Math.floor(this.random() * places.length)];
+    return place ? { activity, place } : null;
   }
 
   /** A dog activity takes the human over. False if they're not available (the Sock Heist, another role). */

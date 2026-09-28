@@ -2,7 +2,12 @@
 export const HOME_ACTIVITIES = {
   delivery: {
     firstDelay: [25, 45] as const,
-    interval: [50, 110] as const,
+    /** Nobody answered (no bark at the door): the courier comes back in a few minutes. */
+    interval: [120, 240] as const,
+    /**
+     * Moke answered the door (barked at it): a good long while before the next delivery, whether the human took the
+     * package or something cut the visit short (a Sock Heist, the human couldn't get there).
+     */
     successfulInterval: [600, 900] as const,
     ringEvery: 2,
     unansweredTimeout: 30,

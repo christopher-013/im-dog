@@ -32,7 +32,8 @@ complete ◄── discovery (SOCK = TREAT) ◄── eating ◄─────�
   "Eat the treat!"). The human's speech bubbles, the sounds and Moke's glances carry the rest.
 
 ## The human (`src/human/`)
-One human, folding laundry at a basket between the lamp and Moke's bed, with their back to the rug where the sock
+One human (since 2026-09-28 the game starts them on a random everyday activity somewhere in the house, not
+always here), folding laundry at a basket on a small table between the lamp and Moke's bed, with their back to the rug where the sock
 lies. They wear one charcoal-striped sock; the other foot is bare. Behaviour, body and look are separate:
 
 | Part | File | What it does |

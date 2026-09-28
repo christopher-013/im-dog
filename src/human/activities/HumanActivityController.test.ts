@@ -58,6 +58,44 @@ describe('HumanActivityController (the daily routine)', () => {
     expect(routine.activity?.id).not.toBe('foldLaundry');
   });
 
+  it('in the game, starts each day somewhere different, doing something ordinary, right where they stand', async () => {
+    const started = new Set<string>();
+    const places = new Set<string>();
+    for (let seed = 1; seed <= 24; seed++) {
+      const routine = new HumanActivityController(home.places, new GameEvents(), mulberry32(seed));
+      routine.startAnywhere = true;
+      routine.reset();
+      const a = routine.activity!;
+      started.add(a.id);
+      places.add(routine.place!.id);
+      expect(['prepareDinner', 'mealPrep', 'eatMeal']).not.toContain(a.id); // never mid-cooking or mid-meal
+      expect(routine.startSpot).toMatchObject({ x: routine.place!.stand.x, z: routine.place!.stand.z, facing: routine.place!.facing });
+    }
+    expect(started.size).toBeGreaterThanOrEqual(5);
+    expect(places.size).toBeGreaterThanOrEqual(8);
+    // Placed at their start spot, they get straight on with it (sitting down first if it's a seat).
+    for (const seed of [3, 7, 12]) {
+      const physics = await PhysicsWorld.create();
+      physics.addStaticBoxes(home.colliders);
+      physics.commitStaticGeometry();
+      const routine = new HumanActivityController(home.places, new GameEvents(), mulberry32(seed));
+      routine.startAnywhere = true;
+      const { laundry, laundryBasket } = home.landmarks;
+      const brain = new HumanBrain({ home: laundry, basket: laundryBasket, treatStand: home.landmarks.treatStand, treatJar: home.landmarks.treatJar },
+        { takeTreat() {}, pickUpSock: () => false, putSockAway() {}, placeTreat() {} }, new GameEvents(), mulberry32(seed + 1));
+      brain.driver = routine;
+      routine.reset();
+      const start = routine.startSpot!;
+      const human = new Human(brain, new HumanController(new CharacterBody(physics, start, HUMAN.body), nav, start.facing), new StylizedHumanVisual());
+      const world = { moke: { x: 5.2, y: 0, z: 1.1 }, mokeCarryingSock: false, mokeSpeed: 0, mokeUnderFurniture: false, mokeBarked: false, looseSock: null, clear: () => true };
+      for (let i = 0; i < 5 / DT && routine.phase !== 'doing'; i++) {
+        human.fixedUpdate(DT, world);
+        physics.step();
+      }
+      expect(routine.phase, `seed ${seed}: ${routine.activity?.id}`).toBe('doing');
+    }
+  }, 30_000);
+
   it('lives a believable twenty minutes: many activities, several rooms, sitting and standing, never stuck', async () => {
     const { routine, human, step } = await setup(7);
     const done = new Set<HumanActivityId>();

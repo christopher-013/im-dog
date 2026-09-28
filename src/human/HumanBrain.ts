@@ -68,8 +68,10 @@ export interface HumanIdleDriver {
   interrupt(): void;
   /** Back to idle after the heist: pick things up again. */
   resume(s: HumanSenses): void;
-  /** A replay: start again at the laundry. */
+  /** A replay: start again at the laundry (or wherever `startSpot` then says). */
   reset(): void;
+  /** Where the body starts after `reset`, if not at the laundry. */
+  readonly startSpot?: { readonly x: number; readonly y: number; readonly z: number; readonly facing: number } | null;
 }
 
 export interface HumanPlaces {

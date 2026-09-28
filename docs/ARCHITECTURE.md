@@ -108,7 +108,7 @@ src/
       homeFurniture.ts    the wing's furniture: sectional, fireplace, built-ins, island, stools, range, fridge, trestle table, chairs…
     HouseholdEffects.ts   signs of life: the TV glow, the steaming pot, dinner on the table; the FOOD smell
     LivingRoom.ts         the room + hallway (its end opens into the wing in the house): shell, layout, spawn, landmarks (navigation-tested with Rapier)
-    furniture.ts          couch, coffee table, rug, TV console, lamp, plant, dog bed, curtains, art, door, laundry basket, treat jar
+    furniture.ts          couch, coffee table, rug, TV console, lamp, plant, dog bed, curtains, art, door, laundry table and basket, treat jar
     materials.ts          the room palette (shared materials)
     textures.ts           original procedural canvas textures (floorboards, grey planks, rug, pillows, art, garden, tiles, clock face, door sign, sun patch)
     StaticSceneBuilder.ts places parts in nested frames, derives colliders, merges by material (tested)

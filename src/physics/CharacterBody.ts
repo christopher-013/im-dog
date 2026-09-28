@@ -5,6 +5,10 @@ import { interactionGroups, LAYER, WORLD_QUERY_GROUPS } from './collisionGroups'
 const CAPSULE_GROUPS = interactionGroups(LAYER.character, 0xffff & ~LAYER.toy);
 import type { PhysicsWorld } from './PhysicsWorld';
 
+const IDENTITY = { x: 0, y: 0, z: 0, w: 1 };
+/** Only other characters. */
+const CHARACTER_QUERY_GROUPS = interactionGroups(0xffff, LAYER.character);
+
 export interface Vec3Like {
   x: number;
   y: number;
@@ -121,6 +125,17 @@ export class CharacterBody {
    */
   offsetCollider(x: number, z: number): void {
     this.collider.setTranslationWrtParent({ x, y: 0, z });
+  }
+
+  /** Is another character (Moke) standing where this capsule would be at the body's own centre, unshifted? */
+  characterAtCentre(): boolean {
+    const shape = this.collider.shape;
+    let found = false;
+    this.physics.world.intersectionsWithShape(this.center, IDENTITY, shape, () => {
+      found = true;
+      return false;
+    }, undefined, CHARACTER_QUERY_GROUPS, this.collider);
+    return found;
   }
 
   /** Free space straight above the capsule centre, capped at `max` metres. */

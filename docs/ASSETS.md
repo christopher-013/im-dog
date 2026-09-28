@@ -37,7 +37,7 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 | Malibu, the green-cheeked conure | `src/world/Conure.ts`, the `icon-bird` symbol in `index.html` | 2026-09-28. Built in code from simple shapes and animated procedurally; modelled on the owner's photo of their bird. |
 | Flagstone patio and backyard sky/tree-line textures | `src/world/textures.ts` | 2026-09-28. Original canvas drawings generated at startup (no image files) |
 | Dog Logic and nap icons (nose, bed, sun, soft, human, ball, toy, kitchen, food, heart, nap, play, warm, quiet) | `index.html` (inline SVG symbols) | Phase 4. Original vector art |
-| Treat (bone biscuit), laundry basket with folded clothes, treat jar | `src/heist/Treat.ts`, `src/world/furniture.ts` | Phase 3. Built in code from simple shapes |
+| Treat (bone biscuit), laundry table with a woven basket of washing and a stack of folded clothes (2026-09-28), treat jar | `src/heist/Treat.ts`, `src/world/furniture.ts` | Phase 3. Built in code from simple shapes |
 | Touch-control, rotate, sock and treat icons | `index.html` (inline SVG symbols) | Phase 3. Original vector art |
 | Scent wisps | `src/senses/ScentWisps.ts` | Procedural particles, a small original shader |
 | Background music, "Aloha, Moke" | `src/audio/music.ts` | **Original composition, written for this game** (owner's request, 2026-09-25: 8-bit video-game music in a Hawaiian, elevator-muzak style). 24 bars, C major, 90 BPM, swung: a triangle bass, a pulse-wave "ukulele" strum, a square-wave "steel guitar" lead with slides and vibrato, a noise shaker. Synthesized with Web Audio at play time; no recordings, samples or borrowed melodies. |

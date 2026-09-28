@@ -10,7 +10,7 @@ import {
   door,
   floorLamp,
   framedArt,
-  laundryBasket,
+  laundryTable,
   pottedPlant,
   rug,
   sideTable,
@@ -216,9 +216,9 @@ b.add(new BoxGeometry(sideLength, H, T), m.wall, [sideX, H / 2, zMax + T / 2], s
     b.at([3.05, 0, -2.6], 0, () => pottedPlant(b, m));
     // Moke's bed sits in the window's pool of afternoon sun, open side facing the room (+x).
     b.at([-2.25, 0, 0.05], Math.PI / 2, () => dogBed(b, m));
-    // Sock Heist: the laundry basket the sock escaped from, and the treat jar, out of reach on the TV console.
-    // Its long side toward where the human stands to fold.
-    b.at([-2.0, 0, -1.85], 1.02, () => laundryBasket(b, m));
+    // Sock Heist: the laundry basket the sock escaped from, up on a table so the human folds standing up, and the
+    // treat jar, out of reach on the TV console. The table's long side toward where the human stands to fold.
+    b.at([-2.0, 0, -1.85], 1.02, () => laundryTable(b, m));
     b.at([0.95, 0.56, 2.77], Math.PI, () => treatJar(b, m));
 
     b.at([0.3, 1.55, -hd + 0.02], 0, () => framedArt(b, m, 1.0, 0.7));

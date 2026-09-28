@@ -197,6 +197,7 @@ export class Game {
     this.loop = new GameLoop(this.gfx.renderer, this.frame);
 
     this.routine = new HumanActivityController(this.room.places, this.events);
+    this.routine.startAnywhere = true;
     this.routine.reactions = this.reactions;
     this.reactions.say = (text, mood) => this.routine.say(text, mood);
     this.reactions.onPet = () => this.petted();

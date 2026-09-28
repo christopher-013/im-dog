@@ -127,11 +127,13 @@ export class DoorDelivery extends DogActivity {
   }
   protected onUpdate(): void {}
   protected onCancel(): void {
+    // Answered (Moke barked at the door) but cut short: as long a break as a delivery that went through.
+    const answered = this.acknowledged;
     this.go('done');
     this.ringing = this.acknowledged = this.guarding = false;
     this.ringingFor = this.guardingFor = 0;
     this.deps.view.cancel();
-    this.schedule();
+    this.schedule(answered);
   }
 
   resetAll(): void {
@@ -190,8 +192,8 @@ export class DoorDelivery extends DogActivity {
   }
 
   private go(step: Step): void { this.step = step; this.elapsed = 0; }
-  private schedule(): void {
-    this.due = this.delay(this.tuning.interval);
+  private schedule(answered = false): void {
+    this.due = this.delay(answered ? this.tuning.successfulInterval : this.tuning.interval);
   }
 
   private delay([min, max]: readonly [number, number]): number {

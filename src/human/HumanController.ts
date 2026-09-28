@@ -112,7 +112,10 @@ export class HumanController {
     this.speed = moveToward(this.speed, targetSpeed, (targetSpeed > this.speed ? t.acceleration : t.braking) * dt);
 
     const onSeat = this.seat !== null && this.seatBlend >= SEAT_COLLIDER_FROM;
-    if (onSeat !== this.onSeat) {
+    // The step the capsule moves over (either way), the body stays put: the physics world only sees where the
+    // capsule now is after the next step, and moving it before then would push it out of the chair it's leaving.
+    const shifting = onSeat !== this.onSeat;
+    if (shifting) {
       this.onSeat = onSeat;
       const seat = this.seat;
       this.body.offsetCollider(onSeat && seat ? seat.x - this.body.center.x : 0, onSeat && seat ? seat.z - this.body.center.z : 0);
@@ -121,7 +124,7 @@ export class HumanController {
     d.x = Math.sin(this.heading) * this.speed * dt;
     d.y = 0;
     d.z = Math.cos(this.heading) * this.speed * dt;
-    if (this.onSeat) this.applied.x = this.applied.y = this.applied.z = 0;
+    if (this.onSeat || shifting) this.applied.x = this.applied.y = this.applied.z = 0;
     else this.body.move(d, this.applied);
     this.position.x = this.body.center.x;
     this.position.y = this.body.center.y - this.body.centerHeight;
@@ -146,7 +149,10 @@ export class HumanController {
     const t = this.tuning;
     const want = intent.seat;
     if (this.seat && want !== this.seat) {
-      this.seatBlend = Math.max(0, this.seatBlend - dt / (t.standTime + this.seatStep(this.seat)));
+      const next = Math.max(0, this.seatBlend - dt / (t.standTime + this.seatStep(this.seat)));
+      // Moke is right where they'd stand up to: stay sat until he moves (their body can't go back there on top of him).
+      if (this.onSeat && next < SEAT_COLLIDER_FROM && this.body.characterAtCentre()) return true;
+      this.seatBlend = next;
       if (this.seatBlend <= 0) this.seat = null;
       return this.seat !== null;
     }

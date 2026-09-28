@@ -164,7 +164,9 @@ export class Human {
   /** Back home, folding laundry (Sock Heist replay). */
   reset(home: Vec3Like, facing: Vec3Like): void {
     this.brain.reset();
-    this.controller.teleport(home, Math.atan2(facing.x - home.x, facing.z - home.z));
+    const start = this.brain.driver?.startSpot;
+    if (start) home = start;
+    this.controller.teleport(home, start ? start.facing : Math.atan2(facing.x - home.x, facing.z - home.z));
     this.renderPosition.set(home.x, this.controller.position.y, home.z);
     this.visualPosition.copy(this.renderPosition);
     this.lastPosition.copy(this.renderPosition);

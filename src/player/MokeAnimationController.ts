@@ -294,6 +294,19 @@ export class MokeAnimationController {
     return this.sincePet < MOKE_ANIMATION.petDuration;
   }
 
+  /**
+   * Safety net (Game): lets go of everything that holds him still (tug, dig, eating, drinking, petting, a trick),
+   * for when one has somehow been held far longer than any real moment lasts while the player tries to move.
+   */
+  releaseHolds(): void {
+    this.tuggingNow = false;
+    this.diggingNow = false;
+    this.sinceEat = this.eatFor;
+    this.sinceDrink = this.drinkFor;
+    this.sincePet = MOKE_ANIMATION.petDuration;
+    this.cancelTrick();
+  }
+
   /** He's in the middle of a trick (including easing out of one he cut short). */
   get performingTrick(): boolean {
     return this.state.trick !== null;

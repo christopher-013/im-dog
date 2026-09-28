@@ -66,7 +66,21 @@ export const JUMP = {
   minRise: 0.02,
   /** A press this long before he lands still counts (s). */
   buffer: 0.1,
+  /**
+   * Wedged: "in the air" but not dropping at all for this long (s). His round bottom is resting on edges in a
+   * gap (between the step stool and the sofa arms, say), where he can neither jump (not standing) nor walk (no
+   * climbing in the air). He slips back to the last place he stood. A real jump is never still this long: at the
+   * top of one he pauses for a frame or two.
+   */
+  wedgeTime: 0.4,
 } as const;
+
+/**
+ * Last-resort safety net against a soft-lock: if something (a tug, digging, eating, petting, a trick) has held Moke
+ * still for this long (s) while the player keeps trying to move him, let him go. The longest real hold is a tug-of-war
+ * (at most 8 s), so this only ever catches a bug. Resting in his bed doesn't count: a move key already gets him up.
+ */
+export const HOLD_RELEASE_AFTER = 12;
 
 export type JumpTuning = { readonly [K in keyof typeof JUMP]: number };
 

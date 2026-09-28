@@ -6,7 +6,7 @@ import { ASSET_MANIFEST, MOKE_MODEL_AVAILABLE } from '../config/assets';
 import { MOKE_ATTENTION } from '../config/attention';
 import { CAMERA } from '../config/camera';
 import { CAMERA_LENS, RENDER } from '../config/engine';
-import { MOKE_BODY } from '../config/movement';
+import { HOLD_RELEASE_AFTER, MOKE_BODY } from '../config/movement';
 import { QUALITY, type QualityLevel } from '../config/quality';
 import { HUMAN } from '../config/human';
 import { SNIFF } from '../config/senses';
@@ -166,6 +166,8 @@ export class Game {
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
   private readonly moveIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
   private readonly stillIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
+  /** Seconds Moke has been held still while the player pushes to move (see HOLD_RELEASE_AFTER). */
+  private heldAgainstInput = 0;
   private readonly cameraInput: CameraInput = { lookX: 0, lookY: 0, zoom: 0 };
   private readonly cameraTarget: CameraTarget = { position: new Vector3(), heading: 0, speed: 0, headroom: Infinity, rest: 0 };
 
@@ -815,6 +817,12 @@ export class Game {
         this.moke.animation.eating ||
         this.moke.animation.petting ||
         this.moke.animation.tugging || this.moke.animation.digging;
+      const pushing = this.moveIntent.x !== 0 || this.moveIntent.z !== 0;
+      this.heldAgainstInput = stayPut && pushing && !this.rest.holdsMoke ? this.heldAgainstInput + step : 0;
+      if (this.heldAgainstInput >= HOLD_RELEASE_AFTER) {
+        this.heldAgainstInput = 0;
+        this.moke.animation.releaseHolds();
+      }
       this.moke.fixedUpdate(step, stayPut ? this.stillIntent : this.moveIntent);
     }
     this.rest.update(step, c);

@@ -185,13 +185,15 @@ export class LivingRoom {
 
     b.add(new BoxGeometry(length, 0.1, width), m.floorGrey, [midX, -0.05, midZ], { cast: false, solid: true, worldUV: FLOOR_TILE });
     b.add(new BoxGeometry(length + T, 0.1, width + 2 * T), m.ceiling, [midX + T / 2, H + 0.05, midZ], { receive: false });
-    // The left wall opens into the bathroom; keep an actual navigable doorway, not a decorative door over a collider.
-    for (const [start, end] of [[x0, BATHROOM.doorMin], [BATHROOM.doorMax, x1 + T]] as const) {
-      b.add(new BoxGeometry(end - start, H, T), m.wall, [(start + end) / 2, H / 2, zMin - T / 2], solid);
-    }
-    b.add(new BoxGeometry(BATHROOM.doorMax - BATHROOM.doorMin, H - BATHROOM.doorHeight, T), m.wall,
-      [(BATHROOM.doorMin + BATHROOM.doorMax) / 2, (H + BATHROOM.doorHeight) / 2, HALL.zMin - T / 2], solid);
-    b.add(new BoxGeometry(length + T, H, T), m.wall, [midX + T / 2, H / 2, zMax + T / 2], solid);
+const sideLength = this.options.hallwayOpen ? length : length + T;
+const sideX = x0 + sideLength / 2;
+// The left wall opens into the bathroom; keep an actual navigable doorway, not a decorative door over a collider.
+for (const [start, end] of [[x0, BATHROOM.doorMin], [BATHROOM.doorMax, x1 + T]] as const) {
+  b.add(new BoxGeometry(end - start, H, T), m.wall, [(start + end) / 2, H / 2, zMin - T / 2], solid);
+}
+b.add(new BoxGeometry(BATHROOM.doorMax - BATHROOM.doorMin, H - BATHROOM.doorHeight, T), m.wall,
+  [(BATHROOM.doorMin + BATHROOM.doorMax) / 2, (H + BATHROOM.doorHeight) / 2, HALL.zMin - T / 2], solid);
+b.add(new BoxGeometry(sideLength, H, T), m.wall, [sideX, H / 2, zMax + T / 2], solid);
     b.add(new BoxGeometry(length - 0.6, 0.008, 0.55), m.runner, [midX + 0.15, 0.004, midZ], { cast: false });
     if (!this.options.hallwayOpen) {
       b.add(new BoxGeometry(T, H, width + 2 * T), m.wall, [x1 + T / 2, H / 2, midZ], solid);

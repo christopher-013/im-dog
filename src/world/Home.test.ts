@@ -305,4 +305,24 @@ describe('Home', () => {
     expect(humanNav.isWalkable(underDiningTable.x, underDiningTable.z)).toBe(false);
     expect(humanNav.isWalkable(9.6, 3.28)).toBe(false);
   });
+
+  it('never leaves him wedged between the step stool and the sofa arms (the jump safety net frees him)', async () => {
+    // Hopping at the step stool from the south, this approach used to leave him resting on edges in the gap
+    // between the stool and the two sofa arms: "in the air", unable to jump or walk, for good.
+    const { moke, physics } = await setup({ x: 16.0, z: 2.1 }, 0);
+    const dx = 16.03 - 16.0;
+    const dz = 1.32 - 2.1;
+    const d = Math.hypot(dx, dz);
+    for (let i = 0; i < 1.6 / DT; i++) {
+      if (i % 16 === 5) moke.requestJump();
+      moke.fixedUpdate(DT, { x: dx / d, z: dz / d, walk: false, run: false });
+      physics.step();
+    }
+    for (let i = 0; i < 1 / DT; i++) {
+      moke.fixedUpdate(DT, { x: 0, z: 0, walk: false, run: false });
+      physics.step();
+    }
+    expect(moke.airborne).toBe(false);
+    expect(moke.position.y).toBeLessThan(0.05);
+  });
 });

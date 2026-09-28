@@ -49,6 +49,11 @@ export class MokeController {
   private ungroundedSteps = 0;
   /** On the ground with something under his middle, not teetering on an edge (see CharacterBody.groundBelow). */
   private standing = true;
+  /** Where he last stood firmly (feet), and how long he's been wedged in mid-air (see JUMP.wedgeTime). */
+  private readonly lastFooting = new Vector3();
+  private wedgedFor = 0;
+  /** Times he's been freed from a wedge (debug panel, tests). */
+  unwedgeCount = 0;
   /** Seconds a jump press stays valid (JUMP.buffer), so one just before landing still counts. */
   private jumpRequest = 0;
   private readonly desired: Vec3Like = { x: 0, y: 0, z: 0 };
@@ -68,6 +73,7 @@ export class MokeController {
     this.probeHeadroom();
     this.syncPositionFromBody();
     this.previousPosition.copy(this.position);
+    this.lastFooting.copy(this.position);
   }
 
   get heading(): number {
@@ -116,6 +122,26 @@ export class MokeController {
     this.afterVerticalMove(jumped);
     this.syncPositionFromBody();
     this.probeHeadroom();
+    this.guardAgainstWedging(dt);
+  }
+
+  /**
+   * Safety net against soft-locks: if he's "airborne" but hasn't dropped at all for JUMP.wedgeTime, he's stuck
+   * on edges in a gap, so put him back where he last stood.
+   */
+  private guardAgainstWedging(dt: number): void {
+    if (!this.airborne) {
+      if (this.standing) this.lastFooting.copy(this.position);
+      this.wedgedFor = 0;
+      return;
+    }
+    const falling = this.desired.y < 0;
+    const stalled = this.applied.y > this.desired.y * 0.1;
+    this.wedgedFor = falling && stalled ? this.wedgedFor + dt : 0;
+    if (this.wedgedFor < this.jumpTuning.wedgeTime) return;
+    this.wedgedFor = 0;
+    this.unwedgeCount++;
+    this.teleport(this.lastFooting, this.locomotion.heading);
   }
 
   /**

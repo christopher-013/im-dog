@@ -26,6 +26,8 @@ export type HeistLine = keyof typeof HEIST_LINES;
 export const HEIST = {
   /** Seconds the SOCK = TREAT card shows before "Sock Heist Complete". */
   discoveryTime: 3.4,
+  /** Seconds the "Sock Heist Complete" card shows over the game before it fades (play carries on underneath). */
+  completeCardTime: 4,
   /** The Dog Logic entry this heist teaches (Phase 4 builds on it). */
   dogLogicId: 'sock=treat',
   /** Eating the treat. */

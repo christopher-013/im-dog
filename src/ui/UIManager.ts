@@ -5,14 +5,11 @@ import { keyLabel } from '../core/InputState';
 import { MUSIC_CHOICES, MUSIC_VOLUME_RANGE, SENSITIVITY_RANGE, type MusicChoice, type PlayerSettings } from '../core/PlayerSettings';
 import { actionGlyph, onboardingRows } from './ControlGlyphs';
 
-export type Screen = 'loading' | 'menu' | 'paused' | 'complete' | 'error';
+export type Screen = 'loading' | 'menu' | 'paused' | 'error';
 
 export interface UIHandlers {
   onPlay(): void;
   onResume(): void;
-  /** Sock Heist complete: go again, or carry on exploring. */
-  onPlayAgain(): void;
-  onKeepExploring(): void;
 }
 
 /**
@@ -46,6 +43,7 @@ export class UIManager {
   private speechTimer: number | undefined;
   private discoveryTimer: number | undefined;
   private napTimer = 0;
+  private completeTimer = 0;
   private discoveryShowing: string | null = null;
   private readonly discoveryQueue: { first: boolean; durationMs: number; entry: DogLogicEntry }[] = [];
   private objective: string | null = null;
@@ -62,7 +60,6 @@ export class UIManager {
       loading: this.el('screen-loading'),
       menu: this.el('screen-menu'),
       paused: this.el('screen-pause'),
-      complete: this.el('screen-complete'),
       error: this.el('screen-error'),
     };
     this.loadingFill = this.el('loading-fill');
@@ -86,8 +83,6 @@ export class UIManager {
 
     this.el('btn-play').addEventListener('click', () => this.handlers?.onPlay());
     this.el('btn-resume').addEventListener('click', () => this.handlers?.onResume());
-    this.el('btn-play-again').addEventListener('click', () => this.handlers?.onPlayAgain());
-    this.el('btn-keep-exploring').addEventListener('click', () => this.handlers?.onKeepExploring());
     this.el('btn-retry').addEventListener('click', () => location.reload());
     this.el('btn-controls-close').addEventListener('click', () => this.controlsDialog.close());
     this.el('btn-about-close').addEventListener('click', () => this.aboutDialog.close());
@@ -477,12 +472,23 @@ export class UIManager {
     this.el('nap-vignette').classList.toggle('is-visible', on);
   }
 
-  /** "Sock Heist Complete", with how long it took. */
-  showComplete(seconds: number): void {
+  /** "Sock Heist Complete", with how long it took: over the game for `durationMs`, then it fades. No buttons. */
+  showComplete(seconds: number, durationMs: number): void {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
     this.el('complete-detail').textContent = `Sock returned. Treat eaten. Took ${m}:${String(s).padStart(2, '0')}.`;
-    this.showScreen('complete');
+    const card = this.el('complete-card');
+    card.classList.add('is-visible');
+    card.setAttribute('aria-hidden', 'false');
+    window.clearTimeout(this.completeTimer);
+    this.completeTimer = window.setTimeout(() => this.hideComplete(), durationMs);
+  }
+
+  hideComplete(): void {
+    window.clearTimeout(this.completeTimer);
+    const card = this.el('complete-card');
+    card.classList.remove('is-visible');
+    card.setAttribute('aria-hidden', 'true');
   }
 
   /** Clears the heist's HUD (a replay). */

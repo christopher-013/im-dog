@@ -201,7 +201,7 @@ It stays hidden unless asked for.
   - rotating mid-chase (touches released, play continues);
   - hiding the page mid-chase (pause, input released, audio suspended).
 - **Sock Heist completed with touch only** at 740×360: steal, flee, trade, eat, SOCK = TREAT, completion, then
-  PLAY AGAIN.
+  PLAY AGAIN (since replaced by a card that fades on its own).
 - **Service worker:**
   - registers, activates and precaches all 14 build files on `npm run preview` with `?sw=on`;
   - `?sw=off` removes it;

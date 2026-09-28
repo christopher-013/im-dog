@@ -234,6 +234,15 @@
           <p id="nap-icons" class="nap-icons"></p>
           <p id="nap-caption" class="nap-caption"></p>
         </div>
+        <!-- Sock Heist done: shown for a few seconds over the game, which carries on. -->
+        <div id="complete-card" class="complete-card" role="status" aria-hidden="true">
+          <p class="complete-icons" aria-hidden="true">
+            <svg class="complete-icon"><use href="#icon-sock" /></svg><span>=</span
+            ><svg class="complete-icon"><use href="#icon-treat" /></svg>
+          </p>
+          <p class="complete-title">Sock Heist Complete</p>
+          <p id="complete-detail" class="complete-detail"></p>
+        </div>
         <div id="nap-vignette" class="nap-vignette" aria-hidden="true"></div>
         <div id="onboarding" class="onboarding" aria-hidden="true">
           <ul id="onboarding-list" class="onboarding-list"></ul>
@@ -353,21 +362,6 @@
             <button class="btn btn-secondary" type="button" data-open-controls>CONTROLS</button>
             <button class="btn btn-secondary" type="button" data-open-about>ABOUT I'M DOG?</button>
             <button class="btn btn-link" type="button" data-fullscreen hidden>FULLSCREEN</button>
-          </div>
-        </div>
-      </section>
-
-      <section id="screen-complete" class="screen screen-complete" aria-label="Sock Heist complete" aria-hidden="true" inert>
-        <div class="card stack">
-          <p class="complete-icons" aria-hidden="true">
-            <svg class="complete-icon"><use href="#icon-sock" /></svg><span>=</span
-            ><svg class="complete-icon"><use href="#icon-treat" /></svg>
-          </p>
-          <h2 class="card-title">Sock Heist Complete</h2>
-          <p id="complete-detail" class="card-text"></p>
-          <div class="menu-buttons">
-            <button id="btn-play-again" class="btn btn-primary" type="button">PLAY AGAIN</button>
-            <button id="btn-keep-exploring" class="btn btn-secondary" type="button">KEEP EXPLORING</button>
           </div>
         </div>
       </section>

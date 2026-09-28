@@ -144,8 +144,8 @@ scripts/sw-template.js    the service worker; vite.config.ts fills in the precac
 
 
 ## Game states and the frame
-`loading → menu → playing ⇄ paused`, and `playing → complete` when a Sock Heist ends (PLAY AGAIN / KEEP EXPLORING
-return to `playing`). Hiding the page (phone locked, app or tab switched) pauses. Each rendered frame:
+`loading → menu → playing ⇄ paused`. A finished Sock Heist no longer stops play: its "Sock Heist Complete" card shows
+over the game for a few seconds (there used to be a `complete` state with PLAY AGAIN / KEEP EXPLORING). Hiding the page (phone locked, app or tab switched) pauses. Each rendered frame:
 
 1. `input.beginFrame(dt)` polls gamepads, then latches button/key presses, analog movement and look delta for the frame.
 2. Global keys: debug toggle, pause.

@@ -76,14 +76,14 @@ import { AdaptiveResolution, pickQuality } from './Quality';
 import type { Vec2Like } from './InputState';
 import { applySettings, loadSettings, saveSettings } from './PlayerSettings';
 
-export type GameState = 'loading' | 'menu' | 'playing' | 'paused' | 'complete';
+export type GameState = 'loading' | 'menu' | 'playing' | 'paused';
 
 /** What Moke says when he plays with Malibu again. */
 const MALIBU_LINES = ['Hi Malibu!', 'Play, Malibu, play!', 'My bird friend!', 'Malibu! Malibu!'] as const;
 
 /**
  * Top-level orchestrator: owns the renderer, scene, input, physics, UI and the game state
- * machine (loading → menu → playing ⇄ paused, and playing → complete after a Sock Heist), and runs the frame:
+ * machine (loading → menu → playing ⇄ paused), and runs the frame:
  *
  *   input.beginFrame → global keys → fixed steps (Moke + physics) → Moke visuals → camera → render → debug
  */
@@ -149,7 +149,6 @@ export class Game {
   private readonly logicMemory = new DogLogicMemory();
   /** Treat Hunt, Perfect Nap, Make Human Play. */
   private director: DogActivityDirector | null = null;
-  private hunt: TreatHunt | null = null;
   private readonly huntTreat = new Treat('hunt', DOG_ACTIVITIES.treatHunt.scentRadius);
   private readonly kitchenTreat = new Treat('kitchen', 3, 'carrot');
   private readonly frontDoor = new FrontDoor();
@@ -226,8 +225,6 @@ export class Game {
     ui.bind({
       onPlay: () => this.play(),
       onResume: () => this.resume(),
-      onPlayAgain: () => this.playAgain(),
-      onKeepExploring: () => this.keepExploring(),
     });
     const settings = loadSettings();
     applySettings(settings);
@@ -429,7 +426,6 @@ export class Game {
         window.setTimeout(() => this.ui.showToast(`Treat Hunt: found it in ${m}:${String(s).padStart(2, '0')}!`, 3500), HEIST.discoveryTime * 1000);
       },
     });
-    this.hunt = hunt;
     const nap = new PerfectNap({
       spots: this.room.napSpots,
       fire: this.room.fire,
@@ -647,40 +643,13 @@ export class Game {
     for (const id of report.learned) this.dogLogic.discover(id, true);
   }
 
-  /** "Sock Heist Complete": the card with PLAY AGAIN / KEEP EXPLORING (the world waits behind it). */
+  /**
+   * "Sock Heist Complete": a card over the game for a few seconds, then it fades. Play never stops: the next steal
+   * starts a new heist (the human tidies the sock away first).
+   */
   private completeHeist(seconds: number): void {
-    if (this.state !== 'playing') return;
-    this.setState('complete');
-    this.ui.showComplete(seconds);
-    this.input.exitPointerLock();
-    this.input.releaseAll();
-  }
-
-  private playAgain(): void {
-    if (this.state !== 'complete') return;
-    this.director?.cancelAll();
-    this.hunt?.resetAll();
-    this.delivery?.resetAll();
-    this.kitchenBeg?.resetAll();
-    this.pillowDig?.resetAll();
-    this.tableManners?.resetAll();
-    this.toiletPaper?.resetAll();
-    this.pillows?.reset();
-    this.bathroom.reset();
-    this.heist?.heist.reset();
-    this.ui.clearHeist();
-    this.audio.unlock();
-    this.setState('playing');
-    void this.input.requestPointerLock();
-  }
-
-  private keepExploring(): void {
-    if (this.state !== 'complete') return;
     this.heist?.heist.keepExploring();
-    this.ui.clearHeist();
-    this.audio.unlock();
-    this.setState('playing');
-    void this.input.requestPointerLock();
+    this.ui.showComplete(seconds, HEIST.completeCardTime * 1000);
   }
 
   /** What catches Moke's eye: the loose props (not while in his mouth) and his bed. */
@@ -776,9 +745,8 @@ export class Game {
     else if (command === 'resume') this.resume(false);
     else if (command === 'play') this.play(false);
     else if (command === 'closeControls') this.ui.closeControls();
-    else if (command === 'playAgain') this.playAgain();
     // The press that started or resumed play mustn't also count as an in-game action (A is also "interact").
-    const enteredPlay = command === 'resume' || command === 'play' || command === 'playAgain';
+    const enteredPlay = command === 'resume' || command === 'play';
 
     const playing = this.state === 'playing';
     // Discrete actions are read once per rendered frame, so a tap is never missed or doubled.

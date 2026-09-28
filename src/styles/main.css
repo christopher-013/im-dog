@@ -1096,6 +1096,44 @@ html[data-debug] .heist-chip {
   opacity: 1;
 }
 
+/* Sock Heist Complete: over the game for a few seconds, then it fades; it never takes a click. */
+.complete-card {
+  position: absolute;
+  left: 50%;
+  top: calc(12% + env(safe-area-inset-top));
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 18px 32px 20px;
+  border-radius: 28px;
+  background: rgba(255, 250, 243, 0.96);
+  box-shadow: 0 6px 0 var(--shadow), 0 16px 40px rgba(43, 37, 48, 0.16);
+  text-align: center;
+  opacity: 0;
+  transform: translate(-50%, -12px) scale(0.96);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+
+.complete-card.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.complete-title {
+  margin: 0;
+  font-size: clamp(1.4rem, 4.5vw, 2rem);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.complete-detail {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
 .complete-icons {
   display: flex;
   align-items: center;
@@ -1552,20 +1590,12 @@ html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
 
 /* Landscape phones: the pause card goes side by side (settings | buttons) so nothing needs scrolling. */
 @media (max-height: 460px) and (orientation: landscape) {
-  .screen-complete .card.stack {
-    gap: 6px;
-    padding: 16px 24px;
+  .complete-card {
+    top: calc(10px + env(safe-area-inset-top));
+    padding: 10px 22px 12px;
   }
-  .screen-complete .card-title {
-    font-size: 1.5rem;
-  }
-  .screen-complete .menu-buttons {
-    margin-top: 4px;
-    gap: 10px;
-  }
-  .screen-complete .btn {
-    padding: 0.55em 1.2em;
-    font-size: 1.05rem;
+  .complete-title {
+    font-size: 1.3rem;
   }
   .discovery {
     top: 45%;

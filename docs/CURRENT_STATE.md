@@ -628,6 +628,13 @@ not on GitHub and is **not** covered.
   - Tests: `Conure.test.ts` (play: position, bouncing, chirps, stays in the cage, ends; a bark ends it) and a new
     `config/dogLogic.test.ts` (unique ids; every icon exists in `index.html`). Checked headless in Chromium (prompt,
     beg, bounce, the Dog Logic card). The chirp wasn't heard (no audio in the headless run).
+- **Sock Heist ends without a menu, 2026-09-28 (owner request, Claude Code):**
+  - The "Sock Heist Complete" card no longer asks PLAY AGAIN / KEEP EXPLORING. It shows over the game for 4 s
+    (`HEIST.completeCardTime`), then fades; play never stops and the mouse stays captured. Afterwards the heist
+    behaves as KEEP EXPLORING did (the next steal is a new heist).
+  - Removed: the `complete` game/menu state, the completion screen and its buttons, controller A's "play again".
+  - Checked headless in Chromium: the card shows with the time, the state stays `playing`, Moke moves, and the card
+    hides by itself. Tests and build pass.
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

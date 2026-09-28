@@ -21,13 +21,13 @@ using: "E — Pick Up Sock" on a keyboard, "A — …" on a controller, a lit-up
 | R | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed, a treat) |
 | W A S D or Space while resting | Get up out of the bed | Working |
 | Esc | Pause and release the mouse | Working. Esc never resumes (it also closes the Controls dialog); resume with RESUME, Enter/Space on it, or a click. |
-| Enter / Space on a menu button | Press that button (PLAY, CONTROLS, RESUME, PLAY AGAIN…) | Working |
+| Enter / Space on a menu button | Press that button (PLAY, CONTROLS, RESUME…) | Working |
 | ` (Backquote) | Toggle the debug panel | Working |
 
 At the bathroom roll, Pull Toilet Paper first lets Moke take the loose end in his mouth. Then use normal movement
 to back out through the door and down the hallway; he lets go after enough distance outside, and the human cleans up.
 
-**Mouse capture:** clicking PLAY, RESUME or PLAY AGAIN captures the mouse (pointer lock). Esc releases it and
+**Mouse capture:** clicking PLAY or RESUME captures the mouse (pointer lock). Esc releases it and
 pauses. Chrome needs about a second after Esc before it will capture again; if resume doesn't capture, click the
 room. Where pointer lock isn't available, click and drag to look.
 
@@ -47,7 +47,7 @@ may hide a newly connected controller until one of its buttons is pressed.
 |---|---|
 | Left stick or D-pad | Move (analog stick preserves speed and direction) |
 | Right stick | Look around / orbit camera |
-| A / bottom face button | Interact (pick up, drop, give, eat, lie down); start from the menu; resume from pause; PLAY AGAIN after Sock Heist |
+| A / bottom face button | Interact (pick up, drop, give, eat, lie down); start from the menu; resume from pause |
 | B / right face button | Jump |
 | X / left face button | Do a trick |
 | Y / top face button | Bark or growl, at random |

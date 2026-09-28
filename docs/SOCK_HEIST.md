@@ -3,7 +3,10 @@
 > **Since Phase 4** (`PHASE_4.md`): the heist's rules are unchanged, but the human now lives a day around the whole house
 > (`HUMAN_SYSTEM.md`): the heist interrupts whatever they're doing the moment they see Moke with the sock, and they
 > carry on afterwards. They look different too: `StylizedHumanVisual` replaced `ToonHumanVisual` (same colours, same
-> one striped sock). Folding laundry by the basket is still where it starts, and PLAY AGAIN still resets them there.
+> one striped sock). Folding laundry by the basket is still where it starts.
+>
+> **Since 2026-09-28** (owner request): no more PLAY AGAIN / KEEP EXPLORING. The "Sock Heist Complete" card shows over
+> the game for 4 s (`HEIST.completeCardTime`) and play simply carries on, as KEEP EXPLORING did.
 
 The first complete gameplay loop (Phase 3). Moke steals a sock, the human wants it back, chasing him doesn't
 work, a treat does: **SOCK = TREAT**. It's playful rather than stressful: no combat, no damage, no failure, no
@@ -21,7 +24,7 @@ waiting ──(Moke picks up the sock)──► stolen ──(the human notices)
                                                                         │ "Give Sock" (or drop it by them)
                                                                         ▼
 complete ◄── discovery (SOCK = TREAT) ◄── eating ◄───────────────────── trade (treat on the floor: "Eat Treat")
-   │ PLAY AGAIN: reset everything        │ KEEP EXPLORING: carry on; the next steal is a new heist
+   │ the card shows for a few seconds; play carries on, and the next steal is a new heist
 ```
 - **Phases** belong to `SockHeistController` (`src/heist/`): `waiting · stolen · chase · treat · trade · eating ·
   discovery · complete`. The heist's clock starts at the steal; the completion card shows how long it took.
@@ -100,19 +103,15 @@ lies. They wear one charcoal-striped sock; the other foot is bare. Behaviour, bo
 - **SOCK = TREAT:** a big pop-up card and a chime, for about 3.4 s. The first time it says Moke "has learned
   something very important"; after that, "Still true. Moke checked." The discovery is remembered in this browser
   (`DogLogicMemory`, key `imdog.dogLogic`). That's the only piece of Phase 4's Dog Logic that exists.
-- **Completion:** the "Sock Heist Complete" screen (a game state: the world waits, the pointer is freed) with the
-  time taken, **PLAY AGAIN** (focused; controller A) and **KEEP EXPLORING**.
+- **Completion:** the "Sock Heist Complete" card with the time taken, over the game for 4 s
+  (`HEIST.completeCardTime`), then it fades. No buttons, no pause: the world never stops and the mouse stays captured.
 
 ## Reset and replay
-- **PLAY AGAIN** → `SockHeistController.reset()`:
-  - the sock comes out of whoever has it and goes back to its spot on the rug;
-  - the treat goes back in the jar;
-  - the human is back at the basket, folding, frustration zero;
-  - the phase is `waiting` and the HUD clears.
-
-  Moke stays where he is, since nothing else needs resetting.
-- **KEEP EXPLORING** → `waiting` once the human has tossed the sock back by the basket. The next steal starts a
-  new heist. Frustration is kept only when the human got the sock back without a trade.
+- **After a heist** (`SockHeistController.keepExploring()`, called as the card appears) → `waiting` once the human
+  has tossed the sock back by the basket. The next steal starts a new heist. Frustration is kept only when the human
+  got the sock back without a trade.
+- `SockHeistController.reset()` (sock back on the rug, treat in the jar, human at the basket) still exists and is
+  tested, but nothing in the game calls it since PLAY AGAIN was removed.
 
 ## Events (`src/core/GameEvents.ts`)
 A tiny typed publish/subscribe hub: no queues or wildcards. The brain and the heist emit events; the heist, UI and

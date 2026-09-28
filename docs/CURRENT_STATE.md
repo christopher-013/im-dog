@@ -616,6 +616,8 @@ not on GitHub and is **not** covered.
     gym.
   - Cost: about 177 draw calls / 290k triangles from the spawn (was about 151 / 280k).
   - Not done: the gym's fireplace, sound for the bird.
+  - The family-room windows no longer have a painted garden standing outside them (it showed as a flat picture in
+    the yard from the gym's doors); they look out onto the modelled backyard (`gardenWindow(…, paintedView = false)`).
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

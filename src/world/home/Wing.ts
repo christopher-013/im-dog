@@ -333,7 +333,8 @@ function familyRoom(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.at([f.sectional.x, 0, f.sectional.z], 0, () => sectional(b, m, f.sectional.length));
   b.at([f.windowCouch.x, 0, f.windowCouch.z], WEST, () => windowCouch(b, m));
   const fw = OPENINGS.familyWindows;
-  for (const zc of fw.centers) b.at([WING.east + T / 2, 0, zc], WEST, () => gardenWindow(b, m, fw.width, fw.height, fw.sill, T));
+  // They look out onto the modelled backyard (gymAndYard.ts), not a painted view.
+  for (const zc of fw.centers) b.at([WING.east + T / 2, 0, zc], WEST, () => gardenWindow(b, m, fw.width, fw.height, fw.sill, T, false));
   // The sun through the windows onto the couch and the floor in front of it: a soft glow (the room's real sun
   // comes in the living room's window; this side of the house gets it drawn in). The nap spot is "sunny" here.
   b.add(new PlaneGeometry(2.2, 1.1), m.sunPatch, [15.42, 0.006, 2.9], { rotation: [-Math.PI / 2, 0, Math.PI / 2], cast: false, receive: false });

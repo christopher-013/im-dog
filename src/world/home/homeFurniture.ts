@@ -672,7 +672,7 @@ export function tvOnStand(b: StaticSceneBuilder, m: RoomMaterials): void {
  * A window with a white frame, a mullion, a half-raised fabric shade and the garden beyond. Its middle is at the
  * origin (in the wall plane, x across, y up): `width` × `height`, sill at `sill`. The glass faces +z (the room).
  */
-export function gardenWindow(b: StaticSceneBuilder, m: RoomMaterials, width: number, height: number, sill: number, wall: number): void {
+export function gardenWindow(b: StaticSceneBuilder, m: RoomMaterials, width: number, height: number, sill: number, wall: number, paintedView = true): void {
   const f = 0.06;
   const depth = wall + 0.04;
   const midY = sill + height / 2;
@@ -684,7 +684,9 @@ export function gardenWindow(b: StaticSceneBuilder, m: RoomMaterials, width: num
   b.add(new PlaneGeometry(width - 2 * f, height - 2 * f), m.glass, [0, midY, 0], { cast: false, receive: false });
   // Shade, raised to about two-thirds.
   b.add(rbox(width - 0.1, height * 0.3, 0.03, 0.01), m.cream, [0, sill + height * 0.83, depth / 2 + 0.02], { cast: false });
-  b.add(new PlaneGeometry(width * 3, height * 2.2), m.garden, [0, midY + 0.2, -1.4], { cast: false, receive: false });
+  // A painted garden just outside, for windows with nothing modelled beyond them. Windows that look onto the real
+  // backyard (`paintedView` false) leave it out: from the gym's glass doors it showed as a flat picture in the yard.
+  if (paintedView) b.add(new PlaneGeometry(width * 3, height * 2.2), m.garden, [0, midY + 0.2, -1.4], { cast: false, receive: false });
   // The glass is solid: nothing (the camera included) goes out through it.
   b.addCollider([0, midY, 0], [width, height, wall]);
 }

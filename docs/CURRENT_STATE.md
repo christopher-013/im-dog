@@ -615,9 +615,19 @@ not on GitHub and is **not** covered.
   - The family-room monstera by the divider was moved and made a little smaller: its leaves poked through into the
     gym.
   - Cost: about 177 draw calls / 290k triangles from the spawn (was about 151 / 280k).
-  - Not done: the gym's fireplace, sound for the bird.
+  - Not done: the gym's fireplace.
   - The family-room windows no longer have a painted garden standing outside them (it showed as a flat picture in
     the yard from the gym's doors); they look out onto the modelled backyard (`gardenWindow(…, paintedView = false)`).
+- **Playing with Malibu, 2026-09-28 (owner request, Claude Code):**
+  - The bird is **Malibu**, Moke's friend. At the cage's front, **E — Play with Malibu** makes Moke stand on his hind
+    legs (the `beg` trick); Malibu hops down to the low perch in front of him and bounces up and down, flapping and
+    chirping (`ConureView.play`, `onChirp`; a new synthesized `chirp` sound), then goes back to its usual life. A bark
+    ends the game (it flutters to the top perch).
+  - New Dog Logic: **MALIBU = FRIEND** (a new bird icon). "Malibu is my friend!" the first time; other lines after.
+  - Needs his begging headroom and to be within `CONURE.frontReach` (0.85 m) of the cage front.
+  - Tests: `Conure.test.ts` (play: position, bouncing, chirps, stays in the cage, ends; a bark ends it) and a new
+    `config/dogLogic.test.ts` (unique ids; every icon exists in `index.html`). Checked headless in Chromium (prompt,
+    beg, bounce, the Dog Logic card). The chirp wasn't heard (no audio in the headless run).
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

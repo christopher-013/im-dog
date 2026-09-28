@@ -18,6 +18,7 @@ a score, and there's no menu of them to grind.
 | BARK = PROTECTOR | Bark at the ringing door and let the human receive the delivery | `DoorDelivery` → `Game` |
 | BEG + KITCHEN = FOOD | Wait beside the chopping human, beg, then eat their carrot reward | `KitchenBeg` → `Game` |
 | PILLOWS = FUN TO MOVE | Dig under the couch's throw pillows and toss them onto the floor | `PillowDig` → `Game` |
+| MALIBU = FRIEND | Go up to the bird cage in the gym and "Play with Malibu": he stands on his hind legs, Malibu bounces and chirps | `Game.playWithMalibu` |
 
 ## How it works
 - **Registry:** `config/dogLogic.ts` → `DOG_LOGIC`: an id (`'sun+soft=nap'`), the terms (word + icon) left of the

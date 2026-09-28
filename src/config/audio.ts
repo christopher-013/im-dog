@@ -16,6 +16,8 @@ export const AUDIO = {
   pour: 0.3,
   discovery: 0.35,
   doorbell: 0.75,
+  /** Malibu the conure, playing with Moke. */
+  chirp: 0.3,
   /** Classic descending DING-DONG; the whole chime ends before the one-second audio cleanup. */
   doorbellChime: {
     notes: [659.25, 523.25],

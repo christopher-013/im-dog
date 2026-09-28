@@ -1,10 +1,10 @@
 import { AUDIO, MUSIC } from '../config/audio';
 import { MusicPlayer, SONGS, type SongId } from './music';
-import { bark, crunch, discovery, doorbell, drop, growl, lap, pickup, pour, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
+import { bark, chirp, crunch, discovery, doorbell, drop, growl, lap, pickup, pour, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
 
-export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'lap' | 'pour' | 'discovery' | 'doorbell';
+export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'lap' | 'pour' | 'discovery' | 'doorbell' | 'chirp';
 
-const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop, surprise, whoosh, treatBag, crunch, lap, pour, discovery, doorbell };
+const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop, surprise, whoosh, treatBag, crunch, lap, pour, discovery, doorbell, chirp };
 
 /** Safari's Audio Session API (feature-detected; not in the TypeScript DOM types yet). */
 type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };

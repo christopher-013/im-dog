@@ -19,6 +19,15 @@ export const CONURE = {
   startleDistance: 6,
   /** How far it can turn its head toward something (rad). */
   maxHeadYaw: 1.3,
+  /** Playing with Moke: how long, one bounce (up and down) and how high, and a chirp this often. */
+  playTime: 2.8,
+  bounceTime: 0.3,
+  bounceHeight: 0.06,
+  chirpEvery: 0.55,
+  /** Moke must be at least this close to the cage's middle to start a game (m). */
+  playReach: 1.6,
+  /** "Play with Malibu" shows when his feet are this close to the cage's front (m). */
+  frontReach: 0.85,
 } as const;
 
 /** Where the bird can stand, in the cage's own space (front +z): along the perches, the swing, the floor. */
@@ -33,6 +42,8 @@ const PERCHES: readonly Perch[] = [
   CAGE.swing,
   { y: CAGE.floorY + 0.004, z: 0.02, x0: -0.3, x1: 0.3 },
 ];
+/** The lowest perch: closest to Moke on his hind legs, where it plays with him. */
+const PLAY = CAGE.perches.reduce((best, p) => (p.y < best.y ? p : best), CAGE.perches[0]);
 /** The top perch: where it flees to when startled. */
 const TOP = CAGE.perches.reduce((best, p) => (p.y > best.y ? p : best), CAGE.perches[0]);
 
@@ -53,10 +64,11 @@ const COLORS = {
 } as const;
 
 /**
- * Moke's household bird, a green-cheeked conure, in its cage in the gym (built from the owner's photo; original
- * geometry, no files). Presentation and a little life of its own, nothing gameplay depends on: it hops between the
- * perches, the swing and the cage floor, side-steps, bobs and tilts its head, watches Moke when he comes close and
- * flutters up to the top perch when he barks. It never leaves the cage.
+ * Malibu, Moke's friend: the household's green-cheeked conure, in its cage in the gym (built from the owner's photo;
+ * original geometry, no files). Presentation and a little life of its own, nothing gameplay depends on: it hops
+ * between the perches, the swing and the cage floor, side-steps, bobs and tilts its head, watches Moke when he comes
+ * close and flutters up to the top perch when he barks. When Moke stands up to play (`play`), it hops down to the
+ * perch nearest him and bounces up and down, flapping and chirping (`onChirp`). It never leaves the cage.
  */
 export class ConureView {
   /** Placed and turned like the cage (its front facing into the room). */
@@ -84,13 +96,18 @@ export class ConureView {
   private flap = 0;
   private time = 0;
   private startled = false;
+  private playLeft = 0;
+  private chirpIn = 0;
+  private bounceTime = 0;
+  /** Each chirp while playing (the game plays the sound). */
+  onChirp: (() => void) | null = null;
 
   constructor(at: { x: number; z: number }, turn: number, seed = 7) {
     this.random = mulberry32(seed);
-    this.object.name = 'Conure and cage';
+    this.object.name = 'Malibu and cage';
     this.object.position.set(at.x, 0, at.z);
     this.object.rotation.y = turn;
-    this.bird.name = 'Green-cheeked conure';
+    this.bird.name = 'Malibu';
     this.object.add(this.bird);
     this.build();
     this.to.set(0, this.perch.y, this.perch.z);
@@ -113,11 +130,39 @@ export class ConureView {
     return this.mode;
   }
 
+  /** Playing with Moke right now. */
+  get playing(): boolean {
+    return this.playLeft > 0;
+  }
+
+  /** Can Moke, standing here, start a game? Close enough, and it isn't already playing. */
+  canPlay(moke: Vec3Like): boolean {
+    return !this.playing && Math.hypot(moke.x - this.object.position.x, moke.z - this.object.position.z) <= CONURE.playReach;
+  }
+
+  /** Moke stood up at the cage to play: down to the low perch, as near him as it goes, then bouncing and chirping. */
+  play(moke: Vec3Like): void {
+    this.object.updateMatrixWorld(true);
+    this.local.set(moke.x, 0, moke.z);
+    this.object.worldToLocal(this.local);
+    this.playLeft = CONURE.playTime;
+    this.chirpIn = 0.12;
+    this.bounceTime = 0;
+    this.startled = false;
+    this.tiltTarget = 0;
+    const p = this.bird.position;
+    this.from.copy(p);
+    this.to.set(clamp(this.local.x, PLAY.x0 + 0.04, PLAY.x1 - 0.04), PLAY.y, PLAY.z);
+    this.perch = PLAY;
+    this.enter('hop');
+  }
+
   /** Moke barked nearby: a fright, then up to the top perch. */
   startle(moke: Vec3Like): void {
     this.object.updateMatrixWorld(true);
     if (Math.hypot(moke.x - this.object.position.x, moke.z - this.object.position.z) > CONURE.startleDistance) return;
     this.startled = true;
+    this.playLeft = 0;
     this.tiltTarget = 0;
     this.go('hop', { ...TOP, x0: TOP.x0 + 0.05, x1: TOP.x1 - 0.05 });
   }
@@ -130,8 +175,26 @@ export class ConureView {
     const c = CONURE;
     const p = this.bird.position;
 
+    const wasPlaying = this.playing;
+    if (wasPlaying) {
+      this.playLeft = Math.max(0, this.playLeft - dt);
+      this.chirpIn -= dt;
+      if (this.chirpIn <= 0 && this.playLeft > 0) {
+        this.chirpIn += c.chirpEvery;
+        this.onChirp?.();
+      }
+    }
+
     if (this.mode === 'sit') {
-      if (this.modeTime >= this.sitFor) this.decide();
+      if (this.playing) {
+        // Bouncing on the spot: little springy hops, feet back on the perch between them.
+        this.bounceTime += dt;
+        p.copy(this.to);
+        p.y += Math.abs(Math.sin((this.bounceTime / c.bounceTime) * Math.PI)) * c.bounceHeight;
+      } else if (wasPlaying) {
+        p.copy(this.to);
+        this.enter('sit');
+      } else if (this.modeTime >= this.sitFor) this.decide();
     } else {
       const duration = this.mode === 'hop' ? c.hopTime * (this.startled ? 0.7 : 1) : c.stepTime;
       const t = Math.min(1, this.modeTime / duration);
@@ -151,11 +214,11 @@ export class ConureView {
       this.local.set(moke.x, 0.3, moke.z);
       this.object.worldToLocal(this.local);
       const d = Math.hypot(this.local.x - p.x, this.local.z - p.z);
-      if (d < CONURE.watchDistance) lookYaw = Math.atan2(this.local.x - p.x, this.local.z - p.z);
+      if (d < CONURE.watchDistance || this.playing) lookYaw = Math.atan2(this.local.x - p.x, this.local.z - p.z);
     }
     const moving = this.mode !== 'sit';
     const moveYaw = moving ? Math.atan2(this.to.x - this.from.x, this.to.z - this.from.z || 0.001) : 0;
-    const bodyTarget = moving && Math.abs(this.to.x - this.from.x) > 0.01 ? moveYaw : clamp(lookYaw * 0.4, -0.8, 0.8);
+    const bodyTarget = moving && Math.abs(this.to.x - this.from.x) > 0.01 ? moveYaw : clamp(lookYaw * (this.playing ? 0.8 : 0.4), -1.1, 1.1);
     this.facing += angleDelta(this.facing, bodyTarget) * (1 - Math.exp(-8 * dt));
     this.bird.rotation.y = this.facing;
     const headTarget = clamp(angleDelta(this.facing, lookYaw), -CONURE.maxHeadYaw, CONURE.maxHeadYaw);
@@ -167,7 +230,7 @@ export class ConureView {
     this.body.position.y = moving ? 0 : bob * 0.5;
 
     // Wings flap on a hop, twitch now and then otherwise; the tail balances.
-    this.flap = damp(this.flap, this.mode === 'hop' ? 1 : 0, 14, dt);
+    this.flap = damp(this.flap, this.mode === 'hop' ? 1 : this.playing ? 0.7 : 0, 14, dt);
     const beat = this.flap * (0.5 + 0.5 * Math.sin(this.time * 38));
     for (const [i, wing] of this.wings.entries()) {
       const side = i === 0 ? 1 : -1;

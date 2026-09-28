@@ -233,6 +233,23 @@ export const surprise: Synth = (ctx, out, t0, pitch) => {
   osc.stop(t0 + 0.24);
 };
 
+/** Malibu's chirp: two or three quick, bright whistles, each flicking up and back down. */
+export const chirp: Synth = (ctx, out, t0, pitch) => {
+  const notes = Math.random() < 0.5 ? 2 : 3;
+  for (let i = 0; i < notes; i++) {
+    const t = t0 + i * 0.085;
+    const f = (2600 + Math.random() * 500) * pitch;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(f * 0.8, t);
+    osc.frequency.exponentialRampToValueAtTime(f * 1.35, t + 0.025);
+    osc.frequency.exponentialRampToValueAtTime(f * 0.95, t + 0.06);
+    osc.connect(envelope(ctx, t, 0.006, 0.8, 0.055)).connect(out);
+    osc.start(t);
+    osc.stop(t + 0.07);
+  }
+};
+
 /** A grab that misses: a soft airy whoosh. */
 export const whoosh: Synth = (ctx, out, t0, pitch, noise) => {
   const src = noiseSource(ctx, noise, t0, 0.3);

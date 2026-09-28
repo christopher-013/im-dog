@@ -2,7 +2,7 @@
  * Dog Logic (Phase 4): the things Moke works out about the world, each backed by something he actually did. Shown
  * as a little equation the first time ("Moke has learned something very important"), and again, checked, later.
  */
-export type DogLogicIcon = 'sock' | 'treat' | 'nose' | 'bed' | 'sun' | 'soft' | 'human' | 'dog' | 'ball' | 'toy' | 'kitchen' | 'food' | 'bark' | 'heart' | 'nap' | 'play' | 'strong';
+export type DogLogicIcon = 'sock' | 'treat' | 'nose' | 'bed' | 'sun' | 'soft' | 'human' | 'dog' | 'ball' | 'toy' | 'kitchen' | 'food' | 'bark' | 'heart' | 'nap' | 'play' | 'strong' | 'bird';
 
 export interface DogLogicTerm {
   readonly word: string;
@@ -52,6 +52,7 @@ export const DOG_LOGIC: readonly DogLogicEntry[] = [
   { id: 'beg+prep=food', left: [{ word: 'BEG', icon: 'dog' }, T.kitchen], right: { word: 'FOOD', icon: 'food' }, how: 'Wait beside the chopping human, beg, and eat the carrot they offer.' },
   { id: 'pillows=fun', left: [{ word: 'PILLOWS', icon: 'soft' }], right: { word: 'FUN TO MOVE', icon: 'play' }, how: 'Dig under the couch pillows and toss them onto the floor.' },
   { id: 'paper=fun+attention', left: [{ word: 'TOILET PAPER', icon: 'soft' }], right: { word: 'FUN + ATTENTION', icon: 'heart' }, how: 'Pull the bathroom roll into the hall and watch your human clean up.' },
+  { id: 'malibu=friend', left: [{ word: 'MALIBU', icon: 'bird' }], right: { word: 'FRIEND', icon: 'heart' }, how: 'Go up to the bird cage in the gym and stand up to play with Malibu.' },
 ];
 
 export function dogLogicEntry(id: string): DogLogicEntry | undefined {

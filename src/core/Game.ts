@@ -24,7 +24,8 @@ import { ToiletPaperMischief } from '../activities/ToiletPaperMischief';
 import { CouchPillows } from '../world/CouchPillows';
 import { FrontDoor } from '../world/FrontDoor';
 import { BathroomView } from '../world/Bathroom';
-import { ConureView } from '../world/Conure';
+import { CONURE, ConureView } from '../world/Conure';
+import { CAGE } from '../world/home/gymAndYard';
 import { BATHROOM, GYM } from '../world/home/layout';
 import { BOWL_REFILL, MOKE_REACTIONS } from '../config/activities';
 import { BATHROOM_ACTIVITY } from '../config/bathroom';
@@ -76,6 +77,9 @@ import type { Vec2Like } from './InputState';
 import { applySettings, loadSettings, saveSettings } from './PlayerSettings';
 
 export type GameState = 'loading' | 'menu' | 'playing' | 'paused' | 'complete';
+
+/** What Moke says when he plays with Malibu again. */
+const MALIBU_LINES = ['Hi Malibu!', 'Play, Malibu, play!', 'My bird friend!', 'Malibu! Malibu!'] as const;
 
 /**
  * Top-level orchestrator: owns the renderer, scene, input, physics, UI and the game state
@@ -150,7 +154,7 @@ export class Game {
   private readonly kitchenTreat = new Treat('kitchen', 3, 'carrot');
   private readonly frontDoor = new FrontDoor();
   private readonly bathroom = new BathroomView();
-  /** The conure in its cage in the gym: scenery with a life of its own. */
+  /** Malibu, the conure in its cage in the gym: scenery with a life of its own, and Moke's friend to play with. */
   private readonly conure = new ConureView(GYM.cage, -Math.PI / 2);
   private delivery: DoorDelivery | null = null;
   private kitchenBeg: KitchenBeg | null = null;
@@ -527,6 +531,24 @@ export class Game {
       requiresClearPath: false,
       priority: 5,
       interact: () => this.reactions.requestPet(),
+    });
+
+    // Malibu's cage: "Play with Malibu". He stands up on his hind legs, and Malibu bounces and chirps.
+    const cageFront = { x: GYM.cage.x - CAGE.depth / 2, y: 0, z: GYM.cage.z };
+    this.conure.onChirp = () => this.audio.play('chirp');
+    this.interactions.register({
+      id: 'bird:play',
+      type: 'PLAY',
+      label: 'Play with Malibu',
+      interactionDistance: CONURE.frontReach,
+      get enabled() {
+        return !game.rest.holdsMoke && moke.controller.headroom >= MOKE_ANIMATION.tricks.begHeadroom && game.conure.canPlay(moke.controller.position);
+      },
+      position: cageFront,
+      // The cage's own bars would block a line-of-sight check to its front.
+      requiresClearPath: false,
+      priority: 4,
+      interact: () => this.playWithMalibu(),
     });
 
     // His bowls: "Eat" and "Drink" when he's at a full one; once he's emptied it, the human comes to refill it.
@@ -912,6 +934,16 @@ export class Game {
     this.moke.animation.growl();
     this.audio.play('growl');
     this.growledThisFrame = true;
+  }
+
+  /** Up on his hind legs at Malibu's cage; Malibu bounces and chirps back. The first time, he learns Malibu is his friend. */
+  private playWithMalibu(): void {
+    const moke = this.moke;
+    if (!moke || !moke.animation.trick('beg', true)) return;
+    this.conure.play(moke.controller.position);
+    this.lastTrick = 'beg';
+    const first = this.dogLogic.discover('malibu=friend', true);
+    this.showVoiceBubble(first ? 'Malibu is my friend!' : MALIBU_LINES[Math.floor(Math.random() * MALIBU_LINES.length)]!);
   }
 
   /** A random trick (see Tricks.ts): not while in his bed, sniffing, or already doing one. */

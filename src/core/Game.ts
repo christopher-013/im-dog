@@ -46,6 +46,7 @@ import { RestSystem } from '../interactions/RestSystem';
 import { REST } from '../config/interaction';
 import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
+import type { Vec3Like } from '../physics/CharacterBody';
 import { BarkTimer, barkOrGrowl } from '../player/Bark';
 import type { MoveIntent } from '../player/Locomotion';
 import { Moke } from '../player/Moke';
@@ -796,6 +797,11 @@ export class Game {
     this.debug.update(dt);
   };
 
+  /** Where the household human is (null before they exist), e.g. so doors open for them too. */
+  private homeHumanPosition(): Vec3Like | null {
+    return this.heist?.human.controller.position ?? null;
+  }
+
   private readonly fixedUpdate = (step: number): void => {
     if (!this.moke || !this.physics) return;
     const c = this.moke.controller;
@@ -826,7 +832,7 @@ export class Game {
       this.moke.fixedUpdate(step, stayPut ? this.stillIntent : this.moveIntent);
     }
     this.rest.update(step, c);
-    this.bathroom.update(step, c.position);
+    this.bathroom.update(step, c.position, this.homeHumanPosition());
     this.moke.resting = this.rest.lying;
     this.heist?.fixedUpdate(step);
     this.bowlRefill?.update(step);

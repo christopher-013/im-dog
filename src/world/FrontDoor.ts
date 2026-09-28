@@ -1,13 +1,13 @@
 import { AdditiveBlending, BoxGeometry, CanvasTexture, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, type Object3D } from 'three';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
 import { createVisualState, HumanAnimationController } from '../human/HumanAnimationController';
-import { StylizedHumanVisual } from '../human/StylizedHumanVisual';
+import { COURIER_LOOK, StylizedHumanVisual } from '../human/StylizedHumanVisual';
 
 /** Presentation only: gameplay owns the bell, acknowledgement and human handoff. */
 export class FrontDoor {
   readonly object = new Group();
   private readonly hinge = new Group();
-  private readonly visitor = new StylizedHumanVisual(true);
+  private readonly visitor = new StylizedHumanVisual(COURIER_LOOK);
   private readonly animation = new HumanAnimationController();
   private readonly pose = createVisualState();
   private readonly package = new Group();

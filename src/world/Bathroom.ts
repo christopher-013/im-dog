@@ -1,5 +1,5 @@
 import { BoxGeometry, BufferAttribute, BufferGeometry, CylinderGeometry, DoubleSide, DynamicDrawUsage, Group, Mesh, MeshStandardMaterial, PointLight, TorusGeometry, Vector3, type Object3D } from 'three';
-import { BATHROOM_ACTIVITY } from '../config/bathroom';
+import { BATHROOM_ACTIVITY, BATHROOM_DOOR } from '../config/bathroom';
 import type { Vec3Like } from '../physics/CharacterBody';
 import { BATHROOM, CEILING, HALL, WALL } from './home/layout';
 import { TILE_REPEAT, type RoomMaterials } from './materials';
@@ -14,7 +14,8 @@ export function buildBathroom(b: StaticSceneBuilder, m: RoomMaterials): void {
   const midZ = (r.zMin + r.zMax) / 2;
   const solid = { solid: true };
   b.add(new BoxGeometry(width, 0.1, depth), m.arabesque, [midX, -0.05, midZ], { cast: false, solid: true, worldUV: TILE_REPEAT });
-  b.add(new BoxGeometry(width + WALL, 0.1, depth + WALL), m.ceiling, [midX, CEILING + 0.05, midZ], { cast: false });
+  // The ceiling stops at the hallway wall, so it doesn't overlap the hallway's own ceiling.
+  b.add(new BoxGeometry(width + WALL, 0.1, depth), m.ceiling, [midX, CEILING + 0.05, midZ - WALL / 2], { cast: false });
   b.add(new BoxGeometry(width, CEILING, WALL), m.wallGreige, [midX, CEILING / 2, r.zMin - WALL / 2], solid);
   // The side walls stop at the hallway wall's back face (HALL.zMin - WALL): running on through it would put their
   // ends in the hallway wall's face, two paints in one place, which flicker (z-fighting).
@@ -67,10 +68,8 @@ export class BathroomView {
   private tip: FloorPoint | null = null;
   private mouth: Object3D | null = null;
   private open = false;
-  private opening = 0.35;
-  private wasInside = false;
-  private closingAfterExit = false;
-  private lastDoorDistance = Infinity;
+  private opening: number = BATHROOM_DOOR.ajar;
+  private inside = false;
   private drawnSegments = 0;
   private readonly paper = new MeshStandardMaterial({ color: '#fffdf8', roughness: 1, side: DoubleSide });
   private readonly wood = new MeshStandardMaterial({ color: '#f4f0e8', roughness: 0.78 });
@@ -128,26 +127,26 @@ export class BathroomView {
     this.hinge.rotation.y = this.opening;
   }
 
+  /** Swung open for someone walking through (it rests ajar otherwise). */
   get isOpen(): boolean { return this.open; }
+  /** How far the door is swung (rad): BATHROOM_DOOR.ajar at rest. */
+  get doorAngle(): number { return this.opening; }
+  /** Moke is in the bathroom (as of the last update). */
+  get mokeInside(): boolean { return this.inside; }
   get visibleStrips(): number { return this.drawnSegments; }
   get trailEndsOutside(): boolean { return this.points.some((p) => p.z >= HALL.zMin) || (this.tip?.z ?? -Infinity) >= HALL.zMin; }
 
-  /** Nudge open near the threshold. Closing on exit stays ajar until Moke turns back toward it. */
-  update(dt: number, moke: Vec3Like): void {
-    const inside = moke.x > BATHROOM.xMin && moke.x < BATHROOM.xMax && moke.z < HALL.zMin - 0.04;
-    const distance = Math.hypot(moke.x - BATHROOM.doorway.x, moke.z - BATHROOM.doorway.z);
-    if (this.wasInside && !inside) {
-      this.open = false;
-      this.closingAfterExit = true;
-    } else if (inside || (distance < 0.83 && (!this.closingAfterExit || distance < this.lastDoorDistance - 0.008))) {
-      this.open = true;
-      this.closingAfterExit = false;
-    }
-    const wanted = this.open ? 1.45 : 0.35;
-    this.opening += Math.sign(wanted - this.opening) * Math.min(Math.abs(wanted - this.opening), dt * 5);
+  /**
+   * The door rests ajar. It swings open while Moke (or the human) walks through the doorway, and back to ajar once
+   * they're through, whichever way they went.
+   */
+  update(dt: number, moke: Vec3Like, human: Vec3Like | null = null): void {
+    this.inside = moke.x > BATHROOM.xMin && moke.x < BATHROOM.xMax && moke.z < HALL.zMin - 0.04;
+    this.open = passingThrough(moke) || (human !== null && passingThrough(human));
+    const d = BATHROOM_DOOR;
+    const wanted = this.open ? d.open : d.ajar;
+    this.opening += Math.sign(wanted - this.opening) * Math.min(Math.abs(wanted - this.opening), dt * d.swingSpeed);
     this.hinge.rotation.y = this.opening;
-    this.wasInside = inside;
-    this.lastDoorDistance = distance;
   }
 
   /** At the bite, the loose paper end becomes a real child of Moke's model-independent mouth socket. */
@@ -238,10 +237,8 @@ export class BathroomView {
 
   reset(): void {
     this.open = false;
-    this.opening = 0.35;
-    this.wasInside = false;
-    this.closingAfterExit = false;
-    this.lastDoorDistance = Infinity;
+    this.inside = false;
+    this.opening = BATHROOM_DOOR.ajar;
     this.hinge.rotation.y = this.opening;
     this.clearPaper();
   }
@@ -252,4 +249,10 @@ export class BathroomView {
     this.heldEnd.geometry.dispose();
     this.paper.dispose(); this.wood.dispose(); this.brass.dispose();
   }
+}
+
+/** Is this walker in the doorway zone (see BATHROOM_DOOR)? */
+function passingThrough(p: Vec3Like): boolean {
+  const d = BATHROOM_DOOR;
+  return Math.abs(p.x - BATHROOM.doorway.x) < d.halfWidth && p.z > HALL.zMin - d.inside && p.z < HALL.zMin + d.outside;
 }

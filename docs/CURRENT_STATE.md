@@ -588,6 +588,18 @@ not on GitHub and is **not** covered.
   - the corner counter's quartz poking 1 cm into the oven column.
 
   The test now fails with the two materials and the location if a new overlap appears.
+- **Owner requests, 2026-09-28 (Claude Code):**
+  - **Bathroom door:** it rests ajar, swings open only while Moke (or the human) walks through the doorway, and
+    back to ajar once they're through, either way. Tuning: `BATHROOM_DOOR` in `config/bathroom.ts`.
+    `BathroomView.mokeInside` (not `isOpen`) now gates the toilet-paper prompt. Tests in `world/Bathroom.test.ts`.
+    The bathroom ceiling no longer overlaps the hallway's.
+  - **Delivery driver:** now a different person, built from `COURIER_LOOK` (the old version was the household human
+    recoloured blue, bare foot and all). Deep brown skin, a brown peaked cap, a brown short-sleeved button-down with
+    bare forearms, brown work trousers and black shoes. `StylizedHumanVisual` takes a `HumanLook` (colours, sleeves,
+    trousers, feet, cap); the household human is `HOUSEHOLD_LOOK`, unchanged apart from the collar.
+  - **Shirt collar (both humans):** it was a thick ring round the neck with two tabs. It's now an open collar: a
+    stand round the back and sides, two pointed leaves folded onto the chest (laid onto the shirt's surface), and a
+    V of skin, with the placket starting below it.
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

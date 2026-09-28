@@ -13,3 +13,19 @@ export const BATHROOM_ACTIVITY = {
   walkTimeout: 45,
   cooldown: 25,
 } as const;
+
+/**
+ * The hall bathroom door rests ajar and swings open only while someone walks through the doorway: within this
+ * zone round the threshold (m). Beyond it, on either side, it swings back to ajar.
+ */
+export const BATHROOM_DOOR = {
+  /** Resting (ajar) and fully open angles (rad), and how fast it swings (rad/s). */
+  ajar: 0.35,
+  open: 1.45,
+  swingSpeed: 6,
+  /** Half the zone's width along the hallway, from the middle of the doorway. */
+  halfWidth: 0.75,
+  /** How far the zone reaches into the bathroom (covers where the ajar door stands) and out into the hallway. */
+  inside: 0.6,
+  outside: 0.35,
+} as const;

@@ -67,7 +67,7 @@ export class ToiletPaperMischief extends DogActivity {
   get holdingPaper(): boolean { return this.step === 'trail'; }
 
   override update(dt: number, ctx: DogActivityContext): void {
-    this.nearby = this.deps.view.isOpen && !ctx.heistRunning && !ctx.moke.carrying && !ctx.moke.napSpot
+    this.nearby = this.deps.view.mokeInside && !ctx.heistRunning && !ctx.moke.carrying && !ctx.moke.napSpot
       && ctx.moke.position.x > BATHROOM.xMin && ctx.moke.position.x < BATHROOM.xMax
       && ctx.moke.position.z < BATHROOM.zMax
       && flatDistance(ctx.moke.position, BATHROOM.paper) <= 1.15;

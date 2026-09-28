@@ -69,10 +69,12 @@ async function setup() {
 }
 
 describe('hall bathroom toilet-paper activity', () => {
-  it('opens the ajar door, lets Moke make a long trail, scolds and cleans it, learns once, then repeats', async () => {
+  it('lets Moke make a long trail from inside the bathroom, scolds and cleans it, learns once, then repeats', async () => {
     const w = await setup();
-    expect(w.view.isOpen).toBe(true);
     w.tick(0.1);
+    // In the bathroom, past the doorway: the door has swung back to ajar.
+    expect(w.view.mokeInside).toBe(true);
+    expect(w.view.isOpen).toBe(false);
     expect(w.paper.interactable.enabled).toBe(true);
     for (let i = 0; i < 5; i++) w.paper.interactable.interact();
     w.tick(1);

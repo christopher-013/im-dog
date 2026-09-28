@@ -638,6 +638,14 @@ not on GitHub and is **not** covered.
 - **Shorter Sock Heist chase, 2026-09-28 (owner request, Claude Code):** the human gives up chasing and fetches the
   treat 10 s sooner: `HUMAN.chase.giveUpAt` 48 → 38 (chasing adds 1 frustration per second, fumbles and escapes more),
   so a plain chase now lasts up to about 38 s instead of 48 s.
+- **Room round the dining table, 2026-09-28 (owner report, Claude Code):**
+  - A seated human's invisible body stayed on the floor where they had stood to sit down: for the gym-side dining
+    chairs, in the passage between the chairs and the gym wall. With the potted plant in the corner by the kitchen
+    opening, that walled Moke off from the gym. Now the body moves onto the seat while they sit (from halfway down to
+    halfway up), for every seat.
+  - The plant moved from that corner into the gym's north-west corner (`GYM.plant`), leaves clear of both walls.
+  - Tests (Home.test): the human sits on each gym-side dining chair; Moke passes through the corner, behind them and
+    into the gym; they get up with Moke standing where they return to, and both walk off. Without the fix these fail.
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

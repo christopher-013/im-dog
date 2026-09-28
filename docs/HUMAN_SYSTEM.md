@@ -51,7 +51,9 @@ they **face**, and for seats where the **hips** go, how high and how they sit (`
 `look` point (the screen); counters and the table a `surface` (its height drives the kitchen and table poses).
 Seats are **stepped into straight**: a sofa straight back from its stand point; a dining chair or island stool,
 whose stand point is behind it, from an `entry` beside it (the gap between chairs), so the body never passes through
-a chair back or slides in sideways. The chaise is not a human seat (it can only be reached from its side); it stays a
+a chair back or slides in sideways. Once they're halfway down, their physical body (the capsule Moke bumps into)
+moves onto the seat with them and comes back as they get up (`CharacterBody.offsetCollider`), so the floor they
+stood on, such as the passage behind the gym-side dining chairs, stays free for Moke. The chaise is not a human seat (it can only be reached from its side); it stays a
 nap spot. Tests check every stand point is walkable and reachable from every other, faces its surface, and steps
 straight into its seat.
 

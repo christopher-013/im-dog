@@ -104,4 +104,6 @@ export const GYM = {
   weights: { x: 14.7, z: 0.06 },
   /** The green-cheeked conure's cage: the far left corner, beside the glass doors (its front faces the room, -x). */
   cage: { x: 16.45, z: -3.72 },
+  /** A potted plant in the near left (north-west) corner, out of everyone's way. */
+  plant: { x: 11.72, z: -3.66 },
 } as const;

@@ -115,6 +115,14 @@ export class CharacterBody {
     return out;
   }
 
+  /**
+   * Shifts the capsule sideways from the body's centre, e.g. onto the seat someone has sat down on, so the floor
+   * where they stood is free again. (0, 0) puts it back. Don't `move` while it's shifted.
+   */
+  offsetCollider(x: number, z: number): void {
+    this.collider.setTranslationWrtParent({ x, y: 0, z });
+  }
+
   /** Free space straight above the capsule centre, capped at `max` metres. */
   spaceAbove(max: number): number {
     return this.castVertical(1, max);

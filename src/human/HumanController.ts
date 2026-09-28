@@ -6,6 +6,9 @@ import type { NavGrid, Point2 } from './NavGrid';
 
 type MoveTuning = typeof HUMAN.move;
 
+/** How far down onto the seat (0..1) before the body's capsule moves over onto it (and back when getting up). */
+const SEAT_COLLIDER_FROM = 0.5;
+
 /**
  * The human's body: walks where the brain asks along NavGrid paths, at human speeds, with limited acceleration
  * and turning, through the same kind of Rapier character body as Moke (so furniture, walls and Moke himself
@@ -22,6 +25,11 @@ export class HumanController {
   /** The seat they're on (or sitting down on, or getting up from), and how far down they are (0 standing … 1 seated). */
   seat: SeatSpec | null = null;
   seatBlend = 0;
+  /**
+   * The body's capsule is over on the seat (from halfway down until halfway up): the chair or couch already fills
+   * that space, and the floor they stood on (behind a dining chair, say) is free for Moke.
+   */
+  private onSeat = false;
   /** Seconds without getting closer to a goal they're walking to (the activity gives up after a while). */
   stuckFor = 0;
 
@@ -103,11 +111,18 @@ export class HumanController {
     this.heading = rotateToward(this.heading, wantHeading, t.turnRate * dt);
     this.speed = moveToward(this.speed, targetSpeed, (targetSpeed > this.speed ? t.acceleration : t.braking) * dt);
 
+    const onSeat = this.seat !== null && this.seatBlend >= SEAT_COLLIDER_FROM;
+    if (onSeat !== this.onSeat) {
+      this.onSeat = onSeat;
+      const seat = this.seat;
+      this.body.offsetCollider(onSeat && seat ? seat.x - this.body.center.x : 0, onSeat && seat ? seat.z - this.body.center.z : 0);
+    }
     const d = this.desired;
     d.x = Math.sin(this.heading) * this.speed * dt;
     d.y = 0;
     d.z = Math.cos(this.heading) * this.speed * dt;
-    this.body.move(d, this.applied);
+    if (this.onSeat) this.applied.x = this.applied.y = this.applied.z = 0;
+    else this.body.move(d, this.applied);
     this.position.x = this.body.center.x;
     this.position.y = this.body.center.y - this.body.centerHeight;
     this.position.z = this.body.center.z;

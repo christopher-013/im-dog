@@ -8,7 +8,9 @@ import { PhysicsWorld } from '../physics/PhysicsWorld';
 import { MokeController } from '../player/MokeController';
 import { Home } from './Home';
 import { roomAt } from './home/layout';
-import { BOWLS, placeById } from './home/places';
+import { BOWLS, HOME_PLACES, placeById } from './home/places';
+import { HumanController } from '../human/HumanController';
+import type { HumanIntent, SeatSpec } from '../human/HumanBrain';
 import { BOWL_REFILL } from '../config/activities';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
 import { BATHROOM } from './home/layout';
@@ -337,5 +339,40 @@ describe('Home', () => {
     // …but not behind or under it.
     expect(mokeNav.isWalkable(16.72, -3.72)).toBe(false);
     expect(w.travel(10.5, -1.7)).toBe(true); // and back out to the dining room
+  });
+
+  describe('with the human sitting at the dining table, gym side', () => {
+    for (const place of HOME_PLACES.filter((p) => p.id.startsWith('dining.chair'))) {
+      it(`lets Moke round ${place.id} and on into the gym (their body goes onto the chair with them)`, async () => {
+        const w = await setup({ x: 8.85, z: 0.05 }, Math.PI / 2);
+        const human = new HumanController(new CharacterBody(w.physics, { x: place.stand.x, y: 0, z: place.stand.z }, HUMAN.body), humanNav, place.facing);
+        const s = place.seat!;
+        const seat: SeatSpec = { x: s.x, z: s.z, height: s.height, style: s.style, facing: place.facing, entry: s.entry ?? null };
+        const intent: HumanIntent = { goal: place.stand, speed: HUMAN.move.walkSpeed, stopWithin: 0.15, face: null, headYaw: 0, crouch: 0, pose: 'idle', seat, prop: null, lookAt: null, talking: 0 };
+        for (let i = 0; i < 6 / DT && !human.seated; i++) {
+          human.fixedUpdate(DT, intent);
+          w.physics.step();
+        }
+        expect(human.seated).toBe(true);
+        // Through the corner by the kitchen opening and along behind the chairs, where the human stood to sit down…
+        expect(w.walkTo(10.5, -0.2)).toBe(true);
+        expect(w.walkTo(place.stand.x, place.stand.z)).toBe(true);
+        expect(w.walkTo(10.45, -2.9)).toBe(true);
+        // …and into the gym.
+        expect(w.travel(11.6, -1.7)).toBe(true);
+        expect(roomAt(w.moke.position.x, w.moke.position.z).id).toBe('gym');
+        // Getting up with Moke standing right where they sat down from: nobody gets stuck. They walk off, and so does he.
+        expect(w.travel(place.stand.x, place.stand.z)).toBe(true);
+        intent.seat = null;
+        intent.goal = { x: 8.85, y: 0, z: 0.1 };
+        for (let i = 0; i < 12 / DT && (i === 0 || !human.arrived); i++) {
+          human.fixedUpdate(DT, intent);
+          w.physics.step();
+        }
+        expect(human.seat).toBeNull();
+        expect(Math.hypot(human.position.x - 8.85, human.position.z - 0.1)).toBeLessThan(0.3);
+        expect(w.travel(11.6, -1.7)).toBe(true);
+      });
+    }
   });
 });

@@ -317,7 +317,6 @@ function diningRoom(b: StaticSceneBuilder, m: RoomMaterials): void {
   // base into it but not walk back out. Invisible, taller than his highest jump, and ignored by the camera.
   b.addCollider([10.6, 0.3, WING.north - 0.001 + 0.265], [0.6, 0.6, 0.53], { thin: true });
   b.at([7.3, 0, WING.north + 0.4], 0, () => pottedPlant(b, m));
-  b.at([10.45, 0, 0.08], 0.8, () => pottedPlant(b, m));
 
 
   // The table, six chairs and the round chandelier.
@@ -368,6 +367,9 @@ function gym(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.at([GYM.bike.x, 0, GYM.bike.z], EAST, () => spinBike(b, m));
   b.at([GYM.weights.x, 0, GYM.weights.z], Math.PI, () => dumbbellRack(b, m));
   b.at([GYM.cage.x, 0, GYM.cage.z], WEST, () => birdCage(b, m));
+  // The plant that used to stand in the dining room's corner by this doorway, where it crowded the way through:
+  // out of the way in the far corner, its leaves clear of both walls.
+  b.at([GYM.plant.x, 0, GYM.plant.z], Math.PI, () => pottedPlant(b, m));
   const midX = (WING.diningEast + WING.east) / 2;
   const midZ = (WING.north + WING.divider) / 2;
   b.add(new CylinderGeometry(0.16, 0.16, 0.035, 20), m.lampShade, [midX, H - 0.0175, midZ], { cast: false });

@@ -400,3 +400,87 @@ export function sunPatchTexture(): CanvasTexture | null {
     ctx.fillRect(0, 0, w, h);
   });
 }
+
+/**
+ * Flagstone paving (the backyard patio): irregular stones in warm beiges, rust and grey with soft grout between them,
+ * from a jittered Voronoi pattern. Tiles seamlessly (distances wrap), one tile per `PATIO_TILE` metres.
+ */
+export function flagstoneTexture(): CanvasTexture | null {
+  return canvasTexture(512, 512, 61, (ctx, w, h, rand) => {
+    const cells = 7;
+    const points: { x: number; y: number; color: [number, number, number] }[] = [];
+    const palette: [number, number, number][] = [[196, 180, 156], [178, 160, 136], [186, 150, 118], [160, 150, 138], [205, 190, 166], [170, 128, 98]];
+    for (let j = 0; j < cells; j++) {
+      for (let i = 0; i < cells; i++) {
+        const base = palette[Math.floor(rand() * palette.length)]!;
+        const shade = 0.9 + rand() * 0.18;
+        points.push({ x: ((i + 0.2 + rand() * 0.6) / cells) * w, y: ((j + 0.2 + rand() * 0.6) / cells) * h, color: [base[0] * shade, base[1] * shade, base[2] * shade] });
+      }
+    }
+    const image = ctx.createImageData(w, h);
+    const wrap = (d: number, size: number) => Math.min(Math.abs(d), size - Math.abs(d));
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let best = Infinity;
+        let second = Infinity;
+        let color = points[0]!.color;
+        for (const p of points) {
+          const d = Math.hypot(wrap(x - p.x, w), wrap(y - p.y, h));
+          if (d < best) {
+            second = best;
+            best = d;
+            color = p.color;
+          } else if (d < second) second = d;
+        }
+        const grout = second - best < 3.5;
+        const i = (y * w + x) * 4;
+        const speckle = (((x * 73 + y * 151) % 17) - 8) * 0.6;
+        image.data[i] = grout ? 128 : color[0] + speckle;
+        image.data[i + 1] = grout ? 122 : color[1] + speckle;
+        image.data[i + 2] = grout ? 112 : color[2] + speckle;
+        image.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(image, 0, 0);
+  }, true);
+}
+
+/** The sky and distant tree line behind the backyard (a backdrop far beyond the fence). */
+export function backyardSkyTexture(): CanvasTexture | null {
+  return canvasTexture(1024, 512, 67, (ctx, w, h, rand) => {
+    const sky = ctx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, '#bcd3e3');
+    sky.addColorStop(0.55, '#dfe8e6');
+    sky.addColorStop(1, '#e9ecdf');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, w, h);
+    // Soft clouds.
+    for (let i = 0; i < 9; i++) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      const x = rand() * w;
+      const y = h * (0.08 + rand() * 0.3);
+      for (let k = 0; k < 4; k++) {
+        ctx.beginPath();
+        ctx.ellipse(x + k * 30, y + (k % 2) * 6, 50 + rand() * 30, 16 + rand() * 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    // A neighbour's roofline and the distant trees.
+    ctx.fillStyle = '#d8c3a2';
+    ctx.fillRect(w * 0.38, h * 0.5, w * 0.24, h * 0.2);
+    ctx.fillStyle = '#b89c7e';
+    ctx.beginPath();
+    ctx.moveTo(w * 0.36, h * 0.5);
+    ctx.lineTo(w * 0.5, h * 0.38);
+    ctx.lineTo(w * 0.64, h * 0.5);
+    ctx.fill();
+    for (let i = 0; i < 26; i++) {
+      ctx.fillStyle = ['#6f9459', '#5e8650', '#7ea465', '#557a48'][i % 4]!;
+      ctx.beginPath();
+      ctx.arc(rand() * w, h * (0.58 + rand() * 0.14), 40 + rand() * 55, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#5c8150';
+    ctx.fillRect(0, h * 0.74, w, h * 0.26);
+  });
+}

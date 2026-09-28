@@ -195,9 +195,10 @@ describe('Home', () => {
     const glass = await setup({ x: 14.0, z: 2.3 });
     expect(glass.walkTo(14.0, -1.5, 4)).toBe(false);
     expect(glass.moke.position.z).toBeGreaterThan(0.5);
-    const sliders = await setup({ x: 10.3, z: -1.7 });
-    expect(sliders.walkTo(12.5, -1.7, 4)).toBe(false);
-    expect(sliders.moke.position.x).toBeLessThan(10.9);
+    // The glass doors to the backyard: he can look, but not go out.
+    const yard = await setup({ x: 15.8, z: -1.9 });
+    expect(yard.walkTo(18.5, -1.9, 4)).toBe(false);
+    expect(yard.moke.position.x).toBeLessThan(16.9);
     const fire = await setup({ x: 14.55, z: 3.6 });
     fire.jumpToward(14.55, 5.3, 0.9);
     fire.walkTo(14.55, 5.4, 2);
@@ -324,5 +325,17 @@ describe('Home', () => {
     }
     expect(moke.airborne).toBe(false);
     expect(moke.position.y).toBeLessThan(0.05);
+  });
+
+  it('lets him into the home gym from the dining room, round the bike and the weights, up to the bird cage', async () => {
+    const w = await setup({ x: 10.5, z: -1.7 }, Math.PI / 2);
+    expect(w.walkTo(11.6, -1.7, 4)).toBe(true); // straight through the doorway (the old sliding doors)
+    expect(roomAt(w.moke.position.x, w.moke.position.z).id).toBe('gym');
+    expect(w.travel(12.75, -1.1)).toBe(true); // beside the bike
+    expect(w.travel(14.7, -0.75)).toBe(true); // in front of the dumbbell rack
+    expect(w.travel(15.8, -3.72)).toBe(true); // in front of the cage
+    // …but not behind or under it.
+    expect(mokeNav.isWalkable(16.72, -3.72)).toBe(false);
+    expect(w.travel(10.5, -1.7)).toBe(true); // and back out to the dining room
   });
 });

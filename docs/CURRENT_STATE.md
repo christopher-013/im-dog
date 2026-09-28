@@ -600,6 +600,21 @@ not on GitHub and is **not** covered.
   - **Shirt collar (both humans):** it was a thick ring round the neck with two tabs. It's now an open collar: a
     stand round the back and sides, two pointed leaves folded onto the chest (laid onto the shirt's surface), and a
     V of skin, with the placket starting below it.
+- **Home gym + backyard view, 2026-09-28 (owner request, Claude Code):**
+  - The old sunroom is now a playable **home gym**. The sliding doors from the dining room are gone (a wide cased
+    doorway), and there's a stationary bike and a dumbbell rack on the right, big sliding glass doors to the backyard
+    ahead, and a bird cage in the far left corner.
+  - A **green-cheeked conure** (`world/Conure.ts`) lives in the cage: it hops, side-steps, bobs, watches Moke and
+    flutters up when he barks. The **backyard** is scenery through the glass (patio, BBQ island, bench, umbrellas,
+    pots, hedges, trees, sky), not explorable.
+  - Code in `world/home/gymAndYard.ts`, `GYM` and `OPENINGS.gymDoorway` / `backyardDoors` in `layout.ts`, and new
+    room id `gym`.
+  - Tests: `Conure.test.ts`; Home.test (into the gym, round the equipment, up to the cage; the glass doors hold);
+    the z-fighting test (it caught four overlaps in the new geometry, all fixed).
+  - The family-room monstera by the divider was moved and made a little smaller: its leaves poked through into the
+    gym.
+  - Cost: about 177 draw calls / 290k triangles from the spawn (was about 151 / 280k).
+  - Not done: the gym's fireplace, sound for the bird.
 - **Security:**
   - No `innerHTML`/`eval`/dynamic code.
   - No network calls (the service worker only touches same-origin GETs).

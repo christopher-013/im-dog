@@ -8,8 +8,10 @@ import {
 } from 'three';
 import {
   arabesqueTileTexture,
+  backyardSkyTexture,
   clockFaceTexture,
   doorSignTexture,
+  flagstoneTexture,
   gardenTexture,
   greyPlankTexture,
   latticePillowTexture,
@@ -33,6 +35,17 @@ function mat(name: string, color: string, roughness: number, extra: MeshStandard
 /** Textured where possible; plain colour where textures aren't available (unit tests). */
 function textured(name: string, map: Texture | null, fallback: string, roughness: number) {
   return mat(name, map ? '#ffffff' : fallback, roughness, { map });
+}
+
+/** Metres covered by one tile of the backyard's flagstone texture. */
+export const PATIO_TILE = 2.4;
+
+/**
+ * Outdoors, seen through the gym's glass doors: lit by the room's lights like everything else, plus a little of its
+ * own colour as glow, so the yard reads as bright daylight without an extra (costly) light.
+ */
+function outdoor(name: string, color: string, roughness: number, extra: MeshStandardMaterialParameters = {}) {
+  return mat(name, color, roughness, { emissive: color, emissiveIntensity: 0.42, ...extra });
 }
 
 /** Metres covered by one tile of the tile textures (arabesque, subway). */
@@ -117,6 +130,53 @@ export function createRoomMaterials() {
     firebox: mat('firebox', '#1e1b1a', 0.9),
     flame: new MeshBasicMaterial({ name: 'flame', color: '#ffb55e', transparent: true, opacity: 0.9, blending: AdditiveBlending, depthWrite: false }),
     backroom: mat('backroom', '#bcc1bb', 1),
+    // The home gym: rubber mats, the bike, the weights, and the conure's cage.
+    rubberMat: mat('rubberMat', '#2c2d31', 1),
+    gymFrame: mat('gymFrame', '#34363b', 0.45, { metalness: 0.4 }),
+    bikeRed: mat('bikeRed', '#b3322e', 0.4),
+    dumbbell: mat('dumbbell', '#2a2a2e', 0.6),
+    chrome: mat('chrome', '#d7dade', 0.2, { metalness: 0.9 }),
+    screen: mat('screen', '#15171c', 0.25),
+    cageMetal: mat('cageMetal', '#2f2824', 0.5, { metalness: 0.35 }),
+    cagePaper: mat('cagePaper', '#cfe6ee', 1),
+    perchWood: mat('perchWood', '#b88b58', 0.9),
+    toyRed: mat('toyRed', '#c8323a', 0.6),
+    toyYellow: mat('toyYellow', '#f0c93c', 0.6),
+    toyTeal: mat('toyTeal', '#3aa6a0', 0.6),
+    // The sliding glass doors to the backyard: warm off-white vinyl frames, like the real ones.
+    doorFrame: mat('doorFrame', '#e6d2bd', 0.6),
+    // The backyard, beyond the glass.
+    patio: (() => {
+      const map = flagstoneTexture();
+      return outdoor('patio', map ? '#ffffff' : '#bfae94', 0.95, { map, emissive: map ? '#6a6258' : '#bfae94', emissiveMap: map });
+    })(),
+    lawn: outdoor('lawn', '#7aa55c', 1),
+    hedge: outdoor('hedge', '#4d7a3e', 1),
+    hedgeLight: outdoor('hedgeLight', '#6a9a50', 1),
+    bougainvillea: outdoor('bougainvillea', '#e0467d', 0.9),
+    trunk: outdoor('trunk', '#7b6a55', 1),
+    fence: outdoor('fence', '#a08a70', 1),
+    islandStone: outdoor('islandStone', '#c2ad8e', 1),
+    travertine: outdoor('travertine', '#dccaa7', 0.8),
+    grill: outdoor('grill', '#b9bdc2', 0.3, { metalness: 0.6, emissiveIntensity: 0.25 }),
+    grillDark: outdoor('grillDark', '#3a3a3e', 0.6),
+    chairCover: outdoor('chairCover', '#ece8df', 1),
+    chairCoverHem: outdoor('chairCoverHem', '#9c8c78', 1),
+    umbrella: outdoor('umbrella', '#f4f2ec', 0.95, { side: DoubleSide }),
+    umbrellaPole: outdoor('umbrellaPole', '#ecebe6', 0.5),
+    benchWood: outdoor('benchWood', '#4a3426', 0.9),
+    cushionGrey: outdoor('cushionGrey', '#8e949b', 1),
+    pillowCream: outdoor('pillowCream', '#e7e0d2', 1),
+    loungeWicker: outdoor('loungeWicker', '#9a7a55', 1),
+    loungeCushion: outdoor('loungeCushion', '#dcd9d2', 1),
+    potWhite: outdoor('potWhite', '#f0efea', 0.6),
+    potBlue: outdoor('potBlue', '#2f4f8a', 0.35),
+    soilDark: outdoor('soilDark', '#4a3a2c', 1),
+    propane: outdoor('propane', '#f2f2ef', 0.5),
+    sky: (() => {
+      const map = backyardSkyTexture();
+      return new MeshBasicMaterial({ name: 'sky', color: map ? '#ffffff' : '#d6e4ea', map });
+    })(),
     clockFace: textured('clockFace', clockFaceTexture(), '#f3efe6', 0.8),
     doorSign: textured('doorSign', doorSignTexture(), '#efe6d6', 0.9),
     sunPatch: (() => {

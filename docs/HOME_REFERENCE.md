@@ -47,7 +47,7 @@ relationship stays true). Game coordinates (metres; x east, z south; the living 
 | Kitchen | x 6.74…11.7, z 0.51…5.4 | kitchen |
 | Family room | x 11.7…16.9, z 0.51…5.4 | family room (open to the kitchen; a ceiling soffit marks the line) |
 | Dining room | x 6.74…10.9, z −4.2…0.39 | dining room, through a 2.9 m cased opening from the kitchen |
-| Sunroom (seen only) | x 11.0…16.9, z −4.2…0.39 | the gym/sunroom behind the interior windows and the sliders |
+| Home gym (playable since 2026-09-28) | x 11.0…16.9, z −4.2…0.39 | the old sunroom behind the interior windows, open from the dining room (the sliders were taken out); big glass doors to the backyard |
 
 (These are what was built, in `src/world/home/layout.ts`; the dining room ended up 0.3 m deeper than first sketched,
 so the human and Moke can get round the ends of the table.)
@@ -99,6 +99,23 @@ In the game, walking out of the hallway: the dining room is on your left (north)
   stand, potted plants.
 - **Slider wall** (game east): tall sliding glass doors with **white curtains** on a black rod.
 - **White wainscoting** on the lower walls, sage walls above.
+
+### Home gym and backyard (x 11.0…16.9, owner request 2026-09-28)
+From two more photos the owner shared in chat (the backyard through the gym's sliding doors, and the bird cage;
+looked at, not saved or committed, never used as textures):
+- **Open from the dining room:** the old sliding doors are gone; a wide cased doorway (`OPENINGS.gymDoorway`).
+- **Right-hand (south) wall:** a connected stationary bike facing the backyard, and a two-tier hex dumbbell rack
+  with two kettlebells, on black rubber mats (`GYM` in `layout.ts`).
+- **Far (east) wall:** big sliding glass doors, fixed pane / two sliders / fixed pane, in warm off-white vinyl frames
+  with C-shaped pulls (`OPENINGS.backyardDoors`). Solid: Moke can look, not go out.
+- **Far left corner, beside the glass:** the green-cheeked conure's dark wrought-iron flight cage on a stand with
+  casters, a seed skirt, a light blue paper-lined tray, perches, a swing, a blue cup, a white cup, a red toy with a
+  yellow bead and a teal toy. The bird (`ConureView`) hops, side-steps, bobs, watches Moke and startles at barks.
+- **The backyard (scenery only):** a flagstone patio (warm beiges, rust and grey), the stone BBQ island with a
+  travertine top, stainless grill and covered bar chairs under a white market umbrella (left), a long dark bench with
+  a grey bolster and cream pillows, a small ottoman and two wicker lounge chairs under a big cantilever umbrella
+  (right), white pots with small trees and a blue glazed pot by the doors, then lawn, hedges with pink bougainvillea,
+  trees, a fence and a neighbour's roof against the sky. Not modelled: the gym's own fireplace the photos hint at.
 
 ## Scale (estimates)
 | Thing | Size |

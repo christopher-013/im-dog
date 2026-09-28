@@ -1,10 +1,9 @@
-import { BoxGeometry, PlaneGeometry, PointLight, type Material } from 'three';
+import { BoxGeometry, CylinderGeometry, PlaneGeometry, PointLight, type Material } from 'three';
 import { pottedPlant, treatJar } from '../furniture';
 import type { RoomMaterials } from '../materials';
 import { FLOOR_TILE } from '../materials';
 import type { StaticSceneBuilder } from '../StaticSceneBuilder';
 import {
-  backroomDressing,
   backsplash,
   baseCabinets,
   builtIns,
@@ -26,7 +25,6 @@ import {
   sectional,
   sideboard,
   signedDoor,
-  slidingDoors,
   smallAppliances,
   stepStool,
   tallColumn,
@@ -40,11 +38,12 @@ import {
   windowCouch,
   wineFridge,
 } from './homeFurniture';
-import { CEILING, HALL, OPENINGS, WALL, WING } from './layout';
+import { backyard, birdCage, dumbbellRack, patioDoors, spinBike } from './gymAndYard';
+import { CEILING, GYM, HALL, OPENINGS, WALL, WING } from './layout';
 import { FURNITURE } from './places';
 
 /** Interior light strengths (candela), like the living room's lamps. */
-export const WING_LIGHTS = { kitchen: 5, dining: 4.5, fire: 2.2 } as const;
+export const WING_LIGHTS = { kitchen: 5, dining: 4.5, fire: 2.2, gym: 4.5 } as const;
 
 const H = CEILING;
 const T = WALL;
@@ -110,7 +109,7 @@ function baseboardZ(b: StaticSceneBuilder, m: RoomMaterials, x: number, z0: numb
 
 /**
  * The new wing (Phase 4): the kitchen, the family room (one open great room with it) and the dining room, joined to
- * the living room's hallway, plus the sunroom glimpsed through glass. Built into `b` with the shared materials.
+ * the living room's hallway, plus the home gym (the old sunroom) with the backyard beyond its glass doors. Built into `b` with the shared materials.
  */
 export function buildWing(b: StaticSceneBuilder, m: RoomMaterials): void {
   shell(b, m);
@@ -120,7 +119,7 @@ export function buildWing(b: StaticSceneBuilder, m: RoomMaterials): void {
   kitchen(b, m);
   diningRoom(b, m);
   familyRoom(b, m);
-  sunroom(b, m);
+  gym(b, m);
   b.castByDefault = true;
 }
 
@@ -147,11 +146,16 @@ function shell(b: StaticSceneBuilder, m: RoomMaterials): void {
   const nz = WING.north - T / 2;
   const dw = OPENINGS.diningWindow;
   wallAlongXWithHole(b, m.wallSage, nz, x0, WING.diningEast + T, { x0: dw.center - dw.width / 2, x1: dw.center + dw.width / 2, y0: dw.sill, y1: dw.sill + dw.height });
-  wallAlongXWithHole(b, m.backroom, nz, WING.diningEast + T, x1, { x0: 13.4, x1: 14.8, y0: 0.9, y1: 2.1 });
+  wallAlongXWithHole(b, m.wallSage, nz, WING.diningEast + T, x1, { x0: 13.4, x1: 14.8, y0: 0.9, y1: 2.1 });
 
-  // The dining room's east wall, with the sliding doors.
-  const s = OPENINGS.sliders;
+  // The dining room's east wall, with the wide doorway into the home gym (cased on both sides).
+  const s = OPENINGS.gymDoorway;
   wallAlongZWithHoles(b, m.wallSage, WING.diningEast + T / 2, z0, d - half, [{ z0: s.zMin, z1: s.zMax, y0: 0, y1: s.height }]);
+  for (const side of [-1, 1]) {
+    const x = WING.diningEast + T / 2 + side * (T / 2 + 0.015);
+    for (const z of [s.zMin - c / 2, s.zMax + c / 2]) b.add(new BoxGeometry(0.03, s.height + c, c), m.trim, [x, (s.height + c) / 2, z]);
+    b.add(new BoxGeometry(0.03, c, s.zMax - s.zMin + 2 * c), m.trim, [x, s.height + c / 2, (s.zMin + s.zMax) / 2]);
+  }
 
   // The divider: dining/kitchen (with the wide opening), then the sunroom/family room (with interior windows).
   // Two layers where the rooms either side are different colours.
@@ -163,9 +167,9 @@ function shell(b: StaticSceneBuilder, m: RoomMaterials): void {
   ] as const) {
     wallAlongXWithHole(b, material, z, x0 + T, WING.diningEast, { x0: o.xMin, x1: o.xMax, y0: 0, y1: o.height }, half);
   }
-  wallAlongX(b, m.backroom, d - half / 2, WING.diningEast, WING.kitchenFamily, 0, H, half);
+  wallAlongX(b, m.wallSage, d - half / 2, WING.diningEast, WING.kitchenFamily, 0, H, half);
   wallAlongX(b, m.wallGreige, d + half / 2, WING.diningEast, WING.kitchenFamily, 0, H, half);
-  wallAlongXWithHole(b, m.backroom, d - half / 2, WING.kitchenFamily, x1, { x0: iw.xMin, x1: iw.xMax, y0: iw.sill, y1: iw.top }, half);
+  wallAlongXWithHole(b, m.wallSage, d - half / 2, WING.kitchenFamily, x1, { x0: iw.xMin, x1: iw.xMax, y0: iw.sill, y1: iw.top }, half);
   wallAlongXWithHole(b, m.wallSage, d + half / 2, WING.kitchenFamily, x1, { x0: iw.xMin, x1: iw.xMax, y0: iw.sill, y1: iw.top }, half);
   // Casing round the dining opening, both sides.
   for (const side of [-1, 1]) {
@@ -190,9 +194,10 @@ function shell(b: StaticSceneBuilder, m: RoomMaterials): void {
   for (const x of [bh.xMin - c / 2, bh.xMax + c / 2]) b.add(new BoxGeometry(c, bh.height + c, 0.03), m.trim, [x, (bh.height + c) / 2, WING.south - 0.015]);
   b.add(new BoxGeometry(bh.xMax - bh.xMin + 2 * c, c, 0.03), m.trim, [(bh.xMin + bh.xMax) / 2, bh.height + c / 2, WING.south - 0.015]);
 
-  // East wall: the sunroom's, then the family room's with its two windows.
+  // East wall: the gym's, with the big sliding glass doors to the backyard, then the family room's with its two windows.
   const ex = WING.east + T / 2;
-  wallAlongZ(b, m.backroom, ex, z0, d);
+  const bd = OPENINGS.backyardDoors;
+  wallAlongZWithHoles(b, m.wallSage, ex, z0, d, [{ z0: bd.zMin, z1: bd.zMax, y0: 0, y1: bd.height }]);
   const fw = OPENINGS.familyWindows;
   wallAlongZWithHoles(
     b,
@@ -291,7 +296,7 @@ function diningRoom(b: StaticSceneBuilder, m: RoomMaterials): void {
   // Wainscoting all round.
   b.at([x, 0, (WING.north + d) / 2], EAST, () => wainscoting(b, m, d - WING.north));
   b.at([(x + WING.diningEast) / 2, 0, WING.north], 0, () => wainscoting(b, m, WING.diningEast - x));
-  const s = OPENINGS.sliders;
+  const s = OPENINGS.gymDoorway;
   b.at([WING.diningEast, 0, (WING.north + s.zMin) / 2], WEST, () => wainscoting(b, m, s.zMin - WING.north));
   b.at([WING.diningEast, 0, (s.zMax + d) / 2], WEST, () => wainscoting(b, m, d - s.zMax));
   const o = OPENINGS.dining;
@@ -314,8 +319,6 @@ function diningRoom(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.at([7.3, 0, WING.north + 0.4], 0, () => pottedPlant(b, m));
   b.at([10.45, 0, 0.08], 0.8, () => pottedPlant(b, m));
 
-  // The sliding doors to the sunroom.
-  b.at([WING.diningEast + T / 2, 0, (s.zMin + s.zMax) / 2], WEST, () => slidingDoors(b, m, s.zMax - s.zMin, T));
 
   // The table, six chairs and the round chandelier.
   const t = FURNITURE.diningTable;
@@ -346,13 +349,27 @@ function familyRoom(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.at([f.coffeeTable.x, 0, f.coffeeTable.z], 0, () => rusticCoffeeTable(b, m));
   b.at([f.pinkBed.x, 0, f.pinkBed.z], f.pinkBed.rotation, () => pinkDogBed(b, m));
   b.at([16.6, 0, 5.05], 0.4, () => monstera(b, m, 1.1));
-  b.at([16.55, 0, 0.9], 1.3, () => monstera(b, m, 1));
+  // A little smaller and further out than the one by the fireplace, turned so no leaf pokes through the gym wall
+  // behind it or the outside wall beside it.
+  b.at([16.36, 0, 1.08], 1.7, () => monstera(b, m, 0.8));
   b.at([15.98, 0, 0.78], 0, () => towerFan(b, m));
   b.at([15.93, 0, 1.32], WEST, () => stepStool(b, m));
 }
 
-/** The gym/sunroom through the glass: never entered, just there. */
-function sunroom(b: StaticSceneBuilder, m: RoomMaterials): void {
-  b.at([13.6, 0, -1.9], 0.2, () => backroomDressing(b, m));
+/**
+ * The home gym (the old sunroom), open from the dining room: the bike and the dumbbell rack along the right-hand
+ * wall, the conure's cage in the far left corner by the big glass doors, and the backyard beyond them.
+ */
+function gym(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.at([14.1, 0, WING.north - T / 2], 0, () => gardenWindow(b, m, 1.4, 1.2, 0.9, T));
+  const bd = OPENINGS.backyardDoors;
+  b.at([WING.east + T / 2, 0, (bd.zMin + bd.zMax) / 2], WEST, () => patioDoors(b, m, bd.zMax - bd.zMin, bd.height, T));
+  b.at([GYM.bike.x, 0, GYM.bike.z], EAST, () => spinBike(b, m));
+  b.at([GYM.weights.x, 0, GYM.weights.z], Math.PI, () => dumbbellRack(b, m));
+  b.at([GYM.cage.x, 0, GYM.cage.z], WEST, () => birdCage(b, m));
+  const midX = (WING.diningEast + WING.east) / 2;
+  const midZ = (WING.north + WING.divider) / 2;
+  b.add(new CylinderGeometry(0.16, 0.16, 0.035, 20), m.lampShade, [midX, H - 0.0175, midZ], { cast: false });
+  b.addObject(new PointLight('#fff1dc', WING_LIGHTS.gym, 6, 2), [midX, H - 0.25, midZ]);
+  backyard(b, m);
 }

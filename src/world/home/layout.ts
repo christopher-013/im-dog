@@ -25,7 +25,7 @@ export const BATHROOM = {
 export const WING = {
   /** West wall's inner face (the wall stands where the hallway's end wall used to). */
   west: 6.74,
-  /** The dining room's east wall (sliding doors to the sunroom). */
+  /** The dining room's east wall (the open doorway to the home gym). */
   diningEast: 10.9,
   east: 16.9,
   north: -4.2,
@@ -42,9 +42,11 @@ export const OPENINGS = {
   dining: { xMin: 7.35, xMax: 10.25, height: 2.2 },
   /** The bedroom hallway off the family room (a closed door, not playable). */
   bedroomHall: { xMin: 11.85, xMax: 12.75, height: 2.1, depth: 0.4 },
-  /** Sliding doors from the dining room to the sunroom. */
-  sliders: { zMin: -2.95, zMax: -0.55, height: 2.2 },
-  /** The interior windows over the sectional, into the sunroom. */
+  /** The wide cased doorway from the dining room into the home gym (the old sliding doors, taken out). */
+  gymDoorway: { zMin: -2.95, zMax: -0.55, height: 2.2 },
+  /** The gym's big sliding glass doors to the backyard, in the east wall: two fixed panes either side of two sliders. */
+  backyardDoors: { zMin: -3.95, zMax: 0.05, height: 2.2 },
+  /** The interior windows over the sectional, into the home gym. */
   interiorWindows: { xMin: 12.3, xMax: 15.8, sill: 1.0, top: 2.15 },
   /** Family room windows over the beige couch (centres along z). */
   familyWindows: { centers: [2.0, 3.8], width: 1.0, sill: 0.95, height: 1.25 },
@@ -52,7 +54,7 @@ export const OPENINGS = {
   diningWindow: { center: 8.85, width: 1.3, sill: 0.95, height: 1.2 },
 } as const;
 
-export type RoomId = 'livingRoom' | 'hallway' | 'bathroom' | 'kitchen' | 'familyRoom' | 'diningRoom';
+export type RoomId = 'livingRoom' | 'hallway' | 'bathroom' | 'kitchen' | 'familyRoom' | 'diningRoom' | 'gym';
 
 export interface RoomArea {
   readonly id: RoomId;
@@ -69,6 +71,7 @@ export const ROOMS: readonly RoomArea[] = [
   { id: 'hallway', name: 'hallway', minX: 3.5, maxX: WING.west, minZ: HALL.zMin, maxZ: HALL.zMax },
   { id: 'bathroom', name: 'bathroom', minX: BATHROOM.xMin, maxX: BATHROOM.xMax, minZ: BATHROOM.zMin, maxZ: BATHROOM.zMax },
   { id: 'diningRoom', name: 'dining room', minX: WING.west, maxX: WING.diningEast, minZ: WING.north, maxZ: WING.divider },
+  { id: 'gym', name: 'home gym', minX: WING.diningEast + WALL, maxX: WING.east, minZ: WING.north, maxZ: WING.divider - WALL / 4 },
   { id: 'kitchen', name: 'kitchen', minX: WING.west, maxX: WING.kitchenFamily, minZ: WING.divider, maxZ: WING.south },
   { id: 'familyRoom', name: 'family room', minX: WING.kitchenFamily, maxX: WING.east, minZ: WING.divider, maxZ: WING.south },
 ];
@@ -92,3 +95,13 @@ export function roomAt(x: number, z: number): RoomArea {
 
 /** The whole house's footprint, outer faces of the walls (navigation, shadows, escaped props). */
 export const HOME_BOUNDS = { minX: -3.62, maxX: WING.east + WALL, minZ: WING.north - WALL, maxZ: WING.south + WALL + OPENINGS.bedroomHall.depth } as const;
+
+/** The home gym (the old sunroom, x 11.02…16.9, z -4.2…0.39): its equipment and the bird. */
+export const GYM = {
+  /** The stationary bike along the right-hand (south) wall, facing the backyard doors. */
+  bike: { x: 12.75, z: -0.25 },
+  /** The dumbbell rack along the same wall. */
+  weights: { x: 14.7, z: 0.06 },
+  /** The green-cheeked conure's cage: the far left corner, beside the glass doors (its front faces the room, -x). */
+  cage: { x: 16.45, z: -3.72 },
+} as const;

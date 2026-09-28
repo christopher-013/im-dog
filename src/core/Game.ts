@@ -24,7 +24,8 @@ import { ToiletPaperMischief } from '../activities/ToiletPaperMischief';
 import { CouchPillows } from '../world/CouchPillows';
 import { FrontDoor } from '../world/FrontDoor';
 import { BathroomView } from '../world/Bathroom';
-import { BATHROOM } from '../world/home/layout';
+import { ConureView } from '../world/Conure';
+import { BATHROOM, GYM } from '../world/home/layout';
 import { BOWL_REFILL, MOKE_REACTIONS } from '../config/activities';
 import { BATHROOM_ACTIVITY } from '../config/bathroom';
 import { MOKE_ANIMATION } from '../config/animation';
@@ -149,6 +150,8 @@ export class Game {
   private readonly kitchenTreat = new Treat('kitchen', 3, 'carrot');
   private readonly frontDoor = new FrontDoor();
   private readonly bathroom = new BathroomView();
+  /** The conure in its cage in the gym: scenery with a life of its own. */
+  private readonly conure = new ConureView(GYM.cage, -Math.PI / 2);
   private delivery: DoorDelivery | null = null;
   private kitchenBeg: KitchenBeg | null = null;
   private pillowDig: PillowDig | null = null;
@@ -316,6 +319,7 @@ export class Game {
     this.pillows?.reset();
     this.frontDoor.dispose();
     this.bathroom.dispose();
+    this.conure.dispose();
     this.kitchenTreat.dispose();
     this.gfx.dispose();
   }
@@ -455,7 +459,7 @@ export class Game {
       },
     });
     this.scene.add(this.frontDoor.object);
-    this.scene.add(this.bathroom.object);
+    this.scene.add(this.bathroom.object, this.conure.object);
     this.delivery = new DoorDelivery({
       routine: this.routine, hand: human.visual.hands.right, view: this.frontDoor,
       onRing: () => this.audio.play('doorbell'), onBark: () => this.bark(),
@@ -768,6 +772,7 @@ export class Game {
     }
     this.moke?.update(dt, alpha);
     this.bathroom.updateMouthLink();
+    this.conure.update(this.state === 'playing' ? dt : 0, this.moke?.controller.position ?? null);
     this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? this.delivery?.objective ?? this.kitchenBeg?.objective ?? null);
     this.huntTreat.update();
     this.kitchenTreat.update();
@@ -897,6 +902,7 @@ export class Game {
     this.barkedThisFrame = true;
     this.heist?.noteBark();
     this.delivery?.noteBark(this.moke.controller.position);
+    this.conure.startle(this.moke.controller.position);
     this.barkForActivities = true;
   }
 

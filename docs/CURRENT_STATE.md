@@ -482,6 +482,45 @@ about −36 dB, some 7 dB under a bark; measured, not heard.
 - **Moke's look:** `ToonMokeVisual` + `player/toon/` (fur geometry with curls and creases, soft toon/outline materials, eye and tag textures), tuned in `config/mokeLook.ts`.
 - Details: `docs/ARCHITECTURE.md` (sections "Interactions", "Props and carrying", "Sniff mode", "Bark and audio").
 
+## Release Review (2026-09-28, Claude Code, cloud; against `main` at `adb8acf`)
+Before sharing the game with friends and family. The owner's unpushed local work (bathroom door, toilet paper) was
+not on GitHub and is **not** covered.
+- **Stuck-Moke sweep (real Rapier, whole house):**
+  - All 711 floor points (every 0.3 m) route back to spawn.
+  - About 5,700 run-and-jump hops (8 directions from each point) were logged for wedges and for "can't move afterwards".
+- **Fixed: a hard soft-lock.** Hopping at the white step stool (family room, about x 15.8, z 1.6) could leave Moke's
+  round bottom resting on edges between the stool and the two sofa arms. He counted as airborne, so he couldn't jump
+  (not standing) or walk (no climbing in the air), forever.
+  - Fix: `MokeController` safety net. If he's "airborne" but hasn't dropped at all for `JUMP.wedgeTime` (0.4 s),
+    he's put back where he last stood.
+  - The sweep saw it free him about 23 times at 19 spots (sofa arms, chairs, coffee tables, the stool).
+  - Regression test in `Home.test.ts`.
+- **Fixed: a jump-only corner.** Moke could hop over the dining-room TV stand's 10 cm base into the corner behind it,
+  and only get out by jumping. It's now filled with an invisible collider, 0.6 m high and thin (the camera ignores it).
+- **Added: a hold safety net.** If a tug, dig, eating, petting or a trick has held Moke still for
+  `HOLD_RELEASE_AFTER` (12 s) while the player keeps pushing to move, `MokeAnimationController.releaseHolds()` lets
+  him go. Every such hold is bounded today (the longest is a tug, at most 8 s), so this only catches a future bug.
+- **Fixed: flicker at the hallway → kitchen opening.** With the hallway open, its side walls ran 12 cm into the
+  kitchen's west wall: two differently painted faces in the same place (z-fighting). They now stop at the kitchen wall.
+- **Security:**
+  - No `innerHTML`/`eval`/dynamic code.
+  - No network calls (the service worker only touches same-origin GETs).
+  - `localStorage` reads fall back to defaults when corrupt.
+  - The deploy workflow uses GitHub's minimal Pages permissions.
+  - `npm audit`: 0 vulnerabilities.
+  - Optional hardening: pin Actions to commit SHAs, and a CSP `<meta>` tag.
+- **Privacy:**
+  - No names, addresses, phone numbers, photos or secrets in any tracked file or in history. The only images ever
+    committed are the four app icons, drawn in code.
+  - **But** the owner's personal email is the author on their commits in this public repo (owner action needed:
+    GitHub "keep my email private" + a noreply commit email; history rewrite optional).
+- **Performance** (headless, SwiftShader):
+  - About 151 draw calls and 280k triangles per frame.
+  - JS heap flat (42 → 40 MB after GC over 25 s of play): no leak.
+  - No console errors.
+  - Hot paths reuse scratch objects.
+  - Real-device frame times weren't measured.
+
 ## Current Gameplay State
 **Jump (2026-09-25):** Space / controller B / touch JUMP hops him up onto the couch seat or the coffee
 table and no higher. F / controller Y / touch Bark barks or growls at random. On touch, the screen shows only the

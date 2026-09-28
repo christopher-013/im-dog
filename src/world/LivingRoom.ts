@@ -182,8 +182,12 @@ export class LivingRoom {
 
     b.add(new BoxGeometry(length, 0.1, width), m.floorGrey, [midX, -0.05, midZ], { cast: false, solid: true, worldUV: FLOOR_TILE });
     b.add(new BoxGeometry(length + T, 0.1, width + 2 * T), m.ceiling, [midX + T / 2, H + 0.05, midZ], { receive: false });
-    b.add(new BoxGeometry(length + T, H, T), m.wall, [midX + T / 2, H / 2, zMin - T / 2], solid);
-    b.add(new BoxGeometry(length + T, H, T), m.wall, [midX + T / 2, H / 2, zMax + T / 2], solid);
+    // Closed, the side walls run on to meet the end wall. Open, the kitchen's own wall starts right at x1: running
+    // on into it would put two differently painted faces in the same place, which flicker (z-fighting).
+    const sideLength = this.options.hallwayOpen ? length : length + T;
+    const sideX = x0 + sideLength / 2;
+    b.add(new BoxGeometry(sideLength, H, T), m.wall, [sideX, H / 2, zMin - T / 2], solid);
+    b.add(new BoxGeometry(sideLength, H, T), m.wall, [sideX, H / 2, zMax + T / 2], solid);
     b.add(new BoxGeometry(length - 0.6, 0.008, 0.55), m.runner, [midX + 0.15, 0.004, midZ], { cast: false });
     if (!this.options.hallwayOpen) {
       b.add(new BoxGeometry(T, H, width + 2 * T), m.wall, [x1 + T / 2, H / 2, midZ], solid);

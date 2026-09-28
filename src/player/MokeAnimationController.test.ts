@@ -182,4 +182,18 @@ describe('MokeAnimationController', () => {
     // Done looking: back to facing forward.
     expect(Math.abs(simulate(anim, { speed: 0, turnRate: 0, headroom: OPEN_SKY }, 1.5).headYaw)).toBeLessThan(0.05);
   });
+
+  it('releaseHolds lets go of everything that holds him still', () => {
+    const anim = new MokeAnimationController(MOVEMENT);
+    anim.tug(true);
+    anim.dig(true);
+    anim.eat(30);
+    anim.drink(30);
+    anim.pet();
+    anim.releaseHolds();
+    expect(anim.tugging).toBe(false);
+    expect(anim.digging).toBe(false);
+    expect(anim.eating).toBe(false);
+    expect(anim.petting).toBe(false);
+  });
 });

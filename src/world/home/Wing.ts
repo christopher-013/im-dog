@@ -305,6 +305,9 @@ function diningRoom(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.at([dw.center, 0, WING.north - T / 2], 0, () => gardenWindow(b, m, dw.width, dw.height, dw.sill, T));
   b.at([7.55, 1.72, WING.north], 0, () => wallClock(b, m));
   b.at([10.35, 0, WING.north + 0.55], -0.6, () => tvOnStand(b, m));
+  // Fill the triangle of floor between the angled TV stand and the corner: Moke could hop over the stand's 10 cm
+  // base into it but not walk back out. Invisible, taller than his highest jump, and ignored by the camera.
+  b.addCollider([10.6, 0.3, WING.north - 0.001 + 0.265], [0.6, 0.6, 0.53], { thin: true });
   b.at([7.3, 0, WING.north + 0.4], 0, () => pottedPlant(b, m));
   b.at([10.45, 0, 0.08], 0.8, () => pottedPlant(b, m));
 

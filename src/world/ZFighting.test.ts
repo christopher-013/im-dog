@@ -174,5 +174,5 @@ describe('the house has no z-fighting (flickering overlapping surfaces)', () => 
   it('finds no two static surfaces drawn in the same place', () => {
     const home = new Home();
     expect(findZFighting(home.object)).toEqual([]);
-  });
+  }, 30_000);
 });

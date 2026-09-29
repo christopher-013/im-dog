@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-27. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; the game is hosted at https://christopher-013.github.io/im-dog/ and republished on every push to `main`. **Phases 1–3 are complete** (tags `phase-1-complete`, `phase-2-complete`, `phase-3-complete`). **Phase 4, "Moke's Home & Family Life", is built, committed to `main`, and independently audited, but not yet closed by the owner:** the whole home from the owner's photos, a stylized human with a daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play and Dog Logic. The prior audit fixes are committed at `6dd0e0b`; the human reconstruction and household updates at `6fc0f8f`. The rope tug-of-war and replay refinement are committed on `main` at the owner's request._
+_Last updated: 2026-09-28. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; every owner-approved push to `main` republishes https://christopher-013.github.io/im-dog/. Phases 1–4 are complete; Phase 4 is tagged `phase-4-complete`. An optional, private-service player Feedback feature is being prepared locally (D22, `docs/FEEDBACK.md`), but is not active on the public site until Cloudflare and GitHub configuration, end-to-end testing and an owner-approved push._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -40,6 +40,21 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-29, owner request, **uncommitted, undeployed**): reviewed and completed Codex's Feedback work (below).
+Brought it up to date with `main`; lined the Worker up with the owner's Adtona/Pictayo feedback Workers (GitHub API
+version `2022-11-28`, Issues titled "[Feedback] <first line>"); added context: how it was played (keyboard/touch/
+controller) and the game build (`__GAME_BUILD__`, the commit in Actions) in the public Issue, the browser's language,
+time zone and window size in the private D1 record (migration, privacy notice and dialog text updated); keys typed
+into a text field no longer reach the game (`typingInto` in `InputManager`: typing a backtick in Comments toggled
+the debug panel, and a phone's on-screen keyboard would have switched the game to keyboard mode); fixed a wording
+slip ("the box above"). Verification: typecheck, `npm test`, build + verify-dist; and end to end on localhost (see
+`docs/FEEDBACK.md` → "Verified locally"): the real Worker code with a stand-in D1 and fake Turnstile/GitHub behind the
+real dialog, from the start and pause menus, desktop and a 375 px phone viewport. **Still to do (owner):** the
+one-time Cloudflare/GitHub setup in `docs/FEEDBACK.md`; until then the Feedback buttons stay hidden on the live site.
+Nothing was sent to the real GitHub or Cloudflare.
+
+OpenAI Codex (2026-09-28, owner request, **uncommitted and undeployed**): added an optional Feedback lightbox to the start and pause menus, plus a separate Cloudflare Worker using Turnstile, D1 and a GitHub Issues-only token. All form fields are optional; an acknowledgement is required. Public Issues include comments, a reference ID and server time only. Private D1 records hold optional name/email plus IP, approximate country and browser User-Agent, with daily 30-day cleanup. The game remains static on GitHub Pages; the buttons stay hidden until the public endpoint/site-key build variables are configured. See `docs/FEEDBACK.md` for owner setup, privacy notice and deployment checks. Local tests mock both Cloudflare and GitHub; **no live submission, Cloudflare deployment, commit or push has happened**. Verification results for this change are reported in the final handoff.
+
 Claude Code (2026-09-29, owner request; code in `02e3116`, tests and docs after it): **the World Series special
 and Watch the Game** (the easter egg). Now and then (first 90–240 s in, then every 6–12 min, `TV.special`) a special
 broadcast cuts in on all three TVs at once, in sync (`world/tv/WorldSeries.ts`, 27 s, LIVE in the corner): the San

@@ -13,6 +13,16 @@ const keyCode = (e: KeyboardEvent): string => e.code || codeFromKey(e.key);
  * feeds the same actions and axes, so gameplay never asks which one it was. `mode` follows the device the
  * player last used, for prompts and the on-screen touch controls.
  */
+const TEXT_INPUTS = new Set(['text', 'email', 'search', 'url', 'tel', 'password', 'number']);
+
+/** Is this key going into a text field (a textarea, a text-type input, or editable content)? */
+export function typingInto(target: EventTarget | null): boolean {
+  const el = target as { tagName?: string; type?: string; isContentEditable?: boolean } | null;
+  if (!el || typeof el.tagName !== 'string') return false;
+  if (el.isContentEditable || el.tagName === 'TEXTAREA') return true;
+  return el.tagName === 'INPUT' && TEXT_INPUTS.has((el.type ?? 'text').toLowerCase());
+}
+
 export class InputManager {
   readonly state = new InputState(KEY_BINDINGS);
   readonly gamepad = new GamepadInput();
@@ -151,8 +161,9 @@ export class InputManager {
   }
 
   private readonly handleKeyDown = (e: KeyboardEvent): void => {
-    // Leave browser/OS shortcuts (Ctrl+R, Cmd+W, Alt+Tab...) alone.
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    // Leave browser/OS shortcuts (Ctrl+R, Cmd+W, Alt+Tab...) alone, and typing in a text field (the Feedback form):
+    // those keys are words, not Moke's actions (and a phone's on-screen keyboard mustn't switch to keyboard mode).
+    if (e.ctrlKey || e.metaKey || e.altKey || typingInto(e.target)) return;
     if (!e.repeat) this.useMode('keyboard');
     const bound = this.state.keyDown(keyCode(e));
     if (bound && this.gameplayFocusNow) e.preventDefault();

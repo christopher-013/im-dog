@@ -30,6 +30,7 @@ rebuilds and republishes it through GitHub Actions (`.github/workflows/deploy-pa
 also runs in phone and tablet browsers (touch controls, portrait or landscape).
 The start and pause menus include **About I'M DOG?**, with an owner-approved photo of the real Moke and a spoiler-light
 introduction. Other private reference photos remain excluded from the public build.
+An optional **Feedback** lightbox is prepared for those menus. It stays hidden until its private Cloudflare submission service is configured and tested; see [Feedback setup](docs/FEEDBACK.md). No GitHub write token is included in the game.
 
 ## Requirements
 - Node.js **22.12+** (tested with Node 24) and npm
@@ -72,6 +73,7 @@ scripts/        build helpers
 [Current state](docs/CURRENT_STATE.md) · [Game design](docs/GAME_DESIGN.md) · [Phase 1 scope](docs/PHASE_1.md) ·
 [Phase 2 scope](docs/PHASE_2.md) · [Phase 3 scope](docs/PHASE_3.md) · [Sock Heist](docs/SOCK_HEIST.md) ·
 [Mobile](docs/MOBILE.md) · [Architecture](docs/ARCHITECTURE.md) · [Decisions](docs/DECISIONS.md) ·
+[Feedback setup](docs/FEEDBACK.md) ·
 [Moke reference](docs/MOKE_CHARACTER_REFERENCE.md) · [Moke 3D spec](docs/MOKE_3D_SPEC.md) ·
 [Moke integration](docs/MOKE_INTEGRATION.md) · [Assets & licenses](docs/ASSETS.md) · [Controls](docs/CONTROLS.md)
 

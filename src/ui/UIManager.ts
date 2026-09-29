@@ -4,6 +4,7 @@ import type { InputMode } from '../core/InputMode';
 import { keyLabel } from '../core/InputState';
 import { MUSIC_CHOICES, MUSIC_VOLUME_RANGE, SENSITIVITY_RANGE, type MusicChoice, type PlayerSettings } from '../core/PlayerSettings';
 import { actionGlyph, onboardingRows } from './ControlGlyphs';
+import { FeedbackDialog } from './FeedbackDialog';
 
 export type Screen = 'loading' | 'menu' | 'paused' | 'error';
 
@@ -24,6 +25,7 @@ export class UIManager {
   private readonly loadingDetail: HTMLElement;
   private readonly controlsDialog: HTMLDialogElement;
   private readonly aboutDialog: HTMLDialogElement;
+  private readonly feedbackDialog: FeedbackDialog;
   private readonly toast: HTMLElement;
   private readonly pointerHint: HTMLElement;
   private readonly errorDetail: HTMLElement;
@@ -67,6 +69,7 @@ export class UIManager {
     this.loadingDetail = this.el('loading-detail');
     this.controlsDialog = this.el<HTMLDialogElement>('controls-dialog');
     this.aboutDialog = this.el<HTMLDialogElement>('about-dialog');
+    this.feedbackDialog = new FeedbackDialog(doc, import.meta.env.VITE_FEEDBACK_ENDPOINT ?? '', import.meta.env.VITE_TURNSTILE_SITEKEY ?? '');
     this.toast = this.el('toast');
     this.pointerHint = this.el('pointer-hint');
     this.errorDetail = this.el('error-detail');
@@ -493,21 +496,24 @@ export class UIManager {
 
   openControls(): void {
     if (this.aboutDialog.open) this.aboutDialog.close();
+    this.feedbackDialog.close();
     if (!this.controlsDialog.open) this.controlsDialog.showModal();
   }
 
   openAbout(): void {
     if (this.controlsDialog.open) this.controlsDialog.close();
+    this.feedbackDialog.close();
     if (!this.aboutDialog.open) this.aboutDialog.showModal();
   }
 
   get controlsOpen(): boolean {
-    return this.controlsDialog.open || this.aboutDialog.open;
+    return this.controlsDialog.open || this.aboutDialog.open || this.feedbackDialog.openNow;
   }
 
   closeControls(): void {
     if (this.controlsDialog.open) this.controlsDialog.close();
     if (this.aboutDialog.open) this.aboutDialog.close();
+    this.feedbackDialog.close();
   }
 
   showFatalError(message: string): void {

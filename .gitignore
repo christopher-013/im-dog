@@ -24,6 +24,8 @@ npm-debug.log*
 # Env files
 .env
 .env.*
+feedback/wrangler.jsonc
+feedback/.dev.vars
 
 # OS files
 .DS_Store

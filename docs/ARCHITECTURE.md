@@ -1,6 +1,6 @@
 # Architecture
 
-Browser game: **TypeScript + three.js + Vite**, HTML/CSS overlays for UI. No framework, no backend.
+Browser game: **TypeScript + three.js + Vite**, HTML/CSS overlays for UI. No framework or gameplay backend. Optional player feedback uses a separate Cloudflare Worker (D22; `docs/FEEDBACK.md`); the game remains a static GitHub Pages build.
 
 ## Dependencies (kept minimal)
 | Package | Why |

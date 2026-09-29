@@ -90,7 +90,11 @@ export default defineConfig({
   // Relative base so the build works from any static host path (GitHub Pages project sites, etc.).
   base: './',
   // Only ask for moke.glb when it's there (restart the dev server after adding it). See docs/MOKE_INTEGRATION.md.
-  define: { __MOKE_MODEL_AVAILABLE__: JSON.stringify(existsSync(MOKE_MODEL_FILE)) },
+  define: {
+    __MOKE_MODEL_AVAILABLE__: JSON.stringify(existsSync(MOKE_MODEL_FILE)),
+    // Which build this is (the commit, from GitHub Actions; "dev" locally): feedback reports it.
+    __GAME_BUILD__: JSON.stringify((process.env.GITHUB_SHA ?? 'dev').slice(0, 7)),
+  },
   plugins: [blockPrivateReferencePhotos(), runtimeLicenses(), serviceWorker()],
   server: {
     fs: {

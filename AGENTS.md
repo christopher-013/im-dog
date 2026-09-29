@@ -51,7 +51,9 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - Claude Code and Codex work **sequentially**, never at the same time on overlapping files.
 - Another agent may have changed the repo since you last saw it. Start with `git status`, the recent `git log`,
   and `docs/CURRENT_STATE.md`. Don't rely on memory of a previous session.
-- The repository is **public**, and every push to `main` publishes the game to https://christopher-013.github.io/im-dog/ (GitHub Actions).
+- The repository is **public**, and every push to `main` publishes the game to https://christopher-013.github.io/im-dog/ (GitHub Actions)
+  and, once Cloudflare's automatic deploys are connected, to **https://im-dog.com** (the site Worker, `wrangler.jsonc`, D23;
+  setup in `docs/FEEDBACK.md`). Never put a secret in `wrangler.jsonc` or anywhere in the repo.
   Only push to `main` when the owner asks, and never commit anything private (the Moke photos stay git-ignored).
 
 ## Development rules

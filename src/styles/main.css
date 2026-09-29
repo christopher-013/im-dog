@@ -565,7 +565,6 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
 .feedback-card textarea:focus-visible,
 .feedback-card a:focus-visible { outline: 3px solid var(--leaf); outline-offset: 2px; }
 .feedback-card .feedback-honey { position: absolute; left: -10000px; width: 1px; height: 1px; }
-.feedback-turnstile { min-height: 0; color: var(--ink-soft); font-size: 0.85rem; }
 .feedback-privacy, .feedback-status {
   margin: 0;
   color: var(--ink-soft);

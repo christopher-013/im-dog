@@ -1,30 +1,92 @@
-# Player feedback (private service)
+# im-dog.com: the site Worker, player feedback and the player counter
 
-The start and pause menus contain the same optional Name / Email / Comments lightbox. **It is hidden until configured**: the public GitHub Pages build still works without Cloudflare. The form sends directly to a small Cloudflare Worker, not to GitHub from the browser. The Worker verifies Turnstile, enforces three submissions per IP per hour, writes a private D1 record, then creates a public Issue in `christopher-013/im-dog`. The Issue (titled like Adtona's and Pictayo's: "[Feedback] <first line of the comments>") contains the comments, how the game was played (keyboard and mouse, touch or controller), the game build, a reference ID and server time. Optional name/email, IP, approximate country, User-Agent, browser language, time zone and window size stay in D1; a daily Cron deletes active records after 30 days. A missing database, verification secret or GitHub token fails closed. No credential belongs in Vite variables or this repository.
+The game is served at **https://im-dog.com** by one Cloudflare Worker (`wrangler.jsonc`, decision D23), built the
+same way as the owner's Adtona and Pictayo Workers: the built game (`dist/`) as static assets, the **Feedback** form's
+endpoint at `/api/feedback`, and an anonymous **player counter** at `/api/ping`, all on the same origin
+(`src/feedback/worker.ts`, `src/feedback/usage.ts`). The GitHub Pages copy (https://christopher-013.github.io/im-dog/)
+keeps publishing until im-dog.com is live and checked; there, the Feedback button stays hidden and nothing is counted.
 
-This is an approved, narrowly scoped exception to the otherwise static architecture (D22). It has **not** been deployed or end-to-end tested against live Cloudflare/GitHub. The owner should review the public [privacy notice](../public/feedback-privacy.html) for their legal/privacy obligations before activation. In particular, user-written Comments are public; the application cannot guarantee that a visitor will not type personal information there. Cloudflare backups may outlive active-record deletion under Cloudflare's own policy.
+## Feedback
 
-The Worker follows the same pattern as the owner's Adtona and Pictayo feedback Workers (a fine-grained, Issues-only token kept as an encrypted Cloudflare secret, origin checks, a honeypot, rate limiting, GitHub API version `2022-11-28`). The difference is hosting: those Workers also serve their sites, so their form posts same-origin to `/api/feedback`; I'M DOG? stays on GitHub Pages, so its form posts cross-origin to the Worker's `/feedback`, allowed only from `ALLOWED_ORIGIN`.
+The start and pause menus have a Feedback lightbox: Name, Email and Comments, all optional, plus an acknowledgement
+box. As in Adtona and Pictayo, there's no bot-check widget: the Worker checks the origin, the size and shape of what
+arrives and a hidden bot-trap field (a bot that fills it is quietly "accepted" and nothing is filed), and uses
+Cloudflare's rate limiter (5 a minute per address). On top of that it allows three per address an hour. Then it writes
+a private record and creates a public Issue in `christopher-013/im-dog`, titled "[Feedback] <first line of the
+comments>". The repository is public, so nothing personal goes in the Issue.
 
-**Verified locally (2026-09-29):** the real Worker handler, run in Node with an in-memory stand-in for D1 and fake Turnstile/GitHub responses, behind the real dialog on a Vite dev server with Cloudflare's always-pass Turnstile test key. The whole flow: the buttons appear once configured (start and pause menus), typing in the form doesn't reach the game, Turnstile loads only after the acknowledgement, the submission goes through, the dialog thanks the player and links the Issue, the form clears. The private row held name, email, IP, country, browser, language, time zone, window size, input and build; the public Issue only the title, comments, input, build, reference and time. The phone layout (375 px wide) was checked too. **Not done:** anything against the live Cloudflare or GitHub (that needs the setup below).
+| | What |
+|---|---|
+| **Public GitHub Issue** | the comments, how it was played (keyboard and mouse, touch or controller), the game build, a reference ID, the time |
+| **Private D1 record** (deleted after 30 days by a daily Cron) | optional name and email, IP address, approximate country, browser (User-Agent), language, time zone, window size, input type, build, time, the Issue number |
 
-## One-time owner setup
+The GitHub token exists only as an encrypted Cloudflare secret: never in the game, this repository, GitHub Actions or
+a chat. Without the token, the database or the rate limiter, the form fails closed (it says it couldn't send).
 
-Use the Cloudflare account you approved. Keep Workers on the Free plan if avoiding charges is important; review its current limits before enabling. These steps need your own login and secrets—never paste either secret into a chat or commit them.
+## The player counter
 
-1. Create a D1 database named `im-dog-feedback` in Cloudflare. Copy `feedback/wrangler.jsonc.example` to ignored `feedback/wrangler.jsonc` and replace `REPLACE_WITH_D1_DATABASE_ID` with its ID. Apply `feedback/migrations/0001_feedback.sql` using Wrangler D1 migrations on the **remote** database. Check the binding is `FEEDBACK_DB`.
-2. Create a Cloudflare Turnstile widget restricted to `christopher-013.github.io` (add localhost only for local testing). Keep its site key for the public build and its secret for the Worker. The Worker requires the `feedback` action and exact configured hostname.
-3. Create a GitHub fine-grained personal access token restricted to **only** `christopher-013/im-dog`, with **Issues: Read and write** and an expiration. Store it in the Worker as the `GITHUB_TOKEN` secret. Store the Turnstile secret as `TURNSTILE_SECRET`. Rotate both before expiry. Do not grant repository contents or administration permissions.
-4. Deploy the Worker from the ignored Wrangler config. It accepts requests only at `/feedback` and only from `ALLOWED_ORIGIN` (`https://christopher-013.github.io`). Turn off worker request-body logging; the example config disables observability. Confirm the daily `0 4 * * *` UTC Cron is installed, as it deletes active private records older than 30 days.
-5. In the GitHub repository's Actions variables (not secrets), set `FEEDBACK_ENDPOINT` to the Worker's HTTPS URL ending `/feedback` and `TURNSTILE_SITEKEY` to the public site key. The Pages workflow passes these into Vite on its next owner-approved push to `main`; without both, the Feedback buttons remain hidden. The endpoint and site key are public by design; the GitHub and Turnstile **secrets** stay only in Cloudflare.
-6. Test a submission from the deployed game with a harmless comment, verify one public Issue and one private D1 row, then check that the public Issue contains no name, email, IP, country or User-Agent. Test an empty optional form too. Close the test Issues afterward if desired. Verify the privacy notice link, phone layout, keyboard focus and error/retry behavior. Do not publish before this check.
+Like Adtona's and Pictayo's usage counters, it answers one question, "are real people playing?", and can't answer
+anything narrower. On im-dog.com the game sends `open` once it has loaded (bots and link previews can do that too),
+and `play` once someone has really played: pressed PLAY, moved Moke, and kept going for 30 seconds of unpaused play
+(`USAGE.realPlayAfter` in `src/config/site.ts`). **Players** is the real-user figure; **visits** is everything.
 
-The form loads Cloudflare's challenge script only after the visitor checks the privacy acknowledgement. Offline play is unaffected; sending feedback needs a connection. Local development can use `VITE_FEEDBACK_ENDPOINT` and `VITE_TURNSTILE_SITEKEY` as process environment variables; do not commit `.env` files. Local Worker testing also needs a Turnstile test widget configured for localhost. The unit tests mock Cloudflare and GitHub and make no external submissions.
+The Worker keeps, in KV, one number per day per event (for about 13 months) plus a few running figures (the total,
+active days, the first and best days). No name, identifier, cookie, IP address or device detail is stored: the
+address is only the rate limiter's key (separate from feedback's). The figures appear in a public Issue, **"I'M DOG?
+usage log"**, created the first time someone is counted: its top shows players to date, today, the last 7 and 30 days,
+active days and the best day, rewritten at most once a minute; each day the Cron adds a comment with yesterday's
+players and visits (days with nobody are skipped). Watching the repository gets you those by email.
+
+## One-time setup (owner)
+
+Everything below uses your Cloudflare login (the account that already holds im-dog.com and adtona.com) or your GitHub
+account, so it's yours to run, from a terminal in the repository folder. Paste the token only at Wrangler's prompt or
+into Cloudflare's page, never into a chat, a commit or a command line.
+
+1. **Log in.** `npx wrangler login`. *(Done 2026-09-29.)*
+2. **The feedback database.** `npx wrangler d1 create im-dog-feedback` *(done: its ID is in `wrangler.jsonc`)*, then
+   create the table: `npx wrangler d1 migrations apply im-dog-feedback --remote`.
+3. **The counter's store.** `npx wrangler kv namespace create USAGE_COUNTS_IM_DOG` *(done 2026-09-29: its ID is in
+   `wrangler.jsonc`, bound as `USAGE_COUNTS`)*. Its own namespace: the one titled `USAGE_COUNTS` is Pictayo's and
+   `USAGE_COUNTS_ADTONA` is Adtona's, so the three apps' counts never mix.
+4. **First deploy.** `npm run build`, then `npx wrangler deploy`. This creates the `im-dog` Worker and attaches
+   `im-dog.com` (Cloudflare adds the DNS record and the certificate). Open https://im-dog.com: the game should load.
+5. **The GitHub token.** GitHub → Settings → Developer settings → **Fine-grained personal access tokens** → Generate:
+   repository access **Only select repositories → im-dog**, permissions **Issues: Read and write** only, with an
+   expiry date (rotate it before then). Then `npx wrangler secret put GITHUB_TOKEN` and paste it at the prompt. Both
+   feedback and the usage log use it.
+6. **www.im-dog.com.** DNS → add a record `www`, type `AAAA`, content `100::`, **Proxied**. Then Rules → **Redirect
+   Rules** → the template **Redirect from WWW to root**, for im-dog.com.
+7. **Automatic deploys** (recommended). Workers & Pages → **im-dog** → Settings → **Builds** → connect the GitHub
+   repository `christopher-013/im-dog`, branch `main`, build command `npm run build`, deploy command
+   `npx wrangler deploy`. From then on, every push to `main` updates both im-dog.com and the GitHub Pages copy.
+8. **Check it.** On https://im-dog.com:
+   - Feedback: open it from the start menu, send a clearly labelled test, and confirm the thank-you message and link,
+     one new Issue with no name, email, IP or browser in it, and one private row:
+     `npx wrangler d1 execute im-dog-feedback --remote --command "SELECT id, created_at, country, input_mode, issue_number FROM feedback_private ORDER BY created_at DESC LIMIT 5"`.
+     Close the test Issue.
+   - The counter: press PLAY and walk Moke around for half a minute. Within a minute or so an **I'M DOG? usage log**
+     Issue appears showing 1 player. Keep that Issue open: it's the running log.
+
+After that, the GitHub Pages copy can be turned into a pointer to im-dog.com (a later, separate change).
 
 ## Operations and privacy
 
-- The private record contains optional name/email plus IP, approximate country, User-Agent, browser language, time zone, window size, input type, game build, server time and the Issue number. It is for abuse control and potential replies, **not analytics**. Do not export it to the public repo or include it in reports.
-- The Issue contains comments and a reference ID. Never add private D1 fields to the Issue, logs or a client response.
-- Only the owner can access the D1 database. Check the database and Cron periodically; if the Cron stops, fix it and run the purge. Remove older records on a data request where feasible.
-- This feature is not suitable for collecting highly sensitive information. The privacy page asks visitors not to put contact details in public Comments. Children under 13 should ask a parent or guardian to submit.
-- If the token is abused, rotate/revoke `GITHUB_TOKEN` and temporarily remove `FEEDBACK_ENDPOINT` from the Pages build variables to hide the button on the next deployment; also disable the Worker route immediately.
+- The private feedback record is for replying and for stopping abuse, **not analytics**. Never export it to the
+  public repo or put its fields in an Issue, a log or a reply to the browser.
+- Only the Cloudflare account owner can read the database and the counts. If the daily Cron stops, fix it (it both
+  purges old feedback records and posts the day's count). On a data request, remove the record where feasible.
+  Cloudflare backups may outlive active-record deletion under Cloudflare's own policy.
+- The privacy notice (`public/feedback-privacy.html`, linked from the form) says what's public, what's private and
+  what the counter keeps. Comments are public, and people may still type personal things there: the notice asks them
+  not to. Children under 13 are asked to have a parent or guardian send feedback.
+- If the token is misused: revoke it in GitHub, then `npx wrangler secret delete GITHUB_TOKEN`; the form fails closed
+  and the usage log stops updating (counting carries on).
+- Worker request logging is off (`observability` in `wrangler.jsonc`), so feedback bodies don't land in logs.
+
+## Local testing
+
+The unit tests (`src/feedback/worker.test.ts`, `src/feedback/usage.test.ts`, `src/core/UsageCounter.test.ts`) fake
+Cloudflare and GitHub and send nothing anywhere. For a local end-to-end check of the form, point a dev build at a local
+copy of the Worker with `VITE_FEEDBACK_ENDPOINT` in a git-ignored `.env.<mode>` file, and add that origin to
+`ALLOWED_ORIGINS` for the local Worker only. Never commit `.env` files or `.dev.vars`.

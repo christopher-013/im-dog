@@ -40,6 +40,30 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-29, owner request, **uncommitted**): **feedback made the Adtona/Pictayo way, and a player
+counter** (D24). No Turnstile (widget, secret, script) any more: Cloudflare's rate limiter (`FEEDBACK_RATE_LIMITER`,
+5 a minute per address, namespace 51013) plus the checks and bot trap they use, and the 3-an-hour cap; GitHub calls
+refuse redirects. New `/api/ping` (`src/feedback/usage.ts`): `open` and `play` counted per day in KV
+(`USAGE_COUNTS`), no identifiers, published to an "I'M DOG? usage log" Issue (rewritten at most once a minute; a
+daily Cron comment). The game (`src/core/UsageCounter.ts`, only on im-dog.com) sends `open` on load and `play`
+after PLAY + Moke moved + 30 s of play. `config/feedback.ts` became `config/site.ts` (`SITE`, `FEEDBACK`,
+`USAGE`). Set up so far: Wrangler logged in; the D1 database created and migrated; the counter's own KV
+namespace `USAGE_COUNTS_IM_DOG` created (the one titled `USAGE_COUNTS` is Pictayo's); this commit deployed to
+im-dog.com with `npx wrangler deploy` at the owner's request. **Still to do (owner):** the `GITHUB_TOKEN` secret (until
+then feedback fails closed and the usage log isn't published, though counting works), the www redirect, automatic
+deploys, the live check (`docs/FEEDBACK.md`). Verification: typecheck, tests, build, a Wrangler dry run.
+
+Claude Code (2026-09-29, owner request, **uncommitted**): **started the move to im-dog.com** (D23). The owner bought
+im-dog.com; its DNS is already on their Cloudflare account. The repo is ready for Cloudflare: `wrangler.jsonc` (the
+`im-dog` Worker: the built game from `dist/` as static assets, `/api/feedback` on the same origin, im-dog.com as
+a custom domain, the D1 database, the daily purge); the Worker now routes (`handleRequest`) and accepts a list of
+origins; the Feedback form turns itself on only on im-dog.com (`config/feedback.ts`: same-origin endpoint, the
+Turnstile site key once it exists), so the GitHub Pages copy keeps it hidden; Codex's cross-origin example config and
+the Pages build variables are gone; `.node-version` for Cloudflare's builds. **Not done (the owner's steps, with
+their logins):** everything in `docs/FEEDBACK.md` → "One-time setup": `wrangler login`, the D1 database (its ID goes
+into `wrangler.jsonc`), the Turnstile widget (its site key into `config/feedback.ts`), the first deploy, the two
+secrets, the www redirect, automatic deploys, the live check. Verification: typecheck, tests, build (below).
+
 Claude Code (2026-09-29, owner request, **uncommitted, undeployed**): reviewed and completed Codex's Feedback work (below).
 Brought it up to date with `main`; lined the Worker up with the owner's Adtona/Pictayo feedback Workers (GitHub API
 version `2022-11-28`, Issues titled "[Feedback] <first line>"); added context: how it was played (keyboard/touch/

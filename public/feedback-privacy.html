@@ -15,12 +15,14 @@
     <main>
       <p><a href="./">← Back to I'M DOG?</a></p>
       <h1>Feedback privacy</h1>
-      <p>Updated September 29, 2026. This notice covers the optional Feedback form in I'M DOG?. The game itself does not require an account.</p>
+      <p>Updated September 29, 2026 (a player counter; no bot-check widget). This notice covers the optional Feedback form in I'M DOG?. The game itself does not require an account.</p>
       <h2>What is shared</h2>
       <p>Your Comments are posted to an Issue in the public <a href="https://github.com/christopher-013/im-dog/issues">I'M DOG? GitHub repository</a>. Anyone can read them. Please do not put contact details or other private information in Comments. An Issue reference ID, the submission time, how you played (keyboard and mouse, touch or controller) and the game version are also public; they help fix bugs and don't identify you.</p>
       <h2>What stays private</h2>
       <p>Name and email are optional. When you submit, the feedback service also receives your IP address, approximate country, browser user-agent, browser language, time zone, window size and submission time. These details are kept in a private Cloudflare database, not posted to GitHub Issues. The service uses them to handle feedback and limit abuse; the email may be used to reply. No precise location is requested.</p>
-      <p>Cloudflare Turnstile checks submissions for bots. Your browser loads it only after you check the form's acknowledgement box. The service sends the verification token and IP address to Cloudflare for validation. Cloudflare and GitHub process data under their own privacy terms.</p>
+      <p>To stop floods of automated submissions, the service limits how often one address can send feedback. Cloudflare (which runs the service) and GitHub process data under their own privacy terms.</p>
+      <h2>Counting players</h2>
+      <p>On im-dog.com the game also sends an anonymous signal when it has loaded, and another once someone has actually played for a little while. The service keeps only a daily total of each (how many visits and how many players), which it posts to a public "usage log" Issue in the repository. No name, identifier, cookie, IP address or device detail is stored for this: your address is used for a moment to limit how often the signal can be sent, and then forgotten.</p>
       <h2>How long it stays</h2>
       <p>Private feedback records are automatically deleted from the active database after 30 days. Cloudflare backups may follow Cloudflare's own retention rules. Public GitHub Issues remain until removed by the repository owner.</p>
       <h2>Your choices</h2>

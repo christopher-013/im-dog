@@ -1,4 +1,11 @@
-/** Cloudflare Worker entry. This module is never imported by the game bundle. */
+import { handlePing, PING_PATH, postDailyDigest, type Kv, type RateLimiter } from './usage';
+
+/**
+ * The site Worker for im-dog.com (wrangler.jsonc), built like the owner's Adtona and Pictayo Workers: it serves the
+ * built game (the ASSETS binding, dist/), takes player feedback at /api/feedback on the same origin (a public GitHub
+ * Issue, and a private record), and counts real players at /api/ping (see usage.ts). A daily Cron purges old private
+ * records and posts yesterday's counts. docs/FEEDBACK.md. Never imported by the game bundle.
+ */
 interface DbStatement {
   bind(...values: (string | number | null)[]): DbStatement;
   first<T>(): Promise<T | null>;
@@ -12,17 +19,24 @@ interface FeedbackDb {
 export interface FeedbackEnv {
   FEEDBACK_DB: FeedbackDb;
   GITHUB_TOKEN: string;
-  TURNSTILE_SECRET: string;
-  ALLOWED_ORIGIN: string;
-  TURNSTILE_HOSTNAME: string;
+  /** Where the form may post from, comma separated (https://im-dog.com). */
+  ALLOWED_ORIGINS: string;
+  /** Cloudflare's rate limiter (wrangler.jsonc: 5 a minute per key), as Adtona and Pictayo use. */
+  FEEDBACK_RATE_LIMITER?: RateLimiter;
+  /** The anonymous usage counts (KV). */
+  USAGE_COUNTS?: Kv;
+  /** The built game (Workers static assets). */
+  ASSETS?: { fetch(request: Request): Promise<Response> };
 }
+
+/** Where the game's form posts. */
+export const FEEDBACK_PATH = '/api/feedback';
 
 interface FeedbackFields {
   name: string;
   email: string;
   comments: string;
   website: string;
-  turnstileToken: string;
   submissionId: string;
   context: FeedbackContext;
 }
@@ -57,13 +71,8 @@ function parseContext(value: unknown): FeedbackContext {
   return { input: pick('input'), build: pick('build'), language: pick('language'), timeZone: pick('timeZone'), screen: pick('screen') };
 }
 
-interface ChallengeResult {
-  success?: boolean;
-  hostname?: string;
-  action?: string;
-}
-
 const MAX_BODY_BYTES = 8_192;
+/** A cap on top of the per-minute rate limiter: no more than this many from one address an hour. */
 const MAX_PER_HOUR = 3;
 const RETENTION_SECONDS = 30 * 24 * 60 * 60;
 const GITHUB_ISSUES = 'https://api.github.com/repos/christopher-013/im-dog/issues';
@@ -104,13 +113,13 @@ async function readSmallBody(request: Request): Promise<string | null> {
 function parseFields(value: unknown): FeedbackFields | null {
   if (!value || typeof value !== 'object') return null;
   const record = value as Record<string, unknown>;
-  const fields = ['name', 'email', 'comments', 'website', 'turnstileToken', 'submissionId'] as const;
+  const fields = ['name', 'email', 'comments', 'website', 'submissionId'] as const;
   if (fields.some((key) => typeof record[key] !== 'string')) return null;
-  const [name, email, comments, website, turnstileToken, submissionId] = fields.map((key) => (record[key] as string).trim());
-  if (name.length > 80 || email.length > 254 || comments.length > 2_000 || website.length > 200 || turnstileToken.length > 2_048) return null;
+  const [name, email, comments, website, submissionId] = fields.map((key) => (record[key] as string).trim());
+  if (name.length > 80 || email.length > 254 || comments.length > 2_000 || website.length > 200) return null;
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(submissionId)) return null;
-  return { name, email, comments, website, turnstileToken, submissionId, context: parseContext(record.context) };
+  return { name, email, comments, website, submissionId, context: parseContext(record.context) };
 }
 
 /** The public title: the first line of the comments, like "[Feedback] Moke is the best" (as Adtona and Pictayo do). */
@@ -130,21 +139,12 @@ function issueBody(fields: FeedbackFields, id: string, createdAt: number): strin
   return `## Player feedback\n\n${comment}\n\n---\n${played}${game}Reference: ${id}\nReceived: ${new Date(createdAt * 1000).toISOString()}\n`;
 }
 
-async function verifyChallenge(token: string, ip: string, env: FeedbackEnv, fetcher: typeof fetch): Promise<boolean> {
-  const params = new URLSearchParams({ secret: env.TURNSTILE_SECRET, response: token, remoteip: ip });
-  const response = await fetcher('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-    method: 'POST', body: params,
-  });
-  if (!response.ok) return false;
-  const result = await response.json() as ChallengeResult;
-  return result.success === true && result.hostname === env.TURNSTILE_HOSTNAME && result.action === 'feedback';
-}
-
 export async function handleFeedback(request: Request, env: FeedbackEnv, fetcher: typeof fetch = fetch): Promise<Response> {
   const path = new URL(request.url).pathname;
-  if (path !== '/feedback') return json(404, { error: 'Not found' });
+  if (path !== FEEDBACK_PATH) return json(404, { error: 'Not found' });
   const origin = request.headers.get('Origin');
-  if (!origin || origin !== env.ALLOWED_ORIGIN) return json(403, { error: 'Forbidden' });
+  const allowed = (env.ALLOWED_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean);
+  if (!origin || !allowed.includes(origin)) return json(403, { error: 'Forbidden' });
   if (request.method === 'OPTIONS') {
     const headers = new Headers({
       'Access-Control-Allow-Origin': origin,
@@ -158,7 +158,7 @@ export async function handleFeedback(request: Request, env: FeedbackEnv, fetcher
   }
   if (request.method !== 'POST') return json(405, { error: 'Method not allowed' }, origin);
   if (!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json')) return json(415, { error: 'JSON required' }, origin);
-  if (!env.GITHUB_TOKEN || !env.TURNSTILE_SECRET || !env.FEEDBACK_DB) return json(503, { error: 'Feedback unavailable' }, origin);
+  if (!env.GITHUB_TOKEN || !env.FEEDBACK_DB) return json(503, { error: 'Feedback unavailable' }, origin);
   const ip = request.headers.get('CF-Connecting-IP');
   if (!ip) return json(400, { error: 'Visitor address unavailable' }, origin);
   let fields: FeedbackFields | null;
@@ -168,13 +168,18 @@ export async function handleFeedback(request: Request, env: FeedbackEnv, fetcher
   } catch {
     fields = null;
   }
-  if (!fields || !fields.turnstileToken) return json(400, { error: 'Invalid feedback' }, origin);
-  if (fields.website) return json(400, { error: 'Invalid feedback' }, origin); // hidden bot trap
+  if (!fields) return json(400, { error: 'Invalid feedback' }, origin);
+  // The hidden field only a bot fills in: quietly "accepted", as Adtona and Pictayo do, so it learns nothing.
+  if (fields.website) return json(201, { issueNumber: null }, origin);
 
+  // Cloudflare's rate limiter, keyed per address (apart from the usage counter's key). No limiter configured is no
+  // control at all: fail closed, as Pictayo does.
+  const limiter = env.FEEDBACK_RATE_LIMITER;
+  if (typeof limiter?.limit !== 'function') return json(503, { error: 'Feedback unavailable' }, origin);
   try {
-    if (!await verifyChallenge(fields.turnstileToken, ip, env, fetcher)) return json(403, { error: 'Verification failed' }, origin);
+    if (!(await limiter.limit({ key: `feedback:${ip}` })).success) return json(429, { error: 'Too many submissions' }, origin);
   } catch {
-    return json(503, { error: 'Verification unavailable' }, origin);
+    return json(503, { error: 'Feedback unavailable' }, origin);
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -211,6 +216,9 @@ export async function handleFeedback(request: Request, env: FeedbackEnv, fetcher
         'X-GitHub-Api-Version': '2022-11-28',
       },
       body: JSON.stringify({ title: issueTitle(fields), body: issueBody(fields, id, now) }),
+      // A renamed repository answers with a redirect, which fetch would follow as a GET and "succeed" without filing
+      // anything: treat any redirect as a failure instead (a lesson from Pictayo's Worker).
+      redirect: 'manual',
     });
     if (!response.ok) {
       githubRejected = true;
@@ -237,7 +245,25 @@ export async function purgePrivateFeedback(env: FeedbackEnv, now = Math.floor(Da
   await env.FEEDBACK_DB.prepare('DELETE FROM feedback_private WHERE created_at < ?').bind(now - RETENTION_SECONDS).run();
 }
 
+/** The runtime's context: work to finish after the response has gone. */
+export interface WorkerContext {
+  waitUntil(promise: Promise<unknown>): void;
+}
+
+/** Every request: feedback and pings to their handlers, everything else to the game's files. */
+export function handleRequest(request: Request, env: FeedbackEnv, ctx?: WorkerContext): Promise<Response> {
+  const path = new URL(request.url).pathname;
+  if (path === FEEDBACK_PATH) return handleFeedback(request, env);
+  if (path === PING_PATH) return handlePing(request, env, ctx);
+  if (env.ASSETS) return env.ASSETS.fetch(request);
+  return Promise.resolve(new Response('Not found', { status: 404 }));
+}
+
 export default {
-  fetch(request: Request, env: FeedbackEnv): Promise<Response> { return handleFeedback(request, env); },
-  scheduled(_event: unknown, env: FeedbackEnv): Promise<void> { return purgePrivateFeedback(env); },
+  fetch(request: Request, env: FeedbackEnv, ctx?: WorkerContext): Promise<Response> {
+    return handleRequest(request, env, ctx);
+  },
+  async scheduled(_event: unknown, env: FeedbackEnv): Promise<void> {
+    await Promise.allSettled([purgePrivateFeedback(env), postDailyDigest(env)]);
+  },
 };

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import worker, { handleFeedback, purgePrivateFeedback, type FeedbackEnv } from './worker';
+import worker, { handleFeedback, handleRequest, purgePrivateFeedback, type FeedbackEnv } from './worker';
 
 function setup() {
   const rows = new Map<string, { ip: string; created: number; issue: number | null }>();
@@ -32,31 +32,40 @@ function setup() {
       };
     },
   };
+  // Cloudflare's rate limiter, faked: a count per key, allowing `perKey` (5 a minute in wrangler.jsonc).
+  const limited = new Map<string, number>();
+  let perKey = 5;
+  const limiter = {
+    async limit({ key }: { key: string }) {
+      const n = (limited.get(key) ?? 0) + 1;
+      limited.set(key, n);
+      return { success: n <= perKey };
+    },
+  };
   const env = {
     FEEDBACK_DB: db,
     GITHUB_TOKEN: 'test-secret',
-    TURNSTILE_SECRET: 'test-challenge-secret',
-    ALLOWED_ORIGIN: 'https://christopher-013.github.io',
-    TURNSTILE_HOSTNAME: 'christopher-013.github.io',
-  } as FeedbackEnv;
+    ALLOWED_ORIGINS: 'https://im-dog.com',
+    FEEDBACK_RATE_LIMITER: limiter,
+  } as unknown as FeedbackEnv;
   const githubBodies: string[] = [];
-  let challengeValid = true;
   let githubWorks: boolean | 'network-error' = true;
-  const fetcher = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-    if (String(url).includes('siteverify')) {
-      return Response.json({ success: challengeValid, hostname: 'christopher-013.github.io', action: 'feedback' });
-    }
+  const fetcher = vi.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
     githubBodies.push(String(init?.body));
     if (githubWorks === 'network-error') throw new Error('Connection dropped');
     return githubWorks ? Response.json({ number: 42 }, { status: 201 }) : Response.json({}, { status: 503 });
   }) as unknown as typeof fetch;
-  const request = (body: object, origin = env.ALLOWED_ORIGIN) => Object.assign(new Request('https://example.workers.dev/feedback', {
+  const request = (body: object, origin = env.ALLOWED_ORIGINS) => Object.assign(new Request('https://im-dog.com/api/feedback', {
     method: 'POST',
     headers: { Origin: origin, 'Content-Type': 'application/json', 'CF-Connecting-IP': '203.0.113.44', 'User-Agent': 'PrivateBrowser/1' },
     body: JSON.stringify(body),
   }), { cf: { country: 'US' } });
-  const fields = { name: 'Alice Private', email: 'alice@example.com', comments: 'I like Moke!', website: '', turnstileToken: 'valid-token', submissionId: crypto.randomUUID() };
-  return { env, rows, statements, githubBodies, fetcher, request, fields, setChallenge: (valid: boolean) => { challengeValid = valid; }, setGithub: (works: boolean | 'network-error') => { githubWorks = works; } };
+  const fields = { name: 'Alice Private', email: 'alice@example.com', comments: 'I like Moke!', website: '', submissionId: crypto.randomUUID() };
+  return {
+    env, rows, statements, githubBodies, fetcher, request, fields, limited,
+    setPerKey: (n: number) => { perKey = n; },
+    setGithub: (works: boolean | 'network-error') => { githubWorks = works; },
+  };
 }
 
 describe('private feedback Worker', () => {
@@ -72,7 +81,7 @@ describe('private feedback Worker', () => {
     }
     expect([...t.rows.values()][0]?.issue).toBe(42);
     expect(t.statements.find((s) => s.sql.startsWith('INSERT'))?.values).toContain('alice@example.com');
-    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(t.env.ALLOWED_ORIGIN);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(t.env.ALLOWED_ORIGINS);
   });
 
   it('uses the runtime fetch handler without treating Cloudflare execution context as an HTTP fetcher', async () => {
@@ -102,13 +111,31 @@ describe('private feedback Worker', () => {
     expect(t.rows.size).toBe(0);
   });
 
-  it('requires a valid server-verified Turnstile token', async () => {
+  it('uses Cloudflare\'s rate limiter, keyed per address, and fails closed without it', async () => {
     const t = setup();
-    t.setChallenge(false);
-    const response = await handleFeedback(t.request(t.fields), t.env, t.fetcher);
-    expect(response.status).toBe(403);
+    t.setPerKey(1);
+    expect((await handleFeedback(t.request(t.fields), t.env, t.fetcher)).status).toBe(201);
+    expect((await handleFeedback(t.request({ ...t.fields, submissionId: crypto.randomUUID() }), t.env, t.fetcher)).status).toBe(429);
+    expect([...t.limited.keys()]).toEqual(['feedback:203.0.113.44']);
+    expect(t.githubBodies).toHaveLength(1);
+    const unguarded = { ...t.env, FEEDBACK_RATE_LIMITER: undefined };
+    expect((await handleFeedback(t.request({ ...t.fields, submissionId: crypto.randomUUID() }), unguarded, t.fetcher)).status).toBe(503);
+  });
+
+  it('quietly "accepts" a bot that fills the hidden field, filing and keeping nothing (as Adtona and Pictayo do)', async () => {
+    const t = setup();
+    const response = await handleFeedback(t.request({ ...t.fields, website: 'https://spam.example' }), t.env, t.fetcher);
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ issueNumber: null });
     expect(t.githubBodies).toHaveLength(0);
     expect(t.rows.size).toBe(0);
+  });
+
+  it('refuses to follow a GitHub redirect (a renamed repository must fail, not "succeed" as a GET)', async () => {
+    const t = setup();
+    await handleFeedback(t.request(t.fields), t.env, t.fetcher);
+    const init = (t.fetcher as unknown as { mock: { calls: [unknown, RequestInit][] } }).mock.calls[0]![1];
+    expect(init.redirect).toBe('manual');
   });
 
   it('limits each IP to three submissions an hour', async () => {
@@ -181,6 +208,27 @@ describe('private feedback Worker', () => {
     expect(sent.body).not.toContain('<script>');
     const insert = t.statements.find((s) => s.sql.startsWith('INSERT'))!.values;
     expect(insert.slice(7)).toEqual([null, null, null, null, null]);
+  });
+
+  it('serves the game from the assets, and only /api/feedback from the feedback handler', async () => {
+    const t = setup();
+    const served: string[] = [];
+    const env = { ...t.env, ASSETS: { fetch: async (r: Request) => { served.push(new URL(r.url).pathname); return new Response('asset'); } } };
+    for (const path of ['/', '/index.html', '/feedback-privacy.html', '/feedback', '/api/other']) {
+      const response = await handleRequest(new Request(`https://im-dog.com${path}`), env);
+      expect(await response.text(), path).toBe('asset');
+    }
+    expect(served).toEqual(['/', '/index.html', '/feedback-privacy.html', '/feedback', '/api/other']);
+    const wrong = await handleRequest(new Request('https://im-dog.com/api/feedback', { method: 'GET', headers: { Origin: 'https://im-dog.com' } }), env);
+    expect(wrong.status).toBe(405);
+    expect(served).toHaveLength(5);
+  });
+
+  it('accepts only the listed origins (the GitHub Pages copy is not one)', async () => {
+    const t = setup();
+    expect((await handleFeedback(t.request(t.fields, 'https://christopher-013.github.io'), t.env, t.fetcher)).status).toBe(403);
+    const env = { ...t.env, ALLOWED_ORIGINS: 'https://im-dog.com, http://localhost:8787' };
+    expect((await handleFeedback(t.request(t.fields, 'http://localhost:8787'), env, t.fetcher)).status).toBe(201);
   });
 
   it('purges active private records older than 30 days', async () => {

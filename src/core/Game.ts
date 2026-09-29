@@ -20,6 +20,8 @@ import { DoorDelivery } from '../activities/DoorDelivery';
 import { DinnerBeg } from '../activities/DinnerBeg';
 import { WatchTheGame } from '../activities/WatchTheGame';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
+import { SITE, USAGE } from '../config/site';
+import { pinger, UsageCounter } from './UsageCounter';
 import { KitchenBeg } from '../activities/KitchenBeg';
 import { PillowDig } from '../activities/PillowDig';
 import { TableManners } from '../activities/TableManners';
@@ -184,6 +186,8 @@ export class Game {
   private readonly lookDelta: Vec2Like = { x: 0, y: 0 };
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
   private readonly moveIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
+  /** The anonymous player counter: only on im-dog.com, where the site Worker takes the pings (config/site.ts). */
+  private readonly usage = typeof location !== 'undefined' && SITE.hosts.includes(location.hostname) ? new UsageCounter(pinger(USAGE.endpoint)) : null;
   private readonly stillIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
   /** Seconds Moke has been held still while the player pushes to move (see HOLD_RELEASE_AFTER). */
   private heldAgainstInput = 0;
@@ -309,6 +313,7 @@ export class Game {
 
     this.loop.start();
     this.setState('menu');
+    this.usage?.open();
   }
 
   /** Development: put Moke somewhere (`imdog.teleport(13, 3)` in the console) with the camera behind him. */
@@ -816,6 +821,7 @@ export class Game {
     const enteredPlay = command === 'resume' || command === 'play';
 
     const playing = this.state === 'playing';
+    this.usage?.update(dt, playing, this.moveIntent.x !== 0 || this.moveIntent.z !== 0);
     // Discrete actions are read once per rendered frame, so a tap is never missed or doubled.
     if (playing && !enteredPlay) this.handleActions();
     this.barkTimer.update(playing ? dt : 0);

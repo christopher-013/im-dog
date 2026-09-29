@@ -1,0 +1,70 @@
+// The im-dog.com site Worker, built like the owner's Adtona and Pictayo Workers: it serves the built game (dist/),
+// takes player feedback at /api/feedback, and counts real players at /api/ping. Only non-secret configuration lives
+// here. The one secret (GITHUB_TOKEN) is set in Cloudflare with `npx wrangler secret put GITHUB_TOKEN`, never in this
+// repository. Setup and checks: docs/FEEDBACK.md.
+{
+	"name": "im-dog",
+	"main": "./src/feedback/worker.ts",
+	"compatibility_date": "2026-09-01",
+	// Feedback arrives in request bodies: keep them out of logs.
+	"observability": {
+		"enabled": false
+	},
+	// im-dog.com points at this Worker (Cloudflare adds the DNS record on deploy). www.im-dog.com redirects to it with
+	// a Cloudflare Redirect Rule (docs/FEEDBACK.md), so the game has one address.
+	"routes": [
+		{
+			"pattern": "im-dog.com",
+			"custom_domain": true
+		}
+	],
+	"vars": {
+		"ALLOWED_ORIGINS": "https://im-dog.com"
+	},
+	// Cloudflare's rate limiter, as in Adtona (51011) and Pictayo (51012): 5 a minute per key. Feedback and the player
+	// counter use separate keys, so counting can never use up anyone's feedback allowance.
+	"ratelimits": [
+		{
+			"name": "FEEDBACK_RATE_LIMITER",
+			"namespace_id": "51013",
+			"simple": {
+				"limit": 5,
+				"period": 60
+			}
+		}
+	],
+	// The anonymous player counts: one number per day per event, no per-visitor records. A namespace ID is an account
+	// handle, not a credential, so it belongs here (as in Pictayo).
+	"kv_namespaces": [
+		{
+			"binding": "USAGE_COUNTS",
+			// The namespace titled USAGE_COUNTS_IM_DOG (`npx wrangler kv namespace create USAGE_COUNTS_IM_DOG`). Not the one
+			// titled USAGE_COUNTS: that's Pictayo's.
+			"id": "6862a145c3c54be2a11402071a6f4ba6"
+		}
+	],
+	// The built game (npm run build). Only the two API paths reach the Worker's code; every file is served directly.
+	"assets": {
+		"directory": "./dist",
+		"binding": "ASSETS",
+		"run_worker_first": [
+			"/api/feedback",
+			"/api/ping"
+		]
+	},
+	"d1_databases": [
+		{
+			"binding": "FEEDBACK_DB",
+			"database_name": "im-dog-feedback",
+			// From `npx wrangler d1 create im-dog-feedback` (an ID, not a secret).
+			"database_id": "9fdeef0f-5f82-4526-a6a8-0575689b0c88",
+			"migrations_dir": "feedback/migrations"
+		}
+	],
+	// Daily: delete private feedback records older than 30 days, and post yesterday's player count to the usage log.
+	"triggers": {
+		"crons": [
+			"0 4 * * *"
+		]
+	}
+}

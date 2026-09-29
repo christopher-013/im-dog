@@ -25,7 +25,7 @@ throwing the ball), each teaching a bit of **Dog Logic**. Plus the doorbell (bar
 the kitchen, the couch pillows, the toilet paper, playing with **Malibu** the bird and a squeaky fish to chew.
 See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
-**Play it:** https://christopher-013.github.io/im-dog/ (desktop Chrome or Edge; keyboard + mouse or a standard controller). Every push to `main`
+**Play it:** https://im-dog.com (being set up; see [im-dog.com and feedback](docs/FEEDBACK.md)) · https://christopher-013.github.io/im-dog/ (desktop Chrome or Edge; keyboard + mouse or a standard controller). Every push to `main`
 rebuilds and republishes it through GitHub Actions (`.github/workflows/deploy-pages.yml`). Since Phase 3 it
 also runs in phone and tablet browsers (touch controls, portrait or landscape).
 The start and pause menus include **About I'M DOG?**, with an owner-approved photo of the real Moke and a spoiler-light

@@ -1,0 +1,6 @@
+# I'M DOG? (https://im-dog.com): everything may be crawled except the Worker's endpoints (feedback and the player counter).
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://im-dog.com/sitemap.xml

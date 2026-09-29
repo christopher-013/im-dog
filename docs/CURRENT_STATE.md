@@ -40,6 +40,14 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-29, owner request): **SEO for Google and Bing.** `index.html`: a descriptive title ("I'M DOG? Play as
+Moke the Dog | Free Cozy Browser Game") and description, a canonical link to https://im-dog.com/ (the GitHub Pages copy
+defers to it), Open Graph and Twitter tags, `VideoGame` JSON-LD, a fuller `<noscript>`. New `public/robots.txt` (all but
+`/api/`), `public/sitemap.xml` (home, privacy page), `public/og-image.jpg` (rendered from the game). The privacy page has
+its own canonical and description. **Owner steps:** Google Search Console (domain property, verify via Cloudflare,
+submit the sitemap, request indexing) and Bing Webmaster Tools (import from Search Console): `docs/FEEDBACK.md` →
+"Search engines".
+
 Claude Code (2026-09-29, owner request): **www.im-dog.com and automatic deploys** (D25). www.im-dog.com now redirects
 (301, same path and query) to https://im-dog.com through a tiny second Worker, `im-dog-www` (`wrangler.www.jsonc`,
 `src/redirect/www.ts`), deployed from here with Wrangler; checked live over https and http. New

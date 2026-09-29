@@ -6,8 +6,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
       name="description"
-      content="I'M DOG? A Day in the Life of Moke. A cozy third-person browser game about being a small, curious dog."
+      content="Play as Moke, a fluffy white Maltipoo, in a cozy 3D browser game. Explore the house, steal socks, beg for treats and nap in the sun. Free, no download."
     />
+    <!-- Search engines and link previews (docs/FEEDBACK.md → "Search engines"). The game's one address is im-dog.com: the
+         GitHub Pages copy points here too, so search results send people to im-dog.com. -->
+    <link rel="canonical" href="https://im-dog.com/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="I'M DOG?" />
+    <meta property="og:title" content="I'M DOG? A Day in the Life of Moke" />
+    <meta property="og:description" content="Play as Moke, a fluffy white Maltipoo, in a cozy 3D browser game. Explore the house, steal socks, beg for treats and nap in the sun. Free, no download." />
+    <meta property="og:url" content="https://im-dog.com/" />
+    <meta property="og:image" content="https://im-dog.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Moke, a small white dog, in the cozy living room of I'M DOG?" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="I'M DOG? A Day in the Life of Moke" />
+    <meta name="twitter:description" content="Play as Moke, a fluffy white Maltipoo, in a cozy 3D browser game. Explore the house, steal socks, beg for treats and nap in the sun. Free, no download." />
+    <meta name="twitter:image" content="https://im-dog.com/og-image.jpg" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "VideoGame",
+        "name": "I'M DOG?",
+        "alternateName": "I'M DOG? A Day in the Life of Moke",
+        "url": "https://im-dog.com/",
+        "image": "https://im-dog.com/og-image.jpg",
+        "description": "Play as Moke, a fluffy white Maltipoo, in a cozy 3D browser game. Explore the house, steal socks, beg for treats and nap in the sun. Free, no download.",
+        "genre": ["Casual", "Simulation", "Adventure"],
+        "gamePlatform": ["Web browser", "Desktop", "Mobile"],
+        "applicationCategory": "Game",
+        "operatingSystem": "Any (runs in a web browser)",
+        "playMode": "SinglePlayer",
+        "inLanguage": "en",
+        "isFamilyFriendly": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" }
+      }
+    </script>
     <meta name="theme-color" content="#fbf1e4" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- Home-screen / installed web app (see docs/MOBILE.md). -->
@@ -17,7 +53,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="I'M DOG?" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>I'M DOG?</title>
+    <title>I'M DOG? Play as Moke the Dog | Free Cozy Browser Game</title>
     <style>
       /* Critical styles: paint the loading screen before the JS/CSS bundle arrives. */
       html,
@@ -421,7 +457,10 @@
       </dialog>
     </div>
 
-    <noscript>I'M DOG? needs JavaScript to run.</noscript>
+    <noscript>
+      I'M DOG? is a cozy 3D browser game where you play as Moke, a small, curious white dog: explore the house, steal
+      socks, beg for treats and nap in the sun. It needs JavaScript to run.
+    </noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -94,6 +94,29 @@ After that, the GitHub Pages copy can be turned into a pointer to im-dog.com (a 
   and the usage log stops updating (counting carries on).
 - Worker request logging is off (`observability` in `wrangler.jsonc`), so feedback bodies don't land in logs.
 
+## Search engines (Google and Bing)
+
+What the site tells them (all in the repo, deployed with the game):
+
+- `index.html`: a descriptive title and description, `<link rel="canonical" href="https://im-dog.com/">` (the GitHub
+  Pages copy carries the same page, so search engines credit im-dog.com, not github.io), Open Graph and Twitter tags
+  for link previews, and `VideoGame` structured data (JSON-LD: free, family friendly, plays in a browser).
+- `public/og-image.jpg` (1200×630): the preview image for search results, messages and social posts, rendered from the
+  game (the cartoon Moke in the living room, the title in the game's lettering). Not the real-Moke photo.
+- `public/robots.txt`: everything may be crawled except `/api/`; it names the sitemap.
+- `public/sitemap.xml`: the home page and the privacy page (`/feedback-privacy`, with its own canonical and
+  description). Add a page here if the site ever gets another.
+
+**Owner steps** (your Google and Microsoft sign-ins):
+
+1. **Google Search Console** (search.google.com/search-console) → **Add property** → **Domain** → `im-dog.com`. To verify,
+   pick Cloudflare when it offers (it adds the DNS record for you after you sign in to Cloudflare), or copy the TXT
+   record it gives you into Cloudflare → im-dog.com → DNS. Then **Sitemaps** → submit `https://im-dog.com/sitemap.xml`,
+   and **URL Inspection** → `https://im-dog.com/` → **Request indexing**.
+2. **Bing Webmaster Tools** (bing.com/webmasters) → sign in → **Import from Google Search Console**: it brings the site
+   and the sitemap over, already verified. (Bing's results also feed DuckDuckGo and Yahoo.)
+3. Give it a few days. Search Console's reports then show impressions, clicks and any page it couldn't index.
+
 ## Local testing
 
 The unit tests (`src/feedback/worker.test.ts`, `src/feedback/usage.test.ts`, `src/core/UsageCounter.test.ts`) fake

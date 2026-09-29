@@ -1,7 +1,7 @@
 import { DoubleSide, Mesh, MeshBasicMaterial, Raycaster, SkinnedMesh, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { createVisualState, HumanAnimationController } from './HumanAnimationController';
-import { StylizedHumanVisual } from './StylizedHumanVisual';
+import { COURIER_LOOK, StylizedHumanVisual } from './StylizedHumanVisual';
 
 describe('StylizedHumanVisual', () => {
   it('is one skinned body: a mesh per material sharing a single skeleton, a dozen or so draw calls', () => {
@@ -85,6 +85,25 @@ describe('StylizedHumanVisual', () => {
     for (let i = 0; i < 30; i++) visual.apply(1 / 30, animation.update(1 / 30, laundryState));
     expect(visual.hands.right.getObjectByName('prop:laundry')?.visible).toBe(true);
     visual.dispose();
+  });
+
+  it('colours the hair from the look, and keeps the courier hair on under the cap', () => {
+    const household = new StylizedHumanVisual();
+    const courier = new StylizedHumanVisual(COURIER_LOOK);
+    const hair = (visual: StylizedHumanVisual) => meshNamed(visual, 'hair').geometry;
+    const reddest = (visual: StylizedHumanVisual) => {
+      const color = hair(visual).getAttribute('color');
+      let most = 0;
+      for (let i = 0; i < color.count; i++) most = Math.max(most, color.getX(i));
+      return most;
+    };
+    // The cap goes on over the hair, not instead of it.
+    expect(hair(courier).getAttribute('position').count).toBeGreaterThan(hair(household).getAttribute('position').count);
+    // Black hair stays black; the courier's auburn shows (brighter than any part of the brown cap).
+    expect(reddest(household)).toBeLessThan(0.08);
+    expect(reddest(courier)).toBeGreaterThan(0.18);
+    household.dispose();
+    courier.dispose();
   });
 
   it('fades to see-through and back', () => {

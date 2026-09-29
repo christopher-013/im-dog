@@ -491,13 +491,6 @@ export class UIManager {
     card.setAttribute('aria-hidden', 'true');
   }
 
-  /** Clears the heist's HUD (a replay). */
-  clearHeist(): void {
-    this.hideSpeech();
-    this.hideDiscovery();
-    this.setObjective(null);
-  }
-
   openControls(): void {
     if (this.aboutDialog.open) this.aboutDialog.close();
     if (!this.controlsDialog.open) this.controlsDialog.showModal();

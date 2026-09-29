@@ -362,22 +362,26 @@ describe('Home', () => {
         // …and into the gym.
         expect(w.travel(11.6, -1.7)).toBe(true);
         expect(roomAt(w.moke.position.x, w.moke.position.z).id).toBe('gym');
-        // Asked to get up with Moke standing right where they sat down from: they stay sat until he moves off (their
-        // body can't come back down on top of him), then get up and walk away.
+        // Asked to get up with Moke standing right where they sat down from: their body can't come back down on top of
+        // him, so they get up beside him instead (no waiting for him), and walk away once he's out of the walkway.
         expect(w.travel(place.stand.x, place.stand.z)).toBe(true);
         intent.seat = null;
         intent.goal = { x: 8.85, y: 0, z: 0.1 };
+        intent.avoid = w.moke.position;
+        let onTopOfMoke = false;
         const run = (seconds: number) => {
           for (let i = 0; i < seconds / DT; i++) {
             human.fixedUpdate(DT, intent);
             w.physics.step();
+            const gap = Math.hypot(human.position.x - w.moke.position.x, human.position.z - w.moke.position.z);
+            if (!human.seat && gap < HUMAN.body.radius + MOKE_BODY.radius) onTopOfMoke = true;
           }
         };
         run(3);
-        expect(human.seat).not.toBeNull();
+        expect(human.seat).toBeNull();
         expect(w.travel(11.6, -1.7)).toBe(true);
         run(12);
-        expect(human.seat).toBeNull();
+        expect(onTopOfMoke).toBe(false);
         expect(Math.hypot(human.position.x - 8.85, human.position.z - 0.1)).toBeLessThan(0.3);
       });
     }

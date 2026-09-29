@@ -95,6 +95,8 @@ export const CHEW = {
   movingRate: 1.0,
   /** Faster than this (m/s) counts as on the move. */
   movingSpeed: 0.4,
+  /** Where the bite rhythm starts when he picks it up (0..1 of a bite): near 1, so the first bite comes quickly. */
+  firstBite: 0.45,
   /** How much the toy squashes on a bite (fraction of its thickness), and how fast it springs back (1/s). */
   squash: 0.35,
   springBack: 9,

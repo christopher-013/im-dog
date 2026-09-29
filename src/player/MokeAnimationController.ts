@@ -131,6 +131,7 @@ export class MokeAnimationController {
   };
 
   private chewingNow = false;
+  private holdingChew = false;
   private chewClock = 0;
   private bitesTaken = 0;
   private idleTime = 0;
@@ -285,10 +286,15 @@ export class MokeAnimationController {
   }
   get digging(): boolean { return this.diggingNow; }
 
-  /** Chomps on what's in his mouth (the squeaky fish) while `active`. He can keep moving. */
-  chew(active: boolean): void {
-    if (active && !this.chewingNow) this.chewClock = 0.45; // the first bite comes quickly
-    this.chewingNow = active;
+  /**
+   * Chomps on what's in his mouth (the squeaky fish) while `active`. He can keep moving. `holding`: it's in his
+   * mouth, chewing or not (the game paused): the first bite comes quickly after he picks it up, but pausing and
+   * resuming carries on the rhythm where it left off.
+   */
+  chew(active: boolean, holding = active): void {
+    if (holding && !this.holdingChew) this.chewClock = CHEW.firstBite;
+    this.holdingChew = holding;
+    this.chewingNow = active && holding;
   }
   get chewing(): boolean { return this.chewingNow; }
 

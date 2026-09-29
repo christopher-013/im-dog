@@ -73,6 +73,14 @@ describe('HumanActivityController (the daily routine)', () => {
     }
     expect(started.size).toBeGreaterThanOrEqual(5);
     expect(places.size).toBeGreaterThanOrEqual(8);
+    // Only the activities marked to start the day, and each of those is something you can walk in on halfway:
+    // one step (it starts at the first), nothing it has to follow, no cooking or meal going on.
+    for (const id of started) expect(HUMAN_ACTIVITIES.find((a) => a.id === id)?.startsDay, id).toBe(true);
+    for (const a of HUMAN_ACTIVITIES.filter((a) => a.startsDay)) {
+      expect(a.steps, a.id).toHaveLength(1);
+      expect(a.requires, a.id).toBeUndefined();
+      expect(['prep', 'cooking', 'meal'], a.id).not.toContain(a.steps[0]!.effect);
+    }
     // Placed at their start spot, they get straight on with it (sitting down first if it's a seat).
     for (const seed of [3, 7, 12]) {
       const physics = await PhysicsWorld.create();

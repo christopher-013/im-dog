@@ -7,7 +7,7 @@ import { FOREARM_TO_PALM, HIP_ABOVE_SEAT, HIP_HEIGHT, HUMAN_JOINTS, type HumanPo
 
 const POSES: HumanPose[] = [
   'fold', 'idle', 'surprised', 'chase', 'lunge', 'stumble', 'shrug', 'search', 'peek', 'rummage', 'offer', 'take', 'place', 'tidy',
-  'read', 'phone', 'watch', 'relax', 'sip', 'cook', 'prep', 'eat', 'fridge', 'pet', 'call', 'shoo', 'handsOnHips', 'laugh', 'tug', 'windup', 'throw', 'point', 'cheer',
+  'read', 'phone', 'watch', 'relax', 'sip', 'cook', 'prep', 'eat', 'fridge', 'pet', 'call', 'shoo', 'handsOnHips', 'laugh', 'tug', 'windup', 'throw', 'point', 'cheer', 'share',
 ];
 
 function run(animation: HumanAnimationController, state = createVisualState(), seconds = 1) {

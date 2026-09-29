@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { Vector3 } from 'three';
 import { CAGE } from './home/gymAndYard';
 import { GYM } from './home/layout';
-import { CONURE, ConureView } from './Conure';
+import { CONURE } from '../config/conure';
+import { ConureView } from './Conure';
 
 const DT = 1 / 60;
 
@@ -103,6 +104,30 @@ describe('ConureView (the gym bird)', () => {
     expect(bird.playing).toBe(false);
     run(bird, CONURE.hopTime);
     expect(bird.cagePosition.y).toBeCloseTo(Math.max(...CAGE.perches.map((p) => p.y)), 3);
+  });
+
+  it('after a fright, its next hop goes to another perch, not back onto the top one', () => {
+    const top = Math.max(...CAGE.perches.map((p) => p.y));
+    let hops = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const bird = new ConureView(GYM.cage, -Math.PI / 2, seed);
+      bird.startle({ x: GYM.cage.x - 1, y: 0, z: GYM.cage.z });
+      run(bird, CONURE.hopTime + 0.05);
+      // Its next move once it's sat a while: if that's a hop, where does it land?
+      let hopping = false;
+      let landed: number | null = null;
+      for (let t = 0; t < 12 && landed === null; t += DT) {
+        bird.update(DT, null);
+        if (bird.state === 'hop') hopping = true;
+        else if (hopping && bird.state === 'sit') landed = bird.cagePosition.y;
+        else if (bird.state === 'step') break;
+      }
+      if (landed !== null) {
+        hops++;
+        expect(landed, `seed ${seed}`).not.toBeCloseTo(top, 3);
+      }
+    }
+    expect(hops).toBeGreaterThan(5);
   });
 
   it('sits inside the real cage in the gym, in world space', () => {

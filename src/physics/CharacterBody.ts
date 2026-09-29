@@ -8,6 +8,10 @@ import type { PhysicsWorld } from './PhysicsWorld';
 const IDENTITY = { x: 0, y: 0, z: 0, w: 1 };
 /** Only other characters. */
 const CHARACTER_QUERY_GROUPS = interactionGroups(0xffff, LAYER.character);
+/** Room to stand: walls and furniture (thick or thin) and other characters, not toys. */
+const OBSTACLE_QUERY_GROUPS = interactionGroups(0xffff, LAYER.world | LAYER.worldThin | LAYER.character);
+/** Checking for room, the capsule is lifted this much off the floor it would stand on (m), so the floor isn't in the way. */
+const ROOM_LIFT = 0.02;
 
 export interface Vec3Like {
   x: number;
@@ -129,12 +133,30 @@ export class CharacterBody {
 
   /** Is another character (Moke) standing where this capsule would be at the body's own centre, unshifted? */
   characterAtCentre(): boolean {
-    const shape = this.collider.shape;
+    return this.overlaps(this.center.x, this.center.y, this.center.z, CHARACTER_QUERY_GROUPS);
+  }
+
+  /** Is there room for this capsule standing at (x, z), at its current height: no wall, furniture or other character? */
+  roomAt(x: number, z: number): boolean {
+    return !this.overlaps(x, this.center.y + ROOM_LIFT, z, OBSTACLE_QUERY_GROUPS);
+  }
+
+  /**
+   * Puts the body's centre straight at (x, z) on the next physics step, without sweeping the capsule there: only
+   * for a capsule that's shifted off its centre (see `offsetCollider`), about to come back to a spot `roomAt` passed.
+   */
+  placeCentre(x: number, z: number): void {
+    this.center.x = x;
+    this.center.z = z;
+    this.body.setNextKinematicTranslation(this.center);
+  }
+
+  private overlaps(x: number, y: number, z: number, groups: number): boolean {
     let found = false;
-    this.physics.world.intersectionsWithShape(this.center, IDENTITY, shape, () => {
+    this.physics.world.intersectionsWithShape({ x, y, z }, IDENTITY, this.collider.shape, () => {
       found = true;
       return false;
-    }, undefined, CHARACTER_QUERY_GROUPS, this.collider);
+    }, undefined, groups, this.collider);
     return found;
   }
 

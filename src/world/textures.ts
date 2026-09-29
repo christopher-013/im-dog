@@ -419,20 +419,33 @@ export function flagstoneTexture(): CanvasTexture | null {
     }
     const image = ctx.createImageData(w, h);
     const wrap = (d: number, size: number) => Math.min(Math.abs(d), size - Math.abs(d));
+    // Each stone's point sits in the middle 60% of its own cell, so a pixel's nearest point is always in the 3×3
+    // cells round it, and any point further out is too far away to put it in the grout: checking those nine points
+    // gives exactly the same stones as checking all 49, about ten times faster (this runs while the game loads).
+    const cellW = w / cells;
+    const cellH = h / cells;
     for (let y = 0; y < h; y++) {
+      const cy = Math.floor(y / cellH);
       for (let x = 0; x < w; x++) {
+        const cx = Math.floor(x / cellW);
         let best = Infinity;
         let second = Infinity;
         let color = points[0]!.color;
-        for (const p of points) {
-          const d = Math.hypot(wrap(x - p.x, w), wrap(y - p.y, h));
-          if (d < best) {
-            second = best;
-            best = d;
-            color = p.color;
-          } else if (d < second) second = d;
+        for (let dj = -1; dj <= 1; dj++) {
+          const row = ((cy + dj + cells) % cells) * cells;
+          for (let di = -1; di <= 1; di++) {
+            const p = points[row + ((cx + di + cells) % cells)]!;
+            const dx = wrap(x - p.x, w);
+            const dy = wrap(y - p.y, h);
+            const d = dx * dx + dy * dy;
+            if (d < best) {
+              second = best;
+              best = d;
+              color = p.color;
+            } else if (d < second) second = d;
+          }
         }
-        const grout = second - best < 3.5;
+        const grout = Math.sqrt(second) - Math.sqrt(best) < 3.5;
         const i = (y * w + x) * 4;
         const speckle = (((x * 73 + y * 151) % 17) - 8) * 0.6;
         image.data[i] = grout ? 128 : color[0] + speckle;

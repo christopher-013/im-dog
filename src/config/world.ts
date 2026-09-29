@@ -10,3 +10,9 @@ export const HOUSE_SCALE = {
   couchBackHeight: 0.88,
   coffeeTableHeight: 0.45,
 } as const;
+
+/**
+ * GEARBOTS, the cartoon on the TVs (world/RobotCartoon.ts): its picture (px, 16:9 like the screens) and how often a
+ * new frame is drawn (fps: a dozen, "on twos" like old cel animation, and cheap to upload).
+ */
+export const TV_SHOW = { width: 384, height: 216, fps: 12 } as const;

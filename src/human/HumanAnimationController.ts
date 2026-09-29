@@ -101,7 +101,7 @@ const BLEND_TIME: Partial<Record<HumanPose, number>> = {
 };
 
 /** Actions whose hands are busy (no walking arm swing). */
-const HANDS_BUSY = new Set<HumanPose>(['read', 'phone', 'sip', 'cook', 'prep', 'eat', 'fold', 'rummage', 'tidy', 'fridge', 'offer', 'take', 'place', 'tug', 'handsOnHips']);
+const HANDS_BUSY = new Set<HumanPose>(['read', 'phone', 'sip', 'cook', 'prep', 'eat', 'fold', 'rummage', 'tidy', 'fridge', 'offer', 'take', 'place', 'tug', 'handsOnHips', 'share']);
 
 const ELBOW_POLE = { L: new Vector3(0.55, -0.55, -0.5), R: new Vector3(-0.55, -0.55, -0.5) };
 const OUT_POLE = { L: new Vector3(0.9, -0.2, -0.35), R: new Vector3(-0.9, -0.2, -0.35) };
@@ -729,6 +729,23 @@ export class HumanAnimationController {
         this.setMood(0.45, 0.1, chew, 0.3, 0.1, 0.4 * (1 - up));
         break;
       }
+      case 'share': {
+        // Sneaking Moke a bite from the table: the hand on his side goes to the plate, then down beside the chair to
+        // his nose, the bite pinched in the fingers; the other hand stays on the table. Soft, a little guilty.
+        const to = s.reach ?? { x: 0.3, y: 0.55, z: 0.1 };
+        const side: Side = to.x > 0 ? 'L' : 'R';
+        const free: Side = side === 'L' ? 'R' : 'L';
+        this.back(t, 0, clamp(Math.atan2(to.x, Math.max(0.15, to.z)) * 0.35, -0.3, 0.3));
+        v.set(to.x, to.y, to.z);
+        this.leanToReach(t, hips, v, side);
+        t.neck.x += 0.15;
+        this.hand(t, hips, side, v, OUT_POLE[side]);
+        (side === 'L' ? t.wristL : t.wristR).x = -0.3;
+        (side === 'L' ? t.fingersL : t.fingersR).x = -0.95;
+        if (seated > 0.5) this.hand(t, hips, free, v.set(side === 'L' ? -0.17 : 0.17, s.surface + 0.02, 0.33), OUT_POLE[free]);
+        this.setMood(0.35, 0.3, 0, 0.4, 0.12);
+        break;
+      }
       case 'fridge':
         // One hand on the door, the other reaching in.
         this.back(t, 0.15);
@@ -1059,6 +1076,8 @@ export class HumanAnimationController {
       case 'laugh':
       case 'tug':
         return 'PLAY_WITH_MOKE';
+      case 'share':
+        return 'SHARE_FOOD';
       case 'idle':
         if (this.walkWeight > 0.3) return 'WALK';
         if (this.stepWeight > 0.3) return 'TURN';

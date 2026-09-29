@@ -111,15 +111,13 @@ lies. They wear one charcoal-striped sock; the other foot is bare. Behaviour, bo
 - **After a heist** (`SockHeistController.keepExploring()`, called as the card appears) → `waiting` once the human
   has tossed the sock back by the basket. The next steal starts a new heist. Frustration is kept only when the human
   got the sock back without a trade.
-- `SockHeistController.reset()` (sock back on the rug, treat in the jar, human at the basket) still exists and is
-  tested, but nothing in the game calls it since PLAY AGAIN was removed.
 
 ## Events (`src/core/GameEvents.ts`)
 A tiny typed publish/subscribe hub: no queues or wildcards. The brain and the heist emit events; the heist, UI and
 audio listen.
 `SOCK_PICKED_UP · SOCK_DROPPED · SOCK_RETURNED · HUMAN_NOTICED · CHASE_STARTED · CHASE_LOST · CHASE_FOUND ·
 GRAB_MISSED · CHASE_GAVE_UP · TREAT_FETCHED · TREAT_OFFERED · SOCK_TRADED · TREAT_PLACED · TREAT_EATEN ·
-DOG_LOGIC_DISCOVERED · HEIST_COMPLETE · HEIST_RESET · HUMAN_SAID`
+DOG_LOGIC_DISCOVERED · HEIST_COMPLETE · HUMAN_SAID`
 
 ## Presentation
 - **Speech bubbles** follow the human's head, kept on screen and below the objective line. A new line replaces the

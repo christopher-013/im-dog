@@ -1,34 +1,9 @@
 import { ConeGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3, type BufferGeometry, type Object3D } from 'three';
+import { CONURE } from '../config/conure';
 import type { Vec3Like } from '../physics/CharacterBody';
 import { angleDelta, clamp, damp } from '../utils/math';
 import { mulberry32 } from '../utils/random';
 import { CAGE } from './home/gymAndYard';
-
-/** The bird's behaviour tuning (seconds, metres, radians). */
-export const CONURE = {
-  /** Seconds sitting still between moves (min, random extra). */
-  sit: [1.2, 3.5] as const,
-  /** A hop between perches: its duration and how high it arcs. */
-  hopTime: 0.42,
-  hopHeight: 0.07,
-  /** A side-step along the same perch. */
-  stepTime: 0.28,
-  /** Moke within this distance: the bird turns to watch him. */
-  watchDistance: 3.2,
-  /** A bark within this distance startles it up to the top perch. */
-  startleDistance: 6,
-  /** How far it can turn its head toward something (rad). */
-  maxHeadYaw: 1.3,
-  /** Playing with Moke: how long, one bounce (up and down) and how high, and a chirp this often. */
-  playTime: 2.8,
-  bounceTime: 0.3,
-  bounceHeight: 0.06,
-  chirpEvery: 0.55,
-  /** Moke must be at least this close to the cage's middle to start a game (m). */
-  playReach: 1.6,
-  /** "Play with Malibu" shows when his feet are this close to the cage's front (m). */
-  frontReach: 0.85,
-} as const;
 
 /** Where the bird can stand, in the cage's own space (front +z): along the perches, the swing, the floor. */
 interface Perch {
@@ -152,7 +127,7 @@ export class ConureView {
     this.tiltTarget = 0;
     const p = this.bird.position;
     this.from.copy(p);
-    this.to.set(clamp(this.local.x, PLAY.x0 + 0.04, PLAY.x1 - 0.04), PLAY.y, PLAY.z);
+    this.to.set(clamp(this.local.x, PLAY.x0 + CONURE.perchEnd, PLAY.x1 - CONURE.perchEnd), PLAY.y, PLAY.z);
     this.perch = PLAY;
     this.enter('hop');
   }
@@ -164,7 +139,7 @@ export class ConureView {
     this.startled = true;
     this.playLeft = 0;
     this.tiltTarget = 0;
-    this.go('hop', { ...TOP, x0: TOP.x0 + 0.05, x1: TOP.x1 - 0.05 });
+    this.go('hop', TOP, CONURE.perchEnd);
   }
 
   /** Each rendered frame (dt 0 while paused). */
@@ -264,11 +239,11 @@ export class ConureView {
     }
   }
 
-  /** Moves to a random spot on `perch` (a short side-step if it's the same one). */
-  private go(mode: 'hop' | 'step', perch: Perch): void {
+  /** Moves to a random spot on `perch`, at least `clear` from its ends (a short side-step if it's the same one). */
+  private go(mode: 'hop' | 'step', perch: Perch, clear = 0): void {
     const p = this.bird.position;
     this.from.copy(p);
-    let x = perch.x0 + (perch.x1 - perch.x0) * this.random();
+    let x = perch.x0 + clear + (perch.x1 - perch.x0 - 2 * clear) * this.random();
     if (mode === 'step') x = clamp(p.x + (this.random() < 0.5 ? -1 : 1) * (0.05 + this.random() * 0.08), perch.x0, perch.x1);
     this.to.set(x, perch.y, perch.z);
     this.perch = perch;

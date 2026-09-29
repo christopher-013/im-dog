@@ -20,6 +20,7 @@ import {
   Shape,
   ShapeGeometry,
   Skeleton,
+  SRGBColorSpace,
   SkinnedMesh,
   SphereGeometry,
   TorusGeometry,
@@ -1013,15 +1014,17 @@ function head(look: HumanLook): Part[] {
   parts.push(face(onHead(new SphereGeometry(0.016, 16, 10).scale(1, 0.9, 0.4), 0, MOUTH.y - 0.002, MOUTH.z - 0.002), COLORS.mouth, 'jaw'));
   parts.push(face(onHead(new BoxGeometry(0.018, 0.004, 0.004), 0, MOUTH.y + 0.009, MOUTH.z + 0.002), COLORS.teeth, 'jaw'));
 
-  // Hair: short and black, sculpted into soft locks that grow from the crown and sweep forward and to his right,
-  // their tips making the hairline, the fringe and the nape (see hairShell).
-  if (!look.cap) {
-    parts.push({ geometry: onHead(hairShell(), 0, 0, 0), material: 'hair', color: look.hair, bind: 'head' });
-  } else {
-    // A peaked cap instead of the sculpted hair: a rounded crown over the top of the head, sitting above the
-    // ears, a stiff brim curving out over the brow, a button on top.
+  // Hair: short, sculpted into soft locks that grow from the crown and sweep forward and to his right, their tips
+  // making the hairline, the fringe and the nape (see hairShell). Under a cap it lies flat where the cap covers it,
+  // so only the sides above the ears and the back show.
+  const capBase = SKULL_CENTER + 0.026;
+  const hair = hairShell(look.hair, look.cap ? (capBase - SKULL_CENTER) / SKULL_SIZE.up : null);
+  parts.push({ geometry: onHead(hair, 0, 0, 0), material: 'hair', color: look.hair, bind: 'head' });
+  if (look.cap) {
+    // A peaked cap: a rounded crown over the top of the head, sitting above the ears, a stiff brim curving out over
+    // the brow, a button on top.
     const c = look.cap;
-    const base = SKULL_CENTER + 0.026;
+    const base = capBase;
     const crown = new SphereGeometry(1, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2).scale(SKULL_SIZE.x + 0.01, SKULL_SIZE.up - 0.004, SKULL_SIZE.z + 0.013);
     parts.push({ geometry: onHead(crown, 0, base, -0.002), material: 'hair', color: c.crown, bind: 'head' });
     const band = new CylinderGeometry(SKULL_SIZE.x + 0.015, SKULL_SIZE.x + 0.015, 0.02, 28, 1, true).scale(1, 1, (SKULL_SIZE.z + 0.018) / (SKULL_SIZE.x + 0.015));
@@ -1043,22 +1046,36 @@ function hairline(around: number): number {
   return base - 0.1 * Math.exp(-(((around + 0.35) / 0.32) ** 2)) + 0.05 * Math.exp(-(((around - 0.5) / 0.22) ** 2));
 }
 
-/** The hair's shape: how many locks round the crown, how much they twist as they grow (rad per rad), their tips. */
-const HAIR = { locks: 13, twist: -0.55, ridge: 0.0055, tipFront: 0.085, tipSide: 0.03, tipBack: 0.05 };
+/**
+ * The hair's shape: how many locks round the crown, how much they twist as they grow (rad per rad), their tips; and
+ * its shading from the look's hair colour (sRGB): this much darker between the locks, this far toward white along them.
+ */
+const HAIR = { locks: 13, twist: -0.55, ridge: 0.0055, tipFront: 0.085, tipSide: 0.03, tipBack: 0.05, deep: 0.6, sheen: 0.17 };
 /** The crown whorl the hair grows from (a direction on the unit skull: the back of the top, a little to his right). */
 const CROWN = new Vector3(-0.1, 0.8, -0.58).normalize();
 const CROWN_E1 = new Vector3(1, 0, 0).addScaledVector(CROWN, -CROWN.x).normalize();
 const CROWN_E2 = new Vector3().crossVectors(CROWN, CROWN_E1);
-const HAIR_DEEP = new Color('#141011');
-const HAIR_SHEEN = new Color('#4a4043');
+/** Under a cap, the hair lies this close to the scalp (m): well inside the cap's crown. */
+const HAIR_UNDER_CAP = 0.003;
+
+/** The hair's two shades from its colour: deep between the locks, a soft sheen down the middle of each. */
+function hairShades(hair: string): { deep: Color; sheen: Color } {
+  const { r, g, b } = new Color(hair).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  return {
+    deep: new Color().setRGB(r * HAIR.deep, g * HAIR.deep, b * HAIR.deep, SRGBColorSpace),
+    sheen: new Color().setRGB(lerp(r, 1, HAIR.sheen), lerp(g, 1, HAIR.sheen), lerp(b, 1, HAIR.sheen), SRGBColorSpace),
+  };
+}
 
 /**
  * The hair as one sculpted shell over the skull: fuller on top and at the front, close at the back and sides, swept
  * to his right. It's divided into locks that radiate from the crown and curve as they go (ridges in the shape, a
  * soft sheen along each lock); where each lock ends it reaches a little past the hairline, so the fringe, sideburns
  * and nape are scalloped by lock tips instead of cut along a line. Below the hairline the shell tucks under the skin.
+ * Under a cap (`capAt`: the cap's lower edge, as a height on the unit skull) it lies flat to the scalp above that edge.
  */
-function hairShell(): BufferGeometry {
+function hairShell(color: string, capAt: number | null): BufferGeometry {
+  const { deep, sheen } = hairShades(color);
   const g = new SphereGeometry(1, 64, 56);
   const p = g.getAttribute('position');
   const colors = new Float32Array(p.count * 3);
@@ -1088,12 +1105,14 @@ function hairShell(): BufferGeometry {
     // The parting: a slight groove on his left.
     thick -= 0.004 * Math.exp(-(((around - 0.5) / 0.1) ** 2)) * smoothstep(0.4, 0.8, y);
     thick = lerp(-0.006, thick, inside);
+    // Flattened under the cap, easing in just below its edge, so none of it pokes out through the crown.
+    if (capAt !== null) thick = lerp(thick, Math.min(thick, HAIR_UNDER_CAP), smoothstep(capAt - 0.08, capAt, y));
     const jaw = y < 0 ? 1 - 0.17 * Math.pow(-y, 1.7) : 1;
     const ry = y < 0 ? SKULL_SIZE.down : SKULL_SIZE.up;
     const fullness = z > 0 && y < 0.2 ? 0.02 * Math.max(0, 0.2 - y) * z : 0;
     p.setXYZ(i, x * (SKULL_SIZE.x * jaw + thick), SKULL_CENTER + y * (ry + thick), z * (SKULL_SIZE.z * jaw + thick) + fullness);
     // A soft sheen down the middle of each lock, darker between them.
-    c.copy(HAIR_DEEP).lerp(HAIR_SHEEN, (0.15 + 0.85 * lock * lock) * (0.35 + 0.65 * grown) * (0.6 + 0.4 * top));
+    c.copy(deep).lerp(sheen, (0.15 + 0.85 * lock * lock) * (0.35 + 0.65 * grown) * (0.6 + 0.4 * top));
     colors[i * 3] = c.r;
     colors[i * 3 + 1] = c.g;
     colors[i * 3 + 2] = c.b;

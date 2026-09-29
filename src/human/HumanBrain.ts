@@ -68,7 +68,7 @@ export interface HumanIdleDriver {
   interrupt(): void;
   /** Back to idle after the heist: pick things up again. */
   resume(s: HumanSenses): void;
-  /** A replay: start again at the laundry (or wherever `startSpot` then says). */
+  /** The start of the day: at the laundry, or wherever `startSpot` then says. */
   reset(): void;
   /** Where the body starts after `reset`, if not at the laundry. */
   readonly startSpot?: { readonly x: number; readonly y: number; readonly z: number; readonly facing: number } | null;
@@ -274,26 +274,6 @@ export class HumanBrain {
     this.say('thanks', 'happy');
     this.go('receiveSock');
     return true;
-  }
-
-  /** Back to folding laundry at home, as at the start (Sock Heist replay). */
-  reset(): void {
-    this.state = 'idle';
-    this.timeInState = 0;
-    this.frustration = 0;
-    this.hasTreat = false;
-    this.hasSock = false;
-    this.timesNoticed = 0;
-    this.seenFor = 0;
-    this.unseenFor = 0;
-    this.headYawTarget = 0;
-    this.intent.headYaw = 0;
-    this.intent.crouch = 0;
-    this.intent.goal = null;
-    this.glanceIn = this.nextGlance();
-    this.glanceLeft = 0;
-    this.offered = false;
-    this.driver?.reset();
   }
 
   // ---------------------------------------------------------------- states

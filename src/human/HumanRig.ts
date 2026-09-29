@@ -123,6 +123,8 @@ export type HumanPose =
   | 'handsOnHips'
   | 'laugh'
   | 'tug'
+  /** Seated at the table, a bite off their plate and down to Moke (the reach says where). */
+  | 'share'
   | 'windup'
   | 'throw'
   | 'point'
@@ -155,6 +157,7 @@ export type HumanAnimState =
   | 'CALL_MOKE'
   | 'SCOLD_MOKE'
   | 'PLAY_WITH_MOKE'
+  | 'SHARE_FOOD'
   | 'HEIST';
 
 /** Something in their hands for an activity (shown by the visual; the Sock Heist's sock and treat are separate). */

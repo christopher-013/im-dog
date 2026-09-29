@@ -20,8 +20,9 @@ Human (src/human/Human.ts): ties it together each fixed step and frame
 - **`HumanBrain`** (`human/HumanBrain.ts`) is Phase 3's Sock Heist state machine, unchanged in its heist states. Its
   `idle` state now asks `driver.drive()` what to do (the routine), while it keeps watching for Moke with the sock
   (sight cone + line of sight + hearing). The moment it notices, it calls `driver.interrupt()` and the heist takes
-  over; when the heist settles back to idle it calls `driver.resume()`. PLAY AGAIN calls `driver.reset()` (folding
-  laundry, as the heist expects). Without a driver it folds laundry as before (its tests use that).
+  over; when the heist settles back to idle it calls `driver.resume()`. Creating the human calls `driver.reset()`: the
+  start of the day, in the middle of a random everyday activity (those marked `startsDay` in `config/activities.ts`)
+  at its `startSpot`. Without a driver it folds laundry as before (its tests use that).
 - **`HumanActivityController`** (`human/activities/`) runs the day: `pause → walking → settling → doing → leaving`.
   Each activity is data (`config/activities.ts`, see `ACTIVITIES.md`): steps at kinds of place, a pose, a prop, a
   duration range. It walks to the place, sits (seats) or lines up (counters), does it, glances round the room now
@@ -32,7 +33,7 @@ Human (src/human/Human.ts): ties it together each fixed step and frame
     away, they carry on folding.
   - **Moke in the way:** if he's lying on the seat they were heading for: "Scoot over, Moke." and another seat.
   - **Can't get there:** after 4 s without progress (or 45 s walking) they give that activity up (cooldown) and do
-    something else. **Never a teleport** (only PLAY AGAIN resets their position, as in Phase 3).
+    something else. **Never a teleport.**
 - **`HumanReactions`** layers short moments on top (see "With Moke" below); a reaction that takes the body (a pat,
   praise) pauses the activity's clock.
 - **Errands:** refilling Moke's bowls once he's emptied one (`BowlRefill`) borrows the human the same way (see
@@ -67,8 +68,12 @@ straight into its seat.
   seat) it gets up first (`standTime` 0.9 s plus the same) before walking, and it isn't "arrived" anywhere while
   getting up. The **body stays at the stand point** (in front of the seat, where the legs are); the **visual** steps
   across to the seat (stand → entry → seat, `Human.visualPosition`) and only then lowers. The animation reads the
-  visual's *measured* motion, so those are real back- or side-steps, not a slide. So a seated human still blocks the
-  floor in front of the sofa, not the cushion Moke might hop onto.
+  visual's *measured* motion, so those are real back- or side-steps, not a slide. From halfway down
+  (`seatColliderFrom`) the body's capsule moves over onto the seat, so the floor they stood on is free for Moke.
+- **Getting up with Moke where they stood:** their body can't come back down on top of him, so they stand up beside
+  him instead: the first spot with room (`CharacterBody.roomAt`), a straight walkable step away, at `standAside`
+  (0.45, 0.6, 0.75 m) to either side, the side away from him first, then out and to the side. Only with no room
+  anywhere near do they stay sat until he moves.
 - **Stuck recovery:** no progress over `stuckTime` → plan afresh; if Moke is what's in the way (within 1.2 m and not
   at the goal), the new path keeps 0.62 m from him (`NavGrid.findPath(…, avoid)`); starting off the walkable area,
   it steps out first. `stuckFor` tells the routine how long. **No path at all is not arrival:** it counts as stuck, so

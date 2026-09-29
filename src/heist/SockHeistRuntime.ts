@@ -97,7 +97,7 @@ export class SockHeistRuntime {
         deps.mokeSays('Nom nom!');
       },
       scene,
-      places: { humanHome: marks.laundry, basket: marks.laundryBasket, sockReturn: marks.sockReturn },
+      places: { sockReturn: marks.sockReturn },
       memory: deps.memory ?? new DogLogicMemory(),
       // The human puts the treat down toward Moke. If he's up on the couch or table, that line runs into the
       // furniture: stop short of it, on open floor he can reach.
@@ -160,7 +160,6 @@ export class SockHeistRuntime {
     events.on('HUMAN_NOTICED', () => audio.play('surprise'));
     events.on('GRAB_MISSED', () => audio.play('whoosh'));
     events.on('TREAT_FETCHED', () => audio.play('treatBag'));
-    events.on('HEIST_RESET', () => ui.clearHeist());
   }
 
   /** Moke barked (the human might hear where he is). */

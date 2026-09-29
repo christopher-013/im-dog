@@ -49,6 +49,7 @@ export const DOG_LOGIC: readonly DogLogicEntry[] = [
   { id: 'bark=attention', left: [T.bark], right: T.attention, how: 'Bark at the human until they give in.' },
   { id: 'kitchen=food?', left: [T.kitchen], right: T.food, how: 'Hang about the kitchen while dinner cooks.' },
   { id: 'bark=protector', left: [T.bark], right: { word: 'PROTECTOR', icon: 'strong' }, how: 'Bark at the ringing door, then watch your human accept the delivery.' },
+  { id: 'beg=food', left: [{ word: 'BEGGING', icon: 'dog' }], right: { word: 'FOOD', icon: 'food' }, how: 'Sit beside your human while they eat dinner at the dining table, and beg until they share a bite.' },
   { id: 'beg+prep=food', left: [{ word: 'BEG', icon: 'dog' }, T.kitchen], right: { word: 'FOOD', icon: 'food' }, how: 'Wait beside the chopping human, beg, and eat the carrot they offer.' },
   { id: 'pillows=fun', left: [{ word: 'PILLOWS', icon: 'soft' }], right: { word: 'FUN TO MOVE', icon: 'play' }, how: 'Dig under the couch pillows and toss them onto the floor.' },
   { id: 'paper=fun+attention', left: [{ word: 'TOILET PAPER', icon: 'soft' }], right: { word: 'FUN + ATTENTION', icon: 'heart' }, how: 'Pull the bathroom roll into the hall and watch your human clean up.' },

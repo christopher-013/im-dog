@@ -16,7 +16,8 @@ Each activity is plain data, so a new one needs no code:
 ```
 - **steps:** done in order, each at the nearest free place of the given kinds (`world/home/places.ts`), with a pose,
   an optional prop, a random duration, optionally looking at the place's focus (the TV), and an optional `effect`
-  the game shows (`tv` glow, `cooking` steam + a FOOD smell, `meal` a plate on the table).
+  the game shows (`cooking` steam + a FOOD smell, `meal` a plate on the table; `tv` has them look at the screen,
+  which always plays the GEARBOTS cartoon).
 - **weight / cooldown:** base chance and the rest before it can come round again.
 - **interruptible:** how willing they are to stop for Moke's barking (`always`, `sometimes`, `rarely`).
 - **attention:** how often they glance round the room while doing it (and so notice Moke).
@@ -25,13 +26,13 @@ Each activity is plain data, so a new one needs no code:
 
 | Activity | Where | Pose / prop | Time | Notes |
 |---|---|---|---|---|
-| Watch TV | Living room couch, the sectional | watch, remote | 45–90 s | The screen glows; noisy for naps nearby |
+| Watch TV | Living room couch, the sectional | watch, remote | 45–90 s | Eyes on the cartoon; noisy for naps nearby |
 | Read | The window couch, sofas | read, book | 40–80 s | Engrossed (rare glances) |
 | Phone | Island stool, sofas, dining chair | phone | 20–40 s | |
 | Coffee at the table | Dining chairs | sip, mug | 30–55 s | |
 | Make dinner | Fridge → island → stove | fridge; prep, knife; cook, spoon | 3–5 + 30–45 + 18–28 s | Carrots on a chopping board, then steam and a FOOD smell |
 | Meal prep | Kitchen island | prep, knife | 35–55 s | Rotates into daily life; Moke can wait nearby and beg for a carrot |
-| Eat dinner | Dining chairs | eat, fork | 25–45 s | Only within 7 minutes of cooking it, and usually straight after; a plate on the table |
+| Eat dinner | Dining chairs | eat, fork | 25–45 s | Only within 7 minutes of cooking it, and usually straight after; a plate of pasta and meatballs on the table; Moke can sit beside the chair and beg for a bite |
 | Relax | Sofas | relax (hands behind head) | 20–40 s | |
 | Coffee at the counter | Counter, island sink | sip, mug | 12–25 s | |
 | Fold laundry | The laundry basket on its table in the living room | fold, laundry cloth | 12–22 s | One of the random starting activities; lower selection weight (0.8), five-minute cooldown; glances round the room often |
@@ -151,6 +152,19 @@ after 60 seconds, and Sock Heist cancels it. One consumption earns one discovery
 food or rewards. A 35-second cooldown and another wait/explicit beg permit repeat play during later prep (or a
 long enough remaining prep session). The human returns to chopping afterwards. Tuning for both new moments:
 `config/homeActivities.ts`; no new device-specific input or dependencies.
+
+### Begging at Dinner (`DinnerBeg.ts`, owner request, 2026-09-28)
+While the human sits eating dinner at the dining table, stand still on the floor beside their chair (either side, or
+under the table by their knees; not behind it, not on the table) with an empty mouth for 1.5 seconds. **Sit & Beg**
+appears on the interaction action (the Trick action also begs once it's ready). Moke sits up and begs. The human says
+**"Moke… no begging at the table."**, looks at him, sighs, and gives in: **"Oh, alright. Just one bite."** Without getting
+up, they pick a meatball off their plate with the hand on his side (the new seated `share` pose) and hold it down to
+his nose. Moke begs again for it and eats it, and learns **BEGGING = FOOD** ("Begging = FOOD! I knew it!"). Then they carry
+on eating: the routine resumes on the same seat, with no getting up and sitting down again (`HumanActivityController.stayPut`
+and the still-seated resume). If he wanders off before taking it: "Suit yourself. More for me!", and the meatball goes
+back. Sock Heist cancels it. A 45-second cooldown. Tuning: `HOME_ACTIVITIES.dinner` in `config/homeActivities.ts`.
+A beg an activity asks for no longer sets off a Treat Hunt as the activity ends: Treat Hunt only counts a trick that
+started while the human was free to watch it (this also fixes the same slip after the kitchen carrot).
 
 ### Pillow Mischief (`PillowDig.ts`, owner-requested addition, 2026-09-27)
 On any of the three pillow-bearing sofas, with feet planted, mouth empty and not napping, use **Dig & Toss

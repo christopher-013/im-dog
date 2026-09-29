@@ -6,9 +6,6 @@ import type { NavGrid, Point2 } from './NavGrid';
 
 type MoveTuning = typeof HUMAN.move;
 
-/** How far down onto the seat (0..1) before the body's capsule moves over onto it (and back when getting up). */
-const SEAT_COLLIDER_FROM = 0.5;
-
 /**
  * The human's body: walks where the brain asks along NavGrid paths, at human speeds, with limited acceleration
  * and turning, through the same kind of Rapier character body as Moke (so furniture, walls and Moke himself
@@ -111,7 +108,7 @@ export class HumanController {
     this.heading = rotateToward(this.heading, wantHeading, t.turnRate * dt);
     this.speed = moveToward(this.speed, targetSpeed, (targetSpeed > this.speed ? t.acceleration : t.braking) * dt);
 
-    const onSeat = this.seat !== null && this.seatBlend >= SEAT_COLLIDER_FROM;
+    const onSeat = this.seat !== null && this.seatBlend >= t.seatColliderFrom;
     // The step the capsule moves over (either way), the body stays put: the physics world only sees where the
     // capsule now is after the next step, and moving it before then would push it out of the chair it's leaving.
     const shifting = onSeat !== this.onSeat;
@@ -150,8 +147,9 @@ export class HumanController {
     const want = intent.seat;
     if (this.seat && want !== this.seat) {
       const next = Math.max(0, this.seatBlend - dt / (t.standTime + this.seatStep(this.seat)));
-      // Moke is right where they'd stand up to: stay sat until he moves (their body can't go back there on top of him).
-      if (this.onSeat && next < SEAT_COLLIDER_FROM && this.body.characterAtCentre()) return true;
+      // Moke is right where they'd stand up to (their body can't go back there on top of him): they stand up beside
+      // him instead, or, with no room anywhere near, stay sat until he moves.
+      if (this.onSeat && next < t.seatColliderFrom && this.body.characterAtCentre() && !this.standAside(this.seat, intent.avoid ?? null)) return true;
       this.seatBlend = next;
       if (this.seatBlend <= 0) this.seat = null;
       return this.seat !== null;
@@ -173,6 +171,43 @@ export class HumanController {
     return false;
   }
 
+  /**
+   * Getting up with Moke where they stood: moves where they'll stand to the nearest spot beside him with room for
+   * them (to the sides first, the side away from him first, then out and to the side). The capsule is still over on
+   * the seat and the figure still sat there, so nothing jumps: they just step up and out to the new spot.
+   */
+  private standAside(seat: SeatSpec, moke: Vec3Like | null): boolean {
+    const t = this.tuning;
+    const from = { x: this.body.center.x, z: this.body.center.z };
+    // "Out" is away from the seat (in front of a couch, behind a dining chair); "side" is along it.
+    let outX = from.x - seat.x;
+    let outZ = from.z - seat.z;
+    const length = Math.hypot(outX, outZ);
+    if (length < 1e-3) {
+      outX = Math.sin(seat.facing);
+      outZ = Math.cos(seat.facing);
+    } else {
+      outX /= length;
+      outZ /= length;
+    }
+    const sideX = outZ;
+    const sideZ = -outX;
+    const first = moke && (moke.x - from.x) * sideX + (moke.z - from.z) * sideZ > 0 ? -1 : 1;
+    const tryAt = (side: number, out: number): boolean => {
+      const x = from.x + sideX * side + outX * out;
+      const z = from.z + sideZ * side + outZ * out;
+      // Room for them there, and a straight step to it (never through a wall into the next room).
+      if (!this.nav.isWalkable(x, z) || !this.nav.lineOfSight(from, { x, z }) || !this.body.roomAt(x, z)) return false;
+      this.body.placeCentre(x, z);
+      return true;
+    };
+    for (const d of t.standAside) {
+      if (tryAt(first * d, 0) || tryAt(-first * d, 0)) return true;
+    }
+    const d = t.standAside[0];
+    return tryAt(first * d, t.standAsideOut) || tryAt(-first * d, t.standAsideOut);
+  }
+
   /** Extra time to step across from where they stand to the seat (via its entry, if it has one). */
   private seatStep(seat: SeatSpec): number {
     const via = seat.entry ?? seat;
@@ -188,7 +223,7 @@ export class HumanController {
     return { heading: this.previousHeading + angleDelta(this.previousHeading, this.heading) * alpha };
   }
 
-  /** Straight to a spot (Sock Heist replay), no walking. */
+  /** Straight to a spot, no walking (setting up tests). */
   teleport(at: Vec3Like, heading: number): void {
     this.body.center.x = at.x;
     this.body.center.z = at.z;

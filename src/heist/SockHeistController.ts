@@ -20,7 +20,6 @@ export interface HeistSock {
   drop(at: Vec3Like, heading: number, velocity: Vec3Like): void;
   holdIn(socket: Object3D): void;
   release(parent: Object3D): void;
-  reset(parent: Object3D): void;
 }
 
 /** The human, as the heist needs them (Human satisfies this). */
@@ -28,12 +27,9 @@ export interface HeistHuman {
   readonly brain: { readonly wantsTrade: boolean; receiveSock(): boolean };
   readonly controller: { readonly position: Vec3Like };
   readonly visual: { readonly hands: { readonly left: Object3D; readonly right: Object3D } };
-  reset(home: Vec3Like, facing: Vec3Like): void;
 }
 
 export interface HeistPlaces {
-  readonly humanHome: Vec3Like;
-  readonly basket: Vec3Like;
   /** Where the human tosses a retrieved sock (beside the basket). */
   readonly sockReturn: Vec3Like;
 }
@@ -62,10 +58,11 @@ const ZERO: Vec3Like = { x: 0, y: 0, z: 0 };
 
 /**
  * Sock Heist, start to finish: Moke steals the sock → the human notices and chases → gives up and fetches a
- * treat → the trade → Moke eats → SOCK = TREAT → "Sock Heist Complete" → replay.
+ * treat → the trade → Moke eats → SOCK = TREAT → "Sock Heist Complete" → play carries on, and the next steal starts
+ * another.
  *
- * The orchestration layer only: it tracks the phase, owns the treat and the trade, lends the human their hands,
- * and resets everything for a replay. The human decides how to behave (HumanBrain); Moke, the sock and the
+ * The orchestration layer only: it tracks the phase, owns the treat and the trade, and lends the human their
+ * hands. The human decides how to behave (HumanBrain); Moke, the sock and the
  * treat look after themselves; UI and audio listen to GameEvents. A pattern for future mini-games.
  */
 export class SockHeistController implements HumanHands {
@@ -156,17 +153,6 @@ export class SockHeistController implements HumanHands {
   /** Each frame: the treat follows the human's hand. */
   update(): void {
     this.treat.update();
-  }
-
-  /** PLAY AGAIN: sock back on the rug, human back at the laundry, treat back in the jar. Moke stays where he is. */
-  reset(): void {
-    if (this.deps.pickup.carried === this.deps.sock) this.deps.pickup.handOver();
-    this.deps.sock.reset(this.deps.scene);
-    this.treat.reset();
-    this.human.reset(this.deps.places.humanHome, this.deps.places.basket);
-    this.elapsed = 0;
-    this.enter('waiting');
-    this.deps.events.emit('HEIST_RESET');
   }
 
   /** KEEP EXPLORING: carry on; the next steal starts a new heist (the human tidies the sock away first). */

@@ -1,4 +1,4 @@
-import { Color, PerspectiveCamera, Scene, Vector3 } from 'three';
+import { Color, PerspectiveCamera, Scene, Vector3, type Object3D } from 'three';
 import { MoveBasis } from '../camera/MoveBasis';
 import { ThirdPersonCamera, type CameraInput, type CameraTarget } from '../camera/ThirdPersonCamera';
 import { AudioManager } from '../audio/AudioManager';
@@ -17,6 +17,7 @@ import { MakeHumanPlay } from '../activities/MakeHumanPlay';
 import { NAP_QUALITIES, PerfectNap, type NapReport } from '../activities/PerfectNap';
 import { TreatHunt } from '../activities/TreatHunt';
 import { DoorDelivery } from '../activities/DoorDelivery';
+import { DinnerBeg } from '../activities/DinnerBeg';
 import { KitchenBeg } from '../activities/KitchenBeg';
 import { PillowDig } from '../activities/PillowDig';
 import { TableManners } from '../activities/TableManners';
@@ -24,7 +25,8 @@ import { ToiletPaperMischief } from '../activities/ToiletPaperMischief';
 import { CouchPillows } from '../world/CouchPillows';
 import { FrontDoor } from '../world/FrontDoor';
 import { BathroomView } from '../world/Bathroom';
-import { CONURE, ConureView } from '../world/Conure';
+import { CONURE } from '../config/conure';
+import { ConureView } from '../world/Conure';
 import { CAGE } from '../world/home/gymAndYard';
 import { BATHROOM, GYM } from '../world/home/layout';
 import { BOWL_REFILL, MOKE_REACTIONS } from '../config/activities';
@@ -130,8 +132,9 @@ export class Game {
   private moke: Moke | null = null;
   private props: Prop[] = [];
   private pickup: PickupSystem<Prop> | null = null;
-  /** 1 just after a bite on the squeaky fish, springing back to 0. */
+  /** 1 just after a bite on the squeaky fish, springing back to 0; and the part of the toy that squashes. */
   private fishSquish = 0;
+  private fishBody: Object3D | null = null;
   private readonly rest: RestSystem;
   /** Gameplay events (Sock Heist publishes; UI, audio and the heist listen). */
   private readonly events = new GameEvents();
@@ -154,12 +157,15 @@ export class Game {
   private director: DogActivityDirector | null = null;
   private readonly huntTreat = new Treat('hunt', DOG_ACTIVITIES.treatHunt.scentRadius);
   private readonly kitchenTreat = new Treat('kitchen', 3, 'carrot');
+  /** A meatball off the human's dinner plate (begging at the dining table). */
+  private readonly dinnerTreat = new Treat('dinner', 2, 'meatball');
   private readonly frontDoor = new FrontDoor();
   private readonly bathroom = new BathroomView();
   /** Malibu, the conure in its cage in the gym: scenery with a life of its own, and Moke's friend to play with. */
   private readonly conure = new ConureView(GYM.cage, -Math.PI / 2);
   private delivery: DoorDelivery | null = null;
   private kitchenBeg: KitchenBeg | null = null;
+  private dinnerBeg: DinnerBeg | null = null;
   private pillowDig: PillowDig | null = null;
   private tableManners: TableManners | null = null;
   private toiletPaper: ToiletPaperMischief | null = null;
@@ -319,6 +325,7 @@ export class Game {
     this.moke?.visual.dispose();
     this.delivery?.resetAll();
     this.kitchenBeg?.resetAll();
+    this.dinnerBeg?.resetAll();
     this.pillowDig?.resetAll();
     this.tableManners?.resetAll();
     this.pillows?.reset();
@@ -326,6 +333,8 @@ export class Game {
     this.bathroom.dispose();
     this.conure.dispose();
     this.kitchenTreat.dispose();
+    this.dinnerTreat.dispose();
+    this.room.tvShow.dispose();
     this.gfx.dispose();
   }
 
@@ -342,6 +351,7 @@ export class Game {
   private spawnProps(physics: PhysicsWorld, moke: Moke): void {
     this.props = createRoomProps(physics, this.room, this.room.bounds);
     for (const prop of this.props) this.scene.add(prop.view);
+    this.fishBody = this.props.find((p) => p.id === 'fish')?.view.getObjectByName('squish') ?? null;
     const pickup = new PickupSystem<Prop>(this.interactions, moke.controller, (origin, direction, max, radius) =>
       physics.sweepWorldSphere(origin, direction, radius, max),
     );
@@ -499,6 +509,18 @@ export class Game {
       },
     });
     this.interactions.register(this.kitchenBeg.interactable);
+    this.scent.register(this.dinnerTreat.scent);
+    this.attention.register(this.dinnerTreat.attention);
+    this.dinnerBeg = new DinnerBeg({
+      routine: this.routine, hands: human.visual.hands, treat: this.dinnerTreat,
+      onBeg: () => { moke.animation.trick('beg', true); },
+      onFed: () => {
+        moke.animation.cancelTrick(); moke.animation.eat(); this.audio.play('crunch');
+        const first = this.dogLogic.discover('beg=food');
+        this.showVoiceBubble(first ? 'Begging = FOOD! I knew it!' : 'Begging works every time!');
+      },
+    });
+    this.interactions.register(this.dinnerBeg.interactable);
     this.pillows = new CouchPillows(this.room.object);
     this.pillowDig = new PillowDig({ routine: this.routine, pillows: this.pillows, nav,
       hand: human.visual.hands.right, grounded: () => moke.controller.grounded,
@@ -513,7 +535,7 @@ export class Game {
     });
     this.interactions.register(this.pillowDig.interactable);
     this.interactions.register(this.toiletPaper.interactable);
-    this.director = new DogActivityDirector([this.delivery, this.kitchenBeg, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
+    this.director = new DogActivityDirector([this.delivery, this.kitchenBeg, this.dinnerBeg, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
 
     // "Get Pets": close to the human while they're free.
     const game = this;
@@ -659,7 +681,7 @@ export class Game {
   /** The squeaky fish in his mouth: he chomps on it the whole time he holds it. Returns the fish while he does. */
   private updateChewing(playing: boolean): Prop | null {
     const fish = this.pickup?.carried?.id === 'fish' ? this.pickup.carried : null;
-    this.moke?.animation.chew(playing && fish !== null);
+    this.moke?.animation.chew(playing && fish !== null, fish !== null);
     return playing ? fish : null;
   }
 
@@ -670,13 +692,15 @@ export class Game {
       this.audio.play('squeak');
       this.fishSquish = 1;
     }
-    this.fishSquish = Math.max(0, this.fishSquish - dt * CHEW.springBack);
-    const view = this.props.find((p) => p.id === 'fish')?.view.getObjectByName('squish');
-    if (view) {
+    const squish = Math.max(0, this.fishSquish - dt * CHEW.springBack);
+    const view = this.fishBody;
+    // Only while it's springing back (or has just finished): at rest it keeps its shape without being touched.
+    if (view && (squish > 0 || this.fishSquish > 0)) {
       // Held on edge, the jaws close across its width (local x): squeezed there, bulging a little through its thickness.
-      const k = this.fishSquish * CHEW.squash;
+      const k = squish * CHEW.squash;
       view.scale.set(1 - k * 0.7, 1 + k * 0.5, 1 + k * 0.1);
     }
+    this.fishSquish = squish;
   }
 
   /** What catches Moke's eye: the loose props (not while in his mouth) and his bed. */
@@ -792,10 +816,12 @@ export class Game {
     this.afterChewing(chewing, playing ? dt : 0);
     this.bathroom.updateMouthLink();
     this.conure.update(this.state === 'playing' ? dt : 0, this.moke?.controller.position ?? null);
-    this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? this.delivery?.objective ?? this.kitchenBeg?.objective ?? null);
+    this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? this.delivery?.objective ?? this.kitchenBeg?.objective ?? this.dinnerBeg?.objective ?? null);
     this.huntTreat.update();
     this.kitchenTreat.update();
+    this.dinnerTreat.update();
     this.frontDoor.update(playing ? dt : 0);
+    this.room.update(playing ? dt : 0);
     this.household.update(dt, { effect: this.routine.effect, place: this.routine.place });
     this.updateBowls(playing ? dt : 0);
     this.updateNapping(playing ? dt : 0, playing);
@@ -947,7 +973,7 @@ export class Game {
   private startTrick(): void {
     const moke = this.moke;
     if (!moke || this.rest.holdsMoke || this.scent.active || moke.animation.performingTrick) return;
-    if (this.kitchenBeg?.requestBeg()) return;
+    if (this.kitchenBeg?.requestBeg() || this.dinnerBeg?.requestBeg()) return;
     const trick = pickTrick(Math.random, this.lastTrick, { carrying: moke.carrying, headroom: moke.controller.headroom });
     if (trick && moke.animation.trick(trick)) this.lastTrick = trick;
   }

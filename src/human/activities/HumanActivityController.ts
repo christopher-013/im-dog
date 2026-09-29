@@ -186,9 +186,9 @@ export class HumanActivityController implements HumanIdleDriver {
     else this.pause();
   }
 
-  /** A random everyday activity to start the game with, at a random one of its places (not cooking or a meal). */
+  /** A random everyday activity to start the game with (see `startsDay`), at a random one of its places. */
   private randomStart(): { activity: HumanActivityDef; place: HomePlace } | null {
-    const options = HUMAN_ACTIVITIES.filter((a) => a.steps.length === 1 && !a.requires && !a.steps[0]!.effect?.match(/prep|meal|cooking/));
+    const options = HUMAN_ACTIVITIES.filter((a) => a.startsDay);
     const activity = options[Math.floor(this.random() * options.length)];
     if (!activity) return null;
     const places = this.places.filter((p) => activity.steps[0]!.places.includes(p.kind));
@@ -209,6 +209,16 @@ export class HumanActivityController implements HumanIdleDriver {
   say(text: string, mood: Speech['mood'], intent?: HumanIntent): void {
     if (intent) intent.talking = TALK_TIME;
     this.events.emit('HUMAN_SAID', { text, mood });
+  }
+
+  /**
+   * For a role that wants them to stay where they are (a bite from the dinner table): holds them at the current
+   * activity's place, sitting on its seat if it has one. False if there's no such place.
+   */
+  stayPut(intent: HumanIntent): boolean {
+    if (!this.place) return false;
+    this.holdPlace(intent, this.place);
+    return true;
   }
 
   /** Cuts the current step short (Moke made it impossible, or a reaction ended it). */
@@ -414,10 +424,12 @@ export class HumanActivityController implements HumanIdleDriver {
         this.prepStarted = saved.prepStarted;
         this.stepIndex = saved.stepIndex;
         this.stepLeft = saved.stepLeft;
+        // Still sat on that very seat (the role kept them there): carry straight on, no getting up and sitting down.
+        const stillSat = place === this.place && this.seatSpec !== null && !!s.seated;
         this.place = place;
-        this.seatSpec = this.specFor(place);
+        if (!stillSat) this.seatSpec = this.specFor(place);
         this.stats.resumed++;
-        this.enter(distance(s.position, place.stand) < 0.35 ? 'settling' : 'walking');
+        this.enter(stillSat ? 'doing' : distance(s.position, place.stand) < 0.35 ? 'settling' : 'walking');
         return;
       }
     }

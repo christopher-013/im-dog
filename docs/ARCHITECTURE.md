@@ -106,7 +106,8 @@ src/
       places.ts           furniture positions, the human's interaction points, nap spots, treat hiding spots, the kitchen treats, the fire
       Wing.ts             builds the kitchen, dining room, family room (+ the sunroom seen through glass) and their lights
       homeFurniture.ts    the wing's furniture: sectional, fireplace, built-ins, island, stools, range, fridge, trestle table, chairs…
-    HouseholdEffects.ts   signs of life: the TV glow, the steaming pot, dinner on the table; the FOOD smell
+    HouseholdEffects.ts   signs of life: the steaming pot, dinner on the table; the FOOD smell
+    RobotCartoon.ts       GEARBOTS, the original robot cartoon every TV plays (a canvas redrawn 12×/s; Home owns it, Game updates it)
     LivingRoom.ts         the room + hallway (its end opens into the wing in the house): shell, layout, spawn, landmarks (navigation-tested with Rapier)
     furniture.ts          couch, coffee table, rug, TV console, lamp, plant, dog bed, curtains, art, door, laundry table and basket, treat jar
     materials.ts          the room palette (shared materials)

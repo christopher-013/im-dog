@@ -11,7 +11,7 @@ const DT = 1 / 60;
 function setup(options: { treatSpot?: HeistDeps['treatSpot'] } = {}) {
   const events = new GameEvents();
   const emitted: GameEventName[] = [];
-  for (const name of ['SOCK_TRADED', 'TREAT_EATEN', 'DOG_LOGIC_DISCOVERED', 'HEIST_COMPLETE', 'HEIST_RESET'] as const) {
+  for (const name of ['SOCK_TRADED', 'TREAT_EATEN', 'DOG_LOGIC_DISCOVERED', 'HEIST_COMPLETE'] as const) {
     events.on(name, () => emitted.push(name));
   }
   const discoveries: boolean[] = [];
@@ -20,12 +20,11 @@ function setup(options: { treatSpot?: HeistDeps['treatSpot'] } = {}) {
   events.on('HEIST_COMPLETE', (e) => seconds.push(e.seconds));
 
   const scene = new Object3D();
-  type FakeSock = { -readonly [K in keyof HeistSock]: HeistSock[K] } & { heldBy: Object3D | null; resets: number };
+  type FakeSock = { -readonly [K in keyof HeistSock]: HeistSock[K] } & { heldBy: Object3D | null };
   const sock: FakeSock = {
     carried: false,
     position: { x: 0, y: 0, z: 0 },
     heldBy: null,
-    resets: 0,
     pickUp() {
       this.carried = true;
     },
@@ -39,19 +38,12 @@ function setup(options: { treatSpot?: HeistDeps['treatSpot'] } = {}) {
     release() {
       this.heldBy = null;
     },
-    reset() {
-      this.carried = false;
-      this.heldBy = null;
-      this.resets++;
-    },
   };
   const brain = { wantsTrade: false, received: 0, receiveSock() { this.received++; return true; } };
-  const humanResets: unknown[] = [];
   const human: HeistHuman = {
     brain,
     controller: { position: { x: 1, y: 0, z: 0 } },
     visual: { hands: { left: new Object3D(), right: new Object3D() } },
-    reset: (home) => humanResets.push(home),
   };
   const pickup = { carried: null as unknown, handOvers: 0, handOver() { this.handOvers++; const item = this.carried; this.carried = null; return item; } };
   const interactions = new InteractionSystem();
@@ -65,7 +57,7 @@ function setup(options: { treatSpot?: HeistDeps['treatSpot'] } = {}) {
     sock,
     eat: () => ate++,
     scene,
-    places: { humanHome: { x: -1, y: 0, z: -1 }, basket: { x: -2, y: 0, z: -2 }, sockReturn: { x: -2.3, y: 0, z: -1.3 } },
+    places: { sockReturn: { x: -2.3, y: 0, z: -1.3 } },
     memory: new DogLogicMemory(storage),
     createHuman: () => human,
     treatSpot: options.treatSpot,
@@ -79,7 +71,7 @@ function setup(options: { treatSpot?: HeistDeps['treatSpot'] } = {}) {
     sock.carried = true;
     events.emit('SOCK_PICKED_UP', { by: 'moke' });
   };
-  return { events, emitted, discoveries, seconds, heist, sock, brain, human, humanResets, pickup, interactions, moke, run, steal, ate: () => ate };
+  return { events, emitted, discoveries, seconds, heist, sock, brain, human, pickup, interactions, moke, run, steal, ate: () => ate };
 }
 
 describe('SockHeistController', () => {
@@ -164,21 +156,6 @@ describe('SockHeistController', () => {
     expect(sock.position.x).toBeCloseTo(-2.3);
   });
 
-  it('replays without a refresh: PLAY AGAIN resets the sock, the human and the treat, even mid-heist', () => {
-    const { heist, steal, events, pickup, sock, humanResets, emitted } = setup();
-    steal();
-    events.emit('HUMAN_NOTICED');
-    heist.takeTreat();
-    heist.reset();
-    expect(heist.phase).toBe('waiting');
-    expect(pickup.handOvers).toBe(1); // out of Moke's mouth first
-    expect(sock.resets).toBe(1);
-    expect(heist.treat.state).toBe('stored');
-    expect(humanResets).toHaveLength(1);
-    expect(emitted).toContain('HEIST_RESET');
-    expect(heist.elapsed).toBe(0);
-  });
-
   it("puts the treat down short of any furniture between the human and Moke (he may be up on the couch)", () => {
     const asked: { from: { x: number; z: number }; to: { x: number; z: number } }[] = [];
     const { heist } = setup({
@@ -205,7 +182,6 @@ describe('SockHeistController', () => {
       expect(heist.phase).toBe('complete');
       heist.keepExploring();
       expect(heist.phase).toBe('waiting');
-      heist.reset();
     }
     expect(discoveries).toEqual([true, false]);
   });

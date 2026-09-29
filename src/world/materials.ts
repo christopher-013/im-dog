@@ -75,6 +75,8 @@ export function createRoomMaterials() {
     pillowMustard: mat('pillowMustard', '#e3b45f', 0.95),
     tvBody: mat('tvBody', '#26262d', 0.5),
     tvScreen: mat('tvScreen', '#0d0e12', 0.12, { metalness: 0.2 }),
+    /** The TVs' pictures: the GEARBOTS cartoon (RobotCartoon, via Home) once it's on, lit by itself like a real screen. */
+    tvShow: new MeshBasicMaterial({ name: 'tvShow', color: '#15171c', toneMapped: false }),
     lampShade: mat('lampShade', '#f8e6c8', 0.9, { emissive: '#ffcf8a', emissiveIntensity: 0.85, side: DoubleSide }),
     bulb: new MeshBasicMaterial({ color: '#fff3dc', name: 'bulb' }),
     terracotta: mat('terracotta', '#c96f4a', 0.85),

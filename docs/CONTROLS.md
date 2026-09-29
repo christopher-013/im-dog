@@ -113,6 +113,9 @@ After that, a one-line reminder when play starts.
 - **Dinner helper:** wait still beside the human while they chop at the kitchen island, mouth empty, for four
   seconds. Use **Beg for a Carrot** (E / A / paw), or Trick (Q / X / paw menu) once ready. Stay nearby to be fed;
   if you wander off, use **Eat Carrot** on the bite they leave by the island. Both activities repeat naturally.
+- **Begging at dinner:** while the human eats at the dining table, stand still beside their chair (not behind it) for a
+  moment, then use **Sit & Beg** (E / A / paw), or Trick (Q / X / paw menu). They'll say no, then give in and hand
+  you a meatball from their plate.
 - **Pillow mischief:** jump onto a pillow-bearing couch with an empty mouth, then use **Dig & Toss Pillows**
   (E / A / paw). Moke digs and throws the pillows; the human puts them back. After cleanup, you can do it again.
 - **Table manners:** jump onto a coffee table. The human comes over, says "Moke, get down!" and repeats varied

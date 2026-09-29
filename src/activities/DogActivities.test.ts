@@ -26,6 +26,7 @@ import { PerfectNap } from './PerfectNap';
 import { TreatHunt } from './TreatHunt';
 import { DoorDelivery } from './DoorDelivery';
 import { KitchenBeg } from './KitchenBeg';
+import { DinnerBeg } from './DinnerBeg';
 import { HUMAN_ACTIVITIES } from '../config/activities';
 import { placeById } from '../world/home/places';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
@@ -386,6 +387,157 @@ describe('Kitchen begging (real island and household human)', () => {
     expect(w.beg.requestBeg()).toBe(false);
     expect(w.counts()).toEqual({ begs: 0, fed: 0 });
   });
+});
+
+describe('Begging at dinner (real dining chair and household human)', () => {
+  const T = HOME_ACTIVITIES.dinner;
+  async function dinnerWorld(options: { withHunt?: boolean } = {}) {
+    const w = await world(51);
+    const place = placeById('dining.chair.1');
+    w.human.controller.teleport(place.stand, place.facing);
+    // Straight into dinner at that chair (the routine's own start: they sit down, then eat).
+    const eat = HUMAN_ACTIVITIES.find((a) => a.id === 'eatMeal')!;
+    (w.routine as unknown as { start(a: typeof eat, p: typeof place, phase: string): void }).start(eat, place, 'settling');
+    Object.assign(w.moke, { x: 12, y: 0, z: -2 });
+    let begs = 0, fed = 0;
+    const treat = new Treat('dinner-test', 2, 'meatball');
+    // Moke's beg is a trick, and it's still showing the moment he's fed.
+    const beg = new DinnerBeg({ routine: w.routine, hands: w.human.visual.hands, treat, onBeg: () => { begs++; w.ctx.moke.trick = true; }, onFed: () => fed++ });
+    const hunt = new TreatHunt({ routine: w.routine, hand: w.human.visual.hands.right, treat: new Treat('hunt-test'), scene: home.object,
+      jar: home.kitchenTreats, spots: home.treatHidingSpots, nav, mokeCanSee: () => true, roomName: (at) => home.roomAt(at.x, at.z).name,
+      onFound: () => {}, random: () => 0 });
+    const director = new DogActivityDirector(options.withHunt ? [beg, hunt] : [beg]);
+    const tick = (seconds: number, each?: () => void) => { for (let i = 0; i < seconds / DT; i++) { w.step(director); each?.(); } };
+    tick(8);
+    expect(w.human.controller.seated).toBe(true);
+    expect(w.routine.effect).toBe('meal');
+    w.routine.stepLeft = 90;
+    // Beside the chair, on their left (in the gap toward the next chair).
+    const seat = place.seat!;
+    const beside = { x: seat.x, y: 0, z: seat.z + 0.5 };
+    return { ...w, place, beg, hunt, treat, director, tick, beside, counts: () => ({ begs, fed }) };
+  }
+
+  it('sit beside them, beg: "no begging at the table", a sigh, then a meatball from the plate, all without getting up', async () => {
+    const w = await dinnerWorld();
+    Object.assign(w.moke, w.beside);
+    expect(w.beg.requestBeg()).toBe(false);
+    w.tick(1);
+    expect(w.beg.canBeg).toBe(false); // sit a moment first
+    w.tick(0.7);
+    expect(w.beg.canBeg).toBe(true);
+    expect(w.beg.objective).toMatch(/beg/i);
+    for (let i = 0; i < 10; i++) w.beg.interactable.interact(); // no duplicates
+    let stoodUp = false;
+    const seated = () => { if (!w.human.controller.seated) stoodUp = true; };
+    w.tick(0.2, seated);
+    expect(w.said.at(-1)).toBe(T.lines.refuse);
+    expect(w.counts().begs).toBe(1);
+    w.tick(T.refuseTime + T.sighTime, seated);
+    expect(w.said.at(-1)).toBe(T.lines.giveIn);
+    expect(w.treat.state).toBe('stored');
+    w.tick(T.takeTime + 0.1, seated);
+    // In the hand on his side (their left), and he sits up for it again.
+    expect(w.treat.state).toBe('held');
+    expect(w.treat.view.parent).toBe(w.human.visual.hands.left);
+    expect(w.counts().begs).toBe(2);
+    w.tick(T.offerTime + 0.2, seated);
+    expect(w.counts()).toEqual({ begs: 2, fed: 1 });
+    expect(w.treat.state).toBe('eaten');
+    expect(w.beg.state).toBe('SUCCESS');
+    // Then straight back to dinner, never having left the chair.
+    w.tick(1, seated);
+    expect(stoodUp).toBe(false);
+    expect(w.routine.available).toBe(true);
+    expect(w.routine.activity?.id).toBe('eatMeal');
+    expect(w.routine.effect).toBe('meal');
+    // Once is enough for a while.
+    expect(w.beg.canBeg).toBe(false);
+    w.routine.stepLeft = 90;
+    w.tick(T.cooldown + 3);
+    expect(w.beg.canBeg).toBe(true);
+  }, 20_000);
+
+  it("doesn't set off a Treat Hunt: the beg he was asked for isn't a trick to show off", async () => {
+    const w = await dinnerWorld({ withHunt: true });
+    Object.assign(w.moke, w.beside);
+    w.tick(T.wait + 0.1);
+    expect(w.beg.requestBeg()).toBe(true);
+    let stoodUp = false;
+    w.tick(T.refuseTime + T.sighTime + T.takeTime + T.offerTime + 0.5, () => { if (!w.human.controller.seated) stoodUp = true; });
+    expect(w.counts().fed).toBe(1);
+    w.tick(2, () => { if (!w.human.controller.seated) stoodUp = true; });
+    expect(w.hunt.state).toBe('AVAILABLE');
+    expect(stoodUp).toBe(false);
+    expect(w.routine.activity?.id).toBe('eatMeal');
+    // A trick he does to show off, with them free to watch, still starts one.
+    w.ctx.moke.trick = false;
+    w.tick(0.1);
+    w.ctx.moke.trick = true;
+    w.tick(0.1);
+    expect(w.hunt.running).toBe(true);
+  }, 20_000);
+
+  it("only works on the floor beside their chair, while they're eating", async () => {
+    const w = await dinnerWorld();
+    const seat = w.place.seat!;
+    // Behind the chair (where they stood to sit down), on the table, or just passing through: no.
+    for (const at of [{ x: w.place.stand.x, y: 0, z: w.place.stand.z }, { x: 8.85, y: 0.77, z: seat.z }]) {
+      Object.assign(w.moke, at);
+      w.tick(3);
+      expect(w.beg.canBeg, JSON.stringify(at)).toBe(false);
+    }
+    Object.assign(w.moke, w.beside);
+    w.ctx.moke.speed = 1;
+    w.tick(3);
+    expect(w.beg.canBeg).toBe(false);
+    w.ctx.moke.speed = 0;
+    // Under the table by their knees, or on their right: yes.
+    for (const at of [{ x: seat.x - 0.55, y: 0, z: seat.z }, { x: seat.x, y: 0, z: seat.z - 0.5 }]) {
+      Object.assign(w.moke, at);
+      w.tick(0.1);
+      w.tick(T.wait + 0.1);
+      expect(w.beg.canBeg, JSON.stringify(at)).toBe(true);
+    }
+    // Not when dinner's over.
+    w.routine.stepLeft = 0;
+    w.tick(2);
+    expect(w.routine.effect).not.toBe('meal');
+    expect(w.beg.canBeg).toBe(false);
+  }, 20_000);
+
+  it('wanders off before taking it: "more for me", the meatball goes back, and dinner carries on', async () => {
+    const w = await dinnerWorld();
+    Object.assign(w.moke, w.beside);
+    w.tick(T.wait + 0.1);
+    w.beg.requestBeg();
+    w.tick(T.refuseTime + T.sighTime + T.takeTime + 0.3);
+    expect(w.treat.state).toBe('held');
+    Object.assign(w.moke, { x: 12, y: 0, z: -2 });
+    w.tick(T.offerTimeout);
+    expect(w.said.at(-1)).toBe(T.lines.keep);
+    expect(w.treat.state).toBe('stored');
+    expect(w.counts().fed).toBe(0);
+    expect(w.beg.running).toBe(false);
+    w.tick(1);
+    expect(w.human.controller.seated).toBe(true);
+    expect(w.routine.activity?.id).toBe('eatMeal');
+  }, 20_000);
+
+  it('the Sock Heist calls it off, with no meatball left anywhere', async () => {
+    const w = await dinnerWorld();
+    Object.assign(w.moke, w.beside);
+    w.tick(T.wait + 0.1);
+    w.beg.requestBeg();
+    w.tick(T.refuseTime + T.sighTime + T.takeTime + 0.3);
+    expect(w.treat.state).toBe('held');
+    w.ctx.heistRunning = true;
+    w.tick(0.1);
+    expect(w.beg.running).toBe(false);
+    expect(w.treat.state).toBe('stored');
+    w.treat.feed();
+    expect(w.counts().fed).toBe(0);
+  }, 20_000);
 });
 
 describe('DogActivity lifecycle', () => {

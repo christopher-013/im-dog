@@ -27,7 +27,6 @@ export interface GameEventMap {
   TREAT_EATEN: Record<string, never>;
   DOG_LOGIC_DISCOVERED: { id: string; first: boolean };
   HEIST_COMPLETE: { seconds: number };
-  HEIST_RESET: Record<string, never>;
   HUMAN_SAID: Speech;
 }
 

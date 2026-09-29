@@ -38,6 +38,24 @@ describe('MokeAnimationController', () => {
     expect(anim.state.chew).toBeLessThan(0.05);
   });
 
+  it('picks the bite rhythm up where it left off after a pause, instead of biting again straight away', () => {
+    const anim = new MokeAnimationController(MOVEMENT);
+    const still: MokeMotionSample = { speed: 0, turnRate: 0, headroom: OPEN_SKY, carrying: true };
+    anim.chew(true, true);
+    simulate(anim, still, 0.35); // the quick first bite, just now
+    expect(anim.takeBites()).toBe(1);
+    anim.chew(false, true); // paused, still holding it
+    simulate(anim, still, 1);
+    anim.chew(true, true);
+    simulate(anim, still, 0.45); // the next bite's still to come
+    expect(anim.takeBites()).toBe(0);
+    // Dropped and picked up again: the quick first bite again.
+    anim.chew(false, false);
+    anim.chew(true, true);
+    simulate(anim, still, (1 - CHEW.firstBite) / CHEW.rate + 0.05);
+    expect(anim.takeBites()).toBe(1);
+  });
+
   it('can replace a fading random trick with an explicit contextual beg', () => {
     const anim = new MokeAnimationController(MOVEMENT);
     anim.trick('spin');

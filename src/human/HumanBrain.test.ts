@@ -319,13 +319,4 @@ describe('HumanBrain (the Sock Heist human)', () => {
     expect(w.said.at(-1)).toMatch(/there you are|aha/i);
     expect(w.brain.frustration).toBeGreaterThanOrEqual(before);
   });
-
-  it('resets to folding laundry for a replay', () => {
-    const w = toTrade();
-    w.brain.reset();
-    expect(w.brain.state).toBe('idle');
-    expect(w.brain.frustration).toBe(0);
-    expect(w.brain.hasTreat).toBe(false);
-    expect(w.brain.wantsTrade).toBe(false);
-  });
 });

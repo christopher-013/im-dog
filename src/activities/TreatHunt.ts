@@ -51,6 +51,8 @@ export class TreatHunt extends DogActivity {
   private huntTime = 0;
   private hinted = { warm: false, room: false, point: false };
   private engagedBefore = false;
+  private tricking = false;
+  private trickToShow = false;
   private firstFind = true;
   private readonly random: () => number;
   private readonly look: Vec3Like = { x: 0, y: 0, z: 0 };
@@ -76,6 +78,16 @@ export class TreatHunt extends DogActivity {
     return null;
   }
 
+  /**
+   * The trick he's doing began while the human was free to watch: a trick to show off, not the beg another activity
+   * asked for while it had them (still going as that activity ends, it mustn't send them straight off for a treat).
+   */
+  protected override observe(ctx: DogActivityContext): void {
+    if (ctx.moke.trick && !this.tricking) this.trickToShow = ctx.human.available;
+    if (!ctx.moke.trick) this.trickToShow = false;
+    this.tricking = ctx.moke.trick;
+  }
+
   protected wants(ctx: DogActivityContext): boolean {
     const engaged = ctx.human.engaged && !this.engagedBefore;
     this.engagedBefore = ctx.human.engaged;
@@ -83,7 +95,7 @@ export class TreatHunt extends DogActivity {
     const d = flatDistance(ctx.moke.position, ctx.human.position);
     // In view, or so close they couldn't miss it.
     if (d > this.tuning.triggerRange || (!ctx.human.seesMoke && d > this.tuning.closeRange)) return false;
-    if (ctx.moke.trick) return this.successes === 0 || this.random() < this.tuning.trickChance;
+    if (ctx.moke.trick && this.trickToShow) return this.successes === 0 || this.random() < this.tuning.trickChance;
     return engaged && this.random() < this.tuning.engagedChance;
   }
 
@@ -127,7 +139,7 @@ export class TreatHunt extends DogActivity {
     this.hiddenAt = null;
   }
 
-  /** A replay (PLAY AGAIN): the treat goes back in the jar, the hunt starts over. */
+  /** Called off entirely: the treat goes back in the jar, the hunt starts over. */
   resetAll(): void {
     this.cancel();
     this.deps.treat.reset();

@@ -1,12 +1,10 @@
 import {
-  AdditiveBlending,
   BoxGeometry,
   CylinderGeometry,
   Group,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
-  PlaneGeometry,
   SphereGeometry,
   TorusGeometry,
   Vector3,
@@ -14,7 +12,6 @@ import {
 } from 'three';
 import type { ScentSource } from '../senses/ScentSystem';
 import { FURNITURE, type HomePlace } from './home/places';
-import { WING } from './home/layout';
 
 /** What the human is doing that shows (or smells): from HumanActivityController.effect and its place. */
 export interface HouseholdActivity {
@@ -22,24 +19,16 @@ export interface HouseholdActivity {
   readonly place: HomePlace | null;
 }
 
-/** The two TV screens, as the routine's `look` points name them, and where their glass is. */
-const SCREENS = [
-  { near: { x: 0.3, z: 2.77 }, center: new Vector3(0.3, 1.06, 2.772), width: 1.2, height: 0.67, facing: Math.PI },
-  { near: { x: FURNITURE.fireplace.x, z: WING.south }, center: new Vector3(FURNITURE.fireplace.x, 1.92, WING.south - 0.069), width: 1.39, height: 0.77, facing: Math.PI },
-];
 const STOVE = new Vector3(7.02, 0.93, FURNITURE.range.z + 0.17);
 
 /**
- * The little signs of someone living here (Phase 4): the TV glows while they watch, a pot steams on the stove
- * while they cook, and a plate of dinner sits on the table while they eat. Cooking and dinner smell of FOOD, for
+ * The little signs of someone living here (Phase 4): a pot steams on the stove while they cook, and a plate of dinner sits on the table while they eat. Cooking and dinner smell of FOOD, for
  * Moke's nose (and his suspicions about the kitchen). Cheap: a few meshes shown and hidden, no lights.
  */
 export class HouseholdEffects {
   readonly object = new Group();
   /** Dinner, on the stove or the table. */
   readonly foodScent: ScentSource;
-  private readonly screens: Mesh[] = [];
-  private readonly screenMaterial = new MeshBasicMaterial({ color: '#8fb7e8', transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false });
   private readonly pot = new Group();
   private readonly steam: Mesh[] = [];
   private readonly steamMaterial = new MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, depthWrite: false });
@@ -50,7 +39,6 @@ export class HouseholdEffects {
   private readonly food = new Vector3();
   private foodOn = false;
   private time = 0;
-  private screenGlow = 0;
 
   constructor() {
     this.object.name = 'HouseholdEffects';
@@ -63,16 +51,7 @@ export class HouseholdEffects {
       this.materials.push(material);
       return material;
     };
-    this.materials.push(this.screenMaterial, this.steamMaterial);
-
-    for (const screen of SCREENS) {
-      const mesh = new Mesh(g(new PlaneGeometry(screen.width, screen.height)), this.screenMaterial);
-      mesh.position.copy(screen.center);
-      mesh.rotation.y = screen.facing;
-      mesh.visible = false;
-      this.screens.push(mesh);
-      this.object.add(mesh);
-    }
+    this.materials.push(this.steamMaterial);
 
     // A pot on the front burner (always there; it steams while they cook).
     const steel = m('#b9bec4', 0.3, 0.8);
@@ -98,13 +77,20 @@ export class HouseholdEffects {
       this.object.add(s);
     }
 
-    // Dinner: a plate of pasta and greens.
+    // Dinner: a plate of pasta and meatballs, and greens.
     const plate = new Mesh(g(new CylinderGeometry(0.12, 0.1, 0.015, 24)), m('#f4f0e8', 0.35));
     const pasta = new Mesh(g(new SphereGeometry(0.07, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2)), m('#e7b458', 0.7));
     pasta.scale.set(1, 0.45, 1);
     pasta.position.y = 0.008;
     const greens = new Mesh(g(new SphereGeometry(0.03, 8, 6)), m('#5e9a4f', 0.8));
     greens.position.set(0.05, 0.02, 0.03);
+    const meatball = g(new SphereGeometry(0.018, 10, 8));
+    const meatballMaterial = m('#7a4a32', 0.9);
+    for (const [x, z] of [[-0.03, -0.02], [0.01, -0.045], [-0.045, 0.025]] as const) {
+      const ball = new Mesh(meatball, meatballMaterial);
+      ball.position.set(x, 0.03, z);
+      this.plate.add(ball);
+    }
     this.plate.add(plate, pasta, greens);
     this.plate.visible = false;
     this.object.add(this.plate);
@@ -138,27 +124,6 @@ export class HouseholdEffects {
   update(dt: number, activity: HouseholdActivity): void {
     this.time += dt;
     const { effect, place } = activity;
-
-    // The TV: the screen nearest what they're watching lights up, shifting colour like a show.
-    const watching = effect === 'tv' && place?.look ? place.look : null;
-    this.screenGlow = Math.max(0, Math.min(1, this.screenGlow + (watching ? dt : -dt) * 2));
-    let nearest = -1;
-    if (watching) {
-      let best = Infinity;
-      SCREENS.forEach((s, i) => {
-        const d = Math.hypot(s.near.x - watching.x, s.near.z - watching.z);
-        if (d < best) {
-          best = d;
-          nearest = i;
-        }
-      });
-    }
-    this.screens.forEach((screen, i) => (screen.visible = this.screenGlow > 0 && (i === nearest || (nearest < 0 && screen.visible))));
-    if (this.screenGlow > 0) {
-      const t = this.time;
-      this.screenMaterial.color.setHSL((0.55 + 0.1 * Math.sin(t * 0.37) + 0.05 * Math.sin(t * 1.3)) % 1, 0.45, 0.45 + 0.08 * Math.sin(t * 2.1));
-      this.screenMaterial.opacity = 0.55 * this.screenGlow;
-    }
 
     // Cooking: steam rising from the pot.
     const cooking = effect === 'cooking';

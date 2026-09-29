@@ -161,18 +161,6 @@ export class Human {
     return seat ? lerp(standing, seat.height + EYE_SITTING_ABOVE_SEAT, smoothstep(SEAT_LOWER_FROM, 1, this.controller.seatBlend)) : standing;
   }
 
-  /** Back home, folding laundry (Sock Heist replay). */
-  reset(home: Vec3Like, facing: Vec3Like): void {
-    this.brain.reset();
-    const start = this.brain.driver?.startSpot;
-    if (start) home = start;
-    this.controller.teleport(home, start ? start.facing : Math.atan2(facing.x - home.x, facing.z - home.z));
-    this.renderPosition.set(home.x, this.controller.position.y, home.z);
-    this.visualPosition.copy(this.renderPosition);
-    this.lastPosition.copy(this.renderPosition);
-    this.lastHeading = this.controller.heading;
-  }
-
   /**
    * How the visual really moved this frame in their own frame (forward, sideways, turning), smoothed: the legs
    * follow the ground, not what the body was asked for, so they never walk on the spot or slide.
@@ -186,7 +174,7 @@ export class Human {
     this.lastHeading = heading;
     if (dt <= 0) return;
     if (Math.hypot(dx, dz) > 1 || Math.abs(turn) > 1.5) {
-      // Teleported (a replay, a debug jump): nothing to walk.
+      // Teleported (a debug jump): nothing to walk.
       v.speed = v.sideSpeed = v.turnRate = 0;
       return;
     }

@@ -49,6 +49,11 @@ export interface HumanActivityDef {
   readonly requires?: { readonly after: HumanActivityId; readonly within: number };
   /** A line now and then as it starts (not every time). */
   readonly lines?: readonly string[];
+  /**
+   * The game can open with them in the middle of this (a random one of these, at a random one of its places).
+   * Everyday, one-step things only: not cooking, and not a meal nobody made.
+   */
+  readonly startsDay?: boolean;
 }
 
 const SEATS: readonly PlaceKind[] = ['couchSeat', 'readingSeat'];
@@ -59,6 +64,7 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     id: 'watchTV',
     name: 'watching TV',
     steps: [{ places: ['couchSeat'], pose: 'watch', prop: 'remote', seconds: [45, 90], lookAtFocus: true, effect: 'tv' }],
+    startsDay: true,
     weight: 3,
     cooldown: 150,
     interruptible: 'always',
@@ -69,6 +75,7 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     id: 'readBook',
     name: 'reading',
     steps: [{ places: ['readingSeat', 'couchSeat'], pose: 'read', prop: 'book', seconds: [40, 80] }],
+    startsDay: true,
     weight: 2.5,
     cooldown: 150,
     interruptible: 'sometimes',
@@ -78,6 +85,7 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     id: 'usePhone',
     name: 'on the phone',
     steps: [{ places: ['stool', 'couchSeat', 'readingSeat', 'diningChair'], pose: 'phone', prop: 'phone', seconds: [20, 40] }],
+    startsDay: true,
     weight: 2,
     cooldown: 90,
     interruptible: 'always',
@@ -87,6 +95,7 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     id: 'sitAtDiningTable',
     name: 'coffee at the table',
     steps: [{ places: ['diningChair'], pose: 'sip', prop: 'mug', seconds: [30, 55] }],
+    startsDay: true,
     weight: 1.6,
     cooldown: 150,
     interruptible: 'always',
@@ -131,6 +140,7 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     id: 'relaxOnCouch',
     name: 'relaxing',
     steps: [{ places: SEATS, pose: 'relax', seconds: [20, 40] }],
+    startsDay: true,
     weight: 1.4,
     cooldown: 100,
     interruptible: 'always',
@@ -140,6 +150,7 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     id: 'standAtKitchenCounter',
     name: 'a coffee at the counter',
     steps: [{ places: ['kitchenCounter', 'sink'], pose: 'sip', prop: 'mug', seconds: [12, 25] }],
+    startsDay: true,
     weight: 1.3,
     cooldown: 90,
     interruptible: 'always',
@@ -149,6 +160,7 @@ export const HUMAN_ACTIVITIES: readonly HumanActivityDef[] = [
     id: 'foldLaundry',
     name: 'folding laundry',
     steps: [{ places: ['laundry'], pose: 'fold', prop: 'laundry', seconds: [12, 22] }],
+    startsDay: true,
     weight: 0.8,
     cooldown: 300,
     interruptible: 'always',

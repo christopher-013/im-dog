@@ -34,6 +34,14 @@ export const HUMAN = {
     seatStepTime: 1.0,
     seatReach: 0.22,
     seatAlign: 0.3,
+    /** How far down onto the seat (0..1) before the body's capsule moves over onto it (and back when getting up). */
+    seatColliderFrom: 0.5,
+    /**
+     * Getting up with Moke right where they'd stand: they step out beside him instead, the first of these that has
+     * room (m to either side of him, then out and to the side). With no room anywhere, they wait for him to move.
+     */
+    standAside: [0.45, 0.6, 0.75] as const,
+    standAsideOut: 0.4,
     /** Held up by Moke: re-plan keeping this far from where he stands (m, centre to centre). */
     avoidRadius: 0.62,
   },

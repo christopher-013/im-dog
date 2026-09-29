@@ -17,6 +17,7 @@ a score, and there's no menu of them to grind.
 | KITCHEN = FOOD? | Hang about the stove while dinner cooks (3 s within 2.2 m) | `Game.updateDogActivities` |
 | BARK = PROTECTOR | Bark at the ringing door and let the human receive the delivery | `DoorDelivery` → `Game` |
 | BEG + KITCHEN = FOOD | Wait beside the chopping human, beg, then eat their carrot reward | `KitchenBeg` → `Game` |
+| BEGGING = FOOD | Sit beside the human at dinner, beg, and eat the meatball they share from their plate | `DinnerBeg` → `Game` |
 | PILLOWS = FUN TO MOVE | Dig under the couch's throw pillows and toss them onto the floor | `PillowDig` → `Game` |
 | MALIBU = FRIEND | Go up to the bird cage in the gym and "Play with Malibu": he stands on his hind legs, Malibu bounces and chirps | `Game.playWithMalibu` |
 

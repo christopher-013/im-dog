@@ -36,4 +36,29 @@ export const HOME_ACTIVITIES = {
     foodTimeout: 60,
     cooldown: 35,
   },
+  /** Begging at the dinner table (DinnerBeg): the human sat eating at the dining table, Moke beside their chair. */
+  dinner: {
+    /** Moke's feet within this of their seat (m), on the floor (feet this low), and no further back than this (m). */
+    reach: 0.95,
+    floor: 0.15,
+    behind: 0.2,
+    stillSpeed: 0.25,
+    /** Sitting there quietly this long before begging works (s). */
+    wait: 1.5,
+    /** Saying no (s), then a sigh before they give in. */
+    refuseTime: 2.4,
+    sighTime: 1.4,
+    /** Picking a meatball off the plate, then holding it down to him until he takes it (or gives up waiting). */
+    takeTime: 1.1,
+    offerTime: 1.1,
+    offerTimeout: 8,
+    /** How high over his feet they hold it (m): just above his nose as he sits up. */
+    offerHeight: 0.5,
+    cooldown: 45,
+    lines: {
+      refuse: 'Moke… no begging at the table.',
+      giveIn: 'Oh, alright. Just one bite.',
+      keep: 'Suit yourself. More for me!',
+    },
+  },
 } as const;

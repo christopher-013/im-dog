@@ -4,6 +4,9 @@ import type { Interactable } from '../interactions/Interactable';
 import type { AttentionTarget } from '../player/AttentionSystem';
 import type { ScentSource } from '../senses/ScentSystem';
 
+/** What each kind of treat is called (its smell, and "Eat …"). */
+const TREAT_NAMES = { biscuit: 'Treat', carrot: 'Carrot', meatball: 'Meatball' } as const;
+
 /** Where a treat is: still in the jar, in someone's hand, down on the floor for Moke, or eaten. */
 export type TreatState = 'stored' | 'held' | 'placed' | 'eaten';
 
@@ -28,16 +31,17 @@ export class Treat {
     readonly id = 'treat',
     /** How far its smell carries (m): further for a hidden one (Treat Hunt). */
     scentRadius = 6,
-    readonly type: 'biscuit' | 'carrot' = 'biscuit',
+    readonly type: 'biscuit' | 'carrot' | 'meatball' = 'biscuit',
   ) {
-    this.view = type === 'carrot' ? createCarrotView() : createTreatView();
+    this.view = type === 'carrot' ? createCarrotView() : type === 'meatball' ? createMeatballView() : createTreatView();
+    const name = TREAT_NAMES[type];
     this.view.visible = false;
     const treat = this;
     const smelly = () => treat.state === 'held' || treat.state === 'placed';
     this.scent = {
       id: `treat:${id}`,
       category: 'TREAT',
-      label: type === 'carrot' ? 'Carrot' : 'Treat',
+      label: name,
       strength: 1,
       radius: scentRadius,
       get position() {
@@ -61,7 +65,7 @@ export class Treat {
     this.interactable = {
       id: `eat:${id}`,
       type: 'EAT',
-      label: type === 'carrot' ? 'Eat Carrot' : 'Eat Treat',
+      label: `Eat ${name}`,
       interactionDistance: HEIST.eatReach,
       get enabled() {
         return treat.state === 'placed';
@@ -81,6 +85,13 @@ export class Treat {
     this.view.position.set(0, -0.02, 0.03);
     this.view.rotation.set(0, 0, Math.PI / 2);
     this.view.visible = true;
+  }
+
+  /** Back in the jar (an activity that handed it out ended or was called off). */
+  reset(): void {
+    this.state = 'stored';
+    this.view.visible = false;
+    this.view.removeFromParent();
   }
 
   /** Put down on the floor at `at`, under `parent` (the scene). */
@@ -106,13 +117,6 @@ export class Treat {
     this.state = 'eaten';
     this.view.visible = false;
     this.onEat?.();
-  }
-
-  /** Back in the jar (a replay). */
-  reset(): void {
-    this.state = 'stored';
-    this.view.visible = false;
-    this.view.removeFromParent();
   }
 
   /** Each frame: while in a hand, its smell and eye-catchingness follow the hand. */
@@ -148,6 +152,17 @@ function createTreatView(): Group {
       root.add(knob);
     }
   }
+  return root;
+}
+
+/** A meatball off the human's dinner plate, in tomato sauce. */
+function createMeatballView(): Group {
+  const root = new Group();
+  root.name = 'Meatball';
+  const ball = new Mesh(new SphereGeometry(0.017, 12, 9), new MeshStandardMaterial({ color: '#7a4a32', roughness: 0.9 }));
+  ball.scale.set(1, 0.9, 1);
+  const sauce = new Mesh(new SphereGeometry(0.0175, 12, 6, 0, Math.PI * 2, 0, Math.PI / 3), new MeshStandardMaterial({ color: '#b8372a', roughness: 0.5 }));
+  root.add(ball, sauce);
   return root;
 }
 

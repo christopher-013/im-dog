@@ -40,6 +40,62 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-28, owner request, **uncommitted**): **begging at dinner** (`activities/DinnerBeg.ts`). While the
+human sits eating dinner at the dining table, Moke can stand beside their chair and **Sit & Beg**. "Moke… no begging
+at the table." A sigh. "Oh, alright. Just one bite." Still seated, they pick a meatball off the plate with the hand on his
+side and hold it down to him; he eats it and learns **BEGGING = FOOD** (`beg=food`). Then dinner carries on in the same
+chair. New: the seated `share` pose (`HumanAnimationController`, anim state `SHARE_FOOD`); `HumanActivityController.stayPut`
+and a resume that keeps them on the seat a role left them on; a meatball `Treat` type and meatballs on the dinner plate;
+`HOME_ACTIVITIES.dinner`. **Fixed on the way:** as a beg an activity asked for ended, Treat Hunt saw "a trick near a
+free human" and sent the human off for a treat (this happened after the kitchen carrot too); it now only counts tricks
+that start while the human is free to watch. Verification: typecheck, `npm test` (**472 tests / 65 files**; five new
+dinner-begging tests with the real dining chair and human, each checked to fail without its fix), build + verify-dist.
+Browser (dev server, desktop, game stepped from the console because the pane was hidden): the whole sequence in the real
+game, the hand within 7–8 cm of the plate and of Moke's nose, BEGGING = FOOD learned, the human never left the chair, no
+console errors. Not looked at on screen (no screenshot of the pose), no phone test.
+
+Claude Code (2026-09-28, owner request, **uncommitted**): the TVs play a cartoon instead of a dark, reflective
+screen. **GEARBOTS** (`world/RobotCartoon.ts`) is an original show in the style of the 1980s transforming-robot
+cartoons: a starburst title card; an orange pickup racing down a sunset highway; it transforms into a robot, piece
+by piece; the robot waves as a purple jet streaks over; the jet transforms; the two high-five ("CLANK!"); "will be
+right back!". It's a 23.5 s loop, drawn in code on a 384×216 canvas 12 times a second (`TV_SHOW` in
+`config/world.ts`), and pauses with the game. None of the real franchise's names, logos, taglines or character
+designs are used (the repo is public; see `docs/ASSETS.md`), and no fighting. All three TVs (living-room console, family-room
+fireplace, dining-room stand) use a new `tvShow` material; the ovens, microwave and wine fridge keep the dark
+`tvScreen` glass. The old blue "TV glow" overlay while the human watched is gone (it would wash the picture out).
+Verification: typecheck, `npm test` (**467 tests / 65 files**, new `RobotCartoon.test.ts`), build + verify-dist.
+Browser (dev server, desktop): the title card on the living-room TV in the game, a contact sheet of every scene
+rendered from the live canvas, no console errors; a frame takes 0.06–0.38 ms to draw on the desktop. The wing's
+two TVs share the same material but weren't looked at in the running game; no phone test.
+
+Claude Code (2026-09-28, code-review fixes against `1995ef7`, **uncommitted**): a review of everything since
+`1c08d9f` found nine issues, all fixed:
+- **Seated human frozen by Moke:** asked to get up with Moke standing where they'd sat down from (e.g. at their knees
+  for pets), the human stayed sat with no timeout, holding up the routine, the doorbell and the heist. Now they stand
+  up beside him (`HumanController.standAside`, `CharacterBody.roomAt` / `placeCentre`, `HUMAN.move.standAside`); they
+  only wait when there's no room anywhere near. Tests: `HumanController.test.ts` (stands beside him, never on top;
+  waits when boxed in), and the dining-chair test in `Home.test.ts` now expects standing aside, not waiting.
+- **Courier hair:** the cap replaced the hair entirely, and no look's `hair` colour was ever used (the shell painted
+  fixed near-black). The shell's shading now comes from the look's colour, and under a cap it lies flat where the cap
+  covers it, so the courier's auburn shows at the sides and back. The household human's black hair is unchanged
+  within a few RGB units.
+- **Malibu after a bark** could "hop" to the perch it was already on (a copy of the top perch defeated the
+  same-perch filter). Fixed; test in `Conure.test.ts`.
+- **Squeaky fish:** each resume from pause gave an early extra bite and squeak. The rhythm now carries on across a
+  pause and only restarts when he picks the fish up (`chew(active, holding)`, `CHEW.firstBite`).
+- **Load time:** the patio's flagstone texture compared every pixel with all 49 stones; it now checks the nine
+  nearby, giving an identical image (checked byte for byte in Node: 382 ms → 32 ms on the desktop).
+- **Dead code:** the PLAY AGAIN replay path (`SockHeistController.reset`, `Human.reset`, `HumanBrain.reset`,
+  `Prop.reset`, `HEIST_RESET`, `UIManager.clearHeist`, unused heist places) is gone.
+- **Random start** now uses an explicit `startsDay` flag on activities instead of matching effect names (same seven
+  activities as before).
+- The fish's squashing part is found once, not every frame; `CONURE` moved to `config/conure.ts` and the seat
+  collider threshold to `HUMAN.move.seatColliderFrom` (AGENTS.md: tunable numbers belong in `src/config/`).
+Verification: `npm run typecheck`, `npm test` (**461 tests / 64 files pass**), `npm run build` and verify-dist (no
+private photo in the output). Browser (dev server, desktop): no console errors; a close-up render of the courier shows
+the hair under the cap; the gym and patio render. The chewing and the stand-aside weren't watched live (the browser
+pane was hidden, which stops the game loop): unit and Rapier tests only. No physical-device test. Not committed.
+
 OpenAI Codex (2026-09-27, public-preview readiness work, **uncommitted**): the bathroom roll is now wall-mounted
 to the toilet's right. Pull Toilet Paper glides Moke to the loose end, attaches paper to his mouth, then returns
 movement control so the trail follows his route out of the bathroom. The human responds only after sufficient

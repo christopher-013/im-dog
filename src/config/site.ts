@@ -12,6 +12,8 @@ export const SITE = {
 /** Where the Feedback form posts. */
 export const FEEDBACK = {
   endpoint: '/api/feedback',
+  /** Seconds "Moke says Thank you!" shows after feedback is sent, before the window closes by itself. */
+  thanksSeconds: 2.5,
 } as const;
 
 /** The anonymous player counter (usage.ts in the Worker publishes the figures to the "I'M DOG? usage log" Issue). */

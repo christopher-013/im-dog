@@ -40,6 +40,13 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-29, owner request): **Feedback thank-you and email notifications.** After sending, the form no longer
+links to the public Issue: it shows "Moke says Thank you!" (the wagging dog-face mark) for `FEEDBACK.thanksSeconds`
+(2.5 s), then closes itself, back to the start or pause menu (`src/ui/FeedbackDialog.ts`, `#feedback-thanks` in
+`index.html`). New `.github/workflows/feedback-notify.yml`: on each Worker-filed "[Feedback]" Issue, github-actions[bot]
+adds the `feedback` label and assigns the owner, so GitHub emails them (their own Issues never notify them). Details:
+`docs/FEEDBACK.md` → "Email notifications".
+
 Claude Code (2026-09-29, owner request): **SEO for Google and Bing.** `index.html`: a descriptive title ("I'M DOG? Play as
 Moke the Dog | Free Cozy Browser Game") and description, a canonical link to https://im-dog.com/ (the GitHub Pages copy
 defers to it), Open Graph and Twitter tags, `VideoGame` JSON-LD, a fuller `<noscript>`. New `public/robots.txt` (all but

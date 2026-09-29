@@ -1,0 +1,38 @@
+# Emails the owner about each new player Feedback Issue (docs/FEEDBACK.md → "Email notifications").
+# The site Worker files feedback with the owner's token, so the Issues are the owner's own, and GitHub never notifies
+# you about your own actions. This workflow, acting as github-actions[bot], labels the Issue "feedback" and assigns it
+# to the owner: that assignment is someone else's action, so GitHub emails it ("you were assigned").
+name: Feedback notification
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Feedback Issue number (to test the email, or to catch up an older Issue)
+        required: true
+        type: number
+
+permissions:
+  issues: write
+
+jobs:
+  notify:
+    # Only the Worker's Issues: titled "[Feedback] …" and filed with the owner's token. (Anyone can open an Issue on a
+    # public repository, and those already notify the owner.)
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (startsWith(github.event.issue.title, '[Feedback]') && github.event.issue.user.login == github.repository_owner)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Label the Issue and assign it to the owner
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue.number || inputs.issue }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          gh label create feedback --color F4A261 --description "From the in-game Feedback form" --force
+          gh issue edit "$ISSUE" --add-label feedback --add-assignee "$OWNER"

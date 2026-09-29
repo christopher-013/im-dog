@@ -448,12 +448,16 @@
           <textarea id="feedback-comments" name="comments" rows="5" maxlength="2000"></textarea>
           <input id="feedback-website" class="feedback-honey" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" />
           <p id="feedback-status" class="feedback-status" role="status" aria-live="polite"></p>
-          <a id="feedback-issue-link" class="feedback-issue-link" target="_blank" rel="noopener noreferrer" hidden>View your public Issue</a>
           <div class="feedback-actions">
             <button id="btn-feedback-close" class="btn btn-secondary" type="button">BACK</button>
             <button id="btn-feedback-submit" class="btn btn-primary" type="submit">SEND FEEDBACK</button>
           </div>
         </form>
+        <!-- Shown for a moment after the feedback is sent; then the window closes by itself (FEEDBACK.thanksSeconds). -->
+        <div id="feedback-thanks" class="card feedback-thanks" role="alert" tabindex="-1" hidden>
+          <svg class="thanks-face" aria-hidden="true"><use href="#moke-face" /></svg>
+          <p class="card-title">Moke says Thank you!</p>
+        </div>
       </dialog>
     </div>
 

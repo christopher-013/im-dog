@@ -23,6 +23,25 @@ comments>". The repository is public, so nothing personal goes in the Issue.
 The GitHub token exists only as an encrypted Cloudflare secret: never in the game, this repository, GitHub Actions or
 a chat. Without the token, the database or the rate limiter, the form fails closed (it says it couldn't send).
 
+Once the Worker confirms the Issue, the form gives way to **"Moke says Thank you!"** (the dog-face mark, wagging) for
+`FEEDBACK.thanksSeconds` (2.5 s, `src/config/site.ts`), then the window closes by itself and the player is back on the
+start or pause menu. Escape, a click outside or a tap on the thank-you closes it sooner. It doesn't link to the Issue.
+If sending fails, the form stays open with the error so they can try again.
+
+### Email notifications
+
+The Worker files each Issue with the owner's token, so the Issues are the owner's own, and GitHub never notifies you
+about your own actions. `.github/workflows/feedback-notify.yml` runs when an Issue titled "[Feedback] …" by the owner
+opens: as github-actions[bot], it adds the `feedback` label (creating it the first time) and assigns the Issue to the
+owner. The assignment is someone else's action, so GitHub emails it: the subject is the Issue title ("[Feedback]" and
+the first line of the comments), with a link to the Issue. Any other Issue is left alone.
+
+- It needs no secret (the workflow's own token, `issues: write`).
+- The email goes where GitHub sends notifications: **Settings → Notifications** → Default notifications email, with
+  **Email** ticked under "Participating, @mentions and custom" (GitHub's default).
+- Try it, or catch up an older Issue: **Actions → Feedback notification → Run workflow** with the Issue number.
+- The `feedback` label lists every piece of player feedback: https://github.com/christopher-013/im-dog/issues?q=label%3Afeedback
+
 ## The player counter
 
 Like Adtona's and Pictayo's usage counters, it answers one question, "are real people playing?", and can't answer

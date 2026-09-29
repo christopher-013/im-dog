@@ -1,8 +1,10 @@
 /**
  * The player-facing Feedback form (start and pause menus). It posts to the site Worker on im-dog.com, as Adtona's and
  * Pictayo's forms do; the Worker files the public Issue and keeps the private record. No GitHub credential or private
- * visitor data lives in the game bundle.
+ * visitor data lives in the game bundle. Once it's sent, Moke says thank you and the window closes by itself.
  */
+import { FEEDBACK } from '../config/site';
+
 function validEndpoint(value: string): boolean {
   // A path on this same site (im-dog.com's /api/feedback), or a full address (local testing).
   if (value.startsWith('/') && !value.startsWith('//')) return true;
@@ -25,11 +27,12 @@ export class FeedbackDialog {
   private readonly dialog: HTMLDialogElement;
   private readonly form: HTMLFormElement;
   private readonly status: HTMLElement;
-  private readonly issueLink: HTMLAnchorElement;
+  private readonly thanks: HTMLElement;
   private readonly submitButton: HTMLButtonElement;
   private readonly closeButton: HTMLButtonElement;
   private sending = false;
   private submissionId: string | undefined;
+  private thanksTimer: number | undefined;
   readonly enabled: boolean;
 
   constructor(
@@ -44,7 +47,7 @@ export class FeedbackDialog {
     this.dialog = el<HTMLDialogElement>('feedback-dialog');
     this.form = el<HTMLFormElement>('feedback-form');
     this.status = el('feedback-status');
-    this.issueLink = el<HTMLAnchorElement>('feedback-issue-link');
+    this.thanks = el('feedback-thanks');
     this.submitButton = el<HTMLButtonElement>('btn-feedback-submit');
     this.closeButton = el<HTMLButtonElement>('btn-feedback-close');
     this.enabled = validEndpoint(endpoint);
@@ -60,6 +63,9 @@ export class FeedbackDialog {
     this.dialog.addEventListener('cancel', (event) => {
       if (this.sending) event.preventDefault();
     });
+    // However it closes (the timer, Escape, a tap on the thank-you), the form is back for next time.
+    this.dialog.addEventListener('close', () => this.showForm());
+    this.thanks.addEventListener('click', () => this.close());
     this.form.addEventListener('submit', (event) => {
       event.preventDefault();
       void this.submit();
@@ -73,8 +79,8 @@ export class FeedbackDialog {
 
   open(): void {
     if (!this.enabled || this.dialog.open) return;
+    this.showForm();
     this.status.textContent = '';
-    this.issueLink.hidden = true;
     this.dialog.showModal();
     this.doc.getElementById('feedback-name')?.focus({ preventScroll: true });
   }
@@ -132,9 +138,8 @@ export class FeedbackDialog {
       if (!Number.isSafeInteger(issueNumber) || Number(issueNumber) < 1) throw new Error(MESSAGES.unconfirmed);
       this.form.reset();
       this.submissionId = undefined;
-      this.status.textContent = 'Thank you! Your feedback was sent.';
-      this.issueLink.href = `https://github.com/christopher-013/im-dog/issues/${issueNumber}`;
-      this.issueLink.hidden = false;
+      this.status.textContent = '';
+      this.showThanks();
     } catch (error) {
       this.status.textContent = error instanceof Error && error.name === 'AbortError'
         ? 'Feedback timed out. Please try again.'
@@ -147,5 +152,21 @@ export class FeedbackDialog {
       this.submitButton.disabled = false;
       this.closeButton.disabled = false;
     }
+  }
+
+  private showForm(): void {
+    clearTimeout(this.thanksTimer);
+    this.thanksTimer = undefined;
+    this.thanks.hidden = true;
+    this.form.hidden = false;
+  }
+
+  /** "Moke says Thank you!", then back to the menu the form was opened from. */
+  private showThanks(): void {
+    if (!this.dialog.open) return;
+    this.form.hidden = true;
+    this.thanks.hidden = false;
+    this.thanks.focus({ preventScroll: true });
+    this.thanksTimer = window.setTimeout(() => this.close(), FEEDBACK.thanksSeconds * 1000);
   }
 }

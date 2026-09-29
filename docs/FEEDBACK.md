@@ -8,8 +8,8 @@ keeps publishing until im-dog.com is live and checked; there, the Feedback butto
 
 ## Feedback
 
-The start and pause menus have a Feedback lightbox: Name, Email and Comments, all optional, plus an acknowledgement
-box. As in Adtona and Pictayo, there's no bot-check widget: the Worker checks the origin, the size and shape of what
+The start and pause menus have a Feedback lightbox: Name, Email and Comments, all optional (the Comments label says
+they're public). As in Adtona and Pictayo, there's no bot-check widget: the Worker checks the origin, the size and shape of what
 arrives and a hidden bot-trap field (a bot that fills it is quietly "accepted" and nothing is filed), and uses
 Cloudflare's rate limiter (5 a minute per address). On top of that it allows three per address an hour. Then it writes
 a private record and creates a public Issue in `christopher-013/im-dog`, titled "[Feedback] <first line of the
@@ -86,7 +86,8 @@ After that, the GitHub Pages copy can be turned into a pointer to im-dog.com (a 
 - Only the Cloudflare account owner can read the database and the counts. If the daily Cron stops, fix it (it both
   purges old feedback records and posts the day's count). On a data request, remove the record where feasible.
   Cloudflare backups may outlive active-record deletion under Cloudflare's own policy.
-- The privacy notice (`public/feedback-privacy.html`, linked from the form) says what's public, what's private and
+- The privacy notice (`public/feedback-privacy.html`, at im-dog.com/feedback-privacy; the owner took its summary, link
+  and acknowledgement box out of the form on 2026-09-29) says what's public, what's private and
   what the counter keeps. Comments are public, and people may still type personal things there: the notice asks them
   not to. Children under 13 are asked to have a parent or guardian send feedback.
 - If the token is misused: revoke it in GitHub, then `npx wrangler secret delete GITHUB_TOKEN`; the form fails closed

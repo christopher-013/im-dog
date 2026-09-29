@@ -60,7 +60,6 @@ export class FeedbackDialog {
     this.dialog.addEventListener('cancel', (event) => {
       if (this.sending) event.preventDefault();
     });
-    // The acknowledgement box is required: the browser won't submit until it's ticked.
     this.form.addEventListener('submit', (event) => {
       event.preventDefault();
       void this.submit();

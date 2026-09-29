@@ -545,7 +545,7 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
   padding: 24px 30px;
 }
 
-.feedback-card label:not(.feedback-consent) { font-weight: 600; }
+.feedback-card label { font-weight: 600; }
 .field-optional { color: var(--ink-soft); font-size: 0.85rem; font-weight: 400; }
 .feedback-card input[type='text'],
 .feedback-card input[type='email'],
@@ -565,16 +565,14 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
 .feedback-card textarea:focus-visible,
 .feedback-card a:focus-visible { outline: 3px solid var(--leaf); outline-offset: 2px; }
 .feedback-card .feedback-honey { position: absolute; left: -10000px; width: 1px; height: 1px; }
-.feedback-privacy, .feedback-status {
+.feedback-status {
   margin: 0;
   color: var(--ink-soft);
   font-size: 0.88rem;
   line-height: 1.4;
 }
-.feedback-privacy a, .feedback-issue-link { color: var(--leaf); }
+.feedback-issue-link { color: var(--leaf); }
 .feedback-status:empty { display: none; }
-.feedback-consent { display: flex; align-items: flex-start; gap: 9px; font-size: 0.92rem; }
-.feedback-consent input { flex: none; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--leaf); }
 .feedback-issue-link[hidden] { display: none; }
 .feedback-actions { display: flex; gap: 12px; margin-top: 4px; }
 .feedback-actions .btn { flex: 1; padding-inline: 0.5em; font-size: 1rem; }

@@ -5,6 +5,8 @@
 {
 	"name": "im-dog",
 	"main": "./src/feedback/worker.ts",
+	// The owner's Cloudflare account (an ID, not a secret): saves the deploy from having to guess.
+	"account_id": "81cc81e7dd4531da3968862517ab5e2b",
 	"compatibility_date": "2026-09-01",
 	// Feedback arrives in request bodies: keep them out of logs.
 	"observability": {

@@ -1,0 +1,43 @@
+# Publishes the game to https://im-dog.com on every push to main (or on demand from the Actions tab), after the tests
+# pass, beside the GitHub Pages deploy: the site Worker (wrangler.jsonc: the game, feedback, the player counter) and
+# the www.im-dog.com redirect (wrangler.www.jsonc). It needs one repository secret, CLOUDFLARE_API_TOKEN (see
+# docs/FEEDBACK.md); without it the build still runs and the deploy step is skipped with a notice, not failed.
+# The private Moke photos are git-ignored, so they're never in CI; `npm run build` still runs its leak check.
+name: Deploy to im-dog.com
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deployment at a time; a newer push waits for the one in progress rather than cancelling it.
+concurrency:
+  group: cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # GITHUB_SHA is set in Actions, so the build carries its commit (feedback reports it).
+      - run: npm run build
+      - name: Deploy the site and the www redirect
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: |
+          npx --yes wrangler@4.143.0 deploy
+          npx --yes wrangler@4.143.0 deploy -c wrangler.www.jsonc
+      - name: Not deployed yet
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "::notice::CLOUDFLARE_API_TOKEN isn't set, so im-dog.com wasn't updated. Add it as described in docs/FEEDBACK.md."

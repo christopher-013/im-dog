@@ -55,11 +55,20 @@ into Cloudflare's page, never into a chat, a commit or a command line.
    repository access **Only select repositories → im-dog**, permissions **Issues: Read and write** only, with an
    expiry date (rotate it before then). Then `npx wrangler secret put GITHUB_TOKEN` and paste it at the prompt. Both
    feedback and the usage log use it.
-6. **www.im-dog.com.** DNS → add a record `www`, type `AAAA`, content `100::`, **Proxied**. Then Rules → **Redirect
-   Rules** → the template **Redirect from WWW to root**, for im-dog.com.
-7. **Automatic deploys** (recommended). Workers & Pages → **im-dog** → Settings → **Builds** → connect the GitHub
-   repository `christopher-013/im-dog`, branch `main`, build command `npm run build`, deploy command
-   `npx wrangler deploy`. From then on, every push to `main` updates both im-dog.com and the GitHub Pages copy.
+6. **www.im-dog.com.** *(Done 2026-09-29.)* A second, tiny Worker, `im-dog-www` (`wrangler.www.jsonc`,
+   `src/redirect/www.ts`), holds www.im-dog.com and sends every request to the same path on https://im-dog.com (301).
+   Deploy it with `npx wrangler deploy -c wrangler.www.jsonc`; Cloudflare made its DNS record and certificate.
+7. **Automatic deploys.** `.github/workflows/deploy-cloudflare.yml` runs on every push to `main` (beside the GitHub
+   Pages deploy): the tests, the build, then `wrangler deploy` for both Workers. It needs one repository secret:
+   - Cloudflare dashboard → My Profile → **API Tokens** → **Create Token** → the **Edit Cloudflare Workers** template.
+     Account resources: your account; zone resources: **Specific zone → im-dog.com**. Add the permission
+     **Account → D1 → Edit** (the Worker is bound to the feedback database). Give it an expiry date, then create it.
+   - In the repository folder: `gh secret set CLOUDFLARE_API_TOKEN --repo christopher-013/im-dog` and paste the token
+     at the prompt (or GitHub → the repo → Settings → Secrets and variables → Actions → New repository secret).
+   - Then GitHub → Actions → **Deploy to im-dog.com** → **Run workflow**, and check it deploys. Until the secret
+     exists, the workflow skips the deploy with a notice rather than failing.
+   New D1 migrations aren't applied by the workflow: run `npx wrangler d1 migrations apply im-dog-feedback --remote`
+   yourself when a change adds one.
 8. **Check it.** On https://im-dog.com:
    - Feedback: open it from the start menu, send a clearly labelled test, and confirm the thank-you message and link,
      one new Issue with no name, email, IP or browser in it, and one private row:

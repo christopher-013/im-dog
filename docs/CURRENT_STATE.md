@@ -40,6 +40,14 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-29, owner request): **www.im-dog.com and automatic deploys** (D25). www.im-dog.com now redirects
+(301, same path and query) to https://im-dog.com through a tiny second Worker, `im-dog-www` (`wrangler.www.jsonc`,
+`src/redirect/www.ts`), deployed from here with Wrangler; checked live over https and http. New
+`.github/workflows/deploy-cloudflare.yml`: on every push to `main`, tests, build, then deploy both Workers; it skips
+the deploy (with a notice) until the owner adds the `CLOUDFLARE_API_TOKEN` repository secret (steps in
+`docs/FEEDBACK.md`). Both Wrangler configs now name the account. **Still to do (owner):** that secret, and the
+`GITHUB_TOKEN` Worker secret for feedback and the usage log.
+
 Claude Code (2026-09-29, owner request, **uncommitted**): **feedback made the Adtona/Pictayo way, and a player
 counter** (D24). No Turnstile (widget, secret, script) any more: Cloudflare's rate limiter (`FEEDBACK_RATE_LIMITER`,
 5 a minute per address, namespace 51013) plus the checks and bot trap they use, and the 3-an-hour cap; GitHub calls

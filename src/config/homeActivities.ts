@@ -36,6 +36,17 @@ export const HOME_ACTIVITIES = {
     foodTimeout: 60,
     cooldown: 35,
   },
+  /** Watching the ballgame on TV (WatchTheGame, only while the World Series special is on). */
+  watchGame: {
+    /** In front of a TV: this near and far (m, flat), and within this angle of straight on (rad). */
+    near: 0.6,
+    reach: 3.6,
+    halfAngle: 1.1,
+    /** Turning to face the screen as he sits (rad/s). */
+    turnRate: 5,
+    cooldown: 0,
+    cheer: 'HOME RUN! GO PADRES!',
+  },
   /** Begging at the dinner table (DinnerBeg): the human sat eating at the dining table, Moke beside their chair. */
   dinner: {
     /** Moke's feet within this of their seat (m), on the floor (feet this low), and no further back than this (m). */

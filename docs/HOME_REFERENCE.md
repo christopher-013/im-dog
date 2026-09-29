@@ -161,7 +161,7 @@ All in code (`src/world/home/`), stylized, from the photos above; nothing from t
 - **Dog-scale:** under the dining table (and between the chairs), under the island's overhang between the stools, up
   on the sofas and the hearth, the pink blanket, round the fan and stool. Moke can't reach the island, counters,
   stools, table, sideboard or mantel (the jump cap, D17). 20 navigation tests pin this.
-- **Signs of life:** the TVs play a cartoon (GEARBOTS, `world/RobotCartoon.ts`), a pot steams on the range while dinner cooks, a plate appears at the
+- **Signs of life:** each TV plays a different show, swapping now and then (`world/tv/`), a pot steams on the range while dinner cooks, a plate appears at the
   table.
 
 ## Uncertain

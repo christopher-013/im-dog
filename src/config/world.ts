@@ -11,8 +11,20 @@ export const HOUSE_SCALE = {
   coffeeTableHeight: 0.45,
 } as const;
 
-/**
- * GEARBOTS, the cartoon on the TVs (world/RobotCartoon.ts): its picture (px, 16:9 like the screens) and how often a
- * new frame is drawn (fps: a dozen, "on twos" like old cel animation, and cheap to upload).
- */
-export const TV_SHOW = { width: 384, height: 216, fps: 12 } as const;
+/** The TVs (world/tv/TvChannels.ts): three shows on three sets, swapping channels now and then. */
+export const TV = {
+  /** Each set's picture (px, 16:9 like the screens), and how often a new frame is drawn (fps: a dozen, "on twos" like old cel animation, and cheap to upload). */
+  width: 384,
+  height: 216,
+  fps: 12,
+  /** Seconds (min, max) between two sets swapping channels. */
+  switchEvery: [18, 40] as const,
+  /** Snow between channels (s), then how long the channel number shows in the corner (s). */
+  staticTime: 0.45,
+  osdTime: 2,
+  /**
+   * The easter egg: a special broadcast (the World Series, world/tv/WorldSeries.ts) takes over every TV at once, the
+   * first time this long into the game (s, min…max), then again every so often.
+   */
+  special: { firstAfter: [90, 240] as const, every: [360, 720] as const },
+} as const;

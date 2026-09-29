@@ -8,7 +8,12 @@ import { MOKE_ANIMATION } from '../config/animation';
  * - `spin`: chases his tail round in one quick circle.
  */
 export const TRICKS = ['bellyUp', 'beg', 'paw', 'spin'] as const;
-export type Trick = (typeof TRICKS)[number];
+/**
+ * Tricks only a moment brings out, never picked at random: `celebrate`, up on his hind legs spinning round with
+ * joy (a home run on TV, see WatchTheGame).
+ */
+export const MOMENT_TRICKS = ['celebrate'] as const;
+export type Trick = (typeof TRICKS)[number] | (typeof MOMENT_TRICKS)[number];
 
 /** What decides which tricks make sense right now. */
 export interface TrickContext {

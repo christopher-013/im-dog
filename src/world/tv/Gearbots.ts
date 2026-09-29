@@ -1,11 +1,10 @@
-import { CanvasTexture, LinearFilter, SRGBColorSpace, type MeshBasicMaterial } from 'three';
-import { TV_SHOW } from '../config/world';
-import { clamp, lerp, smoothstep } from '../utils/math';
+import { lerp } from '../../utils/math';
+import { caption, clamp01, ease, flash, INK, logo, mesas, roundRect, sceneAt, speedLines, star, starburst, type Scenes, type TvShow } from './draw';
 
 /**
- * "GEARBOTS", the Saturday-morning cartoon on every TV in the house: an original show in the style of the 1980s
- * transforming-robot cartoons (flat cel colours, thick black outlines, starburst title cards, sunset highways), drawn
- * in code on a small canvas a dozen times a second, like cel animation "on twos". A friendly show, no fighting.
+ * "GEARBOTS", a Saturday-morning cartoon on the house's TVs (see TvChannels): an original show in the style of the
+ * 1980s transforming-robot cartoons (flat cel colours, thick black outlines, starburst title cards, sunset highways).
+ * A friendly show, no fighting.
  *
  * One loop (`LOOP` s): the title card; an orange pickup racing down a desert highway; it transforms into a robot;
  * the robot waves as a purple jet streaks over; the jet transforms; the two high-five; "right back after these
@@ -48,7 +47,7 @@ export interface Bot {
 export type SceneName = 'title' | 'drive' | 'transform' | 'wave' | 'jet' | 'highFive' | 'bumper';
 
 /** The episode, in order (seconds). */
-export const SCENES: readonly { readonly name: SceneName; readonly from: number; readonly to: number }[] = [
+export const SCENES: Scenes<SceneName> = [
   { name: 'title', from: 0, to: 3 },
   { name: 'drive', from: 3, to: 8.5 },
   { name: 'transform', from: 8.5, to: 11.5 },
@@ -58,13 +57,6 @@ export const SCENES: readonly { readonly name: SceneName; readonly from: number;
   { name: 'bumper', from: 21.5, to: 23.5 },
 ];
 export const LOOP = 23.5;
-
-/** Which scene is on at `time` (s into the loop), how far into it (s) and how far through it (0..1). */
-export function sceneAt(time: number): { name: SceneName; t: number; k: number } {
-  const at = ((time % LOOP) + LOOP) % LOOP;
-  const scene = SCENES.find((s) => at < s.to) ?? SCENES[SCENES.length - 1]!;
-  return { name: scene.name, t: at - scene.from, k: (at - scene.from) / (scene.to - scene.from) };
-}
 
 /** Where `part` is `s` of the way through the transformation (0 the vehicle, 1 the robot). */
 export function partAt(part: Part, s: number, out: Box): Box {
@@ -84,7 +76,6 @@ const box = (x: number, y: number, w: number, h: number, r = 0): Box => ({ x, y,
 /** Tucked away inside the vehicle (no size), at (x, y). */
 const hidden = (x: number, y: number): Box => box(x, y, 0, 0);
 
-const INK = '#17121f';
 const ORANGE = { fill: '#f08a24', shade: '#c0601a' };
 const CREAM = { fill: '#f3e6c8', shade: '#cdbb95' };
 const GLASS = { fill: '#62c6f2', shade: '#3a93c4' };
@@ -146,58 +137,15 @@ interface Pose {
   eyes?: number;
 }
 
-/** The show: a canvas texture for the TV screens, redrawn at `TV_SHOW.fps` while the game runs. */
-export class RobotCartoon {
-  readonly texture: CanvasTexture | null = null;
-  private readonly ctx: CanvasRenderingContext2D | null = null;
+/** The show (one per house: its channel is 3). */
+export class Gearbots implements TvShow {
+  readonly name = 'GEARBOTS';
+  readonly channel = 3;
+  readonly loop = LOOP;
   private readonly box: Box = box(0, 0, 0, 0);
-  private time = 0;
-  private sinceFrame = 0;
 
-  constructor(private readonly options: { readonly width: number; readonly height: number; readonly fps: number } = TV_SHOW) {
-    if (typeof document === 'undefined') return; // unit tests: no canvas, the screens stay dark
-    const canvas = document.createElement('canvas');
-    canvas.width = options.width;
-    canvas.height = options.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    this.ctx = ctx;
-    const texture = new CanvasTexture(canvas);
-    texture.colorSpace = SRGBColorSpace;
-    // Redrawn a dozen times a second: no mipmaps to rebuild each time.
-    texture.generateMipmaps = false;
-    texture.minFilter = LinearFilter;
-    this.texture = texture;
-    this.draw();
-  }
-
-  /** Plays the show on `material` (the TV screens'); without a canvas it stays a dark screen. */
-  showOn(material: MeshBasicMaterial): void {
-    if (!this.texture) return;
-    material.map = this.texture;
-    material.color.set('#ffffff');
-    material.needsUpdate = true;
-  }
-
-  /** Each rendered frame (dt 0 while paused: the show pauses with the game). */
-  update(dt: number): void {
-    if (!this.ctx || dt <= 0) return;
-    this.time = (this.time + dt) % LOOP;
-    this.sinceFrame += dt;
-    if (this.sinceFrame < 1 / this.options.fps) return;
-    this.sinceFrame %= 1 / this.options.fps;
-    this.draw();
-    this.texture!.needsUpdate = true;
-  }
-
-  dispose(): void {
-    this.texture?.dispose();
-  }
-
-  private draw(): void {
-    const ctx = this.ctx!;
-    const { width: W, height: H } = this.options;
-    const { name, t, k } = sceneAt(this.time);
+  draw(ctx: CanvasRenderingContext2D, W: number, H: number, time: number): void {
+    const { name, t, k } = sceneAt(SCENES, time);
     ctx.save();
     switch (name) {
       case 'title':
@@ -225,7 +173,6 @@ export class RobotCartoon {
         break;
     }
     ctx.restore();
-    crt(ctx, W, H);
   }
 
   // ------------------------------------------------------------------ scenes
@@ -470,34 +417,6 @@ function head(ctx: CanvasRenderingContext2D, w: number, h: number, colors: { fil
   if (eyes > 0) star(ctx, w * 0.16, h * 0.08, 4 + eyes * 10, 4, `rgba(255, 255, 255, ${eyes})`);
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
-  const q = Math.max(0, Math.min(r, w / 2, h / 2));
-  ctx.beginPath();
-  ctx.moveTo(x + q, y);
-  ctx.arcTo(x + w, y, x + w, y + h, q);
-  ctx.arcTo(x + w, y + h, x, y + h, q);
-  ctx.arcTo(x, y + h, x, y, q);
-  ctx.arcTo(x, y, x + w, y, q);
-  ctx.closePath();
-}
-
-/** Rays of two colours turning round (cx, cy): the classic dramatic backdrop. */
-function starburst(ctx: CanvasRenderingContext2D, cx: number, cy: number, reach: number, turn: number, a: string, b: string): void {
-  ctx.fillStyle = a;
-  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  ctx.fillStyle = b;
-  const rays = 14;
-  for (let i = 0; i < rays; i++) {
-    const a0 = turn + (i / rays) * Math.PI * 2;
-    const a1 = a0 + Math.PI / rays;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(a0) * reach, cy + Math.sin(a0) * reach);
-    ctx.lineTo(cx + Math.cos(a1) * reach, cy + Math.sin(a1) * reach);
-    ctx.fill();
-  }
-}
-
 /** The show's emblem: a chunky gear with a lightning bolt. */
 function gear(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, turn: number): void {
   ctx.save();
@@ -538,43 +457,6 @@ function gear(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, 
   ctx.restore();
 }
 
-/** Chrome letters with a thick outline, shrunk to fit `maxWidth`. */
-function logo(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, size: number, maxWidth: number): void {
-  ctx.save();
-  ctx.font = `italic 900 ${Math.round(size)}px "Arial Black", Impact, "Helvetica Neue", Arial, sans-serif`;
-  const fit = Math.min(1, maxWidth / Math.max(1, ctx.measureText(text).width));
-  ctx.translate(x, y);
-  ctx.scale(fit, fit);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.lineJoin = 'round';
-  const chrome = ctx.createLinearGradient(0, -size / 2, 0, size / 2);
-  chrome.addColorStop(0, '#ffffff');
-  chrome.addColorStop(0.45, '#bfe6ff');
-  chrome.addColorStop(0.5, '#2a6fd6');
-  chrome.addColorStop(1, '#a8dcff');
-  ctx.lineWidth = Math.max(4, size * 0.16);
-  ctx.strokeStyle = INK;
-  ctx.strokeText(text, 0, 0);
-  ctx.fillStyle = chrome;
-  ctx.fillText(text, 0, 0);
-  ctx.restore();
-}
-
-function caption(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, size: number, color: string): void {
-  ctx.save();
-  ctx.font = `900 ${size}px "Arial Black", Impact, "Helvetica Neue", Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = Math.max(3, size * 0.28);
-  ctx.strokeStyle = INK;
-  ctx.strokeText(text, x, y);
-  ctx.fillStyle = color;
-  ctx.fillText(text, x, y);
-  ctx.restore();
-}
-
 /** A sunset sky with a striped sun sinking behind the horizon. */
 function sunset(ctx: CanvasRenderingContext2D, W: number, H: number, horizon: number): void {
   const sky = ctx.createLinearGradient(0, 0, 0, horizon);
@@ -589,36 +471,6 @@ function sunset(ctx: CanvasRenderingContext2D, W: number, H: number, horizon: nu
   ctx.fill();
   ctx.fillStyle = '#e8667a';
   for (let i = 0; i < 4; i++) ctx.fillRect(W * 0.72 - H * 0.2, horizon - 5 - i * 7, H * 0.4, 2 + i * 0.4);
-}
-
-/** A row of flat-topped mesas, scrolling left by `offset` px. */
-function mesas(ctx: CanvasRenderingContext2D, W: number, horizon: number, offset: number, color: string, height: number): void {
-  ctx.fillStyle = color;
-  const span = 150;
-  for (let x = -((offset % span) + span); x < W + span; x += span) {
-    const top = horizon - 34 * height;
-    ctx.beginPath();
-    ctx.moveTo(x, horizon + 1);
-    ctx.lineTo(x + 18, top);
-    ctx.lineTo(x + 70, top);
-    ctx.lineTo(x + 82, top + 10 * height);
-    ctx.lineTo(x + 96, horizon + 1);
-    ctx.fill();
-  }
-}
-
-function speedLines(ctx: CanvasRenderingContext2D, W: number, H: number, t: number, behind: number): void {
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  for (let i = 0; i < 9; i++) {
-    const y = H * (0.66 + ((i * 37) % 23) / 100);
-    const x = ((i * 97 - t * 520) % (W + 120) + W + 120) % (W + 120) - 60;
-    if (x > behind) continue;
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + 26 + (i % 3) * 14, y);
-  }
-  ctx.stroke();
 }
 
 /** A city skyline at dusk, lit windows and a few stars, and the street. */
@@ -677,45 +529,4 @@ function exhaust(ctx: CanvasRenderingContext2D, x: number, y: number, dir: 1 | -
   ctx.lineTo(x - dir * len * 0.55, y);
   ctx.lineTo(x, y + 2.5);
   ctx.fill();
-}
-
-/** A white flash over the whole picture, peaking at `at` seconds. */
-function flash(ctx: CanvasRenderingContext2D, t: number, at: number): void {
-  const a = Math.max(0, 1 - Math.abs(t - at) / 0.22);
-  if (a <= 0) return;
-  ctx.fillStyle = `rgba(255, 255, 255, ${0.85 * a})`;
-  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-}
-
-/** A four- (or more-) pointed sparkle. */
-function star(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, points: number, color: string): void {
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  for (let i = 0; i < points * 2; i++) {
-    const a = (i / (points * 2)) * Math.PI * 2 - Math.PI / 2;
-    const rr = i % 2 ? r * 0.28 : r;
-    ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
-  }
-  ctx.closePath();
-  ctx.fill();
-}
-
-/** Faint scanlines and darker corners: an old TV picture. */
-function crt(ctx: CanvasRenderingContext2D, W: number, H: number): void {
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
-  for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
-  const vignette = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, W * 0.62);
-  vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-  vignette.addColorStop(1, 'rgba(0, 0, 0, 0.35)');
-  ctx.fillStyle = vignette;
-  ctx.fillRect(0, 0, W, H);
-}
-
-function clamp01(v: number): number {
-  return clamp(v, 0, 1);
-}
-
-/** Smooth in and out. */
-function ease(t: number): number {
-  return smoothstep(0, 1, t);
 }

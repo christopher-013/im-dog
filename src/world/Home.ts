@@ -5,7 +5,7 @@ import { FIRE, HOME_PLACES, KITCHEN_TREATS, NAP_SPOTS, TREAT_HIDING_SPOTS, type 
 import { buildWing } from './home/Wing';
 import { LivingRoom } from './LivingRoom';
 import { createRoomMaterials } from './materials';
-import { RobotCartoon } from './RobotCartoon';
+import { TvChannels } from './tv/TvChannels';
 import { StaticSceneBuilder } from './StaticSceneBuilder';
 
 /**
@@ -36,12 +36,12 @@ export class Home {
   readonly fire = FIRE;
   /** Outer faces of the house's walls. */
   readonly bounds = HOME_BOUNDS;
-  /** GEARBOTS, the cartoon playing on every TV. */
-  readonly tvShow = new RobotCartoon();
+  /** What's on the three TVs (a different show on each). */
+  readonly tv: TvChannels;
 
   constructor() {
     const materials = createRoomMaterials();
-    this.tvShow.showOn(materials.tvShow);
+    this.tv = new TvChannels([materials.tvLiving, materials.tvFamily, materials.tvDining]);
     this.livingRoom = new LivingRoom({ materials, hallwayOpen: true });
     const wing = new StaticSceneBuilder();
     buildWing(wing, materials);
@@ -61,7 +61,7 @@ export class Home {
 
   /** Each rendered frame (dt 0 while paused): the TVs play on. */
   update(dt: number): void {
-    this.tvShow.update(dt);
+    this.tv.update(dt);
   }
 
   /** Which room a floor point is in. */

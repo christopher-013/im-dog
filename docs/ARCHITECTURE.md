@@ -107,7 +107,12 @@ src/
       Wing.ts             builds the kitchen, dining room, family room (+ the sunroom seen through glass) and their lights
       homeFurniture.ts    the wing's furniture: sectional, fireplace, built-ins, island, stools, range, fridge, trestle table, chairs…
     HouseholdEffects.ts   signs of life: the steaming pot, dinner on the table; the FOOD smell
-    RobotCartoon.ts       GEARBOTS, the original robot cartoon every TV plays (a canvas redrawn 12×/s; Home owns it, Game updates it)
+    tv/                   what's on the three TVs (Home owns it, Game updates it): original shows drawn in code on canvases
+      TvChannels.ts       one canvas and material per TV, 12 frames/s; each on a different show, two swap now and then (snow, channel number)
+      Gearbots.ts         GEARBOTS: trucks and jets that transform into robots (80s cartoon style)
+      HighwayHero.ts      HIGHWAY HERO: a smart black car with a red scanner and its human partner catch crooks (no fighting)
+      ChefShowdown.ts     CHEF SHOWDOWN: a dramatic cooking contest: the ingredient reveal, chopping, sushi, judges, the winner
+      draw.ts             what the shows share: the TvShow interface, scene timelines, lettering, starbursts, the old-TV look
     LivingRoom.ts         the room + hallway (its end opens into the wing in the house): shell, layout, spawn, landmarks (navigation-tested with Rapier)
     furniture.ts          couch, coffee table, rug, TV console, lamp, plant, dog bed, curtains, art, door, laundry table and basket, treat jar
     materials.ts          the room palette (shared materials)

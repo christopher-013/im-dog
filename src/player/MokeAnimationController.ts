@@ -131,6 +131,7 @@ export class MokeAnimationController {
   };
 
   private chewingNow = false;
+  private watchingNow = false;
   private holdingChew = false;
   private chewClock = 0;
   private bitesTaken = 0;
@@ -298,6 +299,12 @@ export class MokeAnimationController {
   }
   get chewing(): boolean { return this.chewingNow; }
 
+  /** Sits down to watch something (the ballgame on TV): straight away, no idling first. Moving gets him up. */
+  watch(active: boolean): void {
+    this.watchingNow = active;
+  }
+  get watching(): boolean { return this.watchingNow; }
+
   /** Bites since the last call (each one squeaks). */
   takeBites(): number {
     const n = this.bitesTaken;
@@ -341,6 +348,7 @@ export class MokeAnimationController {
     this.sinceEat = this.eatFor;
     this.sinceDrink = this.drinkFor;
     this.sincePet = MOKE_ANIMATION.petDuration;
+    this.watchingNow = false;
     this.cancelTrick();
   }
 
@@ -424,6 +432,9 @@ export class MokeAnimationController {
       this.sitting = false;
       this.stretchLeft = 0;
       this.idleTime = 0;
+    } else if (this.watchingNow) {
+      this.sitting = true;
+      this.stretchLeft = 0;
     } else if (!this.sitting && this.stretchLeft <= 0 && this.idleTime >= a.idleSitAfter) {
       if (this.random() < a.idleStretchChance) this.stretchLeft = a.stretchDuration;
       else this.sitting = true;

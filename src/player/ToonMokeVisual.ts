@@ -246,6 +246,23 @@ function addTrick(pose: BodyPose, s: Readonly<MokeAnimationState>): void {
       pose.squint = Math.max(pose.squint, 0.5 * over);
       break;
     }
+    case 'celebrate': {
+      // Pure joy: up on his hind legs, paws waving high, spinning round twice, mouth wide open, bouncing.
+      const u = clamp(t / (tricks.celebrate - tricks.blendOut), 0, 1);
+      pose.pitch += -1.12 * w;
+      pose.legX[2] += 1.12 * w + 0.08 * w * Math.sin(t * 16);
+      pose.legX[3] += 1.12 * w + 0.08 * w * Math.sin(t * 16 + Math.PI);
+      pose.legX[0] += w * (0.9 + 0.4 * Math.sin(t * 13));
+      pose.legX[1] += w * (0.9 + 0.4 * Math.sin(t * 13 + Math.PI));
+      pose.spin += TAU * 2 * u * u * (3 - 2 * u) * (u < 1 ? w : 1);
+      pose.lift += w * 0.02 * Math.abs(Math.sin(t * 9));
+      pose.neckX += 0.95 * w;
+      pose.headZ += 0.15 * w * Math.sin(t * 5);
+      pose.tailX += -0.3 * w;
+      pose.mouthOpen = Math.max(pose.mouthOpen, 0.8 * w);
+      pose.squint = Math.max(pose.squint, 0.55 * w);
+      break;
+    }
     case 'spin': {
       // One quick circle chasing his tail, little paws pattering. Cut short, he unwinds back to facing forward.
       const u = clamp(t / (tricks.spin - tricks.blendOut), 0, 1);

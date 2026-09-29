@@ -126,6 +126,22 @@ export const HOME_PLACES: readonly HomePlace[] = [
   ),
 ];
 
+/** A TV's picture: the middle of the screen, and the way it faces (the heading of its front, rad). */
+export interface TvScreenSpot {
+  readonly id: 'living' | 'dining' | 'family';
+  readonly x: number;
+  readonly y: number;
+  readonly z: number;
+  readonly facing: number;
+}
+
+/** The three TVs (see world/tv/TvChannels): on the living-room console, the dining-room stand, over the fireplace. */
+export const TV_SCREENS: readonly TvScreenSpot[] = [
+  { id: 'living', x: 0.3, y: 1.06, z: 2.79, facing: Math.PI },
+  { id: 'dining', x: 10.33, y: 1.3, z: -3.63, facing: -0.6 },
+  { id: 'family', x: f.fireplace.x, y: 1.92, z: 5.33, facing: Math.PI },
+];
+
 export function placeById(id: string): HomePlace {
   const found = HOME_PLACES.find((p) => p.id === id);
   if (!found) throw new Error(`No home place "${id}"`);

@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { JET_BOT, LOOP, partAt, RobotCartoon, sceneAt, SCENES, TRUCK_BOT, type Box } from './RobotCartoon';
+import { sceneAt } from './draw';
+import { JET_BOT, LOOP, partAt, SCENES, TRUCK_BOT, type Box } from './Gearbots';
 
 const turned = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
 
-describe('RobotCartoon (GEARBOTS, on the TVs)', () => {
+describe('GEARBOTS (a show on the TVs)', () => {
   it('runs its scenes back to back, in order, and loops', () => {
     expect(SCENES[0]!.from).toBe(0);
     for (let i = 1; i < SCENES.length; i++) expect(SCENES[i]!.from).toBe(SCENES[i - 1]!.to);
     expect(SCENES.at(-1)!.to).toBe(LOOP);
-    expect(sceneAt(0).name).toBe('title');
-    expect(sceneAt(9).name).toBe('transform');
-    expect(sceneAt(LOOP + 0.5)).toMatchObject({ name: 'title', t: 0.5 });
-    const k = sceneAt(SCENES[2]!.from + 1.5).k;
+    expect(sceneAt(SCENES, 0).name).toBe('title');
+    expect(sceneAt(SCENES, 9).name).toBe('transform');
+    expect(sceneAt(SCENES, LOOP + 0.5)).toMatchObject({ name: 'title', t: 0.5 });
+    const k = sceneAt(SCENES, SCENES[2]!.from + 1.5).k;
     expect(k).toBeCloseTo(0.5, 5);
   });
 
@@ -43,14 +44,7 @@ describe('RobotCartoon (GEARBOTS, on the TVs)', () => {
     });
   }
 
-  it("rolls the truck on its wheels, and doesn't need a canvas to run (the screens stay dark in tests)", () => {
+  it('rolls the truck on its wheels', () => {
     for (const wheel of TRUCK_BOT.parts.filter((p) => p.kind === 'wheel')) expect(wheel.vehicle.y - wheel.vehicle.h / 2).toBeCloseTo(0, 6);
-    const show = new RobotCartoon();
-    expect(show.texture).toBeNull();
-    expect(() => {
-      show.update(1 / 60);
-      show.update(0);
-      show.dispose();
-    }).not.toThrow();
   });
 });

@@ -122,7 +122,7 @@ export function tvConsole(b: StaticSceneBuilder, m: RoomMaterials): void {
   const tvH = 0.72;
   const tvY = topY + 0.14 + tvH / 2;
   b.add(rbox(tvW, tvH, 0.045, 0.01, 2), m.tvBody, [0, tvY, -0.05]);
-  b.add(new PlaneGeometry(tvW - 0.04, tvH - 0.04), m.tvShow, [0, tvY, -0.05 + 0.0225 + 0.004], { cast: false, receive: false });
+  b.add(new PlaneGeometry(tvW - 0.04, tvH - 0.04), m.tvLiving, [0, tvY, -0.05 + 0.0225 + 0.004], { cast: false, receive: false });
 
   b.add(new CylinderGeometry(0.06, 0.05, 0.1, 16), m.ceramic, [0.7, topY + 0.05, 0.02]);
   b.add(new SphereGeometry(0.075, 12, 8), m.leafLight, [0.7, topY + 0.15, 0.02], { scale: [1, 0.8, 1] });

@@ -57,6 +57,8 @@ const TRICK_CLIPS: Readonly<Record<Trick, MokeClipName>> = {
   beg: 'trick_beg',
   paw: 'trick_paw',
   spin: 'trick_spin',
+  // No clip of its own (yet): the beg clip, up on his hind legs.
+  celebrate: 'trick_beg',
 };
 
 /** Target weight and playback speed per clip. Reused every frame (no allocation). */

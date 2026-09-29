@@ -48,6 +48,8 @@ export const MOKE_ANIMATION = {
     beg: 2.1,
     paw: 2.4,
     spin: 1.2,
+    /** Up on his hind legs, spinning round twice for joy (a home run!). */
+    celebrate: 2.6,
     blendIn: 0.28,
     blendOut: 0.35,
     /** Moving cuts a trick short: he's back on his feet this fast (s). */

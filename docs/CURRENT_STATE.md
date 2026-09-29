@@ -40,6 +40,22 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-29, owner request, **uncommitted**): **three TV shows on three TVs.** Each TV (living-room
+console, family-room fireplace, dining-room stand) now has its own screen and plays a different show; every 18–40 s
+two of them swap channels (a burst of snow, then a green "CH 07" in the corner). The shows run as broadcasts, each
+on its own clock, so switching lands mid-episode. Alongside **GEARBOTS**: **HIGHWAY HERO** (a smart black sports car
+with a red scanner light sweeping across its nose, and its human partner: a night desert drive, the talking dashboard,
+a turbo jump over a getaway van, the crooks giving up as police lights flash, off into the sunrise) and **CHEF
+SHOWDOWN** (a spotlit arena, a tuna rising out of the fog, chopping against the clock, sushi rolled and sliced, three
+scorecards, the winner in confetti). All original (no real show's names, logos, cars, hosts or catchphrases) and no
+fighting. Code: `world/tv/` (`TvChannels`, one file per show, shared `draw.ts`); `RobotCartoon.ts` became
+`tv/Gearbots.ts`; tuning `TV` in `config/world.ts`; materials `tvLiving`, `tvFamily`, `tvDining`.
+Verification: typecheck, `npm test` (**480 tests / 66 files**; new `TvChannels.test.ts`: every show drawn through its whole
+loop against a checking stand-in canvas (no bad numbers or negative radii), always three different shows, swaps every
+18–40 s, pausing stops them), build + verify-dist. Browser (dev server, desktop): contact sheets of HIGHWAY HERO and CHEF
+SHOWDOWN rendered from the real canvases and looked at; in the game, each TV on its own material and texture, three
+different shows, a forced swap going through snow to the new show; no new console errors. No phone test.
+
 Claude Code (2026-09-28, owner request, **uncommitted**): **begging at dinner** (`activities/DinnerBeg.ts`). While the
 human sits eating dinner at the dining table, Moke can stand beside their chair and **Sit & Beg**. "Moke… no begging
 at the table." A sigh. "Oh, alright. Just one bite." Still seated, they pick a meatball off the plate with the hand on his

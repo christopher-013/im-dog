@@ -143,7 +143,7 @@ export function fireplace(b: StaticSceneBuilder, m: RoomMaterials): void {
   // The TV above the mantel.
   const tvY = H + 0.62;
   b.add(rbox(1.45, 0.83, 0.05, 0.01), m.tvBody, [0, tvY, 0.04]);
-  b.add(new PlaneGeometry(1.41, 0.79), m.tvShow, [0, tvY, 0.065 + 0.004], { cast: false, receive: false });
+  b.add(new PlaneGeometry(1.41, 0.79), m.tvFamily, [0, tvY, 0.065 + 0.004], { cast: false, receive: false });
 
   b.addCollider([0, H / 2, depth / 2], [W, H, depth]);
   b.addCollider([0, 0.15, depth + 0.23], [W + 0.2, 0.3, 0.46]);
@@ -663,7 +663,7 @@ export function tvOnStand(b: StaticSceneBuilder, m: RoomMaterials): void {
   for (const x of [-0.27, 0.27]) for (const z of [-0.19, 0.19]) b.add(new SphereGeometry(0.03, 8, 6), m.black, [x, 0.03, z], { cast: false });
   b.add(new BoxGeometry(0.08, 1.25, 0.06), m.black, [0, 0.7, -0.05]);
   b.add(rbox(1.1, 0.64, 0.05, 0.01), m.tvBody, [0, 1.3, 0]);
-  b.add(new PlaneGeometry(1.06, 0.6), m.tvShow, [0, 1.3, 0.025 + 0.004], { cast: false, receive: false });
+  b.add(new PlaneGeometry(1.06, 0.6), m.tvDining, [0, 1.3, 0.025 + 0.004], { cast: false, receive: false });
   b.addCollider([0, 0.05, 0], [0.62, 0.1, 0.46]);
   b.addCollider([0, 0.7, -0.05], [0.1, 1.3, 0.1], { thin: true });
 }

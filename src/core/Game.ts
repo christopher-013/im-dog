@@ -18,6 +18,8 @@ import { NAP_QUALITIES, PerfectNap, type NapReport } from '../activities/Perfect
 import { TreatHunt } from '../activities/TreatHunt';
 import { DoorDelivery } from '../activities/DoorDelivery';
 import { DinnerBeg } from '../activities/DinnerBeg';
+import { WatchTheGame } from '../activities/WatchTheGame';
+import { HOME_ACTIVITIES } from '../config/homeActivities';
 import { KitchenBeg } from '../activities/KitchenBeg';
 import { PillowDig } from '../activities/PillowDig';
 import { TableManners } from '../activities/TableManners';
@@ -43,7 +45,7 @@ import { HumanActivityController } from '../human/activities/HumanActivityContro
 import { HumanReactions } from '../human/activities/HumanReactions';
 import { NavGrid } from '../human/NavGrid';
 import { DogBowls, type BowlKind } from '../world/DogBowls';
-import { BOWLS, placeById } from '../world/home/places';
+import { BOWLS, placeById, TV_SCREENS } from '../world/home/places';
 import { HouseholdEffects } from '../world/HouseholdEffects';
 import { InteractionSystem } from '../interactions/InteractionSystem';
 import { PickupSystem } from '../interactions/PickupSystem';
@@ -166,6 +168,7 @@ export class Game {
   private delivery: DoorDelivery | null = null;
   private kitchenBeg: KitchenBeg | null = null;
   private dinnerBeg: DinnerBeg | null = null;
+  private watchGame: WatchTheGame | null = null;
   private pillowDig: PillowDig | null = null;
   private tableManners: TableManners | null = null;
   private toiletPaper: ToiletPaperMischief | null = null;
@@ -326,6 +329,7 @@ export class Game {
     this.delivery?.resetAll();
     this.kitchenBeg?.resetAll();
     this.dinnerBeg?.resetAll();
+    this.watchGame?.stop();
     this.pillowDig?.resetAll();
     this.tableManners?.resetAll();
     this.pillows?.reset();
@@ -334,7 +338,7 @@ export class Game {
     this.conure.dispose();
     this.kitchenTreat.dispose();
     this.dinnerTreat.dispose();
-    this.room.tvShow.dispose();
+    this.room.tv.dispose();
     this.gfx.dispose();
   }
 
@@ -521,6 +525,18 @@ export class Game {
       },
     });
     this.interactions.register(this.dinnerBeg.interactable);
+    this.watchGame = new WatchTheGame({
+      tv: this.room.tv, screens: TV_SCREENS,
+      onWatch: (screen) => moke.animation.watch(screen !== null),
+      onCelebrate: () => {
+        moke.animation.watch(false);
+        moke.animation.trick(moke.controller.headroom >= MOKE_ANIMATION.tricks.begHeadroom ? 'celebrate' : 'spin', true);
+        this.audio.play('bark');
+        this.showVoiceBubble(HOME_ACTIVITIES.watchGame.cheer);
+      },
+    });
+    this.room.tv.onHomeRun = () => this.watchGame?.homeRun();
+    this.interactions.register(this.watchGame.interactable);
     this.pillows = new CouchPillows(this.room.object);
     this.pillowDig = new PillowDig({ routine: this.routine, pillows: this.pillows, nav,
       hand: human.visual.hands.right, grounded: () => moke.controller.grounded,
@@ -535,7 +551,7 @@ export class Game {
     });
     this.interactions.register(this.pillowDig.interactable);
     this.interactions.register(this.toiletPaper.interactable);
-    this.director = new DogActivityDirector([this.delivery, this.kitchenBeg, this.dinnerBeg, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
+    this.director = new DogActivityDirector([this.delivery, this.kitchenBeg, this.dinnerBeg, this.watchGame, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
 
     // "Get Pets": close to the human while they're free.
     const game = this;
@@ -811,6 +827,9 @@ export class Game {
       this.moke.lookAt = BATHROOM.paper;
       this.moke.sniffing = true;
     }
+    // Watching the ballgame: eyes on the screen.
+    const screen = this.watchGame?.watchingScreen;
+    if (screen && this.moke) this.moke.lookAt = screen;
     const chewing = this.updateChewing(playing);
     this.moke?.update(dt, alpha);
     this.afterChewing(chewing, playing ? dt : 0);
@@ -858,7 +877,13 @@ export class Game {
     this.updateMoveIntent();
     const glideTarget = this.rest.glideTarget;
     const paperTarget = this.toiletPaper?.approachTarget;
-    if (glideTarget) {
+    const watching = this.watchGame?.watchingScreen ?? null;
+    // Watching the ballgame: moving off stops it; otherwise he stays put, turning to face the screen.
+    if (watching && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.watchGame?.stop();
+    const tv = this.watchGame?.watchingScreen ?? null;
+    if (tv && !glideTarget && !paperTarget) {
+      c.glideTo(step, c.position, Math.atan2(tv.x - c.position.x, tv.z - c.position.z), 0, HOME_ACTIVITIES.watchGame.turnRate);
+    } else if (glideTarget) {
       c.glideTo(step, glideTarget, this.rest.glideHeading(c), REST.settleSpeed, REST.settleTurnRate);
     } else if (paperTarget) {
       c.glideTo(step, paperTarget, Math.atan2(BATHROOM.paper.x - c.position.x, BATHROOM.paper.z - c.position.z),

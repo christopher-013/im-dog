@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { MOKE_ANIMATION } from '../config/animation';
 import { MokeAnimationController, type MokeAnimationState } from './MokeAnimationController';
 import { ToonMokeVisual } from './ToonMokeVisual';
-import { TRICKS } from './Tricks';
+import { MOMENT_TRICKS, TRICKS } from './Tricks';
 
 const DT = 1 / 60;
 /** Hip pivot height in the toon rig. */
@@ -158,7 +158,7 @@ describe('ToonMokeVisual', () => {
   });
 
   it('does every trick without sinking into the floor, and begs within the headroom it asks for', () => {
-    for (const trick of TRICKS) {
+    for (const trick of [...TRICKS, ...MOMENT_TRICKS]) {
       const visual = new ToonMokeVisual();
       const anim = new MokeAnimationController();
       anim.trick(trick);
@@ -174,7 +174,8 @@ describe('ToonMokeVisual', () => {
         }
       }
       expect(lowest, trick).toBeGreaterThan(-0.02);
-      if (trick === 'beg') expect(highest).toBeLessThan(MOKE_ANIMATION.tricks.begHeadroom);
+      // Up on his hind legs (a beg, or celebrating): within the headroom that asks for.
+      if (trick === 'beg' || trick === 'celebrate') expect(highest, trick).toBeLessThan(MOKE_ANIMATION.tricks.begHeadroom);
       visual.dispose();
     }
   });

@@ -17,7 +17,7 @@ Each activity is plain data, so a new one needs no code:
 - **steps:** done in order, each at the nearest free place of the given kinds (`world/home/places.ts`), with a pose,
   an optional prop, a random duration, optionally looking at the place's focus (the TV), and an optional `effect`
   the game shows (`cooking` steam + a FOOD smell, `meal` a plate on the table; `tv` has them look at the screen,
-  which always plays the GEARBOTS cartoon).
+  which always has a show on: GEARBOTS, HIGHWAY HERO or CHEF SHOWDOWN, see `world/tv/`).
 - **weight / cooldown:** base chance and the rest before it can come round again.
 - **interruptible:** how willing they are to stop for Moke's barking (`always`, `sometimes`, `rarely`).
 - **attention:** how often they glance round the room while doing it (and so notice Moke).

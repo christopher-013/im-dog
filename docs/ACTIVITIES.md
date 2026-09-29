@@ -218,7 +218,26 @@ Tuning: `BOWL_REFILL` in `config/activities.ts`.
 Reactions (a look, a pat…) only pause the activity's clock. A dog activity or the heist saves the activity and time
 left; afterwards the routine walks back and carries on, or picks something new if too much time has passed.
 
+### Watch the Game (`WatchTheGame.ts`, owner request, 2026-09-29; the easter egg)
+Now and then (first 90–240 s into a session, then every 6–12 minutes: `TV.special` in `config/world.ts`) the **World
+Series** cuts in on all three TVs at once: a green LIVE in the corner, every TV on the same moment of the same
+broadcast (`world/tv/WorldSeries.ts`, 27 s). The San Diego Padres trail the Los Angeles Dodgers 5–4, bottom of the
+ninth, two out, a runner on first; the batter hits a walk-off home run, both runners come home, the champions
+celebrate, the trophy; then each TV goes back to the show it was on.
+
+While it's on, stand in front of any TV (0.6–3.6 m away, within about 63° of straight on; not carrying anything, not
+napping) and **Watch the Game** appears. Moke sits down facing the screen and watches ("Watching the World Series…
+come on, Padres!"). At the home run he jumps up on his hind legs and spins round for joy, barks, and says **"HOME RUN!
+GO PADRES!"**. Moving him stops watching; so does the broadcast ending before the home run (he tuned in late). No
+human needed, and it doesn't pause the human's routine. Tuning: `HOME_ACTIVITIES.watchGame` in
+`config/homeActivities.ts`. No Dog Logic entry.
+
 ## Tests
+`world/tv/TvChannels.test.ts` (every show and the whole broadcast drawn against a checking stand-in canvas; three
+different shows, swaps, pausing; the special broadcast in sync on all three TVs, its home run once per broadcast at
+`HOME_RUN_AT`, back to each TV's own show, the next one on schedule), `activities/WatchTheGame.test.ts` (offered only
+during the special and only in front of a TV; every TV; the celebration once; stopping when moved or when it ends;
+again next time; with the real TVs, one celebration at the home run),
 `human/activities/HumanActivityController.test.ts` (a 20-minute simulated day in the real house: all seven major
 household activities, variety, rooms, sitting, no stuck, no give-ups; four more 20-minute days with Moke barking every
 45 s: no give-ups, never stuck, hands empty between activities, no repeats, at most three things running in one seat,

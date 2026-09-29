@@ -7,6 +7,7 @@ import { sceneAt, type Scenes } from './draw';
 import { SCENES as GEARBOTS_SCENES } from './Gearbots';
 import { SCENES as HIGHWAY_SCENES } from './HighwayHero';
 import { TvChannels, tvShows } from './TvChannels';
+import { HOME_RUN_AT, SCENES as SERIES_SCENES, WorldSeries } from './WorldSeries';
 
 /**
  * A stand-in 2D context that accepts every drawing call and remembers anything a real one would choke on: numbers
@@ -102,5 +103,123 @@ describe('The TVs (three shows, three sets)', () => {
     const lineups = new Set<string>();
     for (let seed = 1; seed <= 20; seed++) lineups.add(new TvChannels(screens(), mulberry32(seed)).onAir.map((s) => s.name).join());
     expect(lineups.size).toBeGreaterThan(2);
+  });
+});
+
+/** The TV options with the special broadcast's timing replaced (seconds). */
+const withSpecial = (firstAfter: number, every: number) =>
+  ({ ...TV, special: { firstAfter: [firstAfter, firstAfter], every: [every, every] } }) as unknown as typeof TV;
+
+describe('The special broadcast (the World Series)', () => {
+  it('runs its scenes back to back, with the home run inside the ball\'s flight', () => {
+    for (let i = 1; i < SERIES_SCENES.length; i++) expect(SERIES_SCENES[i]!.from).toBe(SERIES_SCENES[i - 1]!.to);
+    const flight = SERIES_SCENES.find((s) => s.name === 'flight')!;
+    expect(HOME_RUN_AT).toBeGreaterThan(flight.from);
+    expect(HOME_RUN_AT).toBeLessThan(flight.to);
+    const show = new WorldSeries();
+    expect(show.loop).toBe(SERIES_SCENES.at(-1)!.to);
+    expect(show.osd).toBe('LIVE');
+  });
+
+  it('draws the whole broadcast without a single bad number', () => {
+    const show = new WorldSeries();
+    const { ctx, problems } = fakeContext(TV.width, TV.height);
+    for (let time = 0; time < show.loop; time += 1 / 24) show.draw(ctx, TV.width, TV.height, time);
+    // And right at the edges of every scene, where eases start and stop.
+    for (const scene of SERIES_SCENES) for (const t of [scene.from, scene.to - 1e-6]) show.draw(ctx, TV.width, TV.height, t);
+    expect(problems.slice(0, 5)).toEqual([]);
+  });
+
+  it('cuts in on every TV at the same moment, all on the same broadcast, and no channel-hopping while it is on', () => {
+    for (const seed of [1, 2, 3]) {
+      const tv = new TvChannels(screens(), mulberry32(seed), tvShows(), withSpecial(30, 1e9));
+      let t = 0;
+      while (!tv.specialOn && t < 60) {
+        const before = tv.onAir.filter((s) => s === tv.specialShow).length;
+        expect(before).toBe(0); // never partly on: all or nothing
+        tv.update(1 / 30);
+        t += 1 / 30;
+      }
+      expect(tv.specialOn).toBe(true);
+      expect(t).toBeCloseTo(30, 0);
+      expect(tv.onAir.every((s) => s === tv.specialShow)).toBe(true);
+      expect(tv.specialShow.name).toBe('WORLD SERIES');
+      // All the way through, every TV stays on it.
+      for (let i = 0; i < (HOME_RUN_AT + 5) * 30; i++) {
+        tv.update(1 / 30);
+        expect(tv.onAir.every((s) => s === tv.specialShow), `seed ${seed}`).toBe(true);
+      }
+    }
+  });
+
+  it('fires the home-run moment exactly once per broadcast, when the ball clears the wall', () => {
+    const tv = new TvChannels(screens(), mulberry32(4), tvShows(), withSpecial(1e9, 1e9));
+    const hits: number[] = [];
+    let t = 0;
+    tv.onHomeRun = () => hits.push(t);
+    tv.startSpecial();
+    expect(tv.homeRunToCome).toBe(true);
+    for (let i = 0; i < (tv.specialShow.loop + 5) * 30; i++) {
+      t += 1 / 30;
+      tv.update(1 / 30);
+      if (t < HOME_RUN_AT - 1 / 30) expect(tv.homeRunToCome).toBe(true);
+    }
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!).toBeGreaterThanOrEqual(HOME_RUN_AT);
+    expect(hits[0]!).toBeLessThan(HOME_RUN_AT + 1 / 30 + 1e-9);
+    expect(tv.homeRunToCome).toBe(false);
+    // A later broadcast has its own home run (once again).
+    tv.startSpecial();
+    for (let i = 0; i < (tv.specialShow.loop + 1) * 30; i++) tv.update(1 / 30);
+    expect(hits).toHaveLength(2);
+  });
+
+  it('pauses with the game: no home run while paused', () => {
+    const tv = new TvChannels(screens(), mulberry32(5), tvShows(), withSpecial(1e9, 1e9));
+    let hits = 0;
+    tv.onHomeRun = () => hits++;
+    tv.startSpecial();
+    for (let i = 0; i < 10_000; i++) tv.update(0);
+    expect(hits).toBe(0);
+    expect(tv.specialOn).toBe(true);
+  });
+
+  it('goes back to the regular shows when it ends, each TV to the one it was on, and comes round again later', () => {
+    for (const seed of [6, 7, 8]) {
+      const tv = new TvChannels(screens(), mulberry32(seed), tvShows(), withSpecial(1e9, 400));
+      for (let i = 0; i < 20 * 30; i++) tv.update(1 / 30);
+      const lineup = tv.onAir.map((s) => s.name);
+      expect(new Set(lineup).size).toBe(3);
+      tv.startSpecial();
+      let t = 0;
+      while (tv.specialOn && t < 60) {
+        tv.update(1 / 30);
+        t += 1 / 30;
+      }
+      expect(tv.specialOn).toBe(false);
+      expect(t).toBeCloseTo(tv.specialShow.loop, 0);
+      expect(tv.onAir.map((s) => s.name), `seed ${seed}`).toEqual(lineup);
+      // The next one is `every` later (400 s here).
+      let wait = 0;
+      while (!tv.specialOn && wait < 1000) {
+        tv.update(1 / 30);
+        wait += 1 / 30;
+      }
+      expect(wait).toBeCloseTo(400, 0);
+    }
+  });
+
+  it('comes on by itself in a real session: first within its window, never overlapping itself', () => {
+    const [firstMin, firstMax] = TV.special.firstAfter;
+    for (const seed of [11, 12, 13, 14]) {
+      const tv = new TvChannels(screens(), mulberry32(seed));
+      let t = 0;
+      while (!tv.specialOn && t < firstMax + 5) {
+        tv.update(1 / 30);
+        t += 1 / 30;
+      }
+      expect(t, `seed ${seed}`).toBeGreaterThanOrEqual(firstMin - 1 / 30);
+      expect(t, `seed ${seed}`).toBeLessThanOrEqual(firstMax + 1 / 30);
+    }
   });
 });

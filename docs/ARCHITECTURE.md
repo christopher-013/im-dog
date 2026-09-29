@@ -86,6 +86,7 @@ src/
     TreatHunt.ts          the human hides a kitchen treat; Moke sniffs it out (tested in the house)
     PerfectNap.ts         naps judged on sunny / soft / warm / quiet / human near (tested)
     MakeHumanPlay.ts      pester a busy human into throwing a toy; fetch, keep or keep-away (tested with a real ball)
+    WatchTheGame.ts       during the special broadcast, sit in front of a TV and watch; celebrate at the home run (no human needed; tested)
   heist/                  Sock Heist (Phase 3)
     SockHeistController.ts  orchestration: phases, trade, eating, discovery, completion, reset (tested)
     SockHeistRuntime.ts   wires the heist into the game: builds the human, feeds senses, events → UI/audio
@@ -108,10 +109,12 @@ src/
       homeFurniture.ts    the wing's furniture: sectional, fireplace, built-ins, island, stools, range, fridge, trestle table, chairs…
     HouseholdEffects.ts   signs of life: the steaming pot, dinner on the table; the FOOD smell
     tv/                   what's on the three TVs (Home owns it, Game updates it): original shows drawn in code on canvases
-      TvChannels.ts       one canvas and material per TV, 12 frames/s; each on a different show, two swap now and then (snow, channel number)
+      TvChannels.ts       one canvas and material per TV, 12 frames/s; each on a different show, two swap now and then (snow, channel number);
+                          now and then the special broadcast cuts in on all three at once, in sync, fires `onHomeRun` once, then each TV goes back to its show (tested)
       Gearbots.ts         GEARBOTS: trucks and jets that transform into robots (80s cartoon style)
       HighwayHero.ts      HIGHWAY HERO: a smart black car with a red scanner and its human partner catch crooks (no fighting)
       ChefShowdown.ts     CHEF SHOWDOWN: a dramatic cooking contest: the ingredient reveal, chopping, sushi, judges, the winner
+      WorldSeries.ts      the special broadcast (easter egg): a walk-off home run in the World Series; `HOME_RUN_AT` is its big moment
       draw.ts             what the shows share: the TvShow interface, scene timelines, lettering, starbursts, the old-TV look
     LivingRoom.ts         the room + hallway (its end opens into the wing in the house): shell, layout, spawn, landmarks (navigation-tested with Rapier)
     furniture.ts          couch, coffee table, rug, TV console, lamp, plant, dog bed, curtains, art, door, laundry table and basket, treat jar
@@ -579,6 +582,11 @@ The real Moke (`reference/moke/`) and, since Phase 4, the real home (`reference/
   spot; the human's position, availability, sight of Moke, attention; whether the heist is on). Activities that need
   the human borrow it through `routine.claim(role)`. Sock Heist has explicit priority in the director: it cancels
   any running human-dependent dog activity, including an active Treat Hunt whose setup role has already ended.
+- **TV → dog activity:** `Home` owns `TvChannels` (the screens) and `Game` updates it each frame with the paused-aware
+  `dt`. The TVs know nothing about Moke: `TvChannels.specialOn` and the `onHomeRun` callback are all Watch the Game
+  reads. `WatchTheGame` knows nothing about meshes or input: `Game` turns its `onWatch` / `onCelebrate` into Moke's
+  animation (`MokeAnimationController.watch`, the `celebrate` moment trick: up on his hind legs, spinning; the `beg`
+  clip until a `moke.glb` has its own), the bark sound and the voice bubble, and stops it when the player moves him.
 - **Dog Logic:** `DogLogicBook` (learn + `DOG_LOGIC_DISCOVERED`) over Phase 3's `DogLogicMemory`; `Game` shows the card
   for any entry of `config/dogLogic.ts`.
 - **Interactions added:** "Get Pets" (`PET`, near a free human), "Nap Here" at the nap spots (`RestSystem` with many

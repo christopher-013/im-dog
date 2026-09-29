@@ -40,7 +40,22 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code (2026-09-29, owner request, **uncommitted**): **three TV shows on three TVs.** Each TV (living-room
+Claude Code (2026-09-29, owner request; code in `02e3116`, tests and docs after it): **the World Series special
+and Watch the Game** (the easter egg). Now and then (first 90–240 s in, then every 6–12 min, `TV.special`) a special
+broadcast cuts in on all three TVs at once, in sync (`world/tv/WorldSeries.ts`, 27 s, LIVE in the corner): the San
+Diego Padres, down 5–4 to the Los Angeles Dodgers in the bottom of the ninth, win it with a walk-off home run; then
+each TV goes back to its own show. `TvChannels.onHomeRun` fires once per broadcast at `HOME_RUN_AT` (12.8 s). While
+it's on, in front of any TV, **Watch the Game** (`activities/WatchTheGame.ts`) sits Moke down facing the screen; at
+the home run he jumps up on his hind legs and spins (the `celebrate` moment trick, never picked at random), barks and
+says "HOME RUN! GO PADRES!". Team names and colours only, no logos or players (see `ASSETS.md`).
+Verification: typecheck; `npm test` **494 tests / 67 files** (new: the broadcast's scenes and a clean draw of all
+27 s against the checking canvas; all three TVs switching together and staying on it; the home run once per
+broadcast, at the right moment, and not while paused; each TV back to its own show, the next broadcast on schedule;
+`WatchTheGame.test.ts`: where it's offered, every TV, the celebration once, stopping, again next time, and with the
+real TVs). Not verified: the broadcast and the celebration in a browser in this session (the code came from the
+owner's local session), and no phone test.
+
+Claude Code (2026-09-29, owner request, committed in `02e3116`): **three TV shows on three TVs.** Each TV (living-room
 console, family-room fireplace, dining-room stand) now has its own screen and plays a different show; every 18–40 s
 two of them swap channels (a burst of snow, then a green "CH 07" in the corner). The shows run as broadcasts, each
 on its own clock, so switching lands mid-episode. Alongside **GEARBOTS**: **HIGHWAY HERO** (a smart black sports car
@@ -56,7 +71,7 @@ loop against a checking stand-in canvas (no bad numbers or negative radii), alwa
 SHOWDOWN rendered from the real canvases and looked at; in the game, each TV on its own material and texture, three
 different shows, a forced swap going through snow to the new show; no new console errors. No phone test.
 
-Claude Code (2026-09-28, owner request, **uncommitted**): **begging at dinner** (`activities/DinnerBeg.ts`). While the
+Claude Code (2026-09-28, owner request, committed in `00ec677`): **begging at dinner** (`activities/DinnerBeg.ts`). While the
 human sits eating dinner at the dining table, Moke can stand beside their chair and **Sit & Beg**. "Moke… no begging
 at the table." A sigh. "Oh, alright. Just one bite." Still seated, they pick a meatball off the plate with the hand on his
 side and hold it down to him; he eats it and learns **BEGGING = FOOD** (`beg=food`). Then dinner carries on in the same
@@ -70,7 +85,7 @@ Browser (dev server, desktop, game stepped from the console because the pane was
 game, the hand within 7–8 cm of the plate and of Moke's nose, BEGGING = FOOD learned, the human never left the chair, no
 console errors. Not looked at on screen (no screenshot of the pose), no phone test.
 
-Claude Code (2026-09-28, owner request, **uncommitted**): the TVs play a cartoon instead of a dark, reflective
+Claude Code (2026-09-28, owner request, committed in `00ec677`): the TVs play a cartoon instead of a dark, reflective
 screen. **GEARBOTS** (`world/RobotCartoon.ts`) is an original show in the style of the 1980s transforming-robot
 cartoons: a starburst title card; an orange pickup racing down a sunset highway; it transforms into a robot, piece
 by piece; the robot waves as a purple jet streaks over; the jet transforms; the two high-five ("CLANK!"); "will be
@@ -84,7 +99,7 @@ Browser (dev server, desktop): the title card on the living-room TV in the game,
 rendered from the live canvas, no console errors; a frame takes 0.06–0.38 ms to draw on the desktop. The wing's
 two TVs share the same material but weren't looked at in the running game; no phone test.
 
-Claude Code (2026-09-28, code-review fixes against `1995ef7`, **uncommitted**): a review of everything since
+Claude Code (2026-09-28, code-review fixes against `1995ef7`, committed in `00ec677`): a review of everything since
 `1c08d9f` found nine issues, all fixed:
 - **Seated human frozen by Moke:** asked to get up with Moke standing where they'd sat down from (e.g. at their knees
   for pets), the human stayed sat with no timeout, holding up the routine, the doorbell and the heist. Now they stand

@@ -45,7 +45,7 @@ Claude Code (2026-09-29, owner request): **www.im-dog.com is now the game's addr
 Worker, `im-dog-apex` (`wrangler.apex.jsonc`, `src/redirect/apex.ts`, which replace `wrangler.www.jsonc` and
 `src/redirect/www.ts`), deployed after the site by `deploy-cloudflare.yml`. Canonical and social tags, JSON-LD,
 `robots.txt`, `sitemap.xml`, the privacy page's canonical and `SITE.hosts` all say www. The old `im-dog-www` Worker is
-retired. **Owner step:** in Google Search Console, submit `https://www.im-dog.com/sitemap.xml` (`docs/FEEDBACK.md` →
+retired but not yet deleted (owner step, `docs/FEEDBACK.md` step 6). **Owner step:** in Google Search Console, submit `https://www.im-dog.com/sitemap.xml` (`docs/FEEDBACK.md` →
 "Search engines").
 
 Claude Code (2026-09-29, owner request): **Feedback thank-you and email notifications.** After sending, the form no longer

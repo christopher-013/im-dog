@@ -81,7 +81,8 @@ into Cloudflare's page, never into a chat, a commit or a command line.
    (301). Deploy it after the site Worker: `npx wrangler deploy -c wrangler.apex.jsonc`. Until 2026-09-29 it was the
    other way round (a Worker named `im-dog-www` sent www to im-dog.com); the owner chose www as the address people
    see (D26). Each Worker's deploy takes the domains its config lists and releases the others, so the switch was one
-   push; the retired `im-dog-www` Worker was then deleted.
+   push. The retired `im-dog-www` Worker is left with no domain; delete it in the Cloudflare dashboard
+   (Workers & Pages → im-dog-www → Settings → Delete) or with `npx wrangler delete --name im-dog-www`.
 7. **Automatic deploys.** `.github/workflows/deploy-cloudflare.yml` runs on every push to `main` (beside the GitHub
    Pages deploy): the tests, the build, then `wrangler deploy` for both Workers. It needs one repository secret:
    - Cloudflare dashboard → My Profile → **API Tokens** → **Create Token** → the **Edit Cloudflare Workers** template.

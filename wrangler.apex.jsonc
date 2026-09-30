@@ -1,0 +1,22 @@
+// im-dog.com: a tiny Worker that redirects every request to https://www.im-dog.com (same path and query), so the
+// game has one address (D26). It only runs for im-dog.com traffic; www.im-dog.com is the site Worker in
+// wrangler.jsonc. Deployed with `npx wrangler deploy -c wrangler.apex.jsonc` after the site Worker, and on every push
+// to main by .github/workflows/deploy-cloudflare.yml.
+{
+	"name": "im-dog-apex",
+	"main": "./src/redirect/apex.ts",
+	// The owner's Cloudflare account (an ID, not a secret): saves the deploy from having to guess.
+	"account_id": "81cc81e7dd4531da3968862517ab5e2b",
+	"compatibility_date": "2026-09-01",
+	"observability": {
+		"enabled": false
+	},
+	// Only reachable at im-dog.com (Cloudflare adds the DNS record and certificate on deploy).
+	"workers_dev": false,
+	"routes": [
+		{
+			"pattern": "im-dog.com",
+			"custom_domain": true
+		}
+	]
+}

@@ -45,7 +45,7 @@ function setup() {
   const env = {
     FEEDBACK_DB: db,
     GITHUB_TOKEN: 'test-secret',
-    ALLOWED_ORIGINS: 'https://im-dog.com',
+    ALLOWED_ORIGINS: 'https://www.im-dog.com',
     FEEDBACK_RATE_LIMITER: limiter,
   } as unknown as FeedbackEnv;
   const githubBodies: string[] = [];
@@ -55,7 +55,7 @@ function setup() {
     if (githubWorks === 'network-error') throw new Error('Connection dropped');
     return githubWorks ? Response.json({ number: 42 }, { status: 201 }) : Response.json({}, { status: 503 });
   }) as unknown as typeof fetch;
-  const request = (body: object, origin = env.ALLOWED_ORIGINS) => Object.assign(new Request('https://im-dog.com/api/feedback', {
+  const request = (body: object, origin = env.ALLOWED_ORIGINS) => Object.assign(new Request('https://www.im-dog.com/api/feedback', {
     method: 'POST',
     headers: { Origin: origin, 'Content-Type': 'application/json', 'CF-Connecting-IP': '203.0.113.44', 'User-Agent': 'PrivateBrowser/1' },
     body: JSON.stringify(body),
@@ -215,11 +215,11 @@ describe('private feedback Worker', () => {
     const served: string[] = [];
     const env = { ...t.env, ASSETS: { fetch: async (r: Request) => { served.push(new URL(r.url).pathname); return new Response('asset'); } } };
     for (const path of ['/', '/index.html', '/feedback-privacy.html', '/feedback', '/api/other']) {
-      const response = await handleRequest(new Request(`https://im-dog.com${path}`), env);
+      const response = await handleRequest(new Request(`https://www.im-dog.com${path}`), env);
       expect(await response.text(), path).toBe('asset');
     }
     expect(served).toEqual(['/', '/index.html', '/feedback-privacy.html', '/feedback', '/api/other']);
-    const wrong = await handleRequest(new Request('https://im-dog.com/api/feedback', { method: 'GET', headers: { Origin: 'https://im-dog.com' } }), env);
+    const wrong = await handleRequest(new Request('https://www.im-dog.com/api/feedback', { method: 'GET', headers: { Origin: 'https://www.im-dog.com' } }), env);
     expect(wrong.status).toBe(405);
     expect(served).toHaveLength(5);
   });
@@ -227,7 +227,7 @@ describe('private feedback Worker', () => {
   it('accepts only the listed origins (the GitHub Pages copy is not one)', async () => {
     const t = setup();
     expect((await handleFeedback(t.request(t.fields, 'https://christopher-013.github.io'), t.env, t.fetcher)).status).toBe(403);
-    const env = { ...t.env, ALLOWED_ORIGINS: 'https://im-dog.com, http://localhost:8787' };
+    const env = { ...t.env, ALLOWED_ORIGINS: 'https://www.im-dog.com, http://localhost:8787' };
     expect((await handleFeedback(t.request(t.fields, 'http://localhost:8787'), env, t.fetcher)).status).toBe(201);
   });
 

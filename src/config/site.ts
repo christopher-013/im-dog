@@ -1,12 +1,12 @@
 /**
- * The game's home at im-dog.com, served by the site Worker (src/feedback/worker.ts, wrangler.jsonc; see
+ * The game's home at www.im-dog.com (im-dog.com redirects there, D26), served by the site Worker (src/feedback/worker.ts, wrangler.jsonc; see
  * docs/FEEDBACK.md). The Feedback form and the player counter only work there, on the same origin as the Worker.
  * Anywhere else (the GitHub Pages copy, a local dev server) the form stays hidden and nothing is counted, unless
  * VITE_FEEDBACK_ENDPOINT points the form somewhere for a local test.
  */
 export const SITE = {
   /** The hosts the site Worker serves. */
-  hosts: ['im-dog.com'] as readonly string[],
+  hosts: ['www.im-dog.com'] as readonly string[],
 } as const;
 
 /** Where the Feedback form posts. */

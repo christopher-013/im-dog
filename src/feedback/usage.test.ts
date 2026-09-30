@@ -14,7 +14,7 @@ function setup() {
   const limited = new Map<string, number>();
   let perKey = 5;
   const env: UsageEnv = {
-    ALLOWED_ORIGINS: 'https://im-dog.com',
+    ALLOWED_ORIGINS: 'https://www.im-dog.com',
     USAGE_COUNTS: kv,
     GITHUB_TOKEN: 'test-secret',
     FEEDBACK_RATE_LIMITER: {
@@ -33,8 +33,8 @@ function setup() {
   const waits: Promise<unknown>[] = [];
   const ctx = { waitUntil: (p: Promise<unknown>) => void waits.push(p) };
   let ip = 1;
-  const ping = (event: unknown, origin = 'https://im-dog.com') =>
-    handlePing(new Request('https://im-dog.com/api/ping', {
+  const ping = (event: unknown, origin = 'https://www.im-dog.com') =>
+    handlePing(new Request('https://www.im-dog.com/api/ping', {
       method: 'POST',
       headers: { Origin: origin, 'Content-Type': 'application/json', 'CF-Connecting-IP': `198.51.100.${ip++}` },
       body: JSON.stringify({ event }),

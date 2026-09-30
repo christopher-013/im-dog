@@ -1,6 +1,7 @@
 # im-dog.com: the site Worker, player feedback and the player counter
 
-The game is served at **https://im-dog.com** by one Cloudflare Worker (`wrangler.jsonc`, decision D23), built the
+The game is served at **https://www.im-dog.com** by one Cloudflare Worker (`wrangler.jsonc`, decisions D23 and D26;
+https://im-dog.com redirects there), built the
 same way as the owner's Adtona and Pictayo Workers: the built game (`dist/`) as static assets, the **Feedback** form's
 endpoint at `/api/feedback`, and an anonymous **player counter** at `/api/ping`, all on the same origin
 (`src/feedback/worker.ts`, `src/feedback/usage.ts`). The GitHub Pages copy (https://christopher-013.github.io/im-dog/)
@@ -69,14 +70,18 @@ into Cloudflare's page, never into a chat, a commit or a command line.
    `wrangler.jsonc`, bound as `USAGE_COUNTS`)*. Its own namespace: the one titled `USAGE_COUNTS` is Pictayo's and
    `USAGE_COUNTS_ADTONA` is Adtona's, so the three apps' counts never mix.
 4. **First deploy.** `npm run build`, then `npx wrangler deploy`. This creates the `im-dog` Worker and attaches
-   `im-dog.com` (Cloudflare adds the DNS record and the certificate). Open https://im-dog.com: the game should load.
+   its domain, now `www.im-dog.com` (Cloudflare adds the DNS record and the certificate). Open
+   https://www.im-dog.com: the game should load.
 5. **The GitHub token.** GitHub → Settings → Developer settings → **Fine-grained personal access tokens** → Generate:
    repository access **Only select repositories → im-dog**, permissions **Issues: Read and write** only, with an
    expiry date (rotate it before then). Then `npx wrangler secret put GITHUB_TOKEN` and paste it at the prompt. Both
    feedback and the usage log use it.
-6. **www.im-dog.com.** *(Done 2026-09-29.)* A second, tiny Worker, `im-dog-www` (`wrangler.www.jsonc`,
-   `src/redirect/www.ts`), holds www.im-dog.com and sends every request to the same path on https://im-dog.com (301).
-   Deploy it with `npx wrangler deploy -c wrangler.www.jsonc`; Cloudflare made its DNS record and certificate.
+6. **im-dog.com → www.** *(Done 2026-09-29.)* A second, tiny Worker, `im-dog-apex` (`wrangler.apex.jsonc`,
+   `src/redirect/apex.ts`), holds im-dog.com and sends every request to the same path on https://www.im-dog.com
+   (301). Deploy it after the site Worker: `npx wrangler deploy -c wrangler.apex.jsonc`. Until 2026-09-29 it was the
+   other way round (a Worker named `im-dog-www` sent www to im-dog.com); the owner chose www as the address people
+   see (D26). Each Worker's deploy takes the domains its config lists and releases the others, so the switch was one
+   push; the retired `im-dog-www` Worker was then deleted.
 7. **Automatic deploys.** `.github/workflows/deploy-cloudflare.yml` runs on every push to `main` (beside the GitHub
    Pages deploy): the tests, the build, then `wrangler deploy` for both Workers. It needs one repository secret:
    - Cloudflare dashboard → My Profile → **API Tokens** → **Create Token** → the **Edit Cloudflare Workers** template.
@@ -88,8 +93,8 @@ into Cloudflare's page, never into a chat, a commit or a command line.
      exists, the workflow skips the deploy with a notice rather than failing.
    New D1 migrations aren't applied by the workflow: run `npx wrangler d1 migrations apply im-dog-feedback --remote`
    yourself when a change adds one.
-8. **Check it.** On https://im-dog.com:
-   - Feedback: open it from the start menu, send a clearly labelled test, and confirm the thank-you message and link,
+8. **Check it.** On https://www.im-dog.com:
+   - Feedback: open it from the start menu, send a clearly labelled test, and confirm "Moke says Thank you!",
      one new Issue with no name, email, IP or browser in it, and one private row:
      `npx wrangler d1 execute im-dog-feedback --remote --command "SELECT id, created_at, country, input_mode, issue_number FROM feedback_private ORDER BY created_at DESC LIMIT 5"`.
      Close the test Issue.
@@ -117,8 +122,8 @@ After that, the GitHub Pages copy can be turned into a pointer to im-dog.com (a 
 
 What the site tells them (all in the repo, deployed with the game):
 
-- `index.html`: a descriptive title and description, `<link rel="canonical" href="https://im-dog.com/">` (the GitHub
-  Pages copy carries the same page, so search engines credit im-dog.com, not github.io), Open Graph and Twitter tags
+- `index.html`: a descriptive title and description, `<link rel="canonical" href="https://www.im-dog.com/">` (the
+  GitHub Pages copy carries the same page, so search engines credit www.im-dog.com, not github.io), Open Graph and Twitter tags
   for link previews, and `VideoGame` structured data (JSON-LD: free, family friendly, plays in a browser).
 - `public/og-image.jpg` (1200×630): the preview image for search results, messages and social posts, rendered from the
   game (the cartoon Moke in the living room, the title in the game's lettering). Not the real-Moke photo.
@@ -130,8 +135,9 @@ What the site tells them (all in the repo, deployed with the game):
 
 1. **Google Search Console** (search.google.com/search-console) → **Add property** → **Domain** → `im-dog.com`. To verify,
    pick Cloudflare when it offers (it adds the DNS record for you after you sign in to Cloudflare), or copy the TXT
-   record it gives you into Cloudflare → im-dog.com → DNS. Then **Sitemaps** → submit `https://im-dog.com/sitemap.xml`,
-   and **URL Inspection** → `https://im-dog.com/` → **Request indexing**.
+   record it gives you into Cloudflare → im-dog.com → DNS. A Domain property covers www and the plain domain alike.
+   Then **Sitemaps** → submit `https://www.im-dog.com/sitemap.xml` (remove `https://im-dog.com/sitemap.xml` if you
+   submitted it before the switch to www), and **URL Inspection** → `https://www.im-dog.com/` → **Request indexing**.
 2. **Bing Webmaster Tools** (bing.com/webmasters) → sign in → **Import from Google Search Console**: it brings the site
    and the sitemap over, already verified. (Bing's results also feed DuckDuckGo and Yahoo.)
 3. Give it a few days. Search Console's reports then show impressions, clicks and any page it couldn't index.

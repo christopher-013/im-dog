@@ -224,7 +224,7 @@ export function logBody(stats: readonly EventStats[], today: string, updated: Da
     '',
     '---',
     '',
-    "Anonymous counts from the I'M DOG? site (https://im-dog.com). A **player** pressed PLAY and really played (moved",
+    "Anonymous counts from the I'M DOG? site (https://www.im-dog.com). A **player** pressed PLAY and really played (moved",
     `Moke around for at least ${USAGE.realPlayAfter} seconds of play); a **visit** is the game loading, which bots and link`,
     'previews can do too, so players is the real figure. Only daily totals are stored: no identifier, cookie, IP address',
     'or device details. The comments below are the daily history.',

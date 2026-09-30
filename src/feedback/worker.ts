@@ -19,7 +19,7 @@ interface FeedbackDb {
 export interface FeedbackEnv {
   FEEDBACK_DB: FeedbackDb;
   GITHUB_TOKEN: string;
-  /** Where the form may post from, comma separated (https://im-dog.com). */
+  /** Where the form may post from, comma separated (https://www.im-dog.com). */
   ALLOWED_ORIGINS: string;
   /** Cloudflare's rate limiter (wrangler.jsonc: 5 a minute per key), as Adtona and Pictayo use. */
   FEEDBACK_RATE_LIMITER?: RateLimiter;

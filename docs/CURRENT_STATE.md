@@ -40,6 +40,14 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-29, owner request): **www.im-dog.com is now the game's address (D26).** The site Worker
+(`wrangler.jsonc`) holds www.im-dog.com and accepts feedback from that origin only; im-dog.com is a tiny redirect
+Worker, `im-dog-apex` (`wrangler.apex.jsonc`, `src/redirect/apex.ts`, which replace `wrangler.www.jsonc` and
+`src/redirect/www.ts`), deployed after the site by `deploy-cloudflare.yml`. Canonical and social tags, JSON-LD,
+`robots.txt`, `sitemap.xml`, the privacy page's canonical and `SITE.hosts` all say www. The old `im-dog-www` Worker is
+retired. **Owner step:** in Google Search Console, submit `https://www.im-dog.com/sitemap.xml` (`docs/FEEDBACK.md` →
+"Search engines").
+
 Claude Code (2026-09-29, owner request): **Feedback thank-you and email notifications.** After sending, the form no longer
 links to the public Issue: it shows "Moke says Thank you!" (the wagging dog-face mark) for `FEEDBACK.thanksSeconds`
 (2.5 s), then closes itself, back to the start or pause menu (`src/ui/FeedbackDialog.ts`, `#feedback-thanks` in

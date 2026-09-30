@@ -1,4 +1,4 @@
-// The im-dog.com site Worker, built like the owner's Adtona and Pictayo Workers: it serves the built game (dist/),
+// The site Worker for www.im-dog.com, built like the owner's Adtona and Pictayo Workers: it serves the built game (dist/),
 // takes player feedback at /api/feedback, and counts real players at /api/ping. Only non-secret configuration lives
 // here. The one secret (GITHUB_TOKEN) is set in Cloudflare with `npx wrangler secret put GITHUB_TOKEN`, never in this
 // repository. Setup and checks: docs/FEEDBACK.md.
@@ -12,16 +12,17 @@
 	"observability": {
 		"enabled": false
 	},
-	// im-dog.com points at this Worker (Cloudflare adds the DNS record on deploy). www.im-dog.com redirects to it with
-	// a Cloudflare Redirect Rule (docs/FEEDBACK.md), so the game has one address.
+	// www.im-dog.com, the game's one address (D26), points at this Worker (Cloudflare adds the DNS record on deploy).
+	// Only this Worker's domains are listed: a deploy releases any others. im-dog.com redirects here from its own tiny
+	// Worker (wrangler.apex.jsonc), deployed after this one.
 	"routes": [
 		{
-			"pattern": "im-dog.com",
+			"pattern": "www.im-dog.com",
 			"custom_domain": true
 		}
 	],
 	"vars": {
-		"ALLOWED_ORIGINS": "https://im-dog.com"
+		"ALLOWED_ORIGINS": "https://www.im-dog.com"
 	},
 	// Cloudflare's rate limiter, as in Adtona (51011) and Pictayo (51012): 5 a minute per key. Feedback and the player
 	// counter use separate keys, so counting can never use up anyone's feedback allowance.

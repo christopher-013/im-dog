@@ -40,6 +40,10 @@ jobs:
         run: |
           npx --yes wrangler@4.143.0 deploy
           npx --yes wrangler@4.143.0 deploy -c wrangler.apex.jsonc
+      # Then tell Bing (and the other IndexNow search engines) the pages in sitemap.xml changed. Never fails the run.
+      - name: Notify search engines (IndexNow)
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: node scripts/indexnow.mjs
       - name: Not deployed yet
         if: env.CLOUDFLARE_API_TOKEN == ''
         run: echo "::notice::CLOUDFLARE_API_TOKEN isn't set, so im-dog.com wasn't updated. Add it as described in docs/FEEDBACK.md."

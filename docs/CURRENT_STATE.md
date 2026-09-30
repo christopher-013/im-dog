@@ -40,6 +40,12 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-29, owner request): **IndexNow on every deploy.** `deploy-cloudflare.yml` now runs
+`node scripts/indexnow.mjs` after the Workers deploy: it sends the pages in `public/sitemap.xml` to IndexNow (Bing and
+others, not Google), proving ownership with the public key file `public/34b2dbe66046a9ead64ac544a887a507.txt`. A failed
+notice is a warning, never a failed deploy. Bing Webmaster Tools had shown "couldn't connect to the DNS" for
+https://www.im-dog.com/: stale (www only got its address that day); DNS and a Bingbot-agent fetch checked out.
+
 Claude Code (2026-09-29, owner request): **search results: the icon, the site name, the logo.** Google showed a
 generic globe and "im-dog.com". New favicons from `scripts/make-icons.mjs` (transparent, Moke's face):
 `public/favicon.ico` (16/32/48, for Bing and older crawlers; it was a 404) and `icons/favicon-96/192.png` (Google

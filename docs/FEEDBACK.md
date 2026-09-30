@@ -137,6 +137,12 @@ What the site tells them (all in the repo, deployed with the game):
 - `public/robots.txt`: everything may be crawled except `/api/`; it names the sitemap.
 - `public/sitemap.xml`: the home page and the privacy page (`/feedback-privacy`, with its own canonical and
   description). Add a page here if the site ever gets another.
+- **IndexNow** (Bing, plus Yandex, Seznam and Naver through it; Google doesn't take part): after every deploy,
+  `deploy-cloudflare.yml` runs `node scripts/indexnow.mjs`, which tells IndexNow the sitemap's pages changed, so Bing
+  recrawls within hours rather than whenever it next visits. The key is public by design (`public/<key>.txt`, served
+  at the site's root, proves the notice comes from the site); to change it, rename that file and `KEY` in the script
+  together. A failed notice shows as a warning on the run and never fails the deploy. `--dry-run` prints what it
+  would send.
 
 **Owner steps** (your Google and Microsoft sign-ins):
 
@@ -150,8 +156,9 @@ What the site tells them (all in the repo, deployed with the game):
 3. Give it a few days. Search Console's reports then show impressions, clicks and any page it couldn't index. After a
    change to the icon, the site name or the description, **URL Inspection** → `https://www.im-dog.com/` → **Request
    indexing** makes Google look again sooner (the icon and name can still take a few weeks to change in results).
-4. Optional, for Bing: Cloudflare → im-dog.com → **Caching → Configuration → Crawler Hints** → on. Cloudflare then
-   tells Bing (IndexNow) when pages change, so it recrawls sooner.
+4. Bing Webmaster Tools → **Sitemaps** → submit `https://www.im-dog.com/sitemap.xml` (remove any `https://im-dog.com/`
+   sitemap the import brought over). **IndexNow** there lists the notices each deploy sends. Cloudflare's Crawler Hints
+   isn't needed: the deploy does IndexNow itself.
 
 ## Local testing
 

@@ -40,6 +40,14 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-09-29, owner request): **search results: the icon, the site name, the logo.** Google showed a
+generic globe and "im-dog.com". New favicons from `scripts/make-icons.mjs` (transparent, Moke's face):
+`public/favicon.ico` (16/32/48, for Bing and older crawlers; it was a 404) and `icons/favicon-96/192.png` (Google
+wants multiples of 48 px), all linked in `index.html`. The JSON-LD is now a graph: `WebSite` (the site name "I'M DOG?"),
+`Organization` (the logo, `icons/icon-512.png`) and the `VideoGame`. Plus `max-image-preview:large` and
+`application-name`. The existing icons regenerate byte-identical. Search engines refetch icons and names on their own
+schedule (days to weeks); owner steps in `docs/FEEDBACK.md` → "Search engines".
+
 Claude Code (2026-09-29, owner request): **www.im-dog.com is now the game's address (D26).** The site Worker
 (`wrangler.jsonc`) holds www.im-dog.com and accepts feedback from that origin only; im-dog.com is a tiny redirect
 Worker, `im-dog-apex` (`wrangler.apex.jsonc`, `src/redirect/apex.ts`, which replace `wrangler.www.jsonc` and

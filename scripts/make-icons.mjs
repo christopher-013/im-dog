@@ -1,13 +1,15 @@
-// Generates the PWA / home-screen icons in public/icons/ from the same simple circles as public/favicon.svg
-// (Moke's fluffy face, original art). No dependencies: shapes are rasterized here with 4×4 supersampling and
-// written as PNG with Node's zlib. Run: node scripts/make-icons.mjs
+// Generates the PWA / home-screen icons in public/icons/, and the favicons search engines show beside a result
+// (public/favicon.ico, public/icons/favicon-*.png), from the same simple circles as public/favicon.svg (Moke's fluffy
+// face, original art). No dependencies: shapes are rasterized here with 4×4 supersampling and written as PNG (and ICO)
+// with Node's zlib. Run: node scripts/make-icons.mjs
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const outDir = path.join(root, 'public', 'icons');
+const publicDir = path.join(root, 'public');
+const outDir = path.join(publicDir, 'icons');
 
 const hex = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 const CREAM = hex('#fbf1e4');
@@ -34,8 +36,9 @@ const SHAPES = [
 ];
 const FACE = { cx: 50, cy: 51, size: 105 };
 
-function colorAt(x, y) {
-  let c = CREAM;
+/** The shape colour at a point, else the background (null: transparent). */
+function colorAt(x, y, background) {
+  let c = background;
   for (const s of SHAPES) {
     const dx = (x - s.x) / s.rx;
     const dy = (y - s.y) / s.ry;
@@ -44,27 +47,29 @@ function colorAt(x, y) {
   return c;
 }
 
-/** An N×N RGBA image: cream background, the face filling `fraction` of it. */
-function render(n, fraction) {
+/** An N×N RGBA image, the face filling `fraction` of it, on a cream background or (null) a transparent one. */
+function render(n, fraction, background = CREAM) {
   const px = Buffer.alloc(n * n * 4);
   const ss = 4;
   const scale = FACE.size / (n * fraction);
   for (let j = 0; j < n; j++) {
     for (let i = 0; i < n; i++) {
-      let r = 0, g = 0, b = 0;
+      let r = 0, g = 0, b = 0, covered = 0;
       for (let sj = 0; sj < ss; sj++) {
         for (let si = 0; si < ss; si++) {
           const x = FACE.cx + (i + (si + 0.5) / ss - n / 2) * scale;
           const y = FACE.cy + (j + (sj + 0.5) / ss - n / 2) * scale;
-          const c = colorAt(x, y);
-          r += c[0]; g += c[1]; b += c[2];
+          const c = colorAt(x, y, background);
+          if (!c) continue;
+          r += c[0]; g += c[1]; b += c[2]; covered++;
         }
       }
+      if (!covered) continue;
       const o = (j * n + i) * 4;
-      px[o] = Math.round(r / (ss * ss));
-      px[o + 1] = Math.round(g / (ss * ss));
-      px[o + 2] = Math.round(b / (ss * ss));
-      px[o + 3] = 255;
+      px[o] = Math.round(r / covered);
+      px[o + 1] = Math.round(g / covered);
+      px[o + 2] = Math.round(b / covered);
+      px[o + 3] = Math.round((255 * covered) / (ss * ss));
     }
   }
   return px;
@@ -107,6 +112,25 @@ function png(n, rgba) {
   ]);
 }
 
+/** An ICO file holding PNG images (every browser and search engine crawler since 2007 reads these). */
+function ico(images) {
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(1, 2); // type: icon
+  header.writeUInt16LE(images.length, 4);
+  let offset = 6 + 16 * images.length;
+  const entries = images.map(({ n, data }) => {
+    const entry = Buffer.alloc(16);
+    entry[0] = entry[1] = n >= 256 ? 0 : n;
+    entry.writeUInt16LE(1, 4); // colour planes
+    entry.writeUInt16LE(32, 6); // bits per pixel
+    entry.writeUInt32LE(data.length, 8);
+    entry.writeUInt32LE(offset, 12);
+    offset += data.length;
+    return entry;
+  });
+  return Buffer.concat([header, ...entries, ...images.map((image) => image.data)]);
+}
+
 mkdirSync(outDir, { recursive: true });
 const ICONS = [
   ['icon-192.png', 192, 0.8],
@@ -120,3 +144,15 @@ for (const [name, n, fraction] of ICONS) {
   writeFileSync(file, png(n, render(n, fraction)));
   console.log(`wrote ${path.relative(root, file)}`);
 }
+
+// Favicons: transparent like favicon.svg, the face as large as it is there. Google shows a site's favicon beside its
+// results and wants a square at a multiple of 48 px; Bing and older crawlers ask for /favicon.ico first.
+const FAVICON_FRACTION = 0.97;
+for (const n of [96, 192]) {
+  const file = path.join(outDir, `favicon-${n}.png`);
+  writeFileSync(file, png(n, render(n, FAVICON_FRACTION, null)));
+  console.log(`wrote ${path.relative(root, file)}`);
+}
+const icoFile = path.join(publicDir, 'favicon.ico');
+writeFileSync(icoFile, ico([16, 32, 48].map((n) => ({ n, data: png(n, render(n, FAVICON_FRACTION, null)) }))));
+console.log(`wrote ${path.relative(root, icoFile)}`);

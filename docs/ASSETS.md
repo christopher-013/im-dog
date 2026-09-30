@@ -22,6 +22,7 @@ Dev tooling: Vite (MIT), TypeScript (Apache-2.0), Vitest (MIT).
 | Logo lettering + Moke-face "O", paw icon | `index.html` (inline SVG) | Original vector art |
 | Favicon | `public/favicon.svg` | Simplified Moke face |
 | Home-screen icons (192, 512, maskable 512, Apple 180) | `public/icons/` | Phase 3. Generated from the favicon's circles by `node scripts/make-icons.mjs` (rasterized in code, no image editor or third-party art) |
+| Search-result favicons (`favicon.ico` 16/32/48, `favicon-96/192.png`) | `public/favicon.ico`, `public/icons/` | 2026-09-29, for the icon beside search results. Same script and art as the favicon, transparent background |
 | Web app manifest | `public/manifest.webmanifest` | Phase 3. Name, colours, icons for installing to the home screen |
 | Living room, hallway, furniture, lighting | `src/world/` | Built in code from simple shapes |
 | Floorboard, rug, pillow, wall-art and garden textures | `src/world/textures.ts` | Original canvas drawings generated at startup (no image files) |

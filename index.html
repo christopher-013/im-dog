@@ -11,6 +11,9 @@
     <!-- Search engines and link previews (docs/FEEDBACK.md → "Search engines"). The game's one address is www.im-dog.com
          (D26): the GitHub Pages copy points here too, so search results send people to www.im-dog.com. -->
     <link rel="canonical" href="https://www.im-dog.com/" />
+    <!-- Allow a large preview image (og-image.jpg) in results. -->
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="application-name" content="I'M DOG?" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="I'M DOG?" />
     <meta property="og:title" content="I'M DOG? A Day in the Life of Moke" />
@@ -25,26 +28,56 @@
     <meta name="twitter:title" content="I'M DOG? A Day in the Life of Moke" />
     <meta name="twitter:description" content="Play as Moke, a fluffy white Maltipoo, in a cozy 3D browser game. Explore the house, steal socks, beg for treats and nap in the sun. Free, no download." />
     <meta name="twitter:image" content="https://www.im-dog.com/og-image.jpg" />
+    <!-- Structured data: WebSite gives Google the site's name for results ("I'M DOG?" rather than the domain),
+         Organization its logo, VideoGame what it is. -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "VideoGame",
-        "name": "I'M DOG?",
-        "alternateName": "I'M DOG? A Day in the Life of Moke",
-        "url": "https://www.im-dog.com/",
-        "image": "https://www.im-dog.com/og-image.jpg",
-        "description": "Play as Moke, a fluffy white Maltipoo, in a cozy 3D browser game. Explore the house, steal socks, beg for treats and nap in the sun. Free, no download.",
-        "genre": ["Casual", "Simulation", "Adventure"],
-        "gamePlatform": ["Web browser", "Desktop", "Mobile"],
-        "applicationCategory": "Game",
-        "operatingSystem": "Any (runs in a web browser)",
-        "playMode": "SinglePlayer",
-        "inLanguage": "en",
-        "isFamilyFriendly": true,
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" }
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://www.im-dog.com/#website",
+            "name": "I'M DOG?",
+            "alternateName": ["IM DOG", "I'M DOG? A Day in the Life of Moke", "im-dog.com"],
+            "url": "https://www.im-dog.com/",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://www.im-dog.com/#organization" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://www.im-dog.com/#organization",
+            "name": "I'M DOG?",
+            "url": "https://www.im-dog.com/",
+            "logo": { "@type": "ImageObject", "url": "https://www.im-dog.com/icons/icon-512.png", "width": 512, "height": 512 },
+            "sameAs": ["https://github.com/christopher-013/im-dog"]
+          },
+          {
+            "@type": "VideoGame",
+            "@id": "https://www.im-dog.com/#game",
+            "name": "I'M DOG?",
+            "alternateName": "I'M DOG? A Day in the Life of Moke",
+            "url": "https://www.im-dog.com/",
+            "image": "https://www.im-dog.com/og-image.jpg",
+            "description": "Play as Moke, a fluffy white Maltipoo, in a cozy 3D browser game. Explore the house, steal socks, beg for treats and nap in the sun. Free, no download.",
+            "genre": ["Casual", "Simulation", "Adventure"],
+            "gamePlatform": ["Web browser", "Desktop", "Mobile"],
+            "applicationCategory": "Game",
+            "operatingSystem": "Any (runs in a web browser)",
+            "playMode": "SinglePlayer",
+            "inLanguage": "en",
+            "isFamilyFriendly": true,
+            "publisher": { "@id": "https://www.im-dog.com/#organization" },
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" }
+          }
+        ]
       }
     </script>
     <meta name="theme-color" content="#fbf1e4" />
+    <!-- Favicons (scripts/make-icons.mjs): search engines show one beside each result. Google wants a square at a
+         multiple of 48 px; Bing and older crawlers look for /favicon.ico. Browsers that can use the SVG do. -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/favicon-96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/favicon-192.png" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- Home-screen / installed web app (see docs/MOBILE.md). -->
     <link rel="manifest" href="/manifest.webmanifest" />

@@ -125,7 +125,13 @@ What the site tells them (all in the repo, deployed with the game):
 
 - `index.html`: a descriptive title and description, `<link rel="canonical" href="https://www.im-dog.com/">` (the
   GitHub Pages copy carries the same page, so search engines credit www.im-dog.com, not github.io), Open Graph and Twitter tags
-  for link previews, and `VideoGame` structured data (JSON-LD: free, family friendly, plays in a browser).
+  for link previews, `max-image-preview:large` (a big preview image is allowed), and structured data (JSON-LD):
+  `WebSite` names the site "I'M DOG?" so results show that rather than the domain, `Organization` gives the logo
+  (`icons/icon-512.png`), and `VideoGame` says what it is (free, family friendly, plays in a browser).
+- **The icon beside a result.** Search engines show a site's favicon there, fetched on their own schedule (days to
+  weeks after indexing). `public/favicon.ico` (16, 32 and 48 px) is what Bing and older crawlers ask for first;
+  `icons/favicon-96.png` and `icons/favicon-192.png` suit Google (a square at a multiple of 48 px); `favicon.svg`
+  stays for browsers. All are Moke's face on a transparent background, made by `node scripts/make-icons.mjs`.
 - `public/og-image.jpg` (1200×630): the preview image for search results, messages and social posts, rendered from the
   game (the cartoon Moke in the living room, the title in the game's lettering). Not the real-Moke photo.
 - `public/robots.txt`: everything may be crawled except `/api/`; it names the sitemap.
@@ -141,7 +147,11 @@ What the site tells them (all in the repo, deployed with the game):
    submitted it before the switch to www), and **URL Inspection** → `https://www.im-dog.com/` → **Request indexing**.
 2. **Bing Webmaster Tools** (bing.com/webmasters) → sign in → **Import from Google Search Console**: it brings the site
    and the sitemap over, already verified. (Bing's results also feed DuckDuckGo and Yahoo.)
-3. Give it a few days. Search Console's reports then show impressions, clicks and any page it couldn't index.
+3. Give it a few days. Search Console's reports then show impressions, clicks and any page it couldn't index. After a
+   change to the icon, the site name or the description, **URL Inspection** → `https://www.im-dog.com/` → **Request
+   indexing** makes Google look again sooner (the icon and name can still take a few weeks to change in results).
+4. Optional, for Bing: Cloudflare → im-dog.com → **Caching → Configuration → Crawler Hints** → on. Cloudflare then
+   tells Bing (IndexNow) when pages change, so it recrawls sooner.
 
 ## Local testing
 

@@ -4,6 +4,9 @@ Bindings live in `src/config/input.ts`, the single source of truth for the in-ga
 feeds the same gameplay actions (see `docs/ARCHITECTURE.md` → Input). Prompts show the right key for what you're
 using: "E — Pick Up Sock" on a keyboard, "A — …" on a controller, a lit-up button on touch.
 
+The Controls screen shows one input at a time, with tabs (Keyboard, Controller, Touch). It opens on the input in use,
+so the list fits a phone without scrolling (2026-10-01).
+
 ## Desktop: keyboard + mouse
 
 | Input | Action | Status |

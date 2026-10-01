@@ -447,11 +447,18 @@
       </section>
 
       <dialog id="controls-dialog" class="controls-dialog" aria-labelledby="controls-title">
-        <div class="card">
+        <!-- One input's controls at a time (it opens on the one in use), so the list fits a phone without scrolling. -->
+        <div class="card controls-card">
           <h2 id="controls-title" class="card-title">Controls</h2>
-          <ul id="controls-list" class="controls-list"></ul>
-          <p class="controls-note">Controller support uses the standard browser gamepad layout. Press a controller button after connecting it so the browser can detect it.</p>
-          <p class="controls-note">Items marked <span class="soon">soon</span> arrive in later milestones.</p>
+          <div class="controls-tabs" role="tablist" aria-label="Controls for">
+            <button id="controls-tab-keyboard" class="controls-tab" type="button" role="tab" data-controls-group="keyboard" aria-controls="controls-panel">Keyboard</button>
+            <button id="controls-tab-gamepad" class="controls-tab" type="button" role="tab" data-controls-group="gamepad" aria-controls="controls-panel">Controller</button>
+            <button id="controls-tab-touch" class="controls-tab" type="button" role="tab" data-controls-group="touch" aria-controls="controls-panel">Touch</button>
+          </div>
+          <div id="controls-panel" class="controls-panel" role="tabpanel">
+            <ul id="controls-list" class="controls-list"></ul>
+            <p class="controls-note" data-controls-group="gamepad">Uses the standard browser gamepad layout. Press a button after connecting the controller so the browser can find it.</p>
+          </div>
           <button id="btn-controls-close" class="btn btn-secondary" type="button">GOT IT</button>
         </div>
       </dialog>

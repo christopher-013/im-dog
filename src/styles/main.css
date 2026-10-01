@@ -80,7 +80,7 @@ body {
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 24px 16px;
+  padding: var(--screen-pad) 16px;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -113,7 +113,7 @@ body {
  * would clip the logo's tilted "?" and show a scrollbar): they scale with the window instead.
  */
 .screen > .card.stack {
-  max-height: calc(100dvh - 48px);
+  max-height: calc(100dvh - 2 * var(--screen-pad));
   overflow-y: auto;
 }
 
@@ -486,6 +486,7 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
 
 .controls-dialog {
   max-width: none;
+  max-height: none;
   padding: 0;
   overflow: visible;
   border: 0;
@@ -501,7 +502,7 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
 }
 
 .controls-dialog .card {
-  max-height: calc(100dvh - 48px);
+  max-height: calc(100dvh - 2 * var(--screen-pad));
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -519,7 +520,7 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
   align-items: center;
   gap: 24px;
   width: min(680px, calc(100vw - 32px));
-  max-height: calc(100dvh - 32px);
+  max-height: calc(100dvh - 2 * var(--screen-pad));
   overflow-y: auto;
 }
 
@@ -539,7 +540,7 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
 
 .feedback-dialog .feedback-card {
   width: min(480px, calc(100vw - 32px));
-  max-height: calc(100dvh - 32px);
+  max-height: calc(100dvh - 2 * var(--screen-pad));
   overflow-y: auto;
   gap: 6px;
   padding: 24px 30px;
@@ -600,9 +601,49 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
   .about-portrait { width: 110px; margin-inline: auto; }
 }
 
+.controls-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--pill);
+  background: var(--cream);
+}
+
+.controls-tab {
+  flex: 1;
+  padding: 0.42em 0.7em;
+  border: 0;
+  border-radius: var(--pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.controls-tab[aria-selected='true'] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.controls-tab:focus-visible {
+  outline: 3px solid var(--leaf);
+  outline-offset: 2px;
+}
+
+.controls-panel {
+  display: grid;
+  gap: 12px;
+}
+
+/* The rows of one input; each row spans the list's columns, so keys and labels line up across rows. */
 .controls-list {
   display: grid;
-  gap: 10px;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 9px 14px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -610,9 +651,19 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
 
 .control-row {
   display: grid;
-  grid-template-columns: 150px 1fr auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   align-items: center;
-  gap: 12px;
+}
+
+.control-row .soon {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.control-row[hidden],
+.controls-note[hidden] {
+  display: none;
 }
 
 .control-keys {
@@ -620,26 +671,8 @@ html:not([data-input='touch']) .btn-link[data-fullscreen] {
   gap: 5px;
 }
 
-/* Group headings: Keyboard & mouse, Controller, Touch. The first group needs no gap above it. */
-.control-group {
-  margin-top: 8px;
-  color: var(--ink-soft);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.control-group.controls-keyboard {
-  margin-top: 0;
-}
-
-html[data-input='touch'] .control-group.controls-keyboard {
-  margin-top: 8px;
-}
-
 /* Touch descriptions are sentences, not keys: give them room to wrap. */
-.control-row.controls-touch {
+.controls-panel[data-group='touch'] .controls-list {
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
 }
 
@@ -648,13 +681,35 @@ html[data-input='touch'] .control-group.controls-keyboard {
   line-height: 1.3;
 }
 
-/* On a phone, the touch controls come first. */
-html[data-input='touch'] .controls-touch {
-  order: -1;
-}
-
-html[data-input='touch'] .control-group.controls-touch {
-  margin-top: 0;
+/* On a narrow screen each touch control is the action, then how to do it, as plain text. */
+@media (max-width: 560px) {
+  /* Slimmer key caps leave the labels room, so fewer of them wrap. */
+  .controls-card .control-keys {
+    gap: 3px;
+  }
+  .controls-card kbd {
+    min-width: 1.65em;
+    padding: 0.12em 0.38em;
+  }
+  .controls-panel[data-group='touch'] .controls-list {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 7px;
+  }
+  .control-row.controls-touch {
+    row-gap: 1px;
+  }
+  .control-row.controls-touch .control-label {
+    order: -1;
+    font-weight: 700;
+  }
+  .control-row.controls-touch kbd {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--ink-soft);
+    font-weight: 500;
+    text-align: left;
+  }
 }
 
 kbd {
@@ -1620,6 +1675,136 @@ html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
   pointer-events: none;
 }
 
+/* ---------- Menus fit the window ---------- */
+
+/*
+ * Every menu and window fits the screen without scrolling, phones included (owner, 2026-10-01). Their spacing,
+ * button height and larger text scale with --menu-h, the window's height with the browser's toolbars showing (svh),
+ * from full size on a tall screen down to an iPhone SE in Safari (375 × 548). The scroll limits above stay only as
+ * a safety net. Phones on their side get side-by-side layouts (below). Check with the Browser pane at phone sizes.
+ */
+:root {
+  --menu-h: 100vh;
+  --screen-pad: clamp(8px, calc(var(--menu-h) * 0.035), 24px);
+}
+
+@supports (height: 100svh) {
+  :root {
+    --menu-h: 100svh;
+  }
+}
+
+.screen-pause .card.stack,
+.screen-error .card.stack,
+.controls-dialog .controls-card,
+.about-dialog .about-card {
+  padding: clamp(14px, calc(var(--menu-h) * 0.035), 30px) clamp(18px, 5.5vw, 34px);
+}
+
+.screen-pause .card.stack,
+.screen-error .card.stack {
+  gap: clamp(6px, calc(var(--menu-h) * 0.016), 14px);
+}
+
+.screen-pause .card-title,
+.screen-error .card-title,
+.controls-card .card-title,
+.about-copy .card-title {
+  font-size: clamp(1.4rem, calc(var(--menu-h) * 0.045), 2rem);
+  line-height: 1.15;
+}
+
+.screen-pause .card-text {
+  font-size: clamp(0.92rem, calc(var(--menu-h) * 0.022), 1.05rem);
+}
+
+.screen-pause .card .btn:not(.btn-link),
+.screen-error .card .btn,
+.controls-card .btn,
+.about-copy .btn {
+  padding-block: clamp(0.45em, calc(var(--menu-h) * 0.012), 0.85em);
+  font-size: clamp(1rem, calc(var(--menu-h) * 0.026), 1.2rem);
+}
+
+.screen-pause .settings {
+  gap: clamp(5px, calc(var(--menu-h) * 0.014), 12px);
+  margin-top: 0;
+  padding-block: clamp(8px, calc(var(--menu-h) * 0.018), 14px);
+}
+
+.screen-pause .menu-buttons {
+  gap: clamp(8px, calc(var(--menu-h) * 0.016), 14px);
+  margin-top: clamp(4px, calc(var(--menu-h) * 0.02), 20px);
+}
+
+.error-face {
+  width: clamp(52px, calc(var(--menu-h) * 0.14), 96px);
+  height: clamp(52px, calc(var(--menu-h) * 0.14), 96px);
+}
+
+.controls-dialog .controls-card {
+  gap: clamp(8px, calc(var(--menu-h) * 0.022), 18px);
+}
+
+.controls-list {
+  row-gap: clamp(5px, calc(var(--menu-h) * 0.012), 9px);
+}
+
+.controls-card .control-label {
+  font-size: clamp(0.88rem, calc(var(--menu-h) * 0.024), 1.05rem);
+}
+
+.controls-card kbd {
+  font-size: clamp(0.8rem, calc(var(--menu-h) * 0.021), 0.95rem);
+}
+
+.controls-note {
+  font-size: clamp(0.8rem, calc(var(--menu-h) * 0.02), 0.9rem);
+}
+
+.about-dialog .about-card {
+  gap: clamp(10px, calc(var(--menu-h) * 0.03), 24px);
+}
+
+.about-copy p {
+  margin: clamp(4px, calc(var(--menu-h) * 0.012), 10px) 0;
+  font-size: clamp(0.9rem, calc(var(--menu-h) * 0.024), 1rem);
+  line-height: 1.45;
+}
+
+.about-copy .btn {
+  margin-top: clamp(2px, calc(var(--menu-h) * 0.01), 8px);
+}
+
+@media (max-width: 560px) {
+  .about-portrait {
+    width: clamp(64px, calc(var(--menu-h) * 0.17), 110px);
+  }
+}
+
+.feedback-dialog .feedback-card {
+  padding: clamp(14px, calc(var(--menu-h) * 0.03), 24px) clamp(18px, 5.5vw, 30px);
+}
+
+.feedback-card .card-title {
+  font-size: clamp(1.4rem, calc(var(--menu-h) * 0.045), 2rem);
+}
+
+.feedback-card input[type='text'],
+.feedback-card input[type='email'],
+.feedback-card textarea {
+  padding-block: clamp(6px, calc(var(--menu-h) * 0.014), 10px);
+}
+
+.feedback-card textarea {
+  height: clamp(64px, calc(var(--menu-h) * 0.16), 130px);
+  min-height: 0;
+}
+
+.feedback-actions .btn {
+  padding-block: clamp(0.5em, calc(var(--menu-h) * 0.013), 0.85em);
+}
+
 /* ---------- Small / short windows & reduced motion ---------- */
 
 @media (max-height: 560px) {
@@ -1648,7 +1833,7 @@ html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
   }
 }
 
-/* Landscape phones: the pause card goes side by side (settings | buttons) so nothing needs scrolling. */
+/* Landscape phones: the pause card, Controls and Feedback go side by side so nothing needs scrolling. */
 @media (max-height: 460px) and (orientation: landscape) {
   .complete-card {
     top: calc(10px + env(safe-area-inset-top));
@@ -1674,24 +1859,196 @@ html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
   .screen-pause .card-text {
     grid-column: 1 / -1;
   }
-  .screen-pause .card-title {
-    font-size: 1.5rem;
-  }
   .screen-pause .settings {
     width: 100%;
-    margin-top: 0;
-    /* Five settings in a short window: a little tighter. */
-    gap: 7px;
-    padding: 10px 14px;
+    /* Four settings in a short window: a little tighter. */
+    gap: 6px;
+    padding: 9px 14px;
   }
   .screen-pause .menu-buttons {
     width: 100%;
     margin-top: 0;
-    gap: 10px;
+    gap: 8px;
   }
-  .screen-pause .btn {
-    padding: 0.55em 1.2em;
-    font-size: 1.05rem;
+  .screen-pause .card .btn:not(.btn-link) {
+    padding: 0.45em 1.2em;
+  }
+
+  /* Controls: the title, tabs and GOT IT share the top row; the rows of the list go two by two. */
+  .controls-dialog .controls-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'title tabs close'
+      'panel panel panel';
+    align-items: center;
+    gap: 10px 18px;
+    width: min(780px, calc(100vw - 24px));
+  }
+  .controls-card .card-title { grid-area: title; }
+  .controls-card .controls-tabs { grid-area: tabs; }
+  .controls-card .controls-panel { grid-area: panel; }
+  .controls-card #btn-controls-close { grid-area: close; padding-inline: 1.1em; }
+  .controls-list {
+    grid-template-columns: max-content minmax(0, 1fr) max-content minmax(0, 1fr);
+    column-gap: 14px;
+  }
+  .control-row {
+    grid-column: span 2;
+  }
+  .controls-panel[data-group='touch'] .controls-list {
+    grid-template-columns: repeat(2, minmax(0, 1.2fr) minmax(0, 1fr));
+  }
+
+  /* Feedback: name and email on the left, the comments beside them. */
+  .feedback-dialog .feedback-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'title title'
+      'intro intro'
+      'name-label comments-label'
+      'name comments'
+      'email-label comments'
+      'email comments'
+      'status status'
+      'actions actions';
+    column-gap: 18px;
+    row-gap: 4px;
+    width: min(680px, calc(100vw - 24px));
+  }
+  .feedback-card .card-title { grid-area: title; }
+  .feedback-card #feedback-intro { grid-area: intro; }
+  .feedback-card label[for='feedback-name'] { grid-area: name-label; }
+  .feedback-card #feedback-name { grid-area: name; }
+  .feedback-card label[for='feedback-email'] { grid-area: email-label; }
+  .feedback-card #feedback-email { grid-area: email; }
+  .feedback-card label[for='feedback-comments'] { grid-area: comments-label; }
+  .feedback-card #feedback-comments { grid-area: comments; height: 100%; resize: none; }
+  .feedback-card .feedback-status { grid-area: status; }
+  .feedback-card .feedback-actions { grid-area: actions; }
+
+  /* About: the photo's column narrows to what the height allows. */
+  .about-dialog .about-card {
+    grid-template-columns: min(180px, calc((100dvh - 2 * var(--screen-pad) - 28px) * 0.75)) minmax(0, 1fr);
+    width: min(700px, calc(100vw - 24px));
+  }
+}
+
+/* Very short portrait screens (an older phone with the browser's bars showing): tighter still. */
+@media (max-height: 540px) and (orientation: portrait) {
+  .screen-pause .card.stack,
+  .controls-dialog .controls-card {
+    padding: 12px 18px;
+  }
+  .screen-pause .card.stack {
+    gap: 6px;
+  }
+  .screen-pause .settings {
+    gap: 5px;
+    padding: 7px 14px;
+  }
+  .screen-pause .menu-buttons {
+    gap: 7px;
+    margin-top: 4px;
+  }
+  .screen-pause .card .btn:not(.btn-link),
+  .controls-card .btn {
+    padding-block: 0.4em;
+    font-size: 0.98rem;
+  }
+  .controls-dialog .controls-card {
+    gap: 8px;
+  }
+  .controls-tab {
+    padding-block: 0.32em;
+  }
+  .controls-list {
+    row-gap: 4px;
+  }
+}
+
+/* Very short landscape screens (a phone on its side with the browser's bars showing, from about 280 px tall). */
+@media (max-height: 340px) and (orientation: landscape) {
+  .screen-pause .card.stack,
+  .screen-error .card.stack,
+  .controls-dialog .controls-card,
+  .about-dialog .about-card,
+  .feedback-dialog .feedback-card {
+    padding: 9px 18px;
+  }
+  .screen-pause .card-title,
+  .screen-error .card-title,
+  .controls-card .card-title,
+  .about-copy .card-title,
+  .feedback-card .card-title {
+    font-size: 1.25rem;
+  }
+  .screen-pause .card-text {
+    font-size: 0.88rem;
+  }
+  .screen-pause .settings {
+    gap: 4px;
+    padding: 6px 12px;
+  }
+  .screen-pause .menu-buttons {
+    gap: 6px;
+  }
+  .screen-pause .card .btn:not(.btn-link),
+  .screen-error .card .btn,
+  .controls-card .btn,
+  .about-copy .btn,
+  .feedback-actions .btn {
+    padding-block: 0.36em;
+    font-size: 0.95rem;
+  }
+  .controls-dialog .controls-card {
+    gap: 6px 14px;
+  }
+  .controls-tab {
+    padding-block: 0.28em;
+    font-size: 0.88rem;
+  }
+  .controls-list {
+    row-gap: 3px;
+  }
+  .controls-card .control-label {
+    font-size: 0.82rem;
+  }
+  .controls-card kbd {
+    font-size: 0.76rem;
+    padding: 0.1em 0.4em;
+  }
+  .control-row.controls-touch kbd {
+    line-height: 1.2;
+  }
+  .controls-note {
+    font-size: 0.76rem;
+  }
+  .about-copy p {
+    margin: 3px 0;
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+  .feedback-card #feedback-intro,
+  .feedback-card label {
+    font-size: 0.88rem;
+  }
+  .feedback-card input[type='text'],
+  .feedback-card input[type='email'] {
+    padding-block: 4px;
+  }
+  .feedback-dialog .feedback-card {
+    row-gap: 2px;
+  }
+  .screen-menu .logo {
+    font-size: clamp(36px, 15vh, 48px);
+  }
+  .screen-menu .menu-buttons {
+    gap: 5px;
+  }
+  .screen-menu .btn:not(.btn-link) {
+    padding-block: 0.4em;
   }
 }
 

@@ -118,6 +118,25 @@ touch ────────────┘
   - the frame clock restarts, so there's no catch-up jump.
 - Fullscreen is offered, never required.
 
+## Menus never scroll
+Every menu and window fits the screen without scrolling (owner, 2026-10-01): the start and pause menus, the error
+screen, Controls, About and Feedback. In `src/styles/main.css` → "Menus fit the window":
+- **Sizes scale with the screen's height.** Spacing, button height and the larger text use `--menu-h`, the visible
+  height with the browser's toolbars showing (`100svh`). Two tighter steps cover the shortest screens: portrait
+  under 540 px, landscape under 340 px.
+- **Phones on their side get side-by-side layouts.** The pause card (settings | buttons); Controls (the title, tabs
+  and GOT IT on one row, the list two by two); Feedback (the comments beside name and email); About (the photo
+  narrows to the height).
+- **Controls shows one input at a time** (Keyboard, Controller, Touch tabs), opening on the input in use. On a
+  narrow screen each touch control is its action in bold, then how to do it.
+- The scroll limits stay as a safety net only, for screens smaller than the sizes below.
+
+Checked with the Browser pane by measuring each window's top, bottom and scroll overflow, with every button shown
+(Feedback and Fullscreen included). Every window fit at: 320×520, 360×500, 360×520, 360×640, 375×548 (iPhone SE in
+Safari), 390×664, 430×740 (portrait); 568×300, 640×280, 667×325, 740×360, 780×330, 844×340, 844×390, 932×400
+(landscape); 768×1024; 1280×680, 1366×600, 1920×950 (desktop). Not checked on a physical phone, and not with the
+on-screen keyboard open (typing feedback shrinks the window; the form then scrolls).
+
 ## Home screen / PWA
 - `public/manifest.webmanifest`: name and short name "I'M DOG?", `display: fullscreen` (falling back to
   standalone), any orientation, cream theme and background. Icons in `public/icons/` are generated from the favicon art

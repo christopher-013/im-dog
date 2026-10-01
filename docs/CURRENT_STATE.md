@@ -40,6 +40,14 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-01, owner request, from a screenshot of the pause menu scrolling on their iPhone): **no menu
+scrolls.** Every menu and window (start, pause, error, Controls, About, Feedback) fits without scrolling from
+320×520 and 640×280 phones to desktops: sizes scale with the visible height (`--menu-h`, `100svh`), with tighter
+steps for very short screens and side-by-side layouts for phones on their side (`src/styles/main.css` → "Menus fit
+the window"). The Controls window now shows one input at a time with tabs (Keyboard, Controller, Touch), opening on
+the input in use (`UIManager.showControlsGroup`); the obsolete "Items marked soon" note is gone. Measured in the
+Browser pane at 19 sizes (`docs/MOBILE.md` → "Menus never scroll"); not on a physical phone.
+
 Claude Code (2026-09-29, owner request): **IndexNow on every deploy.** `deploy-cloudflare.yml` now runs
 `node scripts/indexnow.mjs` after the Workers deploy: it sends the pages in `public/sitemap.xml` to IndexNow (Bing and
 others, not Google), proving ownership with the public key file `public/34b2dbe66046a9ead64ac544a887a507.txt`. A failed

@@ -107,6 +107,7 @@ export class UIManager {
     });
 
     this.renderControls(this.el('controls-list'));
+    this.setUpControlsTabs();
     this.setUpFullscreen();
   }
 
@@ -500,7 +501,9 @@ export class UIManager {
   openControls(): void {
     if (this.aboutDialog.open) this.aboutDialog.close();
     this.feedbackDialog.close();
-    if (!this.controlsDialog.open) this.controlsDialog.showModal();
+    if (this.controlsDialog.open) return;
+    this.showControlsGroup(this.inputMode);
+    this.controlsDialog.showModal();
   }
 
   openAbout(): void {
@@ -524,14 +527,12 @@ export class UIManager {
     this.showScreen('error');
   }
 
+  /** The Controls window's rows, one group per input (keyboard, gamepad, touch); the tabs show one group at a time. */
   private renderControls(list: HTMLElement): void {
-    const heading = this.doc.createElement('li');
-    heading.className = 'control-group controls-keyboard';
-    heading.textContent = 'Keyboard & mouse';
-    list.appendChild(heading);
     for (const hint of CONTROL_HINTS) {
       const row = this.doc.createElement('li');
       row.className = 'control-row';
+      row.dataset.controlsGroup = 'keyboard';
       row.classList.toggle('is-soon', !hint.ready);
 
       const keys = this.doc.createElement('span');
@@ -558,18 +559,15 @@ export class UIManager {
       list.appendChild(row);
     }
 
-    this.renderHintGroup(list, 'Controller', GAMEPAD_CONTROL_HINTS, 'controls-gamepad');
-    this.renderHintGroup(list, 'Touch', TOUCH_CONTROL_HINTS, 'controls-touch');
+    this.renderHintGroup(list, GAMEPAD_CONTROL_HINTS, 'gamepad');
+    this.renderHintGroup(list, TOUCH_CONTROL_HINTS, 'touch');
   }
 
-  private renderHintGroup(list: HTMLElement, title: string, hints: readonly GamepadControlHint[], className: string): void {
-    const heading = this.doc.createElement('li');
-    heading.className = `control-group ${className}`;
-    heading.textContent = title;
-    list.appendChild(heading);
+  private renderHintGroup(list: HTMLElement, hints: readonly GamepadControlHint[], group: InputMode): void {
     for (const hint of hints) {
       const row = this.doc.createElement('li');
-      row.className = `control-row ${className}`;
+      row.className = `control-row controls-${group}`;
+      row.dataset.controlsGroup = group;
       const keys = this.doc.createElement('span');
       keys.className = 'control-keys';
       const kbd = this.doc.createElement('kbd');
@@ -580,6 +578,37 @@ export class UIManager {
       label.textContent = hint.label;
       row.append(keys, label);
       list.appendChild(row);
+    }
+  }
+
+  /** Tabs: click, or the arrow keys, Home and End between them (the usual tab pattern). */
+  private setUpControlsTabs(): void {
+    const tabs = [...this.controlsDialog.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => this.showControlsGroup(tab.dataset.controlsGroup as InputMode));
+      tab.addEventListener('keydown', (event) => {
+        const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[event.key];
+        if (next === undefined) return;
+        event.preventDefault();
+        const target = tabs[(next + tabs.length) % tabs.length];
+        this.showControlsGroup(target.dataset.controlsGroup as InputMode);
+        target.focus();
+      });
+    });
+  }
+
+  /** Shows one input's controls (its rows and notes) and selects its tab. */
+  private showControlsGroup(group: InputMode): void {
+    const panel = this.el('controls-panel');
+    for (const tab of this.controlsDialog.querySelectorAll<HTMLButtonElement>('[role="tab"]')) {
+      const selected = tab.dataset.controlsGroup === group;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+      if (selected) panel.setAttribute('aria-labelledby', tab.id);
+    }
+    panel.dataset.group = group; // the touch rows lay out differently (CSS)
+    for (const item of panel.querySelectorAll<HTMLElement>('[data-controls-group]')) {
+      item.hidden = item.dataset.controlsGroup !== group;
     }
   }
 

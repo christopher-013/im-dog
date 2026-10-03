@@ -3,8 +3,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { PATIO_TILE, type RoomMaterials } from '../materials';
 import type { StaticSceneBuilder } from '../StaticSceneBuilder';
 
-// The home gym (the old sunroom) and the backyard seen through its glass doors. Original, built in code from the
-// owner's photos (docs/HOME_REFERENCE.md); no photo is used as a texture. Each piece is built around its own origin
+// The home gym (the old sunroom) and the backyard seen through its glass doors. Original, built in code
+// (docs/HOME_REFERENCE.md); no image textures. Each piece is built around its own origin
 // with its front facing +z, like the rest of the furniture; Wing.ts places them.
 
 const rbox = (w: number, h: number, d: number, radius: number, segments = 2) => new RoundedBoxGeometry(w, h, d, segments, radius);

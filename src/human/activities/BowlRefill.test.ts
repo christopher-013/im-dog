@@ -19,7 +19,7 @@ const DT = 1 / 60;
 const home = new Home();
 const nav = new NavGrid(home.colliders, { bounds: home.bounds, cell: 0.1, agentRadius: HUMAN.body.radius, minY: 0.08, maxY: 1.7 });
 
-/** The human in the real house with the real body, their routine running, and Moke's bowls. */
+/** The human in the whole house with the real body, their routine running, and Moke's bowls. */
 async function setup(seed = 3) {
   const physics = await PhysicsWorld.create();
   physics.addStaticBoxes(home.colliders);

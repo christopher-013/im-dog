@@ -9,7 +9,7 @@ coverage/
 reference/moke/*
 !reference/moke/README.md
 
-# Private photos of the real home stay local too (see reference/home/README.md)
+# Private reference photos stay local too (see reference/home/README.md)
 reference/home/*
 !reference/home/README.md
 

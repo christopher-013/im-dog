@@ -71,7 +71,7 @@ describe('NavGrid', () => {
     expect(Math.hypot(near.x, near.z)).toBeLessThan(1);
   });
 
-  it('finds the human a way round the real living room: around the coffee table, not under it', () => {
+  it('finds the human a way round the game\'s living room: around the coffee table, not under it', () => {
     const room = new LivingRoom();
     const grid = new NavGrid(room.colliders, {
       bounds: { minX: -3.6, maxX: 6.8, minZ: -3.1, maxZ: 3.1 },

@@ -1,19 +1,17 @@
 # Phase 4 — Moke's Home & Family Life
 
 > **Status: complete.** Closed by the owner on 2026-09-28 and tagged `phase-4-complete`. Started 2026-09-25 from the
-> owner's brief, with nine private photos of the real home. Every milestone is done. The owner played it on the
+> owner's brief. Every milestone is done. The owner played it on the
 > desktop and on their phone (the published game), asked for a run of additions and fixes (below), then tested and
 > approved it; an independent audit and a final release check (stuck spots, security, privacy, performance) came
 > back clean. **Carried forward:** a recorded device/browser list and measured phone performance (frame rate, heat,
 > memory). Details: `HOME_REFERENCE.md`, `HUMAN_SYSTEM.md`, `ACTIVITIES.md`, `DOG_LOGIC.md`, `CURRENT_STATE.md`.
 
-**Goal:** turn "Moke in a room" into "Moke living in his home with his family": a connected home drawn from the real
-one, a high-quality stylized human with a believable daily routine, and three new dog activities, without breaking
+**Goal:** turn "Moke in a room" into "Moke living in his home with his family": a connected, cozy home, a high-quality stylized human with a believable daily routine, and three new dog activities, without breaking
 Sock Heist or mobile play.
 
 ## In scope (the owner's brief)
-- **A:** the home: living room + family room + kitchen + dining room, connected, no loading, recognisable from the
-  photos, stylized.
+- **A:** the home: living room + family room + kitchen + dining room, connected, no loading, stylized.
 - **B:** a high-quality stylized, animated-film human (not photoreal) replacing the placeholder.
 - **C:** a reusable, data-driven daily-life activity system for the human: interaction points, a weighted scheduler
   with cooldowns, believable durations, location awareness, sit/stand, walking between rooms.
@@ -29,8 +27,8 @@ Human, Someone's Home, Dinner Time, Backyard Patrol, Squirrel, Laundry Day, Tras
 ## Milestones
 | # | Milestone | Status |
 |---|---|---|
-| 4.1 | References and architecture | **Done.** Photos protected in `reference/home/` (git-ignored, guarded like the Moke photos); `HOME_REFERENCE.md` (layout, landmarks, scale, colours, dog-scale features, uncertainties, missing references); the game layout decided (the new wing rotated 180° to join the living room's hallway). |
-| 4.2 | Expanded home | **Done.** `Home` = the living room + hallway (now open at the end) + a new wing: kitchen, family room (one open great room with it) and dining room, and a sunroom seen through glass. Built in code from the photos (no photo textures). Rapier colliders, whole-house NavGrid and shadow fit, 20 navigation tests (every room reachable, what Moke can and can't jump on, under the dining table and island overhang, nap and hiding spots reachable). |
+| 4.1 | References and architecture | **Done.** Private reference photos protected in `reference/home/` (git-ignored, guarded like the Moke photos); `HOME_REFERENCE.md` (the game's house: layout, rooms, scale, dog-scale features); the game layout decided (the new wing joins the living room's hallway). |
+| 4.2 | Expanded home | **Done.** `Home` = the living room + hallway (now open at the end) + a new wing: kitchen, family room (one open great room with it) and dining room, and a sunroom seen through glass. Built in code (no photo textures). Rapier colliders, whole-house NavGrid and shadow fit, 20 navigation tests (every room reachable, what Moke can and can't jump on, under the dining table and island overhang, nap and hiding spots reachable). |
 | 4.3 | Human character | **Done.** `StylizedHumanVisual`: one skinned body (21-joint skeleton) merged into 16 meshes (one per material), face with moving eyes, blinking lids, brows and an expressive mouth, hands with fingers, props. `HumanAnimationController` turns poses into joint angles apart from any mesh (`HumanRig`). The old toon human is gone. |
 | 4.4 | Human activity system | **Done.** `HumanActivityController` (the routine), `ActivityScheduler`, activities as data (`config/activities.ts`), interaction points (`world/home/places.ts`), sit/stand at seats, stuck recovery (re-plan, route round Moke, give up rather than teleport), plugged into `HumanBrain` as its idle behaviour so Sock Heist still interrupts and resumes it. A 20-minute simulated day: 6+ activities, 4+ rooms, no give-ups. |
 | 4.5 | Moke ↔ human | **Done.** `HumanReactions`: glances, hellos, "yes, Moke?" to barks, attention after three barks, praise for tricks, pats (asked for with "Get Pets", or spontaneous when he sits by them); Moke sits, leans in and wags; the activity underneath pauses and resumes. |
@@ -44,8 +42,8 @@ Human, Someone's Home, Dinner Time, Backyard Patrol, Squirrel, Laundry Day, Tras
 Met in automated tests and browser play (desktop and emulated touch) unless noted:
 - **The house feels inhabited:** the human lives a day across four rooms (TV, reading, phone, coffee, cooking then
   dinner, laundry, relaxing), with the TV glowing, a pot steaming and dinner on the table. **Needs the owner's eye.**
-- **Recognisable as the real home** (layout, fireplace wall, white kitchen and island, trestle table, sectional,
-  pink blanket, bowls, the door sign): by design from the photos; **needs the owner's eye.**
+- **A cozy, recognisable home** (fireplace wall, white kitchen and island, trestle table, sectional, pink bed,
+  bowls): met; the owner played and approved it.
 - **Human quality, navigation, sitting, activities, interruptions, resuming, stuck recovery, long runs:** met in
   tests (47 human tests including a 20-minute simulation) and browser play.
 - **Moke ↔ human, petting, the three activities, their replays, Dog Logic:** met in tests (14 activity tests) and
@@ -56,7 +54,7 @@ Met in automated tests and browser play (desktop and emulated touch) unless note
   there's nothing else); emulated only. **Not measured on a phone.**
 - **Performance:** measured on this desktop against the baseline (see `CURRENT_STATE.md` → Verification). Real
   phone GPU cost unknown.
-- **Privacy:** the build's leak check covers all 18 private photos (Moke's and the home's); nothing from
+- **Privacy:** the build's leak check covers all 18 private reference photos; nothing from
   `reference/` is imported, served or bundled.
 
 ## Added during Phase 4, at the owner's request
@@ -79,4 +77,3 @@ Met in automated tests and browser play (desktop and emulated touch) unless note
 - **Listening:** no one has yet confirmed Malibu's chirp, the fish's squeak or "Irasshaimase!" by ear; the bark
   is still a placeholder.
 - **The final `moke.glb`** (from Phase 2).
-- **References that would help** (`HOME_REFERENCE.md`): the real front living room, measurements, the bedroom hall.

@@ -3,13 +3,13 @@ import { HOUSE_SCALE } from '../../config/world';
 /**
  * Where everything is in Moke's home (metres; x east, z south, y up). The living room (Phases 1–3) spans
  * x -3.5..3.5, z -3..3; its hallway runs east to the new wing: the kitchen, the family room (one open great room)
- * and the dining room, drawn from the home photos and turned 180° to fit (docs/HOME_REFERENCE.md).
+ * and the dining room, turned 180° to fit (docs/HOME_REFERENCE.md).
  * Interior faces of walls unless noted.
  */
 export const WALL = 0.12;
 export const CEILING = HOUSE_SCALE.ceilingHeight;
 
-/** The hallway from the living room: its end opens into the kitchen (where the real front hall meets it). */
+/** The hallway from the living room: its end opens into the kitchen. */
 export const HALL = { x0: 3.5, x1: 6.74, zMin: 0.6, zMax: 1.6, height: 2.05 } as const;
 
 /** Small bathroom opening off the left (north) hallway wall when heading toward the kitchen. */

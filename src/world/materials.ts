@@ -58,7 +58,7 @@ export const TILE_REPEAT = 0.3;
 
 /**
  * The living room's palette: warm cream walls, a sage accent wall, honey-oak floor, oatmeal linen,
- * walnut, leaf greens and a little coral and mustard. It echoes the UI and Moke's real home.
+ * walnut, leaf greens and a little coral and mustard. It echoes the UI.
  */
 export function createRoomMaterials() {
   return {
@@ -111,7 +111,7 @@ export function createRoomMaterials() {
       return new MeshBasicMaterial({ name: 'garden', color: map ? '#ffffff' : '#cfe3c1', map });
     })(),
 
-    // ---- The great room, dining room and kitchen (Phase 4), from the home photos: grey-oak planks, sage and
+    // ---- The great room, dining room and kitchen (Phase 4): grey-oak planks, sage and
     // greige walls, white shaker cabinets and quartz, stainless, a whitewashed table, cream and beige fabrics.
     floorGrey: textured('floorGrey', greyPlankTexture(), '#b4ada4', 0.7),
     wallSage: mat('wallSage', '#b9c3b2', 0.95),
@@ -154,7 +154,7 @@ export function createRoomMaterials() {
     toyRed: mat('toyRed', '#c8323a', 0.6),
     toyYellow: mat('toyYellow', '#f0c93c', 0.6),
     toyTeal: mat('toyTeal', '#3aa6a0', 0.6),
-    // The sliding glass doors to the backyard: warm off-white vinyl frames, like the real ones.
+    // The sliding glass doors to the backyard: warm off-white vinyl frames.
     doorFrame: mat('doorFrame', '#e6d2bd', 0.6),
     // The backyard, beyond the glass.
     patio: (() => {

@@ -18,7 +18,7 @@ furniture, hide, then trade the sock for a treat and discover SOCK = TREAT. Plus
 tablets in the same web game (portrait or landscape), phone quality presets, Add to Home Screen, jumping, and
 8-bit background music (Hawaiian or Japanese convenience store).
 **Phase 4 (complete, [docs/PHASE_4.md](docs/PHASE_4.md)):** the living room's hallway now leads into a **kitchen,
-family room, dining room and home gym** modelled on Moke's real home. The human lives there: watches TV, reads, cooks and eats
+family room, dining room and home gym**. The human lives there: watches TV, reads, cooks and eats
 dinner, folds laundry, and responds to Moke (pats, praise, "not now, Moke…"). New to do: a **Treat Hunt** (do a trick
 for them), the **Perfect Nap** (sunny, soft, warm, quiet, near your human) and **Make Human Play** (pester them into
 throwing the ball), each teaching a bit of **Dog Logic**. Plus the doorbell (bark to protect the house), begging in

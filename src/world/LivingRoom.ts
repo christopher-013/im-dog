@@ -41,7 +41,7 @@ export interface LivingRoomOptions {
 }
 
 /**
- * Phase 1's living room, at true human scale seen from a small dog, echoing Moke's real home:
+ * Phase 1's living room, at true human scale seen from a small dog:
  * an oatmeal linen couch with leaf-print pillows, the house's grey plank floor, sunlight through the window
  * onto his bed. Plus a short hallway for tight-space movement and camera testing.
  * Static scenery is merged by material; colliders come from the parts or simple boxes.

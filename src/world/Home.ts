@@ -10,8 +10,7 @@ import { StaticSceneBuilder } from './StaticSceneBuilder';
 
 /**
  * Moke's whole home, one connected space with no loading: the living room and its hallway (Phases 1–3), which
- * now opens into the kitchen, the family room and the dining room (Phase 4, drawn from the home photos: see
- * docs/HOME_REFERENCE.md). Two merged scenery groups sharing one set of materials, one list of colliders, and the
+ * now opens into the kitchen, the family room and the dining room (Phase 4: see docs/HOME_REFERENCE.md). Two merged scenery groups sharing one set of materials, one list of colliders, and the
  * named places everything else uses: landmarks, the human's interaction points, nap spots and treat hiding spots.
  */
 export class Home {

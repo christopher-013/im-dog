@@ -1,7 +1,7 @@
 import { HOUSE_SCALE } from './world';
 import { FURNITURE } from '../world/home/places';
 
-/** Furniture footprints, floor landing spots and reaction timing for the owner's household mischief. */
+/** Furniture footprints, floor landing spots and reaction timing for household mischief. */
 export interface MischiefSurface {
   readonly id: string;
   readonly x: number;

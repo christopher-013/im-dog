@@ -16,8 +16,8 @@ import { addLoosePillow } from '../CouchPillows';
 import { TILE_REPEAT, type RoomMaterials } from '../materials';
 import type { StaticSceneBuilder, Vec3Tuple } from '../StaticSceneBuilder';
 
-// The great room, kitchen and dining room's furniture (Phase 4), drawn from the home photos in the game's
-// stylized look (see docs/HOME_REFERENCE.md). Same conventions as furniture.ts: built round its own origin,
+// The great room, kitchen and dining room's furniture (Phase 4), in the game's stylized look
+// (see docs/HOME_REFERENCE.md). Same conventions as furniture.ts: built round its own origin,
 // standing on the floor, front facing +z. Wall pieces have their back at z = 0 and stand out toward +z.
 
 const rbox = (w: number, h: number, d: number, radius: number, segments = 2) => new RoundedBoxGeometry(w, h, d, segments, radius);

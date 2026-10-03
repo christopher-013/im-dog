@@ -1,7 +1,7 @@
 # Home reference photos (private)
 
-Photos of the real home Moke lives in go in this folder. They are **development references only**: the rooms in the
-game are built by hand from them in a stylized way (see [`docs/HOME_REFERENCE.md`](../../docs/HOME_REFERENCE.md)).
+Private reference photos go in this folder. They are **development references only** and never part of the game
+(see [`docs/HOME_REFERENCE.md`](../../docs/HOME_REFERENCE.md) for the game's house).
 
 - Git ignores everything here except this README (`reference/home/*` in `.gitignore`).
 - Never copy them into `public/`, never import them from `src/`, never use them as textures, and never upload them

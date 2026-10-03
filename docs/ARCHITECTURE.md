@@ -102,7 +102,7 @@ src/
     MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
   world/
     Home.ts               the whole house: the living room + the wing; colliders, landmarks, places, nap and hiding spots (navigation-tested with Rapier)
-    home/                 the new wing (Phase 4, from the home photos; see docs/HOME_REFERENCE.md)
+    home/                 the new wing (Phase 4; see docs/HOME_REFERENCE.md)
       layout.ts           walls, openings, rooms (roomAt), the house's bounds
       places.ts           furniture positions, the human's interaction points, nap spots, treat hiding spots, the kitchen treats, the fire
       Wing.ts             builds the kitchen, dining room, family room (+ the sunroom seen through glass) and their lights
@@ -444,9 +444,8 @@ with a fake. Cost: about 5–7 µs per frame.
 
 ## The house (`world/Home.ts`, Phase 4; details in `docs/HOME_REFERENCE.md`)
 - **One connected space, no loading:** the living room's hallway now opens (`LivingRoom({ hallwayOpen: true })`) into
-  a new wing built from the home photos: the kitchen and family room (one open great room, a soffit between them) and
-  the dining room through a wide cased opening, plus a sunroom seen through glass. The wing is placed rotated 180° from
-  real north so the real front hall lines up with the hallway (`world/home/layout.ts`).
+  a new wing: the kitchen and family room (one open great room, a soffit between them) and the dining room through a
+  wide cased opening, plus the home gym (`world/home/layout.ts`).
 - **Hall bathroom:** the hallway's left/north wall has a 0.9 m opening into a small tiled bathroom, built as
   static scenery/colliders by `world/Bathroom.ts`. Its light ajar door is a separate proximity-driven visual,
   not a blocking collider; Moke's approach swings it open before he crosses. The bathroom is in `ROOMS` for
@@ -542,7 +541,7 @@ Shaders are precompiled during loading (`compileAsync`). Static scenery uses `ma
   furniture's own, so the camera, the human's eyes and the human's `NavGrid` see the room exactly as before.
 
 ## Private reference photos: four layers
-The real Moke (`reference/moke/`) and, since Phase 4, the real home (`reference/home/`, D18).
+The real Moke (`reference/moke/`) and, since Phase 4, other private reference photos (`reference/home/`, D18).
 1. `.gitignore`: `reference/moke/*` and `reference/home/*` (each folder's README stays tracked).
 2. Vite plugin `im-dog:block-private-reference` fails the build if anything imports from `reference/`.
 3. Dev server `server.fs.deny` includes `**/reference/**` (403 on direct URLs).
@@ -640,7 +639,7 @@ Vitest (node environment) covers:
   - camera: the portrait field of view;
   - quality presets and dynamic resolution; events;
   - Sock Heist: the human brain's states (a simulated room: noticing, chasing, fumbling, standoff, losing him,
-    treat, trade, fetch, no soft-lock, replay), awareness, NavGrid (including the real living room), the human
+    treat, trade, fetch, no soft-lock, replay), awareness, NavGrid (including the game's living room), the human
     body with real Rapier, and the heist controller (phases, trade, eating, discovery, reset).
 - **The final-model path without a model file:**
   - `syntheticMoke()` builds a tiny spec-shaped model in code;

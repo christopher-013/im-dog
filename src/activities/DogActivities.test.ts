@@ -51,7 +51,7 @@ function context(): Ctx {
   };
 }
 
-/** The real human (routine, reactions, bodies) in the real house, with Moke as a point we move. */
+/** The real human (routine, reactions, bodies) in the whole house, with Moke as a point we move. */
 async function world(seed = 1) {
   const physics = await PhysicsWorld.create();
   physics.addStaticBoxes(home.colliders);
@@ -112,7 +112,7 @@ class HumanProbe extends Probe {
   override readonly needsHuman = true;
 }
 
-describe('Door delivery (real home and household human)', () => {
+describe('Door delivery (the whole house and the household human)', () => {
   async function deliveryWorld(seed = 41, random: () => number = () => 0) {
     const w = await world(seed);
     let rings = 0, rewards = 0, exchanges = 0, opens = 0, cancels = 0;

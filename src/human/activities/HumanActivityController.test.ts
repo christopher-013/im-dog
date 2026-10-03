@@ -16,7 +16,7 @@ import { ActivityScheduler } from './ActivityScheduler';
 import { HumanActivityController } from './HumanActivityController';
 import { HumanReactions } from './HumanReactions';
 
-// The routine in the real house with the real bodies: the human walks between rooms, sits and stands, does a range
+// The routine in the whole house with the real bodies: the human walks between rooms, sits and stands, does a range
 // of things, and never gets lost or stuck for long.
 const DT = 1 / 60;
 const home = new Home();

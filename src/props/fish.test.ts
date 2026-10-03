@@ -12,7 +12,7 @@ import type { Prop } from './Prop';
 import { createPropView } from './propVisuals';
 import { createRoomProps } from './roomProps';
 
-// The squeaky fish in the real house with real Rapier: it starts in the family room, and Moke can go and get it.
+// The squeaky fish in the whole house with real Rapier: it starts in the family room, and Moke can go and get it.
 const DT = 1 / 60;
 const home = new Home();
 const mokeNav = new NavGrid(home.colliders, { bounds: home.bounds, cell: 0.05, agentRadius: MOKE_BODY.radius + 0.01, minY: 0.03, maxY: 0.38 });

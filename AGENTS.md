@@ -21,7 +21,7 @@ Shared, tool-independent instructions for every coding agent working in this rep
   Real-device coverage is the owner's own phone playtest (device and browser not recorded): don't claim broader
   mobile testing. Details: `docs/SOCK_HEIST.md`, `docs/MOBILE.md`.
 - **Phase 4 is complete:** "Moke's Home & Family Life", closed by the owner on 2026-09-28 and tagged
-  `phase-4-complete`. Scope and history: `docs/PHASE_4.md`. It delivered the whole home drawn from the real one
+  `phase-4-complete`. Scope and history: `docs/PHASE_4.md`. It delivered the whole home
   (living room, kitchen, family room, dining room, and the home gym with its backyard view), a stylized human with a
   daily routine, Moke ↔ human interaction, Treat Hunt, Perfect Nap, Make Human Play, household moments (the doorbell,
   kitchen begging, pillows, table manners, toilet paper, Malibu the bird, the squeaky fish) and Dog Logic. The owner
@@ -81,7 +81,7 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - `docs/PHASE_2.md`: Phase 2 scope and status.
   - `docs/PHASE_3.md`: Phase 3 scope, history and what's carried forward; `docs/SOCK_HEIST.md` (the mini-game, the human) and
     `docs/MOBILE.md` (touch, quality, PWA, phone testing).
-  - `docs/PHASE_4.md`: Phase 4 scope, history and what's carried forward; `docs/HOME_REFERENCE.md` (the real home → the game's house),
+  - `docs/PHASE_4.md`: Phase 4 scope, history and what's carried forward; `docs/HOME_REFERENCE.md` (the game's house),
     `docs/HUMAN_SYSTEM.md` (the human's layers), `docs/ACTIVITIES.md` (daily life and dog activities),
     `docs/DOG_LOGIC.md`.
   - `docs/MOKE_CHARACTER_REFERENCE.md`: character work.
@@ -91,7 +91,7 @@ Shared, tool-independent instructions for every coding agent working in this rep
 
 ## Private references (Moke and the home)
 `reference/moke/` contains **private development photographs** of the real Moke, and (since Phase 4)
-`reference/home/` photographs of the real home (D18). They're git-ignored (only each folder's README is tracked), so a
+`reference/home/` other private reference photos (D18). They're git-ignored (only each folder's README is tracked), so a
 fresh clone won't include them. Never:
 - move or copy them into `public/`, or import them from code;
 - include them in production builds;

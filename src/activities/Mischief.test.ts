@@ -59,7 +59,7 @@ async function setup() {
     airborne: (on: boolean) => { grounded = !on; }, counts: () => ({ digging, fun }) };
 }
 
-describe('Pillow mischief and table manners (real house and human)', () => {
+describe('Pillow mischief and table manners (the whole house and the human)', () => {
   it('offers digging only on the couch, throws its real pillows, cleans them up and allows another explicit dig', async () => {
     const w = await setup(); const original = w.snapshot();
     w.tick(0.1); expect(w.dig.interactable.enabled).toBe(true);

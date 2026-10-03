@@ -11,8 +11,7 @@ on 2026-09-24, tagged `phase-2-complete` and pushed. Scope and criteria: `docs/P
 and at phone sizes (emulated touch). The owner also played on a physical phone and reported that mobile looks and
 plays great. **Still not documented:** the exact phone/browser, installing the web app and real-device performance.
 The owner judged the desktop Sock Heist chase fun. Scope, criteria and what's carried forward: `docs/PHASE_3.md`.
-**Phase 4: complete** ("Moke's Home & Family Life", from the owner's brief of 2026-09-25, with photos of the real
-home), closed by the owner on 2026-09-28 and tagged `phase-4-complete`. Milestones 4.1–4.10 are done; the owner
+**Phase 4: complete** ("Moke's Home & Family Life", from the owner's brief of 2026-09-25), closed by the owner on 2026-09-28 and tagged `phase-4-complete`. Milestones 4.1–4.10 are done; the owner
 played it on the desktop and on their phone (the published game), asked for the additions and fixes listed in
 `docs/PHASE_4.md`, then tested and approved it; a final release check came back clean (see "Release re-check"
 below). **Carried forward:** a recorded device/browser list and measured phone performance. Scope, history and
@@ -132,6 +131,12 @@ Nothing was sent to the real GitHub or Cloudflare.
 
 OpenAI Codex (2026-09-28, owner request, **uncommitted and undeployed**): added an optional Feedback lightbox to the start and pause menus, plus a separate Cloudflare Worker using Turnstile, D1 and a GitHub Issues-only token. All form fields are optional; an acknowledgement is required. Public Issues include comments, a reference ID and server time only. Private D1 records hold optional name/email plus IP, approximate country and browser User-Agent, with daily 30-day cleanup. The game remains static on GitHub Pages; the buttons stay hidden until the public endpoint/site-key build variables are configured. See `docs/FEEDBACK.md` for owner setup, privacy notice and deployment checks. Local tests mock both Cloudflare and GitHub; **no live submission, Cloudflare deployment, commit or push has happened**. Verification results for this change are reported in the final handoff.
 
+Claude Code (2026-10-03, owner request): **no public text says the game's house is modelled on a real home.** Code
+comments, test names, `README.md`, `AGENTS.md`, `reference/home/README.md`, `.gitignore` and the docs were reworded;
+`docs/HOME_REFERENCE.md` was rewritten to describe only the game's house (its photo list, real-layout sketch and
+"real-life match" column are gone). The privacy rules for `reference/` are unchanged. Earlier wording remains in the
+public git history (not rewritten). Verified: typecheck, 525 tests, build + verify-dist.
+
 Claude Code (2026-09-29, owner request; code in `02e3116`, tests and docs after it): **the World Series special
 and Watch the Game** (the easter egg). Now and then (first 90–240 s in, then every 6–12 min, `TV.special`) a special
 broadcast cuts in on all three TVs at once, in sync (`world/tv/WorldSeries.ts`, 27 s, LIVE in the corner): the San
@@ -231,8 +236,8 @@ privacy sign-off; no commit or push has been made. Final verification: 426 tests
 typecheck/build pass, and `git diff --check` is clean. The production build's privacy guard found no reference photo
 in output; live npm advisories currently report no known dependency vulnerabilities. Development touch and built
 desktop browser smoke tests passed without runtime errors. No physical-device or sustained mobile performance test
-was performed. A public source document already describes the real home's layout in detail; owner confirmation of
-that disclosure is pending.
+was performed. (The public layout write-up this note once flagged was rewritten on 2026-10-03 to describe only the
+game's house.)
 
 OpenAI Codex (2026-09-27, newest follow-up, **uncommitted**): added a small bathroom off the north/left wall of
 the first hallway toward the kitchen, with an initially ajar door Moke nudges open by approaching, a tiled floor,
@@ -379,10 +384,10 @@ collar refit.
 ## Completed
 **Phase 4, "Moke's Home & Family Life" (2026-09-25; committed to `main`; awaiting owner sign-off).** Details in `docs/PHASE_4.md`,
 `HOME_REFERENCE.md`, `HUMAN_SYSTEM.md`, `ACTIVITIES.md`, `DOG_LOGIC.md`.
-- **4.1 References:** nine home photos in `reference/home/` (git-ignored like the Moke photos; the build's leak check
-  covers them; `reference/home/README.md` explains), studied into `docs/HOME_REFERENCE.md` (layout, landmarks,
-  scale, colours, dog-scale features, uncertain details, missing references).
-- **4.2 The home:** `world/Home.ts`: the living room's hallway now opens into a new wing drawn from the photos: the
+- **4.1 References:** private reference photos in `reference/home/` (git-ignored like the Moke photos; the build's
+  leak check covers them; `reference/home/README.md` explains); the game's house is described in
+  `docs/HOME_REFERENCE.md` (layout, rooms, scale, dog-scale features).
+- **4.2 The home:** `world/Home.ts`: the living room's hallway now opens into a new wing: the
   kitchen and family room (one great room) and the dining room, plus the sunroom through glass (`world/home/`). Built
   in code, no photo textures. Whole-house colliders, NavGrid and fitted sun shadows; props kept inside the house.
 - **4.3 The human:** `StylizedHumanVisual` (a skinned, code-built stylized adult: face with moving eyes, blinks,
@@ -573,7 +578,7 @@ about −36 dB, some 7 dB under a bark; measured, not heard.
 - Auto-follow; WASD direction lock while keys are held (`MoveBasis`); sensitivity/invert settings.
 
 **Milestone 4: living room** (`LivingRoom`, which replaces the temporary greybox).
-- **The room:** a furnished 7 × 6 m living room at true human scale, echoing Moke's real home.
+- **The room:** a furnished 7 × 6 m living room at true human scale.
   - An oatmeal linen couch with leaf-print, grey-lattice and mustard pillows.
   - A patterned round rug, and a walnut coffee table (with books, a mug and a remote) that Moke can duck under.
   - A walnut TV console with a TV; a brass floor lamp with a glowing shade and warm light; an oak side table.
@@ -861,7 +866,7 @@ not on GitHub and is **not** covered.
     move), and every bite squeaks (new synthesized `squeak`) and squashes the toy, which springs back
     (`CHEW` in `config/props.ts`). Dropping it stops the chewing.
   - Not part of Make Human Play (the human throws the ball and rope toy only).
-  - Tests: the chew rate (standing, moving, stopping) and the fish's start spot, pick-up and drop in the real house.
+  - Tests: the chew rate (standing, moving, stopping) and the fish's start spot, pick-up and drop in the whole house.
     Checked in the browser (on the floor; in his mouth). The squeak wasn't heard (no audio in the headless run).
 - **Release re-check, 2026-09-28 (Claude Code, against `67015d7`, the live build):**
   - Stuck spots: the whole-house sweep (979 floor points: every one routes back to the start; 19 raised surfaces)
@@ -988,7 +993,6 @@ New with Phase 4:
 - **Only one Treat Hunt treat and one pair of hands:** the heist's treat and the hunt's are separate; both can't be in
   the hand at once (the heist cancels the hunt's errand).
 - **Performance on phones is unmeasured** (emulation only; more triangles and draw calls than Phase 3).
-- **Missing references** (`HOME_REFERENCE.md`): the real front living room, measurements, the bedroom hall.
 
 New with the music:
 - ~~Nobody has heard it yet~~: the owner says the Hawaiian song "sounds great". **"Irasshaimase!" hasn't been heard
@@ -1099,7 +1103,7 @@ Owner request, 2026-09-26 (uncommitted): one floor, Moke's bowls, and a pink bed
   BED = NAP). The family-room coffee table moved 0.15 m east: with the bed there, the human's only other way past
   the table was a one-cell squeeze, and the routine tests caught the room splitting in two.
 - Verification: typecheck pass; **53 files / 387 tests pass** (new: the bowls drain and refill; the refill errand in
-  the real house, both bowls, and after an interruption; Moke can reach both bowls and the human their kneeling spot;
+  the whole house, both bowls, and after an interruption; Moke can reach both bowls and the human their kneeling spot;
   eating and drinking hold him still); `npm run build` and `verify-dist` pass. Development browser (stepped via
   `imdog`): the grey floor from the opening camera; "Eat" and "Drink" prompts at the bowls, Moke eating and drinking,
   both bowls emptying; the human fetching kibble and water, carrying the scoop and jug, kneeling and refilling (food
@@ -1116,7 +1120,7 @@ Human NPC reconstruction on 2026-09-26 (uncommitted; no physical device used):
 - Reconstruction: continuous jeans seat/pelvis, untucked sage long-sleeve button-down, close hair base with layered
   swept locks, a visible two-handed laundry cloth and larger folding action, and fast recovery from invalid snapped
   interaction points. Debug output now exposes routine animation, target, phase time and gaze.
-- A deterministic **20-minute accelerated simulation** runs the real home navigation and physics at 60 fixed steps
+- A deterministic **20-minute accelerated simulation** runs the whole house's navigation and physics at 60 fixed steps
   per second (72,000 steps). It requires all seven major household activities, at least four rooms, more than 120
   seated seconds, no give-ups, and no stuck interval over five seconds.
 - Development browser at 1440×900 HIGH: folding was visibly readable; the human transitioned from laundry through a

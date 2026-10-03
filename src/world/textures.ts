@@ -147,7 +147,7 @@ function monsteraLeaf(
   ctx.restore();
 }
 
-/** Cream pillow with big monstera leaves, a nod to the leaf pillows in Moke's home. */
+/** Cream pillow with big monstera leaves. */
 export function leafPillowTexture(): CanvasTexture | null {
   return canvasTexture(512, 512, 3, (ctx, w, h) => {
     const bg = '#f3ebde';
@@ -160,7 +160,7 @@ export function leafPillowTexture(): CanvasTexture | null {
   });
 }
 
-/** Grey pillow with a white rounded lattice, like the geometric pillow in Moke's photos. */
+/** Grey pillow with a white rounded lattice. */
 export function latticePillowTexture(): CanvasTexture | null {
   return canvasTexture(512, 512, 5, (ctx, w, h) => {
     ctx.fillStyle = '#a2a7aa';

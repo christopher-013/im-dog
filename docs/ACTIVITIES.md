@@ -238,7 +238,7 @@ different shows, swaps, pausing; the special broadcast in sync on all three TVs,
 `HOME_RUN_AT`, back to each TV's own show, the next one on schedule), `activities/WatchTheGame.test.ts` (offered only
 during the special and only in front of a TV; every TV; the celebration once; stopping when moved or when it ends;
 again next time; with the real TVs, one celebration at the home run),
-`human/activities/HumanActivityController.test.ts` (a 20-minute simulated day in the real house: all seven major
+`human/activities/HumanActivityController.test.ts` (a 20-minute simulated day in the whole house: all seven major
 household activities, variety, rooms, sitting, no stuck, no give-ups; four more 20-minute days with Moke barking every
 45 s: no give-ups, never stuck, hands empty between activities, no repeats, at most three things running in one seat,
 dinner only after cooking, barks answered; cooking → dinner; cooldowns and location; resume; Moke in the seat;

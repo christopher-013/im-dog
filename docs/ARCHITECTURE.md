@@ -37,6 +37,7 @@ src/
     activities.ts         the human's daily-life activities as data (Phase 4), the routine's timing, reactions to Moke
     dogActivities.ts      Treat Hunt, Perfect Nap, Make Human Play tuning (Phase 4)
     dogLogic.ts           the Dog Logic registry: every equation, its terms and icons (Phase 4)
+    autopilot.ts          FSD, Full Self Dog (Phase 5): route following, getting unstuck, hopping up, how long he does things
   core/
     Game.ts               state machine + frame orchestration
     GameLoop.ts           FixedStep accumulator + rAF loop
@@ -87,6 +88,9 @@ src/
     PerfectNap.ts         naps judged on sunny / soft / warm / quiet / human near (tested)
     MakeHumanPlay.ts      pester a busy human into throwing a toy; fetch, keep or keep-away (tested with a real ball)
     WatchTheGame.ts       during the special broadcast, sit in front of a TV and watch; celebrate at the home run (no human needed; tested)
+  autopilot/              FSD, Full Self Dog (Phase 5, D27; see docs/PHASE_5.md)
+    FullSelfDog.ts        a virtual player: routines → a move direction + button presses each frame, on its own NavGrid (tested; DOM/three-free,
+                          and driving the real Moke through the real house with Rapier)
   heist/                  Sock Heist (Phase 3)
     SockHeistController.ts  orchestration: phases, trade, eating, discovery, completion, reset (tested)
     SockHeistRuntime.ts   wires the heist into the game: builds the human, feeds senses, events → UI/audio
@@ -100,6 +104,7 @@ src/
   camera/
     ThirdPersonCamera.ts  orbit, follow, collision, tight-space handling, zoom, FOV (tested with a fake collider)
     MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
+    TvCloseUp.ts          the straight-on shot of a TV that fills the view (watching the ballgame) (tested)
   world/
     Home.ts               the whole house: the living room + the wing; colliders, landmarks, places, nap and hiding spots (navigation-tested with Rapier)
     home/                 the new wing (Phase 4; see docs/HOME_REFERENCE.md)
@@ -110,7 +115,8 @@ src/
     HouseholdEffects.ts   signs of life: the steaming pot, dinner on the table; the FOOD smell
     tv/                   what's on the three TVs (Home owns it, Game updates it): original shows drawn in code on canvases
       TvChannels.ts       one canvas and material per TV, 12 frames/s; each on a different show, two swap now and then (snow, channel number);
-                          now and then the special broadcast cuts in on all three at once, in sync, fires `onHomeRun` once, then each TV goes back to its show (tested)
+                          now and then the special broadcast cuts in on all three at once, in sync, fires `onHomeRun` once, then each TV goes back to its show (tested);
+                          `setDetail(i)` draws one TV `TV.detailScale` (2.5×) sharper on its own canvas while the camera's close up on it
       Gearbots.ts         GEARBOTS: trucks and jets that transform into robots (80s cartoon style)
       HighwayHero.ts      HIGHWAY HERO: a smart black car with a red scanner and its human partner catch crooks (no fighting)
       ChefShowdown.ts     CHEF SHOWDOWN: a dramatic cooking contest: the ingredient reveal, chopping, sushi, judges, the winner
@@ -199,6 +205,13 @@ so stalls are visible instead of being hidden by the simulation clamp.
     last used.
   - It drives `html[data-input]` (CSS shows the touch controls) and every prompt, via `ControlGlyphs`.
   - `?input=` forces it. Touch mode never requests pointer lock.
+- **FSD, Full Self Dog (Phase 5, D27, `autopilot/FullSelfDog.ts`):** a virtual player. While it's on (the FSD button
+  or the `autopilot` action, G), `Game.frame` asks it for a command each rendered frame, before `handleActions`: a
+  world-space direction with run/walk, which replaces the player's move intent, and button presses, which
+  `handleActions` treats exactly like `input.wasPressed` (interact, jump, bark, trick, sniff). Any movement input from
+  the player switches it off. It reads a small `FsdWorld` view built in `Game.spawnFsd` (Moke, the human, the heist's
+  phase, the doorbell, the ballgame, `InteractionSystem.all` and `current`) and plans on its own `NavGrid` at Moke's
+  size; nothing else in the game knows it exists.
 
 ## Moke: gameplay vs. visuals (decision D7)
 The key rule: **gameplay never touches the mesh.** The data flows one way:
@@ -441,6 +454,13 @@ steered. Holding D runs Moke straight right while the camera swings behind him.
 
 The camera talks to physics only through a `CameraCollider` interface (`sweepSphere`), which makes it unit-testable
 with a fake. Cost: about 5–7 µs per frame.
+
+**The TV close-up (Phase 5):** while Moke is watching the ballgame (Watch the Game, played or FSD), `Game` eases the
+camera, after the follow camera's update, into a straight-on shot of that TV (`camera/TvCloseUp.ts`): on the screen's
+normal at screen height, as close as fills `TV_CLOSE_UP.fill` of the view in the tighter direction for the window's
+shape and field of view (clamped). The blend (`TV_CLOSE_UP.blendRate`, smoothstepped) lerps the position and slerps the
+rotation, so the follow camera underneath keeps running and takes back over smoothly when he gets up. While it's close
+up, that TV draws on a 2.5× canvas (`TvChannels.setDetail`) so the game stays crisp.
 
 ## The house (`world/Home.ts`, Phase 4; details in `docs/HOME_REFERENCE.md`)
 - **One connected space, no loading:** the living room's hallway now opens (`LivingRoom({ hallwayOpen: true })`) into

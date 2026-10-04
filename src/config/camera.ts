@@ -138,3 +138,15 @@ export const CAMERA: CameraTuning = {
 
   rest: { pivotDrop: 0.08, distanceScale: 0.85, minPitch: 0.42 },
 };
+
+/**
+ * The close-up on a TV while Moke watches the ballgame (Phase 5; camera/TvCloseUp.ts): the picture fills this much
+ * of the view, the camera stays between these distances from the screen (m), and eases in and out at this rate.
+ */
+export const TV_CLOSE_UP = {
+  fill: 0.9,
+  minDistance: 0.55,
+  maxDistance: 3,
+  /** 1/s: about two-thirds of the way in after half a second. */
+  blendRate: 2.4,
+} as const;

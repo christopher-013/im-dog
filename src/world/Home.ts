@@ -63,6 +63,11 @@ export class Home {
     this.tv.update(dt);
   }
 
+  /** Which of `tv`'s screens a TV is (its materials are living, family, dining). */
+  tvIndex(id: 'living' | 'dining' | 'family'): number {
+    return id === 'living' ? 0 : id === 'family' ? 1 : 2;
+  }
+
   /** Which room a floor point is in. */
   roomAt(x: number, z: number): RoomArea {
     return roomAt(x, z);

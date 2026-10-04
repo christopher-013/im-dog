@@ -15,6 +15,7 @@ export const ACTIONS = [
   'resume',
   'toggleDebug',
   'menuConfirm',
+  'autopilot',
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];
@@ -48,6 +49,8 @@ export const KEY_BINDINGS: Readonly<Record<Action, readonly string[]>> = {
   // Controller-only: keyboard menus use the focused button (Enter/Space), and Esc can't resume (see MenuInput.ts).
   resume: ['Gamepad:Button9'],
   toggleDebug: ['Backquote', 'Gamepad:Button8'],
+  /** FSD, Full Self Dog (Phase 5): the autopilot on or off. The FSD button does the same. */
+  autopilot: ['KeyG', 'Gamepad:Button10'],
   menuConfirm: ['Gamepad:Button0'],
 };
 
@@ -131,6 +134,7 @@ export const CONTROL_HINTS: readonly ControlHint[] = [
   { label: 'Bark or growl (random)', input: ['bark'], ready: true },
   { label: 'Do a trick', input: ['trick'], ready: true },
   { label: 'Sniff', input: ['sniff'], ready: true },
+  { label: 'FSD: Full Self Dog (Moke plays by himself; move to take over)', input: ['autopilot'], ready: true },
   { label: 'Pause · free the mouse', input: ['pause'], ready: true },
   { label: 'Debug panel', input: ['toggleDebug'], ready: true },
 ];
@@ -142,6 +146,7 @@ export const TOUCH_CONTROL_HINTS: readonly GamepadControlHint[] = [
   { label: 'Look around', input: 'Right thumb: drag anywhere on the right' },
   { label: 'Interact · pick up · drop · give · eat', input: 'Tap the paw button (it says what it will do)' },
   { label: 'Jump · bark or growl · trick · run', input: 'Hold the paw button: they pop out. Slide onto one and let go, or tap one.' },
+  { label: 'FSD: Full Self Dog (Moke plays by himself)', input: 'The FSD button, top corner. Move to take over.' },
   { label: 'Pause', input: 'II, top corner' },
 ];
 
@@ -156,6 +161,7 @@ export const GAMEPAD_CONTROL_HINTS: readonly GamepadControlHint[] = [
   { label: 'Walk / sneak (hold)', input: 'LB / LT' },
   { label: 'Run (hold)', input: 'RB / RT' },
   { label: 'Sniff', input: 'Press the right stick' },
+  { label: 'FSD: Full Self Dog (move to take over)', input: 'Press the left stick' },
   { label: 'Pause / resume', input: 'Menu / Start' },
   { label: 'Debug panel', input: 'View / Back' },
 ];

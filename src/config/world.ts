@@ -27,4 +27,6 @@ export const TV = {
    * first time this long into the game (s, min…max), then again every so often.
    */
   special: { firstAfter: [90, 240] as const, every: [360, 720] as const },
+  /** Close up (Moke watching the game, the camera on the screen): that TV draws this many times sharper. */
+  detailScale: 2.5,
 } as const;

@@ -1660,6 +1660,100 @@ html[data-onboarding] .touch-actions.is-open .touch-paw-hint {
 
 /* ---------- Debug panel ---------- */
 
+/* ---------- FSD, Full Self Dog (Phase 5) ---------- */
+
+/* Top right, translucent until it's on. On touch it sits left of the II button. */
+.fsd {
+  position: absolute;
+  top: calc(14px + env(safe-area-inset-top));
+  right: calc(14px + env(safe-area-inset-right));
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: none;
+}
+
+html[data-playing] .fsd {
+  display: flex;
+}
+
+html[data-input='touch'] .fsd {
+  right: calc(74px + env(safe-area-inset-right));
+}
+
+.fsd-button {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 74px;
+  padding: 6px 12px 7px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  background: rgba(43, 37, 48, 0.28);
+  color: rgba(255, 255, 255, 0.92);
+  font-family: var(--font-display);
+  line-height: 1;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.12s ease;
+  touch-action: manipulation;
+}
+
+.fsd-button:hover {
+  background: rgba(43, 37, 48, 0.4);
+}
+
+.fsd-button:active {
+  transform: scale(0.96);
+}
+
+.fsd-button:focus-visible {
+  outline: 3px solid var(--coral);
+  outline-offset: 2px;
+}
+
+.fsd-mark {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.fsd-sub {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.fsd-button[aria-pressed='true'] {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(239, 116, 89, 0.82);
+  box-shadow: 0 0 0 4px rgba(239, 116, 89, 0.25), 0 6px 18px rgba(43, 37, 48, 0.2);
+}
+
+/* What Moke is up to, under the button, while FSD drives. */
+.fsd-status {
+  max-width: min(260px, 60vw);
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 12px;
+  background: rgba(255, 250, 243, 0.82);
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: right;
+  box-shadow: 0 2px 0 var(--shadow);
+}
+
+.fsd-status:empty {
+  display: none;
+}
+
 #debug-panel {
   position: absolute;
   top: 12px;

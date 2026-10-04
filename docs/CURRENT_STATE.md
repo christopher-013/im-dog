@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-09-28. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; every owner-approved push to `main` republishes https://christopher-013.github.io/im-dog/. Phases 1–4 are complete; Phase 4 is tagged `phase-4-complete`. An optional, private-service player Feedback feature is being prepared locally (D22, `docs/FEEDBACK.md`), but is not active on the public site until Cloudflare and GitHub configuration, end-to-end testing and an owner-approved push._
+_Last updated: 2026-10-04. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; every owner-approved push to `main` republishes https://christopher-013.github.io/im-dog/. Phases 1–4 are complete; Phase 4 is tagged `phase-4-complete`. Phase 5 has started (FSD, Full Self Dog). An optional, private-service player Feedback feature is being prepared locally (D22, `docs/FEEDBACK.md`), but is not active on the public site until Cloudflare and GitHub configuration, end-to-end testing and an owner-approved push._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -17,8 +17,11 @@ played it on the desktop and on their phone (the published game), asked for the 
 below). **Carried forward:** a recorded device/browser list and measured phone performance. Scope, history and
 what's carried forward: `docs/PHASE_4.md`.
 
+**Phase 5: started** 2026-10-04 at the owner's request, with its first feature, FSD ("Full Self Dog"). Scope and
+status: `docs/PHASE_5.md`; the rest of the phase isn't defined yet.
+
 ## Current Milestone
-**None: Phase 4 is closed.** Phase 5 isn't defined yet: write `docs/PHASE_5.md` for the owner to approve first.
+**5.1 FSD, Full Self Dog: built, waiting for the owner to try it** (`docs/PHASE_5.md`). Phase 4 is closed.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
@@ -39,6 +42,19 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-04, owner request, Phase 5): **FSD, Full Self Dog.** A translucent FSD button at the top right
+(left of II on touch), G, or the left stick pressed on a controller hands Moke to an autopilot that goes round the
+house through his activities at random (toys, fetch, the whole Sock Heist, the carrot and dinner begging, Treat Hunt,
+pets, his bowls, Malibu, naps, the coffee tables, the pillows, the toilet paper, the door, exploring), with a status
+line under the button. When the Padres game is on he sits in front of a TV and watches, and the camera eases into a
+straight-on close-up that fills the window while that TV draws 2.5× sharper (the same when you watch it yourself).
+Moving takes over. FSD is a virtual player (D27): it only makes a move direction and button presses, which the game
+takes like a person's. New: `src/autopilot/`, `src/config/autopilot.ts`, `src/camera/TvCloseUp.ts`, `TV_CLOSE_UP`,
+`TvChannels.setDetail`, `NavGrid.region`/`nearestReachable`, `InteractionSystem.all`; the button in `index.html`,
+`main.css`, `UIManager`; wiring in `Game` (`spawnFsd`, `updateTvCloseUp`). Verified with unit and Rapier tests,
+8-minute headless runs of the real game and screenshots (`docs/PHASE_5.md` → Verification); not yet played by a
+person, nor on a phone.
+
 Claude Code (2026-10-01, owner request, from a screenshot of the pause menu scrolling on their iPhone): **no menu
 scrolls.** Every menu and window (start, pause, error, Controls, About, Feedback) fits without scrolling from
 320×520 and 640×280 phones to desktops: sizes scale with the visible height (`--menu-h`, `100svh`), with tighter

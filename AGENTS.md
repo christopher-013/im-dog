@@ -28,10 +28,12 @@ Shared, tool-independent instructions for every coding agent working in this rep
   played it on the desktop and on their phone (the live site), tested it and approved it; the phone and browser
   weren't recorded, so don't claim broader mobile testing or measured phone performance.
   Details: `docs/HOME_REFERENCE.md`, `docs/HUMAN_SYSTEM.md`, `docs/ACTIVITIES.md`, `docs/DOG_LOGIC.md`.
-- **Next:** Phase 5 isn't defined yet. Write `docs/PHASE_5.md` (scope, milestones, success criteria) for the owner to
-  approve before any Phase 5 code. Don't start Phase 5, more humans, more rooms, the outdoors or another mini-game
-  without the owner's approval. Also carried over: `docs/PHASE_4.md` → "Carried forward", and the Known Issues in
-  `docs/CURRENT_STATE.md`.
+- **Phase 5 has started** (2026-10-04, at the owner's request): its first feature is **FSD, "Full Self Dog"**, an
+  autopilot button that plays Moke through the house and his activities at random, including watching the Padres game
+  with the camera zoomed in on the TV (D27). Scope and status: `docs/PHASE_5.md`. The rest of Phase 5 isn't defined:
+  add milestones there only as the owner approves them. Don't add more humans, more rooms, the outdoors or another
+  mini-game without the owner's approval. Also carried over: `docs/PHASE_4.md` → "Carried forward", and the Known
+  Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
   - FUN > FEATURES
@@ -84,6 +86,7 @@ Shared, tool-independent instructions for every coding agent working in this rep
   - `docs/PHASE_4.md`: Phase 4 scope, history and what's carried forward; `docs/HOME_REFERENCE.md` (the game's house),
     `docs/HUMAN_SYSTEM.md` (the human's layers), `docs/ACTIVITIES.md` (daily life and dog activities),
     `docs/DOG_LOGIC.md`.
+  - `docs/PHASE_5.md`: Phase 5 scope and status (FSD, Full Self Dog).
   - `docs/MOKE_CHARACTER_REFERENCE.md`: character work.
   - `docs/MOKE_3D_SPEC.md` and `docs/MOKE_INTEGRATION.md`: the final `moke.glb` and how it plugs in.
   - `docs/ASSETS.md`: licence log. Record every external asset here. Original, CC0 or properly licensed only; never purchase anything.

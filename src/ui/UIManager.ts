@@ -12,6 +12,8 @@ export type Screen = 'loading' | 'menu' | 'paused' | 'error';
 export interface UIHandlers {
   onPlay(): void;
   onResume(): void;
+  /** The FSD (Full Self Dog) button. */
+  onFsd?(): void;
 }
 
 /**
@@ -89,6 +91,11 @@ export class UIManager {
 
     this.el('btn-play').addEventListener('click', () => this.handlers?.onPlay());
     this.el('btn-resume').addEventListener('click', () => this.handlers?.onResume());
+    this.el('btn-fsd').addEventListener('click', (e) => {
+      this.handlers?.onFsd?.();
+      // Back to the game: no lingering focus ring, and Space/Enter keep meaning jump/interact.
+      (e.currentTarget as HTMLElement).blur();
+    });
     this.el('btn-retry').addEventListener('click', () => location.reload());
     this.el('btn-controls-close').addEventListener('click', () => this.controlsDialog.close());
     this.el('btn-about-close').addEventListener('click', () => this.aboutDialog.close());
@@ -248,6 +255,19 @@ export class UIManager {
     this.doc.documentElement.dataset.input = mode;
     this.promptText = null; // re-render the prompt with the new glyph
     this.setPrompt(this.promptAction, this.promptLabelText);
+  }
+
+  /** FSD (Full Self Dog) on or off: the button lights up; off, the status line clears. */
+  setFsd(on: boolean): void {
+    const button = this.el('btn-fsd');
+    if (button.getAttribute('aria-pressed') !== String(on)) button.setAttribute('aria-pressed', String(on));
+    if (!on) this.setFsdStatus('');
+  }
+
+  /** What Moke's up to while FSD drives ("Answering the door!"). Cheap to call every frame. */
+  setFsdStatus(text: string): void {
+    const status = this.el('fsd-status');
+    if (status.textContent !== text) status.textContent = text;
   }
 
   /** Whether play is running (the touch controls only show then). */

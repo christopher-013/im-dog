@@ -39,6 +39,11 @@ export class InteractionSystem {
     return this.items.length;
   }
 
+  /** Everything registered (FSD reads the prompts the player would see). */
+  get all(): readonly Interactable[] {
+    return this.items;
+  }
+
   register(item: Interactable): void {
     if (this.items.some((i) => i.id === item.id)) throw new Error(`Interactable "${item.id}" is already registered`);
     this.items.push(item);

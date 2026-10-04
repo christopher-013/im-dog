@@ -94,4 +94,23 @@ describe('NavGrid', () => {
     expect(grid.findPath({ x: -1.4, z: -1.15 }, hallwayEnd, path)).toBe(true);
     expect(path.at(-1)!.x).toBeGreaterThan(5.5);
   });
+
+  it('knows which floor is connected, and the nearest reachable point to a spot that is walled in', () => {
+    // A closed pen in the middle (walls on four sides): inside is walkable but cut off.
+    const pen = [box(0, -0.8, 0.9, 0.05), box(0, 0.8, 0.9, 0.05), box(-0.8, 0, 0.05, 0.9), box(0.8, 0, 0.05, 0.9)];
+    const grid = new NavGrid(pen, options(0.1));
+    const outside = { x: -2.5, z: -2.5 };
+    expect(grid.region(0, 0)).toBeGreaterThanOrEqual(0);
+    expect(grid.region(0, 0)).not.toBe(grid.region(outside.x, outside.z));
+    expect(grid.region(2.5, 2.5)).toBe(grid.region(outside.x, outside.z));
+    expect(grid.region(0.8, 0)).toBe(-1);
+    // From outside, the nearest reachable floor to the middle of the pen is just outside its wall.
+    const near = grid.nearestReachable(outside, { x: 0.5, z: 0 }, 1.5)!;
+    expect(grid.region(near.x, near.z)).toBe(grid.region(outside.x, outside.z));
+    expect(near.x).toBeGreaterThan(0.95);
+    expect(near.x).toBeLessThan(1.15);
+    expect(grid.nearestReachable(outside, { x: 0, z: 0 }, 0.3)).toBeNull();
+    // Already reachable: unchanged.
+    expect(grid.nearestReachable(outside, { x: 2, z: 2 })).toEqual({ x: 2, z: 2 });
+  });
 });

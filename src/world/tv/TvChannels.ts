@@ -21,6 +21,9 @@ interface Screen {
   static: number;
   osd: number;
   sinceFrame: number;
+  /** The sharper picture for a close-up (made the first time it's needed), and whether it's showing. */
+  detail: { readonly ctx: CanvasRenderingContext2D; readonly texture: CanvasTexture } | null;
+  detailed: boolean;
 }
 
 /**
@@ -42,6 +45,8 @@ export class TvChannels {
   private specialIn: number;
   /** Called once per special broadcast, the moment the home run's hit. */
   onHomeRun: (() => void) | null = null;
+  /** The TV being shown close up (drawn sharper), or null. */
+  private detailIndex: number | null = null;
 
   constructor(
     materials: readonly MeshBasicMaterial[],
@@ -78,6 +83,28 @@ export class TvChannels {
   startSpecial(): void {
     this.special = { time: 0, homeRun: false };
     for (const screen of this.screens) this.flick(screen);
+  }
+
+  /**
+   * Draws TV `index` (in the order of the materials) `TV.detailScale` times sharper while the camera's close up on it
+   * (Moke watching the game); null puts every TV back to its usual picture. Only one at a time.
+   */
+  setDetail(index: number | null): void {
+    if (index === this.detailIndex) return;
+    this.detailIndex = index;
+    this.screens.forEach((screen, i) => {
+      const want = i === index;
+      if (want && !screen.detail) screen.detail = this.createDetail();
+      screen.detailed = want && screen.detail !== null;
+      const map = screen.detailed ? screen.detail!.texture : screen.texture;
+      if (map && screen.material.map !== map) screen.material.map = map;
+      screen.sinceFrame = 1; // redraw now
+    });
+  }
+
+  /** The TV drawn sharper right now (tests, debug). */
+  get detail(): number | null {
+    return this.detailIndex;
   }
 
   /** Which show each TV is on, in the order of the materials. */
@@ -118,7 +145,10 @@ export class TvChannels {
   }
 
   dispose(): void {
-    for (const screen of this.screens) screen.texture?.dispose();
+    for (const screen of this.screens) {
+      screen.texture?.dispose();
+      screen.detail?.texture.dispose();
+    }
   }
 
   /** Two TVs swap shows (with three shows on three TVs, they're all still different). */
@@ -157,7 +187,7 @@ export class TvChannels {
   }
 
   private createScreen(material: MeshBasicMaterial, show: number, stagger: number): Screen {
-    const screen: Screen = { material, ctx: null, texture: null, show, static: 0, osd: this.options.osdTime, sinceFrame: stagger };
+    const screen: Screen = { material, ctx: null, texture: null, show, static: 0, osd: this.options.osdTime, sinceFrame: stagger, detail: null, detailed: false };
     if (typeof document === 'undefined') return screen;
     const canvas = document.createElement('canvas');
     canvas.width = this.options.width;
@@ -175,16 +205,36 @@ export class TvChannels {
     return { ...screen, ctx, texture };
   }
 
+  /** A canvas `detailScale` times the usual size, for a close-up. Null without a DOM. */
+  private createDetail(): Screen['detail'] {
+    if (typeof document === 'undefined') return null;
+    const k = this.options.detailScale;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(this.options.width * k);
+    canvas.height = Math.round(this.options.height * k);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const texture = new CanvasTexture(canvas);
+    texture.colorSpace = SRGBColorSpace;
+    texture.generateMipmaps = false;
+    texture.minFilter = LinearFilter;
+    return { ctx, texture };
+  }
+
   private draw(screen: Screen): void {
-    const ctx = screen.ctx;
-    if (!ctx || !screen.texture) return;
+    // Close up, the sharp canvas: the same drawing, scaled up (the shows are drawn as shapes, so they stay crisp).
+    const sharp = screen.detailed ? screen.detail : null;
+    const ctx = sharp?.ctx ?? screen.ctx;
+    const texture = sharp?.texture ?? screen.texture;
+    if (!ctx || !texture) return;
+    if (sharp) ctx.setTransform(this.options.detailScale, 0, 0, this.options.detailScale, 0, 0);
     const { width: W, height: H } = this.options;
     const show = this.special ? this.specialShow : this.shows[screen.show]!;
     if (screen.static > 0) snow(ctx, W, H);
     else show.draw(ctx, W, H, this.special ? this.special.time : this.clocks[screen.show]!);
     crt(ctx, W, H);
     if (screen.osd > 0) channelNumber(ctx, W, show.osd ?? `CH ${String(show.channel).padStart(2, '0')}`);
-    screen.texture.needsUpdate = true;
+    texture.needsUpdate = true;
   }
 }
 

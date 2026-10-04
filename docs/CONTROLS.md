@@ -22,6 +22,7 @@ so the list fits a phone without scrolling (2026-10-01).
 | F | Bark or growl, at random | Working. Bark: a little hop, "Arf!" and a synthesized bark; the human can hear it. Growl: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a deep, rumbly "grrrr". |
 | Q | Do a trick | Working: a random trick, never the same twice in a row: belly up, beg, give paw, or spin. He stays put for it; moving or E cuts it short. No belly-up with something in his mouth, no begging under the furniture. |
 | R | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed, a treat) |
+| G | **FSD, Full Self Dog** on or off (Phase 5): Moke plays by himself | Working. The same as the FSD button (top right), which you can't click while the mouse is captured. Moving Moke yourself switches it off. |
 | W A S D or Space while resting | Get up out of the bed | Working |
 | Esc | Pause and release the mouse | Working. Esc never resumes (it also closes the Controls dialog); resume with RESUME, Enter/Space on it, or a click. |
 | Enter / Space on a menu button | Press that button (PLAY, CONTROLS, RESUME…) | Working |
@@ -29,6 +30,13 @@ so the list fits a phone without scrolling (2026-10-01).
 
 At the bathroom roll, Pull Toilet Paper first lets Moke take the loose end in his mouth. Then use normal movement
 to back out through the door and down the hallway; he lets go after enough distance outside, and the human cleans up.
+
+**FSD, Full Self Dog (Phase 5):** the translucent **FSD** button at the top right (on touch, just left of the II
+button), or G on a keyboard, hands Moke to the autopilot: he goes round the house through his activities at random
+(the toys, fetch, the sock heist, begging, the door, naps, the coffee table, the pillows, the toilet paper, Malibu),
+and when the Padres game is on he sits and watches it while the camera zooms in on the screen. A line under the
+button says what he's up to. Moving him yourself (keys, stick or thumb) takes back over; so does pressing the button
+or G again. On a controller, press the left stick.
 
 **Mouse capture:** clicking PLAY or RESUME captures the mouse (pointer lock). Esc releases it and
 pauses. Chrome needs about a second after Esc before it will capture again; if resume doesn't capture, click the
@@ -57,6 +65,7 @@ may hide a newly connected controller until one of its buttons is pressed.
 | Left shoulder or left trigger | Walk / sneak (hold) |
 | Right shoulder or right trigger | Run (hold) |
 | Right stick press | Sniff (all four face buttons are taken) |
+| Left stick press | FSD, Full Self Dog on or off (moving the stick takes over) |
 | Menu / Start | Pause or resume; closes the Controls dialog if it's open |
 | View / Back | Toggle the debug panel |
 

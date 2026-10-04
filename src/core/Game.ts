@@ -1,10 +1,12 @@
-import { Color, PerspectiveCamera, Scene, Vector3, type Object3D } from 'three';
+import { Color, Matrix4, PerspectiveCamera, Quaternion, Scene, Vector3, type Object3D } from 'three';
 import { MoveBasis } from '../camera/MoveBasis';
 import { ThirdPersonCamera, type CameraInput, type CameraTarget } from '../camera/ThirdPersonCamera';
 import { AudioManager } from '../audio/AudioManager';
 import { ASSET_MANIFEST, MOKE_MODEL_AVAILABLE } from '../config/assets';
 import { MOKE_ATTENTION } from '../config/attention';
-import { CAMERA } from '../config/camera';
+import { CAMERA, TV_CLOSE_UP } from '../config/camera';
+import { tvCloseUp } from '../camera/TvCloseUp';
+import { damp, smoothstep } from '../utils/math';
 import { CAMERA_LENS, RENDER } from '../config/engine';
 import { HOLD_RELEASE_AFTER, MOKE_BODY } from '../config/movement';
 import { QUALITY, type QualityLevel } from '../config/quality';
@@ -19,6 +21,9 @@ import { TreatHunt } from '../activities/TreatHunt';
 import { DoorDelivery } from '../activities/DoorDelivery';
 import { DinnerBeg } from '../activities/DinnerBeg';
 import { WatchTheGame } from '../activities/WatchTheGame';
+import { FullSelfDog, type FsdCommand, type FsdPress, type FsdWorld } from '../autopilot/FullSelfDog';
+import type { Action } from '../config/input';
+import { MISCHIEF_TABLES, PILLOW_SOFAS } from '../config/mischief';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
 import { SITE, USAGE } from '../config/site';
 import { pinger, UsageCounter } from './UsageCounter';
@@ -47,7 +52,7 @@ import { HumanActivityController } from '../human/activities/HumanActivityContro
 import { HumanReactions } from '../human/activities/HumanReactions';
 import { NavGrid } from '../human/NavGrid';
 import { DogBowls, type BowlKind } from '../world/DogBowls';
-import { BOWLS, placeById, TV_SCREENS } from '../world/home/places';
+import { BOWLS, placeById, TV_SCREENS, type TvScreenSpot } from '../world/home/places';
 import { HouseholdEffects } from '../world/HouseholdEffects';
 import { InteractionSystem } from '../interactions/InteractionSystem';
 import { PickupSystem } from '../interactions/PickupSystem';
@@ -171,6 +176,18 @@ export class Game {
   private kitchenBeg: KitchenBeg | null = null;
   private dinnerBeg: DinnerBeg | null = null;
   private watchGame: WatchTheGame | null = null;
+  /** FSD, Full Self Dog (Phase 5): the autopilot, whether it's driving, and this frame's command. */
+  private fsd: FullSelfDog | null = null;
+  private fsdOn = false;
+  private fsdCmd: FsdCommand | null = null;
+  private fsdWorld: FsdWorld | null = null;
+  /** The TV close-up while Moke watches the game: how far in (0..1), the screen, and scratch for the shot. */
+  private closeUp = 0;
+  private closeUpScreen: TvScreenSpot | null = null;
+  private readonly closeUpPosition = new Vector3();
+  private readonly closeUpLook = new Vector3();
+  private readonly closeUpRotation = new Quaternion();
+  private readonly closeUpMatrix = new Matrix4();
   private pillowDig: PillowDig | null = null;
   private tableManners: TableManners | null = null;
   private toiletPaper: ToiletPaperMischief | null = null;
@@ -242,6 +259,7 @@ export class Game {
     ui.bind({
       onPlay: () => this.play(),
       onResume: () => this.resume(),
+      onFsd: () => this.setFsd(!this.fsdOn),
     });
     const settings = loadSettings();
     applySettings(settings);
@@ -557,6 +575,7 @@ export class Game {
     this.interactions.register(this.pillowDig.interactable);
     this.interactions.register(this.toiletPaper.interactable);
     this.director = new DogActivityDirector([this.delivery, this.kitchenBeg, this.dinnerBeg, this.watchGame, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
+    this.spawnFsd(moke);
 
     // "Get Pets": close to the human while they're free.
     const game = this;
@@ -822,6 +841,9 @@ export class Game {
 
     const playing = this.state === 'playing';
     this.usage?.update(dt, playing, this.moveIntent.x !== 0 || this.moveIntent.z !== 0);
+    // FSD drives: this frame's moves and button presses (read below and in the fixed steps, like a player's).
+    this.fsdCmd = playing && this.fsdOn && this.fsd && this.fsdWorld ? this.fsd.update(dt, this.fsdWorld) : null;
+    if (this.fsdCmd && this.fsd) this.ui.setFsdStatus(this.fsd.status);
     // Discrete actions are read once per rendered frame, so a tap is never missed or doubled.
     if (playing && !enteredPlay) this.handleActions();
     this.barkTimer.update(playing ? dt : 0);
@@ -860,6 +882,7 @@ export class Game {
     this.cameraInput.lookY = playing ? this.lookDelta.y : 0;
     this.cameraInput.zoom = playing ? input.getZoomDelta() : 0;
     this.followCamera.update(dt, this.cameraInput, this.updateCameraTarget());
+    this.updateTvCloseUp(dt);
     // Walls can force the camera right up against Moke; hide him then rather than render his insides.
     if (this.moke) this.moke.visual.object.visible = !this.followCamera.isInsideTarget;
     if (this.barkedThisFrame) this.showBarkBubble();
@@ -931,6 +954,18 @@ export class Game {
     const input = this.input.state;
     const axis = input.getMoveAxis(this.moveAxis);
     const moving = axis.x !== 0 || axis.y !== 0;
+    if (this.fsdOn) {
+      // Steering takes over from FSD, like grabbing the wheel.
+      if (moving) this.setFsd(false, 'FSD off: you\'re driving.');
+      else {
+        const cmd = this.fsdCmd;
+        this.moveIntent.x = cmd?.x ?? 0;
+        this.moveIntent.z = cmd?.z ?? 0;
+        this.moveIntent.walk = cmd?.walk ?? false;
+        this.moveIntent.run = cmd?.run ?? false;
+        return;
+      }
+    }
     const yaw = this.moveBasis.update(moving, this.followCamera.yaw, this.followCamera.takeManualYawDelta());
     const sin = Math.sin(yaw);
     const cos = Math.cos(yaw);
@@ -944,7 +979,11 @@ export class Game {
   /** The discrete action keys, once per rendered frame while playing: E interact, Space jump, F bark or growl, Q trick, R sniff. */
   private handleActions(): void {
     const input = this.input.state;
-    if (input.wasPressed('interact') && !this.toiletPaper?.grabbing && !this.toiletPaper?.holdingPaper) {
+    if (input.wasPressed('autopilot')) this.setFsd(!this.fsdOn);
+    // A button pressed by the player, or by FSD while it drives (D27: one input path either way).
+    const presses = this.fsdCmd?.presses;
+    const pressed = (action: Action) => input.wasPressed(action) || (presses?.has(action as FsdPress) ?? false);
+    if (pressed('interact') && !this.toiletPaper?.grabbing && !this.toiletPaper?.holdingPaper) {
       this.moke?.animation.cancelTrick();
       // Nothing to use here: the paw (or E) sniffs instead, so a phone can hunt for treats without a sniff button.
       if (!this.interactions.interact() && !this.rest.holdsMoke && !this.moke?.animation.performingTrick && this.scent.start()) this.audio.play('sniff');
@@ -952,15 +991,97 @@ export class Game {
     // Any fresh movement key (or a jump) gets him up out of his bed.
     const moved = ['moveForward', 'moveBackward', 'moveLeft', 'moveRight', 'jump'] as const;
     const wasResting = this.rest.holdsMoke;
-    if (wasResting && (input.wasMoveStarted() || moved.some((a) => input.wasPressed(a)))) this.rest.standUp();
-    if (input.wasPressed('jump') && !wasResting) this.jump();
-    if (input.wasPressed('bark') && this.moke && !this.delivery?.guarding) {
+    if (wasResting && (input.wasMoveStarted() || moved.some((a) => pressed(a)))) this.rest.standUp();
+    if (pressed('jump') && !wasResting) this.jump();
+    if (pressed('bark') && this.moke && !this.delivery?.guarding) {
       if (this.delivery?.ringing) this.bark();
       else if (barkOrGrowl() === 'growl') this.growl();
       else this.bark();
     }
-    if (input.wasPressed('trick')) this.startTrick();
-    if (input.wasPressed('sniff') && !this.moke?.animation.performingTrick && this.scent.start()) this.audio.play('sniff');
+    if (pressed('trick')) this.startTrick();
+    if (pressed('sniff') && !this.moke?.animation.performingTrick && this.scent.start()) this.audio.play('sniff');
+  }
+
+  /**
+   * Watching the ballgame, the camera eases in from behind Moke to a close-up of the screen (the picture filling the
+   * view, drawn sharper), and back out when he's done. It overrides the follow camera's pose only for the frame;
+   * the follow camera carries on underneath, so it picks up exactly where it was.
+   */
+  private updateTvCloseUp(dt: number): void {
+    const watching = this.watchGame?.watchingScreen ?? null;
+    if (watching) this.closeUpScreen = watching;
+    this.closeUp = damp(this.closeUp, watching ? 1 : 0, TV_CLOSE_UP.blendRate, dt);
+    const screen = this.closeUpScreen;
+    if (!screen || (!watching && this.closeUp < 0.002)) {
+      this.closeUp = watching ? this.closeUp : 0;
+      this.room.tv.setDetail(null);
+      return;
+    }
+    this.room.tv.setDetail(this.room.tvIndex(screen.id));
+    tvCloseUp(screen, this.camera.aspect, this.camera.fov, this.closeUpPosition, this.closeUpLook);
+    this.closeUpMatrix.lookAt(this.closeUpPosition, this.closeUpLook, this.camera.up);
+    this.closeUpRotation.setFromRotationMatrix(this.closeUpMatrix);
+    const k = smoothstep(0, 1, this.closeUp);
+    this.camera.position.lerp(this.closeUpPosition, k);
+    this.camera.quaternion.slerp(this.closeUpRotation, k);
+  }
+
+  /** FSD on or off. On, it starts fresh; off (the button, G, or the player steering), Moke is the player's again. */
+  private setFsd(on: boolean, toast?: string): void {
+    if (!this.fsd || this.fsdOn === on) return;
+    this.fsdOn = on;
+    this.fsdCmd = null;
+    if (on) this.fsd.reset();
+    this.ui.setFsd(on);
+    this.ui.showToast(toast ?? (on ? 'FSD on: Moke is driving himself. Move to take over.' : 'FSD off: Moke is all yours.'), 2600);
+  }
+
+  /**
+   * FSD, Full Self Dog (Phase 5): its own navigation grid at Moke's size, and its view of the world: the prompts the
+   * player would see, Moke, the human, and a few things going on (the doorbell, the ballgame, the toilet paper).
+   */
+  private spawnFsd(moke: Moke): void {
+    const nav = new NavGrid(this.room.colliders, { bounds: this.room.bounds, cell: 0.1, agentRadius: MOKE_BODY.radius + 0.04, minY: 0.03, maxY: 0.38 });
+    this.fsd = new FullSelfDog(nav);
+    const game = this;
+    const c = moke.controller;
+    const surfaces = [
+      ...MISCHIEF_TABLES.map((t) => ({ id: t.id, kind: 'table' as const, x: t.x, z: t.z, halfX: t.halfX, halfZ: t.halfZ, height: t.height })),
+      ...PILLOW_SOFAS.map((s) => ({ id: s.id, kind: 'sofa' as const, x: s.x, z: s.z, halfX: s.halfX, halfZ: s.halfZ, height: s.height })),
+    ];
+    const mokeView = {
+      get position() { return c.position; },
+      get heading() { return c.heading; },
+      get grounded() { return c.grounded; },
+      get speed() { return c.actualSpeed; },
+      get carrying() { return game.toiletPaper?.holdingPaper ? 'paper' : game.pickup?.carried?.id ?? null; },
+      get resting() { return game.rest.holdsMoke; },
+      get watching() { return !!game.watchGame?.watchingScreen; },
+      get busy() {
+        const a = moke.animation;
+        return a.eating || a.petting || a.tugging || a.digging || a.performingTrick || !!game.toiletPaper?.grabbing;
+      },
+    };
+    const humanView = {
+      get position() { return game.heist!.human.controller.position; },
+      get available() { return game.routine.available && !game.heist!.heist.running; },
+      get effect() { return game.routine.effect ?? null; },
+      get placeKind() { return game.routine.place?.kind ?? null; },
+    };
+    this.fsdWorld = {
+      moke: mokeView,
+      get human() { return game.heist ? humanView : null; },
+      get heistRunning() { return game.heist?.heist.running ?? false; },
+      get heistPhase() { return game.heist?.heist.phase ?? 'waiting'; },
+      get doorRinging() { return game.delivery?.ringing ?? false; },
+      get ballgameOn() { return game.room.tv.homeRunToCome; },
+      get holdingPaper() { return game.toiletPaper?.holdingPaper ?? false; },
+      interactables: this.interactions.all,
+      get current() { return game.interactions.current?.id ?? null; },
+      screens: TV_SCREENS,
+      surfaces,
+      roomName: (x, z) => game.room.roomAt(x, z).name,
+    };
   }
 
   /** Up he goes (MokeController decides whether he can: on his feet, nothing low overhead, under the height cap). */

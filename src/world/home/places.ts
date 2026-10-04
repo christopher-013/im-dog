@@ -129,17 +129,22 @@ export const HOME_PLACES: readonly HomePlace[] = [
 /** A TV's picture: the middle of the screen, and the way it faces (the heading of its front, rad). */
 export interface TvScreenSpot {
   readonly id: 'living' | 'dining' | 'family';
+  /** The middle of the picture. */
   readonly x: number;
   readonly y: number;
   readonly z: number;
+  /** Which way the picture faces, into the room. */
   readonly facing: number;
+  /** The picture's size (m): the close-up fits it to the view. */
+  readonly width: number;
+  readonly height: number;
 }
 
 /** The three TVs (see world/tv/TvChannels): on the living-room console, the dining-room stand, over the fireplace. */
 export const TV_SCREENS: readonly TvScreenSpot[] = [
-  { id: 'living', x: 0.3, y: 1.06, z: 2.79, facing: Math.PI },
-  { id: 'dining', x: 10.33, y: 1.3, z: -3.63, facing: -0.6 },
-  { id: 'family', x: f.fireplace.x, y: 1.92, z: 5.33, facing: Math.PI },
+  { id: 'living', x: 0.3, y: 1.06, z: 2.79, facing: Math.PI, width: 1.21, height: 0.68 },
+  { id: 'dining', x: 10.33, y: 1.3, z: -3.63, facing: -0.6, width: 1.06, height: 0.6 },
+  { id: 'family', x: f.fireplace.x, y: 1.92, z: 5.33, facing: Math.PI, width: 1.41, height: 0.79 },
 ];
 
 export function placeById(id: string): HomePlace {

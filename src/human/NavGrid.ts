@@ -282,6 +282,97 @@ export class NavGrid {
     return false;
   }
 
+  /**
+   * Which connected patch of floor (x, z) is on: two points with the same id have a way between them. -1 off the
+   * walkable area. Static obstacles only (no `avoid`); worked out once, on first use.
+   */
+  region(x: number, z: number): number {
+    const i = this.index(x, z);
+    if (i < 0 || this.blocked[i] !== 0) return -1;
+    return this.labelRegions()[i]!;
+  }
+
+  /** The walkable point nearest `to` (within `maxRadius`) on the same patch of floor as `from`, or null. */
+  nearestReachable(from: Point2, to: Point2, maxRadius = 1.5): Point2 | null {
+    const start = this.nearestWalkable(from.x, from.z);
+    if (!start) return null;
+    const labels = this.labelRegions();
+    // His patch, and any he can step onto from it (squeezed onto a scrap of floor, findPath steps off it first).
+    const want = new Set<number>();
+    const sc = this.col(start.x);
+    const sr = this.row(start.z);
+    for (let dr = -4; dr <= 4; dr++) {
+      for (let dc = -4; dc <= 4; dc++) {
+        const c = sc + dc;
+        const r = sr + dr;
+        if (c >= 0 && r >= 0 && c < this.cols && r < this.rows && labels[r * this.cols + c]! >= 0) want.add(labels[r * this.cols + c]!);
+      }
+    }
+    if (want.has(this.region(to.x, to.z))) return { x: to.x, z: to.z };
+    const { cell } = this.options;
+    const c0 = this.col(to.x);
+    const r0 = this.row(to.z);
+    let best: Point2 | null = null;
+    let bestDistance = Infinity;
+    const rings = Math.ceil(maxRadius / cell);
+    for (let ring = 1; ring <= rings; ring++) {
+      // A ring's corners are further than the next ring's sides: finish one more ring before settling.
+      if (best && (ring - 1) * cell > bestDistance) break;
+      for (let dr = -ring; dr <= ring; dr++) {
+        for (let dc = -ring; dc <= ring; dc++) {
+          if (Math.max(Math.abs(dr), Math.abs(dc)) !== ring) continue;
+          const c = c0 + dc;
+          const r = r0 + dr;
+          if (c < 0 || r < 0 || c >= this.cols || r >= this.rows || !want.has(labels[r * this.cols + c]!)) continue;
+          const p = this.center(c, r);
+          const d = Math.hypot(p.x - to.x, p.z - to.z);
+          if (d < bestDistance && d <= maxRadius) {
+            bestDistance = d;
+            best = p;
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  private regions: Int32Array | null = null;
+
+  private labelRegions(): Int32Array {
+    if (this.regions) return this.regions;
+    const { cols, rows } = this;
+    const labels = new Int32Array(cols * rows).fill(-1);
+    const queue = new Int32Array(cols * rows);
+    const open = (c: number, r: number) => c >= 0 && r >= 0 && c < cols && r < rows && this.blocked[r * cols + c] === 0;
+    let next = 0;
+    for (let i = 0; i < labels.length; i++) {
+      if (labels[i] !== -1 || this.blocked[i] !== 0) continue;
+      // Flood one patch, moving the way the search does (no cutting corners past an obstacle).
+      let head = 0;
+      let tail = 0;
+      labels[i] = next;
+      queue[tail++] = i;
+      while (head < tail) {
+        const cur = queue[head++]!;
+        const c = cur % cols;
+        const r = Math.floor(cur / cols);
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            if ((dr === 0 && dc === 0) || !open(c + dc, r + dr)) continue;
+            if (dr !== 0 && dc !== 0 && (!open(c + dc, r) || !open(c, r + dr))) continue;
+            const n = (r + dr) * cols + c + dc;
+            if (labels[n] !== -1) continue;
+            labels[n] = next;
+            queue[tail++] = n;
+          }
+        }
+      }
+      next++;
+    }
+    this.regions = labels;
+    return labels;
+  }
+
   /** Blocks every cell whose centre is within the walker's radius of the box's footprint. */
   private stamp(box: StaticBox): void {
     const { minY, maxY, agentRadius: radius } = this.options;

@@ -98,21 +98,28 @@ export class WatchTheGame extends DogActivity {
     this.deps.onWatch(null);
   }
 
-  /** The nearest TV he's in front of: close enough to see, not right underneath, and not off to the side. */
   private screenInFront(p: Vec3Like): TvScreenSpot | null {
-    const t = this.tuning;
-    let best: TvScreenSpot | null = null;
-    let bestD = Infinity;
-    for (const screen of this.deps.screens) {
-      const dx = p.x - screen.x;
-      const dz = p.z - screen.z;
-      const d = Math.hypot(dx, dz);
-      if (d < t.near || d > t.reach || d >= bestD) continue;
-      const ahead = (dx * Math.sin(screen.facing) + dz * Math.cos(screen.facing)) / d;
-      if (ahead < Math.cos(t.halfAngle)) continue;
-      best = screen;
-      bestD = d;
-    }
-    return best;
+    return screenInFront(this.deps.screens, p, this.tuning);
   }
+}
+
+/** The nearest TV `p` is in front of: close enough to see, not right underneath, and not off to the side. */
+export function screenInFront(
+  screens: readonly TvScreenSpot[],
+  p: Vec3Like,
+  t: { readonly near: number; readonly reach: number; readonly halfAngle: number } = HOME_ACTIVITIES.watchGame,
+): TvScreenSpot | null {
+  let best: TvScreenSpot | null = null;
+  let bestD = Infinity;
+  for (const screen of screens) {
+    const dx = p.x - screen.x;
+    const dz = p.z - screen.z;
+    const d = Math.hypot(dx, dz);
+    if (d < t.near || d > t.reach || d >= bestD) continue;
+    const ahead = (dx * Math.sin(screen.facing) + dz * Math.cos(screen.facing)) / d;
+    if (ahead < Math.cos(t.halfAngle)) continue;
+    best = screen;
+    bestD = d;
+  }
+  return best;
 }

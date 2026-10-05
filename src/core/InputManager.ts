@@ -78,6 +78,7 @@ export class InputManager {
 
     document.addEventListener('mousemove', this.handleMouseMove, opts);
     surface.addEventListener('mousedown', (e) => {
+      if (this.gameplayFocusNow) this.state.pressAny();
       if (e.button === 0 && this.gameplayFocusNow && this.mode === 'keyboard' && !this.isPointerLocked) this.dragLooking = true;
     }, opts);
     window.addEventListener('mouseup', (e) => e.button === 0 && (this.dragLooking = false), opts);

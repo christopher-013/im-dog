@@ -6,6 +6,7 @@ import { SCENES as CHEF_SCENES } from './ChefShowdown';
 import { sceneAt, type Scenes } from './draw';
 import { SCENES as GEARBOTS_SCENES } from './Gearbots';
 import { SCENES as HIGHWAY_SCENES } from './HighwayHero';
+import { SCENES as VOYAGER_SCENES } from './StarVoyagers';
 import { TvChannels, tvShows } from './TvChannels';
 import { HOME_RUN_AT, SCENES as SERIES_SCENES, WorldSeries } from './WorldSeries';
 
@@ -44,8 +45,8 @@ function fakeContext(width: number, height: number) {
 
 const screens = () => [new MeshBasicMaterial(), new MeshBasicMaterial(), new MeshBasicMaterial()];
 
-describe('The TVs (three shows, three sets)', () => {
-  for (const [name, scenes] of [['GEARBOTS', GEARBOTS_SCENES], ['HIGHWAY HERO', HIGHWAY_SCENES], ['CHEF SHOWDOWN', CHEF_SCENES]] as const) {
+describe('The TVs (four shows, three sets)', () => {
+  for (const [name, scenes] of [['GEARBOTS', GEARBOTS_SCENES], ['HIGHWAY HERO', HIGHWAY_SCENES], ['CHEF SHOWDOWN', CHEF_SCENES], ['STAR VOYAGERS', VOYAGER_SCENES]] as const) {
     it(`runs ${name}'s scenes back to back, and loops`, () => {
       const s = scenes as Scenes<string>;
       expect(s[0]!.from).toBe(0);
@@ -66,10 +67,10 @@ describe('The TVs (three shows, three sets)', () => {
   it('gives each show its own channel number and a name', () => {
     const shows = tvShows();
     expect(new Set(shows.map((s) => s.channel)).size).toBe(shows.length);
-    expect(shows.map((s) => s.name)).toEqual(['GEARBOTS', 'HIGHWAY HERO', 'CHEF SHOWDOWN']);
+    expect(shows.map((s) => s.name)).toEqual(['GEARBOTS', 'HIGHWAY HERO', 'CHEF SHOWDOWN', 'STAR VOYAGERS']);
   });
 
-  it('puts a different show on each TV, and every so often two swap, so they are never on the same one', () => {
+  it('puts a different show on each TV, and every so often one changes channel or two swap, never onto the same one', () => {
     for (const seed of [1, 2, 3, 4, 5]) {
       // (The World Series special is left out here: it puts the same broadcast on all three.)
       const tv = new TvChannels(screens(), mulberry32(seed), tvShows(), { ...TV, special: { firstAfter: [1e9, 1e9], every: [1e9, 1e9] } } as unknown as typeof TV);
@@ -87,8 +88,9 @@ describe('The TVs (three shows, three sets)', () => {
       // Swaps come every 18–40 s: roughly 15–33 in ten minutes.
       expect(swaps).toBeGreaterThanOrEqual(600 / TV.switchEvery[1] - 1);
       expect(swaps).toBeLessThanOrEqual(600 / TV.switchEvery[0] + 1);
-      // Over ten minutes, every TV shows every show.
-      for (const s of seen) expect(s.size, `seed ${seed}`).toBe(3);
+      // Over ten minutes, every TV shows every show (or all but one), and all four are on somewhere.
+      for (const s of seen) expect(s.size, `seed ${seed}`).toBeGreaterThanOrEqual(3);
+      expect(new Set(seen.flatMap((s) => [...s])).size, `seed ${seed}`).toBe(4);
     }
   });
 
@@ -103,6 +105,23 @@ describe('The TVs (three shows, three sets)', () => {
     const lineups = new Set<string>();
     for (let seed = 1; seed <= 20; seed++) lineups.add(new TvChannels(screens(), mulberry32(seed)).onAir.map((s) => s.name).join());
     expect(lineups.size).toBeGreaterThan(2);
+  });
+});
+
+describe('Watching a TV full screen (Watch TV)', () => {
+  it('draws exactly what that TV is showing, as big as fits the window, without a single bad number', () => {
+    for (const [w, h] of [[1920, 1080], [390, 844], [844, 390]] as const) {
+      const tv = new TvChannels(screens(), mulberry32(3));
+      for (let i = 0; i < 3; i++) {
+        const { ctx, problems } = fakeContext(w, h);
+        for (let t = 0; t < 30; t++) {
+          tv.update(0.5);
+          tv.drawFull(i, ctx);
+        }
+        expect(problems.slice(0, 5), `TV ${i} at ${w}×${h}`).toEqual([]);
+      }
+      expect(tv.showOn(0)).toBe(tv.onAir[0]);
+    }
   });
 });
 

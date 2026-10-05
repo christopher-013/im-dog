@@ -177,4 +177,26 @@ describe('codeFromKey', () => {
     expect(codeFromKey('Shift')).toBe('ShiftLeft');
     expect(codeFromKey('Dead')).toBe('');
   });
+
+  it('knows when any button at all went down: bound or not, a stick pushed, a click (for "press any button")', () => {
+    const input = new InputState(KEY_BINDINGS);
+    input.beginFrame();
+    expect(input.wasAnyPressed()).toBe(false);
+    input.keyDown('KeyX'); // bound to nothing
+    input.beginFrame();
+    expect(input.wasAnyPressed()).toBe(true);
+    input.beginFrame();
+    expect(input.wasAnyPressed()).toBe(false);
+    // Held down (OS auto-repeat) is not a new press.
+    input.keyDown('KeyX');
+    input.beginFrame();
+    expect(input.wasAnyPressed()).toBe(false);
+    input.setAnalogMove(0, 0.8);
+    input.beginFrame();
+    expect(input.wasAnyPressed()).toBe(true);
+    input.pressAny();
+    input.beginFrame();
+    expect(input.wasAnyPressed()).toBe(true);
+  });
 });
+

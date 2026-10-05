@@ -15,6 +15,8 @@ export interface UIHandlers {
   onResume(): void;
   /** The FSD (Full Self Dog) button. */
   onFsd?(): void;
+  /** A tap or click on the full-screen TV: stop watching. */
+  onTvExit?(): void;
 }
 
 /**
@@ -98,6 +100,10 @@ export class UIManager {
       this.handlers?.onFsd?.();
       // Back to the game: no lingering focus ring, and Space/Enter keep meaning jump/interact.
       (e.currentTarget as HTMLElement).blur();
+    });
+    this.el('tv-view').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      this.handlers?.onTvExit?.();
     });
     this.el('btn-retry').addEventListener('click', () => location.reload());
     this.el('btn-controls-close').addEventListener('click', () => this.controlsDialog.close());
@@ -268,6 +274,36 @@ export class UIManager {
   }
 
   /** What Moke's up to while FSD drives ("Answering the door!"). Cheap to call every frame. */
+  /** Watch TV: the full-screen view on (with the show's name and channel) or off. */
+  showTv(title: string | null): void {
+    const view = this.el('tv-view');
+    view.classList.toggle('is-visible', title !== null);
+    view.setAttribute('aria-hidden', String(title === null));
+    if (title !== null) {
+      this.el('tv-title').textContent = title;
+      // Restart the hint's fade.
+      const hint = view.querySelector<HTMLElement>('.tv-hint');
+      if (hint) {
+        hint.style.animation = 'none';
+        void hint.offsetWidth;
+        hint.style.animation = '';
+      }
+    }
+  }
+
+  /** The full-screen TV's canvas, sized to the window (device pixels, at most 2×). */
+  get tvCanvas(): HTMLCanvasElement {
+    const canvas = this.el('tv-canvas') as HTMLCanvasElement;
+    const ratio = Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(1, Math.round(canvas.clientWidth * ratio));
+    const h = Math.max(1, Math.round(canvas.clientHeight * ratio));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    return canvas;
+  }
+
   setFsdStatus(text: string): void {
     const status = this.el('fsd-status');
     if (status.textContent !== text) status.textContent = text;

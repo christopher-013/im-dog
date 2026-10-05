@@ -369,6 +369,13 @@
         <p id="fsd-status" class="fsd-status" aria-live="polite"></p>
       </div>
 
+      <!-- Watch TV (Phase 5): the show on that TV, full screen, until any button or a tap. -->
+      <div id="tv-view" class="tv-view" role="dialog" aria-label="Watching TV" aria-hidden="true">
+        <canvas id="tv-canvas" class="tv-canvas"></canvas>
+        <p id="tv-title" class="tv-title"></p>
+        <p class="tv-hint"><span class="tv-hint-keys">Press any button to stop watching</span><span class="tv-hint-touch">Tap to stop watching</span></p>
+      </div>
+
       <section id="screen-loading" class="screen screen-loading is-active" aria-label="Loading">
         <div class="stack">
           <p class="logo logo-small" aria-label="I'M DOG?">

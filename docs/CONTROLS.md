@@ -31,6 +31,9 @@ so the list fits a phone without scrolling (2026-10-01).
 At the bathroom roll, Pull Toilet Paper first lets Moke take the loose end in his mouth. Then use normal movement
 to back out through the door and down the hallway; he lets go after enough distance outside, and the human cleans up.
 
+**Watch TV (Phase 5):** in front of any TV, interact (E, A, the paw) to watch its show full screen; any key or button,
+a click or a tap stops watching.
+
 **FSD, Full Self Dog (Phase 5):** the translucent **FSD** button at the top right (on touch, just left of the II
 button), or G on a keyboard, hands Moke to the autopilot: he goes round the house through his activities at random
 (the toys, fetch, the sock heist, begging, the door, naps, the coffee table, the pillows, the toilet paper, Malibu),

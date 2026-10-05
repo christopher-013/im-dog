@@ -35,6 +35,8 @@ export const FSD = {
   chewFor: [4, 6] as const,
   /** Waiting for a "beg" prompt (sitting still beside the human) at most this long. */
   begWait: 9,
+  /** Watching a show full screen (Watch TV), how long (s) before he presses a button to stop. */
+  tvFor: [8, 14] as const,
   /** Watching the ballgame: how far in front of the TV he sits (m). */
   watchDistance: 1.6,
   /** Running off with the sock: how far from the human he heads (m), and how often he picks a new spot (s). */

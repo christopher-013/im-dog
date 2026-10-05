@@ -43,6 +43,16 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-05, owner request, Phase 5.3): **Watch TV, and STAR VOYAGERS.** In front of any TV, "Watch TV"
+shows whatever it's on full screen (`activities/WatchTv.ts`, `TvChannels.drawFull`, the `#tv-view` overlay) until any
+key, button, stick push, click or tap (`InputState.wasAnyPressed`/`pressAny`); pausing ends it; the World Series
+special keeps Watch the Game. A fourth show, **STAR VOYAGERS** (`world/tv/StarVoyagers.ts`), an original homage to
+the late-1980s starship series: the bridge crew, "ENGAGE!", warp speed (no real names, ship or insignia). With four
+shows on three TVs, a channel change sometimes switches a TV to the show that's off. FSD watches TV now and then
+(`tv` routine). Verified: unit tests (Watch TV, any-button input, full-screen drawing at three window shapes, the
+new show drawn all the way through, the four-show rotation), in the real game (the prompt, full screen, exit by an
+unbound key and by a click; no console errors) and screenshots. Not verified on a phone or by a person.
+
 Claude Code (2026-10-05, owner request from a screenshot): **Liam's Obstacle Course, roomier and clearer.** The loop is
 wider (radius 2.1 → 3 m; the fence moved back to x 32.2 and two trees with it), with the same stations (the weave
 poles a little further apart, the hill a little longer). The start is now on the loop's south side, where you walk

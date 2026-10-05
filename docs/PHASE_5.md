@@ -32,6 +32,7 @@ sessions.
 |---|---|---|
 | 5.1 | FSD, Full Self Dog | **Built** (2026-10-04): see below. |
 | 5.2 | The backyard and Liam's Obstacle Course | **Built** (2026-10-05): see below. |
+| 5.3 | Watch TV full screen, and a fourth show (STAR VOYAGERS) | **Built** (2026-10-05): see below. |
 
 ## 5.1 FSD: how it works
 - **On and off:** the **FSD** button (top right, left of the II button on touch) or **G** on a keyboard (with the mouse
@@ -92,6 +93,17 @@ sessions.
 - **Done:** fireworks over the screen and **"Moke is tired!"** with his time, then the human waits just inside the
   open slider with a **hamburger patty** and gives it to him when he comes in (`CourseReward`).
 - **FSD** runs the course too, then goes in for the patty.
+
+## 5.3 Watch TV full screen, and STAR VOYAGERS (owner's request, 2026-10-05)
+"If Moke is close to the TV they can watch whatever show is playing as a full screen display of the show; they can
+exit out of it if they are done by pressing any button. Add one more show that is like 'Star Trek: The Next
+Generation'… the captain, the first officer, the android and the security chief on the bridge… going into warp
+speed with the words 'Engage'."
+- **Watch TV** (`activities/WatchTv.ts`): see `ACTIVITIES.md`. Any button, click or tap exits.
+- **STAR VOYAGERS** (`world/tv/StarVoyagers.ts`, channel 9): an original homage (no real names, ship or insignia):
+  the title among the stars, the bridge crew at their posts, the captain points at the viewscreen, **"ENGAGE!"**, the
+  stars stretch into warp, the ship flashes away, "next time: a new world!" (23 s). With four shows on three TVs, a
+  channel change now sometimes switches a TV to the one that isn't on (`TvChannels.switchChannels`).
 
 ## Success criteria
 - Switching FSD on makes Moke go round the house doing things, by himself, for as long as you leave it; moving takes

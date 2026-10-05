@@ -4,11 +4,12 @@ import { ChefShowdown } from './ChefShowdown';
 import { crt, type TvShow } from './draw';
 import { Gearbots } from './Gearbots';
 import { HighwayHero } from './HighwayHero';
+import { StarVoyagers } from './StarVoyagers';
 import { HOME_RUN_AT, WorldSeries } from './WorldSeries';
 
 /** Every show on the air. */
 export function tvShows(): TvShow[] {
-  return [new Gearbots(), new HighwayHero(), new ChefShowdown()];
+  return [new Gearbots(), new HighwayHero(), new ChefShowdown(), new StarVoyagers()];
 }
 
 interface Screen {
@@ -144,6 +145,37 @@ export class TvChannels {
     }
   }
 
+  /**
+   * Draws what TV `index` is showing right now (the same show at the same moment, snow and all) as big as fits on
+   * `ctx`'s whole canvas, black round it: watching TV full screen. Shapes, so it stays sharp at any size.
+   */
+  drawFull(index: number, ctx: CanvasRenderingContext2D): void {
+    const screen = this.screens[index];
+    if (!screen) return;
+    const { width: cw, height: ch } = ctx.canvas;
+    const { width: W, height: H } = this.options;
+    const k = Math.min(cw / W, ch / H);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, cw, ch);
+    ctx.save();
+    ctx.setTransform(k, 0, 0, k, (cw - W * k) / 2, (ch - H * k) / 2);
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    ctx.clip();
+    const show = this.special ? this.specialShow : this.shows[screen.show]!;
+    if (screen.static > 0) snow(ctx, W, H);
+    else show.draw(ctx, W, H, this.special ? this.special.time : this.clocks[screen.show]!);
+    if (screen.osd > 0) channelNumber(ctx, W, show.osd ?? `CH ${String(show.channel).padStart(2, '0')}`);
+    ctx.restore();
+  }
+
+  /** Which show TV `index` is on right now. */
+  showOn(index: number): TvShow | null {
+    const screen = this.screens[index];
+    return screen ? (this.special ? this.specialShow : this.shows[screen.show]!) : null;
+  }
+
   dispose(): void {
     for (const screen of this.screens) {
       screen.texture?.dispose();
@@ -151,8 +183,18 @@ export class TvChannels {
     }
   }
 
-  /** Two TVs swap shows (with three shows on three TVs, they're all still different). */
+  /**
+   * A channel change: with a show that's on no TV (four shows, three sets), half the time one TV changes over to it;
+   * otherwise two TVs swap. Either way they're all still on different shows.
+   */
   private switchChannels(): void {
+    const offAir = this.shows.map((_, i) => i).filter((i) => !this.screens.some((s) => s.show === i));
+    if (offAir.length > 0 && (this.screens.length < 2 || this.random() < 0.5)) {
+      const screen = this.screens[Math.floor(this.random() * this.screens.length)]!;
+      screen.show = offAir[Math.floor(this.random() * offAir.length)]!;
+      this.flick(screen);
+      return;
+    }
     if (this.screens.length < 2) return;
     const a = Math.floor(this.random() * this.screens.length);
     const b = (a + 1 + Math.floor(this.random() * (this.screens.length - 1))) % this.screens.length;

@@ -36,6 +36,11 @@ export class InputState {
   private readonly analog: Record<AnalogSource, Vec2Like> = { gamepad: { x: 0, y: 0 }, touch: { x: 0, y: 0 } };
   private pendingMoveStarted = false;
   private frameMoveStarted = false;
+  /** Any key or button at all went down (bound or not), or a click: "press any button". */
+  private pendingAny = false;
+  private frameAny = false;
+  /** Every key held, bound or not (so a held key's auto-repeat isn't a new press). */
+  private readonly anyDown = new Set<string>();
 
   constructor(bindings: Readonly<Record<Action, readonly string[]>>) {
     for (const [action, keys] of Object.entries(bindings) as [Action, readonly string[]][]) {
@@ -49,7 +54,16 @@ export class InputState {
 
   /** Returns true if the key is bound to something (so the caller can suppress browser defaults). */
   keyDown(key: string): boolean {
+    if (!this.anyDown.has(key)) {
+      this.anyDown.add(key);
+      this.pendingAny = true;
+    }
     return this.hold(key, true);
+  }
+
+  /** A press that isn't a key (a mouse click): counts only for "press any button". */
+  pressAny(): void {
+    this.pendingAny = true;
   }
 
   /**
@@ -78,6 +92,7 @@ export class InputState {
   }
 
   keyUp(key: string): void {
+    this.anyDown.delete(key);
     if (!this.keysDown.delete(key)) return;
     for (const action of this.actionsByKey.get(key) ?? []) {
       const count = (this.heldCount.get(action) ?? 1) - 1;
@@ -102,7 +117,10 @@ export class InputState {
     const moving = Math.hypot(x, y) > 0.001;
     axis.x = x;
     axis.y = y;
-    if (!wasMoving && moving) this.pendingMoveStarted = true;
+    if (!wasMoving && moving) {
+      this.pendingMoveStarted = true;
+      this.pendingAny = true;
+    }
   }
 
   /** Mouse-wheel zoom in notches (positive = zoom out). */
@@ -121,6 +139,8 @@ export class InputState {
       axis.y = 0;
     }
     this.pendingMoveStarted = false;
+    this.pendingAny = false;
+    this.anyDown.clear();
   }
 
   beginFrame(): void {
@@ -137,6 +157,8 @@ export class InputState {
     this.pendingZoom = 0;
     this.frameMoveStarted = this.pendingMoveStarted;
     this.pendingMoveStarted = false;
+    this.frameAny = this.pendingAny;
+    this.pendingAny = false;
   }
 
   isDown(action: Action): boolean {
@@ -162,6 +184,11 @@ export class InputState {
     out.x = x * scale;
     out.y = y * scale;
     return out;
+  }
+
+  /** True for the frame after any key or button at all went down, a stick was pushed, or the mouse clicked. */
+  wasAnyPressed(): boolean {
+    return this.frameAny;
   }
 
   /** True once when an analog movement control leaves its deadzone. */

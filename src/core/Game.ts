@@ -21,6 +21,7 @@ import { TreatHunt } from '../activities/TreatHunt';
 import { DoorDelivery } from '../activities/DoorDelivery';
 import { DinnerBeg } from '../activities/DinnerBeg';
 import { WatchTheGame } from '../activities/WatchTheGame';
+import { WatchTv } from '../activities/WatchTv';
 import { FullSelfDog, type FsdCommand, type FsdPress, type FsdWorld } from '../autopilot/FullSelfDog';
 import type { Action } from '../config/input';
 import { MISCHIEF_TABLES, PILLOW_SOFAS } from '../config/mischief';
@@ -187,6 +188,9 @@ export class Game {
   private kitchenBeg: KitchenBeg | null = null;
   private dinnerBeg: DinnerBeg | null = null;
   private watchGame: WatchTheGame | null = null;
+  /** Watch TV (Phase 5): any TV's show full screen, until any button; and when its picture was last drawn. */
+  private watchTv: WatchTv | null = null;
+  private tvDrawnAgo = 0;
   /** FSD, Full Self Dog (Phase 5): the autopilot, whether it's driving, and this frame's command. */
   private fsd: FullSelfDog | null = null;
   private fsdOn = false;
@@ -271,6 +275,7 @@ export class Game {
       onPlay: () => this.play(),
       onResume: () => this.resume(),
       onFsd: () => this.setFsd(!this.fsdOn),
+      onTvExit: () => this.watchTv?.stop(),
     });
     const settings = loadSettings();
     applySettings(settings);
@@ -573,6 +578,17 @@ export class Game {
     });
     this.room.tv.onHomeRun = () => this.watchGame?.homeRun();
     this.interactions.register(this.watchGame.interactable);
+    this.watchTv = new WatchTv({
+      screens: TV_SCREENS,
+      specialOn: () => this.room.tv.specialOn,
+      onWatch: (screen) => {
+        moke.animation.watch(screen !== null);
+        const show = screen ? this.room.tv.showOn(this.room.tvIndex(screen.id)) : null;
+        this.ui.showTv(screen ? (show ? `${show.name} · CH ${String(show.channel).padStart(2, '0')}` : 'TV') : null);
+        this.tvDrawnAgo = Infinity;
+      },
+    });
+    this.interactions.register(this.watchTv.interactable);
     this.pillows = new CouchPillows(this.room.object);
     this.pillowDig = new PillowDig({ routine: this.routine, pillows: this.pillows, nav,
       hand: human.visual.hands.right, grounded: () => moke.controller.grounded,
@@ -756,6 +772,17 @@ export class Game {
     this.courseReward?.earn();
   }
 
+  /** Watch TV: the show on that TV, full screen, redrawn up to 30 times a second (the shows animate on twos anyway). */
+  private drawTv(dt: number): void {
+    const screen = this.watchTv?.watching;
+    if (!screen) return;
+    this.tvDrawnAgo += dt;
+    if (this.tvDrawnAgo < 1 / 30) return;
+    this.tvDrawnAgo = 0;
+    const ctx = this.ui.tvCanvas.getContext('2d');
+    if (ctx) this.room.tv.drawFull(this.room.tvIndex(screen.id), ctx);
+  }
+
   /** The squeaky fish in his mouth: he chomps on it the whole time he holds it. Returns the fish while he does. */
   private updateChewing(playing: boolean): Prop | null {
     const fish = this.pickup?.carried?.id === 'fish' ? this.pickup.carried : null;
@@ -859,6 +886,7 @@ export class Game {
 
   private pause(): void {
     if (this.state !== 'playing') return;
+    this.watchTv?.stop();
     this.setState('paused');
     this.input.exitPointerLock();
     this.input.releaseAll();
@@ -882,8 +910,18 @@ export class Game {
     // FSD drives: this frame's moves and button presses (read below and in the fixed steps, like a player's).
     this.fsdCmd = playing && this.fsdOn && this.fsd && this.fsdWorld ? this.fsd.update(dt, this.fsdWorld) : null;
     if (this.fsdCmd && this.fsd) this.ui.setFsdStatus(this.fsd.status);
+    // Watching TV full screen: any button (or FSD wanting to do something else) and he's done; that press does
+    // nothing else.
+    let tvExit = false;
+    if (playing && this.watchTv?.watching) {
+      const cmd = this.fsdCmd;
+      if (input.wasAnyPressed() || (cmd && (cmd.presses.size > 0 || Math.hypot(cmd.x, cmd.z) > 0.1))) {
+        this.watchTv.stop();
+        tvExit = true;
+      }
+    }
     // Discrete actions are read once per rendered frame, so a tap is never missed or doubled.
-    if (playing && !enteredPlay) this.handleActions();
+    if (playing && !enteredPlay && !tvExit) this.handleActions();
     this.barkTimer.update(playing ? dt : 0);
 
     // The world only advances while playing; menus and pause freeze it.
@@ -893,9 +931,10 @@ export class Game {
       this.moke.lookAt = BATHROOM.paper;
       this.moke.sniffing = true;
     }
-    // Watching the ballgame: eyes on the screen.
-    const screen = this.watchGame?.watchingScreen;
+    // Watching the ballgame (or any show): eyes on the screen.
+    const screen = this.watchGame?.watchingScreen ?? this.watchTv?.watching;
     if (screen && this.moke) this.moke.lookAt = screen;
+    this.drawTv(dt);
     const chewing = this.updateChewing(playing);
     this.moke?.update(dt, alpha);
     this.afterChewing(chewing, playing ? dt : 0);
@@ -948,7 +987,8 @@ export class Game {
     const watching = this.watchGame?.watchingScreen ?? null;
     // Watching the ballgame: moving off stops it; otherwise he stays put, turning to face the screen.
     if (watching && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.watchGame?.stop();
-    const tv = this.watchGame?.watchingScreen ?? null;
+    this.watchTv?.update({ position: c.position, carrying: this.toiletPaper?.holdingPaper ? 'paper' : this.pickup?.carried?.id ?? null, napping: this.rest.lying });
+    const tv = this.watchGame?.watchingScreen ?? this.watchTv?.watching ?? null;
     if (tv && !glideTarget && !paperTarget) {
       c.glideTo(step, c.position, Math.atan2(tv.x - c.position.x, tv.z - c.position.z), 0, HOME_ACTIVITIES.watchGame.turnRate);
     } else if (glideTarget) {
@@ -991,6 +1031,12 @@ export class Game {
    */
   private updateMoveIntent(): void {
     const input = this.input.state;
+    // Watching TV full screen: he sits still (any button ends it, in frame()).
+    if (this.watchTv?.watching) {
+      this.moveIntent.x = this.moveIntent.z = 0;
+      this.moveIntent.walk = this.moveIntent.run = false;
+      return;
+    }
     const axis = input.getMoveAxis(this.moveAxis);
     const moving = axis.x !== 0 || axis.y !== 0;
     if (this.fsdOn) {

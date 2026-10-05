@@ -439,6 +439,17 @@ export class FullSelfDog {
         plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.interact('bathroom:paper'), this.waitUntil((x) => x.holdingPaper, 5)],
       },
       {
+        id: 'tv', status: 'Off to watch some TV', weight: 1,
+        available: (w) => free(w) && !w.ballgameOn && w.screens.length > 0 && w.interactables.some((t) => t.id === 'tv:show'),
+        plan: (w) => {
+          const spot = this.watchSpot(w);
+          if (!spot) return [];
+          // Any button stops watching: he presses one when he's had enough.
+          return [...emptyMouth(w), ...offFurniture(w), this.go(spot, 0.3), this.waitUntil((x) => enabled(x, 'tv:show'), 2),
+            this.interact('tv:show'), this.wait(this.between(this.tuning.tvFor), 'Watching TV…'), this.press('interact'), this.wait(0.5)];
+        },
+      },
+      {
         id: 'course', status: "Off to Liam's Obstacle Course!", weight: 1.6,
         available: (w) => free(w) && !!w.course && w.course.phase !== 'running',
         plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.go(coursePoint(-0.45), 0.35, true), this.runCourse(),

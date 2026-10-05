@@ -232,6 +232,16 @@ GO PADRES!"**. Moving him stops watching; so does the broadcast ending before th
 human needed, and it doesn't pause the human's routine. Tuning: `HOME_ACTIVITIES.watchGame` in
 `config/homeActivities.ts`. No Dog Logic entry.
 
+### Watch TV (`WatchTv.ts`, owner request, 2026-10-05, Phase 5)
+In front of any TV (the same spots as Watch the Game: 0.6–3.6 m away, within about 63° of straight on, nothing in his
+mouth, not napping), **Watch TV** appears. Moke sits facing the screen and whatever that TV is showing right then
+fills the whole window (`TvChannels.drawFull`, drawn sharp at the window's size up to 30 times a second), with the
+show's name and channel at the top and "Press any button to stop watching" (on touch: "Tap to stop watching").
+**Any key or controller button, a stick push, a click or a tap** ends it, and that press does nothing else
+(`InputState.wasAnyPressed`). Pausing ends it too. The shows keep their own clocks, so it's whatever's on; during the
+World Series special it's Watch the Game instead (with its own close-up). No human needed; FSD does it now and then
+(the `tv` routine: watches 8–14 s, then presses a button).
+
 ### Liam's Obstacle Course (`ObstacleCourse.ts`, `CourseReward.ts`; owner request, 2026-10-04, Phase 5)
 A tribute to Liam's feedback. Out through the gym's open slider, behind the patio furniture, is a small loop on the
 lawn (`HOME_REFERENCE.md`). Near it, the HUD says **"Liam's Obstacle Course! Start at the arch."** A START arrow on the

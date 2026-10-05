@@ -90,6 +90,7 @@ src/
     MakeHumanPlay.ts      pester a busy human into throwing a toy; fetch, keep or keep-away (tested with a real ball)
     WatchTheGame.ts       during the special broadcast, sit in front of a TV and watch; celebrate at the home run (no human needed; tested)
     ObstacleCourse.ts     Liam's Obstacle Course's rules (Phase 5): through the arch, hurdles, weave, hill, finish; the loop's geometry (tested; pure)
+    WatchTv.ts            in front of any TV, its show full screen until any button (tested)
     CourseReward.ts       after the course, the human waits inside the open slider with a hamburger patty (tested in the house)
   autopilot/              FSD, Full Self Dog (Phase 5, D27; see docs/PHASE_5.md)
     FullSelfDog.ts        a virtual player: routines → a move direction + button presses each frame, on its own NavGrid (tested; DOM/three-free,
@@ -125,6 +126,7 @@ src/
       Gearbots.ts         GEARBOTS: trucks and jets that transform into robots (80s cartoon style)
       HighwayHero.ts      HIGHWAY HERO: a smart black car with a red scanner and its human partner catch crooks (no fighting)
       ChefShowdown.ts     CHEF SHOWDOWN: a dramatic cooking contest: the ingredient reveal, chopping, sushi, judges, the winner
+      StarVoyagers.ts     STAR VOYAGERS: a starship bridge crew, "Engage!", warp speed (a late-1980s space series homage, original)
       WorldSeries.ts      the special broadcast (easter egg): a walk-off home run in the World Series; `HOME_RUN_AT` is its big moment
       draw.ts             what the shows share: the TvShow interface, scene timelines, lettering, starbursts, the old-TV look
     LivingRoom.ts         the room + hallway (its end opens into the wing in the house): shell, layout, spawn, landmarks (navigation-tested with Rapier)

@@ -179,6 +179,11 @@ export class FullSelfDog {
   }
 
   private readonly tight: (() => FsdNav) | null;
+  /**
+   * Where he's heading this frame: the rest of the route he's following, nearest first (empty while he waits). For
+   * the rainbow path drawn on the floor while FSD drives.
+   */
+  readonly trail: Point2[] = [];
 
   /** Starts fresh (turned on again). */
   reset(): void {
@@ -193,6 +198,7 @@ export class FullSelfDog {
   /** Each rendered frame while playing. The command is reused: read it before the next call. */
   update(dt: number, w: FsdWorld): FsdCommand {
     const cmd = this.cmd;
+    this.trail.length = 0;
     cmd.x = cmd.z = 0;
     cmd.run = cmd.walk = false;
     cmd.presses.clear();
@@ -572,6 +578,7 @@ export class FullSelfDog {
           jumped = true;
         }
         aim(p, m, cmd, Math.min(1, d / 0.5));
+        for (let i = index; i < Math.min(moves.length, index + 8); i++) this.trail.push(moves[i]!);
         cmd.run = !!m.run;
         return 'running';
       },
@@ -584,7 +591,7 @@ export class FullSelfDog {
    * their feet; wait while they pick it up. Done when they've had enough (or never gave in).
    */
   private playFetch(): Step {
-    const route = new Route(this.nav, this.tuning, this.tight);
+    const route = new Route(this.nav, this.tuning, this.tight, this.trail);
     let time = 0;
     let sinceAsk = 0;
     let asks = 0;
@@ -664,7 +671,7 @@ export class FullSelfDog {
 
   /** Keeps away from the human (the Sock Heist chase), a new spot every so often, until `until` (or `timeout`). */
   private keepAway(until: (w: FsdWorld) => boolean, timeout: number): Step {
-    const route = new Route(this.nav, this.tuning, this.tight);
+    const route = new Route(this.nav, this.tuning, this.tight, this.trail);
     let spot: Point2 | null = null;
     let since = 0;
     let left = timeout;
@@ -706,7 +713,7 @@ export class FullSelfDog {
 
   /** Off to wherever `where` says (re-read each frame). Done within `within`; fails if there's no way there. */
   private goTo(where: (w: FsdWorld) => Vec3Like | null, within: number, run = false, status?: string): Step {
-    const route = new Route(this.nav, this.tuning, this.tight);
+    const route = new Route(this.nav, this.tuning, this.tight, this.trail);
     return {
       status,
       update: (dt, w, cmd) => {
@@ -723,7 +730,7 @@ export class FullSelfDog {
    * come up (another prompt can win for a moment). Fails if it's gone.
    */
   private interact(id: string, wait = 3): Step {
-    const route = new Route(this.nav, this.tuning, this.tight);
+    const route = new Route(this.nav, this.tuning, this.tight, this.trail);
     let inRange = 0;
     return {
       update: (dt, w, cmd) => {
@@ -755,7 +762,7 @@ export class FullSelfDog {
    * tries; between them, back to the start of the run-up.
    */
   private hopOn(surface: { x: number; z: number; height: number; halfX?: number; halfZ?: number }): Step {
-    const route = new Route(this.nav, this.tuning, this.tight);
+    const route = new Route(this.nav, this.tuning, this.tight, this.trail);
     let runUp: { from: Point2; jumpAt: number } | null = null;
     let phase: 'approach' | 'runUp' | 'air' = 'approach';
     let phaseTime = 0;
@@ -966,7 +973,13 @@ class Route {
   /** Getting out of a pocket of floor first (see steer). */
   private escape: Point2 | null = null;
 
-  constructor(private readonly nav: FsdNav, private readonly tuning: Tuning, private readonly tight: (() => FsdNav) | null = null) {}
+  constructor(
+    private readonly nav: FsdNav,
+    private readonly tuning: Tuning,
+    private readonly tight: (() => FsdNav) | null = null,
+    /** Filled with the rest of the route each time he steers (FullSelfDog.trail). */
+    private readonly trail: Point2[] | null = null,
+  ) {}
 
   /** Somewhere new: plan afresh next time (and forget being stuck). */
   replan(): void {
@@ -1020,6 +1033,11 @@ class Route {
     // gives up as usual).
     const atEnd = !this.escape && this.index >= this.path.length - 1 && flat(p, waypoint) < this.tuning.waypointReach;
     aim(p, atEnd ? to : waypoint, cmd, 1);
+    if (this.trail) {
+      this.trail.length = 0;
+      for (let i = Math.min(this.index, this.path.length); i < this.path.length; i++) this.trail.push(this.path[i]!);
+      if (!this.escape && flat(this.path[this.path.length - 1] ?? p, to) > 0.05) this.trail.push({ x: to.x, z: to.z });
+    }
     cmd.run = run || remaining > this.tuning.runBeyond;
     cmd.walk = !cmd.run && remaining < this.tuning.walkWithin;
 

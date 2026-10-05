@@ -43,6 +43,12 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-05, owner request): **FSD's rainbow path.** While FSD drives, a glowing rainbow ribbon on the floor
+shows where Moke is about to run, like a self-driving car's on-screen path: from his paws along the rest of his route
+(up to 7 m), corners rounded off, rainbow colours flowing forward with chevrons pulsing the way he's going, soft
+edges, fading in at his feet and out at the far end, and fading away while he waits (`autopilot/FsdPathView.ts`, a
+small shader; `FullSelfDog.trail`; tuning `FSD_PATH`). Tests for the ribbon and the trail; checked in a screenshot.
+
 Claude Code (2026-10-05, owner request: "FSD doesn't complete all the tasks"): **FSD verified and fixed in the real
 game.**
 - **Fetch** now really plays: it keeps asking (a bark or a trick every few seconds) until the human gives in, then

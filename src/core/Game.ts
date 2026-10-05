@@ -23,6 +23,7 @@ import { DoorDelivery } from '../activities/DoorDelivery';
 import { DinnerBeg } from '../activities/DinnerBeg';
 import { WatchTheGame } from '../activities/WatchTheGame';
 import { WatchTv } from '../activities/WatchTv';
+import { FsdPathView } from '../autopilot/FsdPathView';
 import { FullSelfDog, type FsdCommand, type FsdPress, type FsdWorld } from '../autopilot/FullSelfDog';
 import type { Action } from '../config/input';
 import { MISCHIEF_TABLES, PILLOW_SOFAS } from '../config/mischief';
@@ -195,6 +196,8 @@ export class Game {
   /** FSD, Full Self Dog (Phase 5): the autopilot, whether it's driving, and this frame's command. */
   private fsd: FullSelfDog | null = null;
   private fsdOn = false;
+  /** The rainbow path on the floor ahead of Moke while FSD drives. */
+  private readonly fsdPath = new FsdPathView();
   private fsdCmd: FsdCommand | null = null;
   private fsdWorld: FsdWorld | null = null;
   /** The TV close-up while Moke watches the game: how far in (0..1), the screen, and scratch for the shot. */
@@ -380,6 +383,7 @@ export class Game {
     this.dinnerTreat.dispose();
     this.courseReward?.resetAll();
     this.pattyTreat.dispose();
+    this.fsdPath.dispose();
     this.room.tv.dispose();
     this.gfx.dispose();
   }
@@ -938,6 +942,9 @@ export class Game {
     this.drawTv(dt);
     const chewing = this.updateChewing(playing);
     this.moke?.update(dt, alpha);
+    // FSD's way ahead, in rainbow on the floor (only while it drives and he's on his way somewhere).
+    const driving = playing && this.fsdOn && this.fsd && this.moke;
+    this.fsdPath.update(playing ? dt : 0, driving ? this.moke!.controller.position : null, driving ? this.fsd!.trail : null);
     this.afterChewing(chewing, playing ? dt : 0);
     this.bathroom.updateMouthLink();
     this.conure.update(this.state === 'playing' ? dt : 0, this.moke?.controller.position ?? null);
@@ -1134,6 +1141,7 @@ export class Game {
     tightNav.region(0, 0);
     nav.region(0, 0);
     this.fsd = new FullSelfDog(nav, Math.random, FSD, () => tightNav);
+    this.scene.add(this.fsdPath.mesh);
     const game = this;
     const c = moke.controller;
     const surfaces = [

@@ -62,3 +62,18 @@ export const FSD = {
   /** Dragging the toilet paper: where he heads, out in the hall (game coordinates). */
   paperRunTo: { x: 2.4, z: 1.1 },
 } as const;
+
+/** The rainbow path drawn on the floor ahead of Moke while FSD drives (autopilot/FsdPathView.ts). Metres, seconds. */
+export const FSD_PATH = {
+  /** How wide the ribbon is, how far ahead it reaches, and how high over the floor (clear of the rugs). */
+  width: 0.34,
+  maxLength: 7,
+  height: 0.018,
+  /** A sample every this far along it, at most this many; corners rounded off this far each side. */
+  step: 0.08,
+  maxSamples: 110,
+  cornerCut: 0.35,
+  /** How see-through at most (0..1), and how fast it fades in and out (1/s). */
+  opacity: 0.95,
+  fadeRate: 6,
+} as const;

@@ -93,6 +93,7 @@ src/
     WatchTv.ts            in front of any TV, its show full screen until any button (tested)
     CourseReward.ts       after the course, the human waits inside the open slider with a hamburger patty (tested in the house)
   autopilot/              FSD, Full Self Dog (Phase 5, D27; see docs/PHASE_5.md)
+    FsdPathView.ts        the rainbow path on the floor ahead of Moke while FSD drives (a ribbon mesh and a small shader; tested)
     FullSelfDog.ts        a virtual player: routines → a move direction + button presses each frame, on its own NavGrid (tested; DOM/three-free,
                           and driving the real Moke through the real house with Rapier)
   heist/                  Sock Heist (Phase 3)

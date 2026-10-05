@@ -97,6 +97,11 @@ describe('FSD, Full Self Dog (the autopilot)', () => {
     w.interactables.push(target('door:bark', 4, 3));
     // As in the game: the bark at the door stops the ringing.
     w.onPress = (press, current) => { if (press === 'interact' && current === 'door:bark') w.doorRinging = false; };
+    // On his way: the trail (the rainbow path) leads round the wall to the door.
+    w.step(0.1, fsd);
+    expect(fsd.trail.length).toBeGreaterThan(0);
+    const end = fsd.trail[fsd.trail.length - 1]!;
+    expect(Math.hypot(end.x - 4, end.z - 3)).toBeLessThan(0.3);
     const presses = w.step(12, fsd);
     expect(fsd.stats.started.get('door')).toBe(1);
     expect(presses).toContain('interact');

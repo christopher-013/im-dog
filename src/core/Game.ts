@@ -304,7 +304,11 @@ export class Game {
       if (this.state === 'playing' && !this.input.isPointerLocked) void this.input.requestPointerLock();
     });
     this.gfx.onContextLost = () => this.ui.showToast('Graphics hiccup. Trying to recover…', 6000);
-    this.gfx.onContextRestored = () => this.ui.showToast('Back!', 2000);
+    this.gfx.onContextRestored = () => {
+      // The prefiltered environment was only ever on the GPU: without it the whole house comes back darker.
+      applySoftEnvironment(this.gfx.renderer, this.scene);
+      this.ui.showToast('Back!', 2000);
+    };
 
     // Phones stop web audio by themselves (a call, the lock screen, switching apps), and only a user gesture may
     // start it again: every tap, click or key wakes it. (Pointer-down counts for a mouse, pointer-up for a finger.)

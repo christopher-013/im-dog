@@ -21,8 +21,9 @@ what's carried forward: `docs/PHASE_4.md`.
 Liam's Obstacle Course. Scope and status: `docs/PHASE_5.md`.
 
 ## Current Milestone
-**5.1 FSD, Full Self Dog** and **5.2 the backyard and Liam's Obstacle Course: built, waiting for the owner to try
-them** (`docs/PHASE_5.md`). Phase 4 is closed.
+**5.1 FSD, Full Self Dog**, **5.2 the backyard and Liam's Obstacle Course** and **5.3 Watch TV full screen (with
+STAR VOYAGERS)**: built and published to the live site, waiting for the owner's verdict (`docs/PHASE_5.md`). Phase 4
+is closed.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
@@ -43,7 +44,17 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code (2026-10-05, owner request): **The Engage FSD button moved to the bottom right.** On desktop it sits in
+Claude Code (2026-10-05, owner request): **an independent engineering audit** (performance, security/privacy,
+reliability, usability, mobile), in the manner of Codex's Phase 4 audit (`6dd0e0b`). It made two small fixes:
+- **WebGL context loss left the house about 20% darker.** The soft environment lighting is rendered once on the GPU,
+  and a lost context loses it. It's now rebuilt when the context comes back (`Game` → `onContextRestored`,
+  `applySoftEnvironment` disposes the old one).
+- **The service worker no longer precaches the About photo (1.1 MB) or the link-preview image**
+  (`NOT_PRECACHED` in `vite.config.ts`, `docs/MOBILE.md`). That's about 1.2 MB less for every first visit to
+  download in the background. Both still load when online.
+Measurements, what was run and the recommendations are under "Engineering audit (2026-10-05)" in Verification Status.
+
+Before that, Claude Code (2026-10-05, owner request): **The Engage FSD button moved to the bottom right.** On desktop it sits in
 the lower-right corner. On touch it sits just above the paw button, and when the paw menu opens (`TouchInput.setMenu`
 sets `data-paw-open` on `<html>`), it slides up above the menu's arc so it is never covered. All of this is in CSS in
 `src/styles/main.css`. It was checked by headless screenshots at desktop size, phone landscape (844×390) and phone
@@ -1185,6 +1196,53 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+### Engineering audit (2026-10-05, Claude Code)
+Independent review of the whole codebase at `ada4b9b` (branch `claude/milestones-5-9-qagq4b` = `main`). Node 22.22.2,
+npm 10.9.7; three 0.186.0, Rapier compat 0.20.0, Vite 8.3.0, Vitest 5.0.1, TypeScript 7.0.2. Run in a cloud container:
+headless Chromium with SwiftShader (software WebGL), so **GPU frame rates were not measured and no physical phone
+was used.**
+- **Baseline before any change:** typecheck pass; 79 files / 571 tests pass; build pass; `npm audit` 0
+  vulnerabilities; no linter configured. Production preview console: no errors and no failed requests (only
+  SwiftShader's `KHR_parallel_shader_compile` warning, and the documented missing-`moke.glb` notice in dev).
+  `verify-dist` passed, but **this clone has no private reference files, so its photo comparison was empty here**
+  (its path check still ran); it is only meaningful on the owner's machine.
+- **Game logic CPU** (8-minute FSD run, 28,800 frames at 1/60 s, rendering off): about 0.5 ms a frame on average.
+  FSD, physics, human, camera and Moke each average 0.03–0.11 ms. FSD started and finished every routine it tried
+  (Sock Heist, fetch, the ballgame, naps, toys, tables, Malibu, pillows), with 0 failures.
+- **No leaks over 8 minutes:** geometries 229, textures 24, shader programs 25, DOM nodes and scene objects all flat;
+  JS heap after GC 82.6 → 85.4 MB.
+- **TV canvases:** about 1.4 ms on the frames where they redraw (95th percentile 4.4 ms), measured with real
+  rendering. The 0.1–10 s "spikes" seen with rendering switched off were Chrome flushing a backlog of canvas drawing
+  that the texture upload normally flushes every frame. They don't happen in play.
+- **Rendering load:** 148–258 draw calls (shadow pass included) and 199–345k triangles, depending on the room; family
+  and dining rooms are the heaviest. Of about 335k triangles in the scene, **the procedural Moke stand-in is 109k**
+  (fur clumps on finely divided spheres, plus their outline copies), against a 40k hard cap for the final
+  `moke.glb` (`docs/MOKE_3D_SPEC.md`). One shadow-casting light (2048 map on HIGH), 107 shadow casters.
+- **Real input, desktop and emulated phone (844×390, touch):** walk, jump, bark, FSD on (G / tap) and taking over
+  by moving, pause (the world freezes) and resume, the paw menu opening with Engage FSD not covered, the stick.
+  Console clean.
+- **Context loss** (`WEBGL_lose_context`): the game recovered but came back darker (average colour 196 → 159); after
+  the fix it matches exactly.
+- **Security/privacy:** no `innerHTML`/`eval` anywhere; the feedback Worker checks Origin, size, fields and rate,
+  keeps personal data out of the public Issue and neutralizes @mentions; no secrets in the repo or Wrangler
+  configs; the private-photo guards are unchanged.
+- **After the fixes:** typecheck, 571 tests, build pass; the service worker installs with `?sw=on`, precaches 21
+  files (not the two photos), controls the page on reload, the About photo loads, the game plays, console clean.
+
+**Recommendations (not done; each needs the owner's say):**
+1. **Phones: a lighter Moke stand-in on LOW/MEDIUM quality** (fewer fur subdivisions). It's the biggest single
+   rendering cost, but it changes his silhouette slightly, so it's a look decision. The real fix is the final
+   `moke.glb` at its 15–30k budget.
+2. **Security headers for www.im-dog.com** (a `public/_headers` file for Workers static assets:
+   `X-Content-Type-Options: nosniff`, `Referrer-Policy`, maybe `frame-ancestors`). It's a live-site change, so it
+   needs testing on the deploy.
+3. **Measure on a real phone** (the debug panel, `?debug`): frame time in the family room, during the ballgame
+   close-up and in the backyard. Nothing here replaces that.
+4. **`src/core/Game.ts` (1,479 lines, ~80 fields) is the one place that will get harder as the game grows.**
+   Every activity is wired into it by hand, and the objective chain, `stayPut` list and per-frame update order live
+   there. Before the next big batch of activities, consider moving the per-frame activity updates into a small list
+   the activities register with. That's a refactor, not a bug fix, so it was left alone.
+
 Owner request, 2026-09-26 (uncommitted): one floor, Moke's bowls, and a pink bed by the fire.
 - The starting living room and the hallway now use the grey plank floor of the rest of the house.
 - His bowls (family room, by the hearth) hold kibble and water (`world/DogBowls.ts`). At a full bowl: **Eat** (a

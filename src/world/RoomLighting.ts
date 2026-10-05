@@ -94,8 +94,10 @@ export function fitShadowCamera(sun: DirectionalLight, area: ShadowArea, margin 
 /**
  * A soft, neutral image-based environment (three's RoomEnvironment, prefiltered once at startup).
  * It gives wood, brass and the TV screen gentle reflections and fills in the flat hemisphere light.
+ * Lives on the GPU only, so a lost WebGL context loses it: call again when the context is restored.
  */
 export function applySoftEnvironment(renderer: WebGLRenderer, scene: Scene): void {
+  scene.environment?.dispose();
   const pmrem = new PMREMGenerator(renderer);
   const room = new RoomEnvironment();
   scene.environment = pmrem.fromScene(room, 0.04).texture;

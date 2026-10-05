@@ -31,8 +31,15 @@ function listFiles(dir: string, prefix = ''): string[] {
 }
 
 /**
+ * Files the game never needs to play, left out of the precache so a first visit doesn't download them in the
+ * background: the About photo (1.1 MB, fetched when the About screen opens) and the link-preview image for social
+ * sites. Online they load as usual.
+ */
+const NOT_PRECACHED = new Set(['moke-about.png', 'og-image.jpg']);
+
+/**
  * Writes dist/sw.js (from scripts/sw-template.js) once the whole build, public/ files included, is on disk:
- * it precaches every file, under a cache name hashed from their contents. See docs/MOBILE.md.
+ * it precaches every file (but NOT_PRECACHED), under a cache name hashed from their contents. See docs/MOBILE.md.
  */
 function serviceWorker(): Plugin {
   let outDir = path.join(projectRoot, 'dist');
@@ -48,7 +55,7 @@ function serviceWorker(): Plugin {
         .sort();
       const hash = createHash('sha256');
       for (const file of files) hash.update(file).update(readFileSync(path.join(outDir, file)));
-      const precache = ['./', ...files.filter((file) => file !== 'index.html')];
+      const precache = ['./', ...files.filter((file) => file !== 'index.html' && !NOT_PRECACHED.has(file))];
       const source = readFileSync(path.join(projectRoot, 'scripts', 'sw-template.js'), 'utf8')
         .replace('__VERSION__', hash.digest('hex').slice(0, 12))
         .replace('__PRECACHE__', JSON.stringify(precache));

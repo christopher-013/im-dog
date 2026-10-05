@@ -146,6 +146,9 @@ on-screen keyboard open (typing feedback shrinks the window; the form then scrol
   - It's generated at build time by the `im-dog:service-worker` plugin in `vite.config.ts` from
     `scripts/sw-template.js`.
   - It precaches every file of the build, so repeat visits are fast and the game plays offline after one visit.
+  - Except two files the game never needs to play (`NOT_PRECACHED` in `vite.config.ts`): the About photo
+    (`moke-about.png`, 1.1 MB) and the link-preview image (`og-image.jpg`). Online they load as usual; offline the
+    About screen shows no photo.
   - The cache name is a hash of the build's files. A new deploy gets a new cache, and old ones are deleted, with no
     manual versioning.
   - Pages are network-first (updates show up when online); built files are cache-first (their names are

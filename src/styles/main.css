@@ -1762,7 +1762,7 @@ html[data-input='touch'] .fsd {
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  min-width: 196px;
+  min-width: 204px;
   padding: 11px 20px 12px;
   border: 2px solid rgba(255, 255, 255, 0.6);
   border-radius: 20px;
@@ -1832,7 +1832,7 @@ html[data-input='touch'] .fsd {
 /* Phones and small windows: still big, a little less so. */
 @media (max-width: 600px), (max-height: 460px) {
   .fsd-button {
-    min-width: 152px;
+    min-width: 158px;
     padding: 8px 14px 9px;
   }
   .fsd-mark {

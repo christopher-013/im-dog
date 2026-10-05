@@ -34,7 +34,7 @@ to back out through the door and down the hallway; he lets go after enough dista
 **Watch TV (Phase 5):** in front of any TV, interact (E, A, the paw) to watch its show full screen; any key or button,
 a click or a tap stops watching.
 
-**FSD, Full Self Dog (Phase 5):** the translucent **Engage FSD** button (it reads **FSD Engaged** while it drives) at the top right (on touch, just left of the II
+**FSD, Full Self Dog (Phase 5):** the translucent **Engage FSD** button (it reads **FSD Engaged!** while it drives) at the top right (on touch, just left of the II
 button), or G on a keyboard, hands Moke to the autopilot: he goes round the house through his activities at random
 (the toys, fetch, the sock heist, begging, the door, naps, the coffee table, the pillows, the toilet paper, Malibu),
 and when the Padres game is on he sits and watches it while the camera zooms in on the screen. A line under the

@@ -270,8 +270,8 @@ export class UIManager {
   setFsd(on: boolean): void {
     const button = this.el('btn-fsd');
     if (button.getAttribute('aria-pressed') !== String(on)) button.setAttribute('aria-pressed', String(on));
-    // "Engage FSD" to switch it on; "FSD Engaged" while it drives.
-    this.el('fsd-mark').textContent = on ? 'FSD Engaged' : 'Engage FSD';
+    // "Engage FSD" to switch it on; "FSD Engaged!" while it drives.
+    this.el('fsd-mark').textContent = on ? 'FSD Engaged!' : 'Engage FSD';
     if (!on) this.setFsdStatus('');
   }
 

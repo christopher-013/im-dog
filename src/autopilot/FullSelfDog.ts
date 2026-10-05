@@ -442,10 +442,12 @@ export class FullSelfDog {
         id: 'tv', status: 'Off to watch some TV', weight: 1,
         available: (w) => free(w) && !w.ballgameOn && w.screens.length > 0 && w.interactables.some((t) => t.id === 'tv:show'),
         plan: (w) => {
-          const spot = this.watchSpot(w);
+          // Close enough for Watch TV (it's only offered close up, stopped and facing the screen).
+          const spot = this.watchSpot(w, this.tuning.tvWithin);
           if (!spot) return [];
+          const screen = this.nearestScreen(w, spot);
           // Any button stops watching: he presses one when he's had enough.
-          return [...emptyMouth(w), ...offFurniture(w), this.go(spot, 0.3), this.waitUntil((x) => enabled(x, 'tv:show'), 2),
+          return [...emptyMouth(w), ...offFurniture(w), this.go(spot, 0.3), this.face(screen), this.waitUntil((x) => enabled(x, 'tv:show'), 2.5),
             this.interact('tv:show'), this.wait(this.between(this.tuning.tvFor), 'Watching TV…'), this.press('interact'), this.wait(0.5)];
         },
       },
@@ -545,6 +547,28 @@ export class FullSelfDog {
         return 'running';
       },
     };
+  }
+
+  /** Turns on the spot to face `at` (a little walk toward it), then stands still. */
+  private face(at: Point2): Step {
+    let time = 0;
+    return {
+      update: (dt, w, cmd) => {
+        time += dt;
+        const p = w.moke.position;
+        const want = Math.atan2(at.x - p.x, at.z - p.z);
+        const off = Math.abs(Math.atan2(Math.sin(want - w.moke.heading), Math.cos(want - w.moke.heading)));
+        if (off < 0.2 || time > 1.5) return 'done';
+        aim(p, at, cmd, 0.12);
+        cmd.walk = true;
+        return 'running';
+      },
+    };
+  }
+
+  /** The TV nearest `p`. */
+  private nearestScreen(w: FsdWorld, p: Point2): FsdScreen {
+    return w.screens.reduce((best, s) => (flat(p, s) < flat(p, best) ? s : best), w.screens[0]!);
   }
 
   /** Keeps away from the human (the Sock Heist chase), a new spot every so often, until `until` (or `timeout`). */
@@ -750,19 +774,20 @@ export class FullSelfDog {
    * nearer or further), that he can get to from here; the nearest TV that has one. Remembered per TV (the house
    * doesn't move), so the search runs once.
    */
-  private watchSpot(w: FsdWorld): Point2 | null {
+  private watchSpot(w: FsdWorld, maxDistance = Infinity): Point2 | null {
     const screens = [...w.screens].sort((a, b) => flat(w.moke.position, a) - flat(w.moke.position, b));
     for (const s of screens) {
-      if (!this.watchSpots.has(s.id)) this.watchSpots.set(s.id, this.findWatchSpot(w, s));
-      const spot = this.watchSpots.get(s.id);
+      const key = `${s.id}@${maxDistance}`;
+      if (!this.watchSpots.has(key)) this.watchSpots.set(key, this.findWatchSpot(w, s, maxDistance));
+      const spot = this.watchSpots.get(key);
       if (spot) return spot;
     }
     return null;
   }
 
-  private findWatchSpot(w: FsdWorld, s: FsdScreen): Point2 | null {
+  private findWatchSpot(w: FsdWorld, s: FsdScreen, maxDistance: number): Point2 | null {
     const base = this.tuning.watchDistance;
-    for (const d of [base, base + 0.5, base - 0.4, base + 1]) {
+    for (const d of [base, base + 0.5, base - 0.4, base + 1].filter((x) => x <= maxDistance)) {
       for (const a of [0, 0.35, -0.35, 0.7, -0.7]) {
         const q = { x: s.x + Math.sin(s.facing + a) * d, z: s.z + Math.cos(s.facing + a) * d };
         if (!this.nav.isWalkable(q.x, q.z)) continue;

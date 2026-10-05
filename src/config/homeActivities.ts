@@ -47,6 +47,20 @@ export const HOME_ACTIVITIES = {
     cooldown: 0,
     cheer: 'HOME RUN! GO PADRES!',
   },
+  /**
+   * Watch TV (WatchTv, any show full screen): only when he's stopped, close, in front and facing it (owner,
+   * 2026-10-05: it was offered too far round a TV). Metres, radians, m/s.
+   */
+  watchTv: {
+    near: 0.6,
+    reach: 2.1,
+    /** In front: within this of straight out from the screen. */
+    halfAngle: 0.75,
+    /** Facing it: his heading within this of the way to the screen. */
+    facing: 0.6,
+    /** Stopped: slower than this. */
+    stillSpeed: 0.12,
+  },
   /** Begging at the dinner table (DinnerBeg): the human sat eating at the dining table, Moke beside their chair. */
   dinner: {
     /** Moke's feet within this of their seat (m), on the floor (feet this low), and no further back than this (m). */

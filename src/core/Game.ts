@@ -987,7 +987,7 @@ export class Game {
     const watching = this.watchGame?.watchingScreen ?? null;
     // Watching the ballgame: moving off stops it; otherwise he stays put, turning to face the screen.
     if (watching && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.watchGame?.stop();
-    this.watchTv?.update({ position: c.position, carrying: this.toiletPaper?.holdingPaper ? 'paper' : this.pickup?.carried?.id ?? null, napping: this.rest.lying });
+    this.watchTv?.update({ position: c.position, heading: c.heading, speed: c.actualSpeed, carrying: this.toiletPaper?.holdingPaper ? 'paper' : this.pickup?.carried?.id ?? null, napping: this.rest.lying });
     const tv = this.watchGame?.watchingScreen ?? this.watchTv?.watching ?? null;
     if (tv && !glideTarget && !paperTarget) {
       c.glideTo(step, c.position, Math.atan2(tv.x - c.position.x, tv.z - c.position.z), 0, HOME_ACTIVITIES.watchGame.turnRate);

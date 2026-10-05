@@ -233,10 +233,12 @@ human needed, and it doesn't pause the human's routine. Tuning: `HOME_ACTIVITIES
 `config/homeActivities.ts`. No Dog Logic entry.
 
 ### Watch TV (`WatchTv.ts`, owner request, 2026-10-05, Phase 5)
-In front of any TV (the same spots as Watch the Game: 0.6–3.6 m away, within about 63° of straight on, nothing in his
-mouth, not napping), **Watch TV** appears. Moke sits facing the screen and whatever that TV is showing right then
-fills the whole window (`TvChannels.drawFull`, drawn sharp at the window's size up to 30 times a second), with the
-show's name and channel at the top and "Press any button to stop watching" (on touch: "Tap to stop watching").
+When Moke is **stopped, close in front of a TV and facing it** (0.6–2.1 m away, within about 43° of straight on, his
+nose within about 34° of the screen, nothing in his mouth, not napping: `HOME_ACTIVITIES.watchTv`; owner, 2026-10-05,
+it used to show from too far round), **Watch TV** appears. Moke sits facing the screen and whatever that TV is showing
+right then fills the window inside a TV set: a dark bezel with its power light on a wooden stand against the wall,
+with Moke's fluffy head and ears from behind at the bottom, watching (`TvChannels.drawFull`, drawn sharp at the
+window's size up to 30 times a second). The show's name and channel are at the top and "Press any button to stop watching" (on touch: "Tap to stop watching").
 **Any key or controller button, a stick push, a click or a tap** ends it, and that press does nothing else
 (`InputState.wasAnyPressed`). Pausing ends it too. The shows keep their own clocks, so it's whatever's on; during the
 World Series special it's Watch the Game instead (with its own close-up). No human needed; FSD does it now and then

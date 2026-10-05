@@ -43,6 +43,13 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-05, owner request): **Watch TV, closer and framed.** "Watch TV" now only appears when Moke is
+stopped, close (2.1 m at most), in front of a TV and facing it (`HOME_ACTIVITIES.watchTv`); FSD walks up to 1.8 m,
+turns to face the screen and stands still first. The full-screen view now shows the picture inside a TV set (bezel,
+power light, a wooden stand, the wall), with Moke's head and ears from behind at the bottom; the "press any button"
+hint moved to the bottom-left corner. Tests updated (moving, facing away, too far, off to the side); checked in the
+game and in a screenshot.
+
 Claude Code (2026-10-05, owner request): the FSD button now says **Engage FSD** (and **FSD Engaged!** while it drives), and it's bigger: 196×65 px on a desktop, 152×54 px on a phone (it was about 80×45), the same width on and off so it doesn't jump. Checked in screenshots at 960×540 and 390×844.
 
 Claude Code (2026-10-05, owner request, Phase 5.3): **Watch TV, and STAR VOYAGERS.** In front of any TV, "Watch TV"

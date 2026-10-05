@@ -1883,6 +1883,9 @@ html[data-input='touch'] .fsd {
 }
 
 .tv-hint {
+  /* Bottom left, clear of Moke watching in the middle. */
+  left: calc(14px + env(safe-area-inset-left));
+  transform: none;
   bottom: calc(14px + env(safe-area-inset-bottom));
   font-size: 0.85rem;
   animation: tv-hint-fade 4s ease forwards;

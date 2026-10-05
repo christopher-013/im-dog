@@ -37,6 +37,8 @@ export const FSD = {
   begWait: 9,
   /** Watching a show full screen (Watch TV), how long (s) before he presses a button to stop. */
   tvFor: [8, 14] as const,
+  /** …from a spot this close to the screen (Watch TV is only offered close up, m). */
+  tvWithin: 1.8,
   /** Watching the ballgame: how far in front of the TV he sits (m). */
   watchDistance: 1.6,
   /** Running off with the sock: how far from the human he heads (m), and how often he picks a new spot (s). */

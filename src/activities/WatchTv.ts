@@ -28,7 +28,7 @@ export class WatchTv {
   constructor(private readonly deps: WatchTvDeps) {
     const tv = this;
     this.interactable = {
-      id: 'tv:show', type: 'REST', label: 'Watch TV', interactionDistance: HOME_ACTIVITIES.watchGame.reach,
+      id: 'tv:show', type: 'REST', label: 'Watch TV', interactionDistance: HOME_ACTIVITIES.watchTv.reach + 0.3,
       priority: 25, requiresFacing: false, requiresClearPath: false,
       get position() { return tv.nearby ?? deps.screens[0]!; },
       get enabled() { return tv.nearby !== null && tv.watching === null && !deps.specialOn(); },
@@ -36,9 +36,17 @@ export class WatchTv {
     };
   }
 
-  /** Each fixed step: is he in front of a TV (on the floor, nothing in his mouth, not napping)? */
-  update(moke: { readonly position: Vec3Like; readonly carrying: string | null; readonly napping: boolean }): void {
-    this.nearby = !moke.carrying && !moke.napping ? screenInFront(this.deps.screens, moke.position) : null;
+  /**
+   * Each fixed step: is he stopped, close in front of a TV and facing it (on the floor, nothing in his mouth, not
+   * napping)? `heading`: the way he faces (radians, 0 = +z).
+   */
+  update(moke: { readonly position: Vec3Like; readonly heading: number; readonly speed: number; readonly carrying: string | null; readonly napping: boolean }): void {
+    const t = HOME_ACTIVITIES.watchTv;
+    const p = moke.position;
+    const screen = !moke.carrying && !moke.napping && moke.speed <= t.stillSpeed ? screenInFront(this.deps.screens, p, t) : null;
+    const toward = screen ? Math.atan2(screen.x - p.x, screen.z - p.z) : 0;
+    const off = Math.abs(Math.atan2(Math.sin(toward - moke.heading), Math.cos(toward - moke.heading)));
+    this.nearby = screen && off <= t.facing ? screen : null;
     // The special cutting in: off to Watch the Game instead.
     if (this.watching && this.deps.specialOn()) this.stop();
   }

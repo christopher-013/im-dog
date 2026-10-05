@@ -100,7 +100,7 @@ describe('Home', () => {
     home.object.traverse((o) => {
       if ((o as { isMesh?: boolean }).isMesh) meshes++;
     });
-    expect(meshes).toBeLessThan(160);
+    expect(meshes).toBeLessThan(185);
   });
 
   it('knows which room a point is in', () => {
@@ -198,9 +198,9 @@ describe('Home', () => {
     const glass = await setup({ x: 14.0, z: 2.3 });
     expect(glass.walkTo(14.0, -1.5, 4)).toBe(false);
     expect(glass.moke.position.z).toBeGreaterThan(0.5);
-    // The glass doors to the backyard: he can look, but not go out.
-    const yard = await setup({ x: 15.8, z: -1.9 });
-    expect(yard.walkTo(18.5, -1.9, 4)).toBe(false);
+    // The glass doors to the backyard: not through the closed panes (Phase 5: the open slider is the way out).
+    const yard = await setup({ x: 15.8, z: -3.0 });
+    expect(yard.walkTo(18.5, -3.0, 4)).toBe(false);
     expect(yard.moke.position.x).toBeLessThan(16.9);
     const fire = await setup({ x: 14.55, z: 3.6 });
     fire.jumpToward(14.55, 5.3, 0.9);

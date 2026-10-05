@@ -365,3 +365,27 @@ export const discovery: Synth = (ctx, out, t0, pitch) => {
     osc.stop(t + 0.8);
   });
 };
+
+/**
+ * Fireworks (Liam's Obstacle Course done): a bright little fanfare, then pops in the distance, each with a fizzy
+ * crackle as it falls. About three seconds.
+ */
+export const fireworks: Synth = (ctx, out, t0, pitch, noise) => {
+  discovery(ctx, out, t0, pitch, noise);
+  const pops = [0.55, 0.9, 1.2, 1.55, 1.75, 2.15, 2.5];
+  for (const [i, at] of pops.entries()) {
+    const t = t0 + at + Math.random() * 0.08;
+    // The pop: a short thump of low noise.
+    const thump = noiseSource(ctx, noise, t, 0.12);
+    const low = ctx.createBiquadFilter();
+    low.type = 'lowpass';
+    low.frequency.value = (380 + (i % 3) * 120) * pitch;
+    thump.connect(low).connect(envelope(ctx, t, 0.004, 0.9, 0.12)).connect(out);
+    // The crackle: high, sparkly, dying away.
+    const fizz = noiseSource(ctx, noise, t + 0.05, 0.45);
+    const high = ctx.createBiquadFilter();
+    high.type = 'highpass';
+    high.frequency.value = 3200 * pitch;
+    fizz.connect(high).connect(envelope(ctx, t + 0.05, 0.03, 0.22, 0.4)).connect(out);
+  }
+};

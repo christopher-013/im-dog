@@ -27,6 +27,9 @@ import { TreatHunt } from './TreatHunt';
 import { DoorDelivery } from './DoorDelivery';
 import { KitchenBeg } from './KitchenBeg';
 import { DinnerBeg } from './DinnerBeg';
+import { CourseReward } from './CourseReward';
+import { COURSE_REWARD } from '../config/obstacleCourse';
+import { roomAt } from '../world/home/layout';
 import { HUMAN_ACTIVITIES } from '../config/activities';
 import { placeById } from '../world/home/places';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
@@ -387,6 +390,72 @@ describe('Kitchen begging (real island and household human)', () => {
     expect(w.beg.requestBeg()).toBe(false);
     expect(w.counts()).toEqual({ begs: 0, fed: 0 });
   });
+});
+
+describe("The obstacle course's reward (real house and household human)", () => {
+  async function rewardWorld() {
+    const w = await world(61);
+    let fed = 0;
+    const treat = new Treat('patty-test', 4, 'patty');
+    const reward = new CourseReward({ routine: w.routine, hand: w.human.visual.hands.right, treat, scene: home.object,
+      inside: (p) => roomAt(p.x, p.z).id !== 'backyard', openFloor: (x, z) => nav.isWalkable(x, z), onFed: () => fed++ });
+    const director = new DogActivityDirector([reward]);
+    const tick = (seconds: number, until?: () => boolean) => {
+      for (let i = 0; i < seconds / DT && !until?.(); i++) w.step(director);
+    };
+    // Moke is out on the lawn, by the course.
+    Object.assign(w.moke, { x: 24, y: 0, z: -0.6 });
+    return { ...w, reward, treat, director, tick, fed: () => fed };
+  }
+
+  it('they go and wait by the open slider with a hamburger patty, and give it to him when he comes back in', async () => {
+    const w = await rewardWorld();
+    w.tick(1);
+    expect(w.reward.state).toBe('AVAILABLE');
+    w.reward.earn();
+    w.tick(30, () => w.treat.state === 'held');
+    expect(w.treat.state).toBe('held');
+    const at = w.human.controller.position;
+    expect(Math.hypot(at.x - COURSE_REWARD.waitAt.x, at.z - COURSE_REWARD.waitAt.z)).toBeLessThan(0.45);
+    expect(w.said).toContain(COURSE_REWARD.lines.waiting);
+    // Still outside: they wait, holding it out.
+    w.tick(5);
+    expect(w.fed()).toBe(0);
+    expect(w.reward.objective).toMatch(/Head back inside/);
+    // In he comes.
+    Object.assign(w.moke, { x: at.x - 0.6, y: 0, z: at.z });
+    w.tick(3);
+    expect(w.fed()).toBe(1);
+    expect(w.said).toContain(COURSE_REWARD.lines.give);
+    expect(w.reward.pending).toBe(false);
+    w.tick(10);
+    expect(w.routine.available).toBe(true);
+  }, 60_000);
+
+  it("if he stays out, it goes down on the floor for him: never a soft-lock", async () => {
+    const w = await rewardWorld();
+    w.reward.earn();
+    w.tick(30, () => w.treat.state === 'held');
+    w.tick(COURSE_REWARD.waitTimeout + 1);
+    expect(w.treat.state).toBe('placed');
+    expect(w.routine.available).toBe(true);
+    w.treat.eat();
+    expect(w.fed()).toBe(1);
+    expect(w.reward.pending).toBe(false);
+  }, 60_000);
+
+  it('the Sock Heist calls it off, and the patty waits for later', async () => {
+    const w = await rewardWorld();
+    w.reward.earn();
+    w.tick(30, () => w.treat.state === 'held');
+    w.ctx.heistRunning = true;
+    w.tick(0.2);
+    expect(w.treat.state).toBe('stored');
+    expect(w.reward.pending).toBe(true);
+    w.ctx.heistRunning = false;
+    w.tick(COURSE_REWARD.cooldown + 4 + 30, () => w.treat.state === 'held');
+    expect(w.treat.state).toBe('held');
+  }, 60_000);
 });
 
 describe('Begging at dinner (real dining chair and household human)', () => {

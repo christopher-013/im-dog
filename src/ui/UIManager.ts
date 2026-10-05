@@ -6,6 +6,7 @@ import { MUSIC_CHOICES, MUSIC_VOLUME_RANGE, SENSITIVITY_RANGE, type MusicChoice,
 import { actionGlyph, onboardingRows } from './ControlGlyphs';
 import { FEEDBACK, SITE } from '../config/site';
 import { FeedbackDialog } from './FeedbackDialog';
+import { Fireworks } from './Fireworks';
 
 export type Screen = 'loading' | 'menu' | 'paused' | 'error';
 
@@ -49,6 +50,8 @@ export class UIManager {
   private discoveryTimer: number | undefined;
   private napTimer = 0;
   private completeTimer = 0;
+  private courseTimer = 0;
+  private fireworks: Fireworks | null = null;
   private discoveryShowing: string | null = null;
   private readonly discoveryQueue: { first: boolean; durationMs: number; entry: DogLogicEntry }[] = [];
   private objective: string | null = null;
@@ -509,6 +512,29 @@ export class UIManager {
     card.setAttribute('aria-hidden', 'false');
     window.clearTimeout(this.completeTimer);
     this.completeTimer = window.setTimeout(() => this.hideComplete(), durationMs);
+  }
+
+  /** Liam's Obstacle Course done: fireworks and "Moke is tired!" over the game for `durationMs`, then it fades. */
+  showCourseComplete(detail: string, durationMs: number): void {
+    this.el('course-detail').textContent = detail;
+    const card = this.el('course-card');
+    card.classList.add('is-visible');
+    card.setAttribute('aria-hidden', 'false');
+    this.fireworks ??= new Fireworks(this.el('fireworks') as HTMLCanvasElement);
+    this.fireworks.start(Math.max(1, durationMs / 1000 - 1.5));
+    window.clearTimeout(this.courseTimer);
+    this.courseTimer = window.setTimeout(() => this.hideCourseComplete(), durationMs);
+  }
+
+  hideCourseComplete(): void {
+    window.clearTimeout(this.courseTimer);
+    const card = this.el('course-card');
+    card.classList.remove('is-visible');
+    card.setAttribute('aria-hidden', 'true');
+    // Let the card fade before the last sparks go.
+    window.setTimeout(() => {
+      if (!card.classList.contains('is-visible')) this.fireworks?.stop();
+    }, 600);
   }
 
   hideComplete(): void {

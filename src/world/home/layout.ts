@@ -44,8 +44,11 @@ export const OPENINGS = {
   bedroomHall: { xMin: 11.85, xMax: 12.75, height: 2.1, depth: 0.4 },
   /** The wide cased doorway from the dining room into the home gym (the old sliding doors, taken out). */
   gymDoorway: { zMin: -2.95, zMax: -0.55, height: 2.2 },
-  /** The gym's big sliding glass doors to the backyard, in the east wall: two fixed panes either side of two sliders. */
-  backyardDoors: { zMin: -3.95, zMax: 0.05, height: 2.2 },
+  /**
+   * The gym's big sliding glass doors to the backyard, in the east wall: two fixed panes either side of two sliders.
+   * Since Phase 5 the slider at `openPane` (0 = the north end) stands open, slid in front of its neighbour: the way out.
+   */
+  backyardDoors: { zMin: -3.95, zMax: 0.05, height: 2.2, frame: 0.055, openPane: 2 },
   /** The interior windows over the sectional, into the home gym. */
   interiorWindows: { xMin: 12.3, xMax: 15.8, sill: 1.0, top: 2.15 },
   /** Family room windows over the beige couch (centres along z). */
@@ -54,7 +57,21 @@ export const OPENINGS = {
   diningWindow: { center: 8.85, width: 1.3, sill: 0.95, height: 1.2 },
 } as const;
 
-export type RoomId = 'livingRoom' | 'hallway' | 'bathroom' | 'kitchen' | 'familyRoom' | 'diningRoom' | 'gym';
+/** The way out to the backyard through the open slider (z along the east wall), and its sill. */
+export const BACKYARD_DOORWAY = (() => {
+  const d = OPENINGS.backyardDoors;
+  const pane = (d.zMax - d.zMin - 2 * d.frame) / 4;
+  const zMin = d.zMin + d.frame + d.openPane * pane;
+  return { zMin, zMax: zMin + pane, x: WING.east + WALL / 2 } as const;
+})();
+
+/**
+ * The backyard (Phase 5): the patio and the lawn behind the house, between the hedges and the back fence. Where Moke
+ * can go out there (the hedges, the fence and the house are its edges).
+ */
+export const YARD = { minX: WING.east + WALL, maxX: 29.9, minZ: -5.4, maxZ: 4.4, fenceX: 30 } as const;
+
+export type RoomId = 'livingRoom' | 'hallway' | 'bathroom' | 'kitchen' | 'familyRoom' | 'diningRoom' | 'gym' | 'backyard';
 
 export interface RoomArea {
   readonly id: RoomId;
@@ -74,6 +91,7 @@ export const ROOMS: readonly RoomArea[] = [
   { id: 'gym', name: 'home gym', minX: WING.diningEast + WALL, maxX: WING.east, minZ: WING.north, maxZ: WING.divider - WALL / 4 },
   { id: 'kitchen', name: 'kitchen', minX: WING.west, maxX: WING.kitchenFamily, minZ: WING.divider, maxZ: WING.south },
   { id: 'familyRoom', name: 'family room', minX: WING.kitchenFamily, maxX: WING.east, minZ: WING.divider, maxZ: WING.south },
+  { id: 'backyard', name: 'backyard', minX: YARD.minX, maxX: YARD.maxX, minZ: YARD.minZ, maxZ: YARD.maxZ },
 ];
 
 /** Which room a floor point is in (the nearest one if it's in a doorway or wall). */
@@ -95,6 +113,15 @@ export function roomAt(x: number, z: number): RoomArea {
 
 /** The whole house's footprint, outer faces of the walls (navigation, shadows, escaped props). */
 export const HOME_BOUNDS = { minX: -3.62, maxX: WING.east + WALL, minZ: WING.north - WALL, maxZ: WING.south + WALL + OPENINGS.bedroomHall.depth } as const;
+
+/** Everywhere Moke can go: the house and the backyard (navigation, escaped props). The lighting still fits the house. */
+export const PLAY_BOUNDS = {
+  minX: HOME_BOUNDS.minX,
+  maxX: YARD.maxX + 0.1,
+  // Whole 10 cm steps beyond the house's own edge, so navigation grids keep the same cells indoors.
+  minZ: HOME_BOUNDS.minZ - Math.ceil((HOME_BOUNDS.minZ - (YARD.minZ - 0.1)) / 0.1 - 1e-9) * 0.1,
+  maxZ: Math.max(HOME_BOUNDS.maxZ, YARD.maxZ + 0.1),
+} as const;
 
 /** The home gym (the old sunroom, x 11.02…16.9, z -4.2…0.39): its equipment and the bird. */
 export const GYM = {

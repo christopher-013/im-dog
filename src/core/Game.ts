@@ -28,6 +28,9 @@ import { HOME_ACTIVITIES } from '../config/homeActivities';
 import { SITE, USAGE } from '../config/site';
 import { pinger, UsageCounter } from './UsageCounter';
 import { KitchenBeg } from '../activities/KitchenBeg';
+import { CourseReward } from '../activities/CourseReward';
+import { ObstacleCourse } from '../activities/ObstacleCourse';
+import { COURSE_REWARD, COURSE_RULES, COURSE_TEXT } from '../config/obstacleCourse';
 import { PillowDig } from '../activities/PillowDig';
 import { TableManners } from '../activities/TableManners';
 import { ToiletPaperMischief } from '../activities/ToiletPaperMischief';
@@ -168,6 +171,14 @@ export class Game {
   private readonly kitchenTreat = new Treat('kitchen', 3, 'carrot');
   /** A meatball off the human's dinner plate (begging at the dining table). */
   private readonly dinnerTreat = new Treat('dinner', 2, 'meatball');
+  /** Liam's Obstacle Course (Phase 5): its rules; then a hamburger patty waiting indoors (CourseReward). */
+  private readonly course = new ObstacleCourse({
+    onStart: () => this.audio.play('whoosh'),
+    onObstacle: () => this.audio.play('pickup'),
+    onComplete: (seconds) => this.completeCourse(seconds),
+  });
+  private readonly pattyTreat = new Treat('patty', 4, 'patty');
+  private courseReward: CourseReward | null = null;
   private readonly frontDoor = new FrontDoor();
   private readonly bathroom = new BathroomView();
   /** Malibu, the conure in its cage in the gym: scenery with a life of its own, and Moke's friend to play with. */
@@ -248,7 +259,7 @@ export class Game {
     );
 
     this.scene.background = new Color(RENDER.background);
-    this.scene.add(new RoomLighting(quality, { ...this.room.bounds, height: 2.7 }).object, this.room.object, this.wisps.object, this.household.object, this.bowls.object);
+    this.scene.add(new RoomLighting(quality, { ...this.room.houseBounds, height: 2.7 }).object, this.room.object, this.wisps.object, this.household.object, this.bowls.object);
     this.events.on('DOG_LOGIC_DISCOVERED', ({ id, first }) => {
       this.ui.showDiscovery(first, HEIST.discoveryTime * 1000 - 250, dogLogicEntry(id));
       this.audio.play('discovery');
@@ -361,6 +372,8 @@ export class Game {
     this.conure.dispose();
     this.kitchenTreat.dispose();
     this.dinnerTreat.dispose();
+    this.courseReward?.resetAll();
+    this.pattyTreat.dispose();
     this.room.tv.dispose();
     this.gfx.dispose();
   }
@@ -574,7 +587,19 @@ export class Game {
     });
     this.interactions.register(this.pillowDig.interactable);
     this.interactions.register(this.toiletPaper.interactable);
-    this.director = new DogActivityDirector([this.delivery, this.kitchenBeg, this.dinnerBeg, this.watchGame, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
+    this.scent.register(this.pattyTreat.scent);
+    this.attention.register(this.pattyTreat.attention);
+    this.interactions.register(this.pattyTreat.interactable);
+    this.courseReward = new CourseReward({
+      routine: this.routine, hand: human.visual.hands.right, treat: this.pattyTreat, scene: this.scene,
+      inside: (p) => this.room.roomAt(p.x, p.z).id !== 'backyard',
+      openFloor: (x, z) => nav.isWalkable(x, z),
+      onFed: () => {
+        moke.animation.cancelTrick(); moke.animation.eat(); this.audio.play('crunch');
+        this.showVoiceBubble(COURSE_REWARD.lines.fed);
+      },
+    });
+    this.director = new DogActivityDirector([this.delivery, this.courseReward, this.kitchenBeg, this.dinnerBeg, this.watchGame, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
     this.spawnFsd(moke);
 
     // "Get Pets": close to the human while they're free.
@@ -716,6 +741,19 @@ export class Game {
   private completeHeist(seconds: number): void {
     this.heist?.heist.keepExploring();
     this.ui.showComplete(seconds, HEIST.completeCardTime * 1000);
+  }
+
+  /**
+   * Liam's Obstacle Course done: fireworks and "Moke is tired!" for a few seconds, a happy hop, and back inside the
+   * human waits with a hamburger patty (CourseReward).
+   */
+  private completeCourse(seconds: number): void {
+    this.ui.showCourseComplete(COURSE_TEXT.tiredDetail(seconds), COURSE_RULES.celebrateFor * 1000);
+    this.audio.play('fireworks');
+    const moke = this.moke;
+    if (moke) moke.animation.trick(moke.controller.headroom >= MOKE_ANIMATION.tricks.begHeadroom ? 'celebrate' : 'spin', true);
+    this.showVoiceBubble('Phew! I did Liam\'s course!');
+    this.courseReward?.earn();
   }
 
   /** The squeaky fish in his mouth: he chomps on it the whole time he holds it. Returns the fish while he does. */
@@ -863,10 +901,11 @@ export class Game {
     this.afterChewing(chewing, playing ? dt : 0);
     this.bathroom.updateMouthLink();
     this.conure.update(this.state === 'playing' ? dt : 0, this.moke?.controller.position ?? null);
-    this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.director?.objective ?? this.delivery?.objective ?? this.kitchenBeg?.objective ?? this.dinnerBeg?.objective ?? null);
+    this.heist?.update(dt, alpha, this.camera, this.gfx.canvas, playing, this.course.objective ?? this.director?.objective ?? this.delivery?.objective ?? this.kitchenBeg?.objective ?? this.dinnerBeg?.objective ?? null);
     this.huntTreat.update();
     this.kitchenTreat.update();
     this.dinnerTreat.update();
+    this.pattyTreat.update();
     this.frontDoor.update(playing ? dt : 0);
     this.room.update(playing ? dt : 0);
     this.household.update(dt, { effect: this.routine.effect, place: this.routine.place });
@@ -1076,6 +1115,8 @@ export class Game {
       get doorRinging() { return game.delivery?.ringing ?? false; },
       get ballgameOn() { return game.room.tv.homeRunToCome; },
       get holdingPaper() { return game.toiletPaper?.holdingPaper ?? false; },
+      course: this.course,
+      get rewardWaiting() { return !!game.courseReward?.pending && game.pattyTreat.state === 'held'; },
       interactables: this.interactions.all,
       get current() { return game.interactions.current?.id ?? null; },
       screens: TV_SCREENS,
@@ -1214,6 +1255,7 @@ export class Game {
       heistRunning: heist.heist.running,
     };
     this.barkForActivities = false;
+    this.course.update(step, c, this.room.roomAt(c.position.x, c.position.z).id === 'backyard');
     this.director.update(step, ctx);
 
     // KITCHEN = FOOD?: hanging about the stove while dinner cooks.

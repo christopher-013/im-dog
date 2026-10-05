@@ -14,14 +14,24 @@ himself, going round the house and through his activities at random, until you t
 - **The ballgame:** when the Padres game (the World Series special) is on the TVs, FSD goes and watches it, and while
   Moke sits watching, **the camera zooms in on the screen** to show the game in detail.
 
+- **5.2 (owner's brief, 2026-10-04): the backyard and Liam's Obstacle Course.** "Allow one of the sliding doors open
+  to the backyard which allows Moke to explore the contained backyard area. Behind the patio furniture there is a
+  small circular obstacle course that has a few activities for Moke to run thru which will include areas where Moke
+  has to jump or move left and right or run up and down a hill. Nothing that is too strenuous. When Moke completes the
+  obstacle course, show a fireworks celebration screen that says Moke is tired! And when Moke goes inside the house,
+  the human will be waiting for a good treat (hamburger patty) to give Moke as a reward. The obstacle course will
+  have a sign that says "Liam's Obstacle Course" as a tribute to Liam's feedback about adding this."
+
 ## Not in scope
-More humans, rooms, the outdoors, new mini-games or new activities (FSD only uses what's already in the game); a
-"follow cam" director beyond the TV close-up; an FSD that learns or remembers between sessions.
+More humans or rooms; outdoors beyond this one backyard (no front yard, no walks); the human going outside; new
+mini-games beyond the course; a "follow cam" director beyond the TV close-up; an FSD that learns or remembers between
+sessions.
 
 ## Milestones
 | # | Milestone | Status |
 |---|---|---|
 | 5.1 | FSD, Full Self Dog | **Built** (2026-10-04): see below. |
+| 5.2 | The backyard and Liam's Obstacle Course | **Built** (2026-10-05): see below. |
 
 ## 5.1 FSD: how it works
 - **On and off:** the **FSD** button (top right, left of the II button on touch) or **G** on a keyboard (with the mouse
@@ -71,9 +81,24 @@ More humans, rooms, the outdoors, new mini-games or new activities (FSD only use
 - Screenshots (960×540): the button off and on with its status line, and the close-up of the dining-room TV.
 - **Not verified:** a person playing with FSD in a real browser, on a phone, or for long; how it feels to watch.
 
+## 5.2 The backyard and Liam's Obstacle Course: how it works
+- **Out the door:** the gym's southern slider stands open (slid in front of its fixed pane), and the backyard is part
+  of the one connected space: solid patio and lawn, solid furniture, held in by the hedges, the back fence (moved
+  back to make room) and the house (D28). A soft sky dome and a roof over the wing make it look right from outside.
+- **Liam's Obstacle Course**, on the lawn behind the patio furniture: a small loop with a start/finish arch, the sign
+  "Liam's Obstacle Course", two low hurdles to hop, five weave poles to go in and out of, and a gentle hill to run up
+  and down. The HUD walks him through it; stations count in order; nothing fails. Details: `ACTIVITIES.md`,
+  `HOME_REFERENCE.md`; numbers in `config/obstacleCourse.ts`.
+- **Done:** fireworks over the screen and **"Moke is tired!"** with his time, then the human waits just inside the
+  open slider with a **hamburger patty** and gives it to him when he comes in (`CourseReward`).
+- **FSD** runs the course too, then goes in for the patty.
+
 ## Success criteria
 - Switching FSD on makes Moke go round the house doing things, by himself, for as long as you leave it; moving takes
   over.
 - Over a long run, most routines get done, none gets him stuck, nothing errors.
 - When the ballgame is on, he goes and watches it, and the screen fills the view while he does.
 - Everything still works without FSD (it's off by default).
+- 5.2: Moke can walk out through the open slider, round the backyard but never out of it, and do the course; the
+  hurdles need a hop, the weave needs in-and-out, the hill goes up and down; finishing shows the fireworks card and
+  the human gives him a hamburger patty back inside.

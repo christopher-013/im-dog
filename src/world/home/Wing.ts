@@ -363,7 +363,7 @@ function familyRoom(b: StaticSceneBuilder, m: RoomMaterials): void {
 function gym(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.at([14.1, 0, WING.north - T / 2], 0, () => gardenWindow(b, m, 1.4, 1.2, 0.9, T));
   const bd = OPENINGS.backyardDoors;
-  b.at([WING.east + T / 2, 0, (bd.zMin + bd.zMax) / 2], WEST, () => patioDoors(b, m, bd.zMax - bd.zMin, bd.height, T));
+  b.at([WING.east + T / 2, 0, (bd.zMin + bd.zMax) / 2], WEST, () => patioDoors(b, m, bd.zMax - bd.zMin, bd.height, T, bd.openPane, bd.frame));
   b.at([GYM.bike.x, 0, GYM.bike.z], EAST, () => spinBike(b, m));
   b.at([GYM.weights.x, 0, GYM.weights.z], Math.PI, () => dumbbellRack(b, m));
   b.at([GYM.cage.x, 0, GYM.cage.z], WEST, () => birdCage(b, m));

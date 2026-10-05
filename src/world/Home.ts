@@ -1,6 +1,6 @@
 import { Group, Vector3 } from 'three';
 import type { StaticBox } from '../physics/PhysicsWorld';
-import { HOME_BOUNDS, ROOMS, roomAt, type RoomArea } from './home/layout';
+import { HOME_BOUNDS, PLAY_BOUNDS, ROOMS, roomAt, type RoomArea } from './home/layout';
 import { FIRE, HOME_PLACES, KITCHEN_TREATS, NAP_SPOTS, TREAT_HIDING_SPOTS, type HomePlace, type NapSpot, type Spot } from './home/places';
 import { buildWing } from './home/Wing';
 import { LivingRoom } from './LivingRoom';
@@ -33,8 +33,10 @@ export class Home {
   readonly treatHidingSpots: readonly Spot[] = TREAT_HIDING_SPOTS;
   readonly kitchenTreats = KITCHEN_TREATS;
   readonly fire = FIRE;
-  /** Outer faces of the house's walls. */
-  readonly bounds = HOME_BOUNDS;
+  /** Everywhere Moke can go: the house and, since Phase 5, the backyard. */
+  readonly bounds = PLAY_BOUNDS;
+  /** Outer faces of the house's walls (the lighting and its shadows fit these). */
+  readonly houseBounds = HOME_BOUNDS;
   /** What's on the three TVs (a different show on each). */
   readonly tv: TvChannels;
 

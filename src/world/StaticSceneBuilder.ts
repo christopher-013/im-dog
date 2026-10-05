@@ -102,8 +102,9 @@ export class StaticSceneBuilder {
   }
 
   /** A collider with no mesh of its own, e.g. one simple box for a whole couch. `size` is the full size. */
-  addCollider(center: Vec3Tuple, size: Vec3Tuple, options: { rotationY?: number; thin?: boolean } = {}): void {
-    const world = this.frame.clone().multiply(transform(center, [0, options.rotationY ?? 0, 0]));
+  addCollider(center: Vec3Tuple, size: Vec3Tuple, options: { rotationY?: number; rotation?: Vec3Tuple; thin?: boolean } = {}): void {
+    // `rotation` (Euler, radians) tilts it too: a ramp.
+    const world = this.frame.clone().multiply(transform(center, options.rotation ?? [0, options.rotationY ?? 0, 0]));
     world.decompose(tmpPosition, tmpQuaternion, tmpScale);
     this.pushBox(tmpPosition, [size[0] / 2, size[1] / 2, size[2] / 2], tmpQuaternion, !options.thin);
   }

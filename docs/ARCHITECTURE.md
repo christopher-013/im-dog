@@ -37,6 +37,7 @@ src/
     activities.ts         the human's daily-life activities as data (Phase 4), the routine's timing, reactions to Moke
     dogActivities.ts      Treat Hunt, Perfect Nap, Make Human Play tuning (Phase 4)
     dogLogic.ts           the Dog Logic registry: every equation, its terms and icons (Phase 4)
+    obstacleCourse.ts     Liam's Obstacle Course (Phase 5): the loop, its stations, the HUD lines, the patty reward
     autopilot.ts          FSD, Full Self Dog (Phase 5): route following, getting unstuck, hopping up, how long he does things
   core/
     Game.ts               state machine + frame orchestration
@@ -88,6 +89,8 @@ src/
     PerfectNap.ts         naps judged on sunny / soft / warm / quiet / human near (tested)
     MakeHumanPlay.ts      pester a busy human into throwing a toy; fetch, keep or keep-away (tested with a real ball)
     WatchTheGame.ts       during the special broadcast, sit in front of a TV and watch; celebrate at the home run (no human needed; tested)
+    ObstacleCourse.ts     Liam's Obstacle Course's rules (Phase 5): through the arch, hurdles, weave, hill, finish; the loop's geometry (tested; pure)
+    CourseReward.ts       after the course, the human waits inside the open slider with a hamburger patty (tested in the house)
   autopilot/              FSD, Full Self Dog (Phase 5, D27; see docs/PHASE_5.md)
     FullSelfDog.ts        a virtual player: routines → a move direction + button presses each frame, on its own NavGrid (tested; DOM/three-free,
                           and driving the real Moke through the real house with Rapier)
@@ -111,6 +114,8 @@ src/
       layout.ts           walls, openings, rooms (roomAt), the house's bounds
       places.ts           furniture positions, the human's interaction points, nap spots, treat hiding spots, the kitchen treats, the fire
       Wing.ts             builds the kitchen, dining room, family room (+ the sunroom seen through glass) and their lights
+      gymAndYard.ts       the home gym, the patio doors (one slider open), and the playable backyard: ground, furniture, its edges, sky dome, roof
+      obstacleCourse.ts   Liam's Obstacle Course's scenery and colliders (arch, sign, hurdles, weave poles, hill)
       homeFurniture.ts    the wing's furniture: sectional, fireplace, built-ins, island, stools, range, fridge, trestle table, chairs…
     HouseholdEffects.ts   signs of life: the steaming pot, dinner on the table; the FOOD smell
     tv/                   what's on the three TVs (Home owns it, Game updates it): original shows drawn in code on canvases

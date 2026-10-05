@@ -1264,6 +1264,80 @@ html[data-debug] .heist-chip {
   height: 1.4em;
 }
 
+/* Liam's Obstacle Course done: fireworks over the whole game and a card, then it fades. Never takes a click. */
+.course-card {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.course-card.is-visible {
+  opacity: 1;
+}
+
+.fireworks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at 50% 30%, rgba(24, 20, 48, 0.62), rgba(24, 20, 48, 0.32) 70%, rgba(24, 20, 48, 0.12) 100%);
+}
+
+.course-card-inner {
+  position: absolute;
+  left: 50%;
+  top: calc(16% + env(safe-area-inset-top));
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 16px 34px 18px;
+  border-radius: 28px;
+  background: rgba(255, 250, 243, 0.96);
+  box-shadow: 0 6px 0 var(--shadow), 0 16px 40px rgba(43, 37, 48, 0.2);
+  text-align: center;
+  transform: translate(-50%, -12px) scale(0.92);
+  transition: transform 0.5s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.course-card.is-visible .course-card-inner {
+  transform: translate(-50%, 0) scale(1);
+}
+
+.course-kicker {
+  margin: 0;
+  color: var(--coral);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.course-title {
+  margin: 0;
+  font-size: clamp(1.8rem, 6vw, 2.8rem);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.course-detail {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+@media (max-height: 460px) and (orientation: landscape) {
+  .course-card-inner {
+    top: calc(10px + env(safe-area-inset-top));
+    padding: 10px 24px 12px;
+  }
+  .course-title {
+    font-size: 1.6rem;
+  }
+}
+
 /* ---------- First-play onboarding ---------- */
 
 .onboarding {

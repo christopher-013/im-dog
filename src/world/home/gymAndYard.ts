@@ -1,7 +1,9 @@
-import { BoxGeometry, ConeGeometry, CylinderGeometry, IcosahedronGeometry, PlaneGeometry, SphereGeometry, TorusGeometry } from 'three';
+import { BackSide, BoxGeometry, Color, ConeGeometry, CylinderGeometry, Float32BufferAttribute, IcosahedronGeometry, Mesh, MeshBasicMaterial, PlaneGeometry, SphereGeometry, TorusGeometry } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { PATIO_TILE, type RoomMaterials } from '../materials';
 import type { StaticSceneBuilder } from '../StaticSceneBuilder';
+import { CEILING, WALL, WING, YARD } from './layout';
+import { obstacleCourse } from './obstacleCourse';
 
 // The home gym (the old sunroom) and the backyard seen through its glass doors. Original, built in code
 // (docs/HOME_REFERENCE.md); no image textures. Each piece is built around its own origin
@@ -29,10 +31,13 @@ export const CAGE = {
   swing: { y: 1.2, z: 0.12, x0: 0.14, x1: 0.28 },
 } as const;
 
-/** The big sliding glass doors to the backyard: two fixed panes either side of two sliders. Middle at the origin, glass faces +z. */
-export function patioDoors(b: StaticSceneBuilder, m: RoomMaterials, width: number, height: number, wall: number): void {
+/**
+ * The big sliding glass doors to the backyard: two fixed panes either side of two sliders. Middle at the origin, glass
+ * faces +z. The slider at `openPane` (counting from -x; a slider, 1 or 2) stands open, slid in front of its neighbour,
+ * and the way through is clear (Phase 5: out to the backyard).
+ */
+export function patioDoors(b: StaticSceneBuilder, m: RoomMaterials, width: number, height: number, wall: number, openPane: number | null = null, f = 0.055): void {
   // The frame sits inside the wall's opening (its outer faces against the opening's, never in the same place).
-  const f = 0.055;
   const depth = wall + 0.03;
   const inner = width - 2 * f;
   const pane = inner / 4;
@@ -42,20 +47,33 @@ export function patioDoors(b: StaticSceneBuilder, m: RoomMaterials, width: numbe
   const paneHeight = height - f - 0.03;
   // The two sliders run on the inner track, the fixed panes on the outer one (so no two panes share a plane).
   for (let i = 0; i < 4; i++) {
-    const x = -inner / 2 + (i + 0.5) * pane;
-    const z = i === 1 || i === 2 ? 0.022 : -0.022;
+    // An open slider sits in front of the fixed pane beside it (further in, so the two never share a plane).
+    const open = i === openPane;
+    const x = -inner / 2 + (i + 0.5 + (open ? (i === 1 ? -1 : 1) : 0)) * pane;
+    const z = open ? 0.06 : i === 1 || i === 2 ? 0.022 : -0.022;
     const sash = i === 1 || i === 2 ? 0.036 : 0.03;
     for (const sx of [-1, 1]) b.add(new BoxGeometry(0.045, paneHeight, sash), m.doorFrame, [x + sx * (pane / 2 - 0.0225), 0.03 + paneHeight / 2, z]);
     for (const y of [0.03 + 0.035, 0.03 + paneHeight - 0.035]) b.add(new BoxGeometry(pane - 0.09, 0.07, sash), m.doorFrame, [x, y, z]);
     b.add(new PlaneGeometry(pane - 0.09, paneHeight - 0.14), m.glass, [x, 0.03 + paneHeight / 2, z], { cast: false, receive: false });
   }
-  // The C-shaped pulls on the two sliders, where they meet in the middle.
+  // The C-shaped pulls on the two sliders, where they meet in the middle (an open one carries its pull along).
   for (const sx of [-1, 1]) {
-    const x = sx * 0.09;
-    b.add(new BoxGeometry(0.02, 0.26, 0.018), m.doorFrame, [x, 1.0, 0.07]);
-    for (const y of [0.88, 1.12]) b.add(new BoxGeometry(0.02, 0.02, 0.04), m.doorFrame, [x, y, 0.055]);
+    const slid = openPane !== null && (sx < 0 ? openPane === 1 : openPane === 2) ? sx * pane : 0;
+    const x = sx * 0.09 + slid;
+    const z = slid ? 0.04 : 0;
+    b.add(new BoxGeometry(0.02, 0.26, 0.018), m.doorFrame, [x, 1.0, 0.07 + z]);
+    for (const y of [0.88, 1.12]) b.add(new BoxGeometry(0.02, 0.02, 0.04), m.doorFrame, [x, y, 0.055 + z]);
   }
-  b.addCollider([0, height / 2, 0], [width, height, wall]);
+  if (openPane === null) {
+    b.addCollider([0, height / 2, 0], [width, height, wall]);
+    return;
+  }
+  // Solid either side of the gap; the floor runs on through it.
+  const g0 = -inner / 2 + openPane * pane;
+  const g1 = g0 + pane;
+  b.addCollider([(-width / 2 + g0) / 2, height / 2, 0], [g0 + width / 2, height, wall]);
+  b.addCollider([(g1 + width / 2) / 2, height / 2, 0], [width / 2 - g1, height, wall]);
+  b.addCollider([(g0 + g1) / 2, -0.05, 0], [pane, 0.1, wall + 0.4]);
 }
 
 /** A connected stationary bike facing +z: a low frame, a big flywheel under a red guard, a saddle, bars and a screen. */
@@ -192,21 +210,30 @@ export function birdCage(b: StaticSceneBuilder, m: RoomMaterials): void {
  * The backyard beyond the gym's glass doors, in world space (x east of the house's east wall, x > 17): a flagstone
  * patio, the stone BBQ island with a grill and covered bar chairs under a white market umbrella, the dark wood bench
  * with grey cushions and two wicker lounge chairs under a big cantilever umbrella, potted plants by the doors, then
- * the lawn, hedges with pink bougainvillea, a fence and trees, and the sky. Scenery only: nothing out here is reachable.
+ * the lawn, hedges with pink bougainvillea, a fence and trees, and the sky. Since Phase 5 Moke can go out there
+ * (through the open slider): the ground and the furniture are solid, the hedges, the fence and the house are its
+ * edges (`YARD`), and Liam's Obstacle Course is on the lawn behind the patio furniture.
  */
 export function backyard(b: StaticSceneBuilder, m: RoomMaterials): void {
   const cast = b.castByDefault;
   b.castByDefault = false;
   const x0 = 17.03;
-  // Ground: the lawn, and the patio just above it.
-  b.add(new BoxGeometry(24, 0.1, 40), m.lawn, [x0 + 12.05, -0.064, 0]);
-  b.add(new BoxGeometry(6.4, 0.1, 11.5), m.patio, [x0 + 3.2, -0.054, -1], { worldUV: PATIO_TILE });
+  // Ground: the lawn, and the patio just above it. Both solid now.
+  b.add(new BoxGeometry(24, 0.1, 40), m.lawn, [x0 + 12.05, -0.064, 0], { solid: true });
+  b.add(new BoxGeometry(6.4, 0.1, 11.5), m.patio, [x0 + 3.2, -0.054, -1], { worldUV: PATIO_TILE, solid: true });
+  // Its edges: the hedges along both sides, the back fence, and past the end of the house's wall.
+  const edge = (x0e: number, x1e: number, z0e: number, z1e: number) => b.addCollider([(x0e + x1e) / 2, 1, (z0e + z1e) / 2], [x1e - x0e, 2, z1e - z0e]);
+  edge(x0 - 0.2, YARD.fenceX, YARD.minZ - 0.3, YARD.minZ);
+  edge(x0 - 0.2, YARD.fenceX, YARD.maxZ, YARD.maxZ + 0.3);
+  edge(YARD.maxX, YARD.maxX + 0.3, YARD.minZ - 0.3, YARD.maxZ + 0.3);
+  edge(x0 - 0.3, x0, YARD.minZ - 0.3, -4.3);
 
   // The BBQ island, running away from the doors on the left.
   const island = { x0: 18.1, x1: 21.1, z: -2.65, depth: 0.78, height: 0.9 };
   const midX = (island.x0 + island.x1) / 2;
   const len = island.x1 - island.x0;
   b.add(new BoxGeometry(len, island.height, island.depth), m.islandStone, [midX, island.height / 2, island.z]);
+  b.addCollider([midX, island.height / 2, island.z], [len, island.height, island.depth]);
   b.add(rbox(len + 0.12, 0.06, island.depth + 0.3, 0.01), m.travertine, [midX, island.height + 0.03, island.z + 0.1]);
   b.add(new BoxGeometry(0.3, 0.1, 0.02), m.grillDark, [island.x0 - 0.001, 0.55, island.z], { rotation: [0, Math.PI / 2, 0] });
   // The grill: a stainless body set into the top, its hood, and the handle.
@@ -218,7 +245,10 @@ export function backyard(b: StaticSceneBuilder, m: RoomMaterials): void {
     b.add(rbox(0.46, 1.0, 0.46, 0.06), m.chairCover, [x, 0.52, island.z + island.depth / 2 + 0.34]);
     b.add(new BoxGeometry(0.48, 0.12, 0.48), m.chairCoverHem, [x, 0.06, island.z + island.depth / 2 + 0.34]);
   }
+  b.addCollider([19.8, 0.52, island.z + island.depth / 2 + 0.34], [2.58, 1.04, 0.48]);
   b.add(new CylinderGeometry(0.15, 0.15, 0.45, 16), m.propane, [21.3, 0.23, -1.75]);
+  b.addCollider([21.3, 0.23, -1.75], [0.3, 0.46, 0.3]);
+  b.addCollider([20.6, 1.2, -3.45], [0.6, 2.4, 0.6], { thin: true });
   // The market umbrella over the far end of the island.
   umbrella(b, m, 20.6, -3.45, 2.45, 1.4, 0);
 
@@ -230,11 +260,14 @@ export function backyard(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.add(new CylinderGeometry(0.1, 0.1, bl - 0.1, 16), m.cushionGrey, [(bench.x0 + bench.x1) / 2, 0.46, bench.z - 0.12], { rotation: [0, 0, Math.PI / 2] });
   for (const [x, turn] of [[19.8, 0.2], [20.3, -0.15], [20.8, 0.1]] as const) b.add(rbox(0.36, 0.34, 0.12, 0.05), m.pillowCream, [x, 0.6, bench.z + 0.14], { rotation: [-0.25, turn, 0] });
   b.add(new BoxGeometry(0.62, 0.36, 0.62), m.benchWood, [bench.x0 - 0.4, 0.18, bench.z + 0.05]);
+  b.addCollider([(bench.x0 + bench.x1) / 2, 0.36, bench.z], [bl, 0.72, 0.62]);
+  b.addCollider([bench.x0 - 0.4, 0.18, bench.z + 0.05], [0.62, 0.36, 0.62]);
   for (const [x, z, r] of [[18.55, 1.2, 0.5], [19.35, 1.45, -0.4]] as const) {
     b.at([x, 0, z], r, () => {
       b.add(new CylinderGeometry(0.36, 0.32, 0.36, 18), m.loungeWicker, [0, 0.18, 0]);
       b.add(new CylinderGeometry(0.34, 0.34, 0.12, 18), m.loungeCushion, [0, 0.42, 0]);
       b.add(new TorusGeometry(0.34, 0.07, 8, 18, Math.PI * 1.1), m.loungeWicker, [0, 0.55, 0], { rotation: [Math.PI / 2, 0, Math.PI * 0.95] });
+      b.addCollider([0, 0.3, 0], [0.72, 0.6, 0.72]);
     });
   }
   // The big cantilever umbrella: a post beside the bench, its arm reaching over the seating.
@@ -242,6 +275,7 @@ export function backyard(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.add(new BoxGeometry(0.9, 0.08, 0.12), m.umbrellaPole, [post.x, 0.04, post.z]);
   b.add(new BoxGeometry(0.12, 0.08, 0.9), m.umbrellaPole, [post.x, 0.04, post.z]);
   b.add(new CylinderGeometry(0.035, 0.04, 2.7, 10), m.umbrellaPole, [post.x, 1.35, post.z]);
+  b.addCollider([post.x, 1.35, post.z], [0.9, 2.7, 0.9], { thin: true });
   b.add(new CylinderGeometry(0.025, 0.025, 1.9, 8), m.umbrellaPole, [post.x - 0.72, 2.62, post.z + 0.56], { rotation: [0, -0.66, Math.PI / 2 - 0.12] });
   umbrella(b, m, 20.6, 1.8, 2.55, 1.8, 0.35);
 
@@ -251,24 +285,55 @@ export function backyard(b: StaticSceneBuilder, m: RoomMaterials): void {
     b.add(new CylinderGeometry(r * 0.92, r * 0.92, 0.02, 16), m.soilDark, [x, r * 1.4 + 0.005, z]);
     b.add(new CylinderGeometry(0.018, 0.024, 0.5, 6), m.trunk, [x, r * 1.4 + 0.25, z]);
     b.add(new IcosahedronGeometry(r * 1.3, 1), material === m.potBlue ? m.hedgeLight : m.hedge, [x, r * 1.4 + 0.55, z], { scale: [1, 0.8, 1] });
+    b.addCollider([x, r * 0.7, z], [r * 2, r * 1.4, r * 2]);
   }
 
   // The garden: hedges down both sides with bougainvillea on the left, trees and a fence at the back.
   const blob = (x: number, y: number, z: number, r: number, material = m.hedge) => b.add(new IcosahedronGeometry(r, 1), material, [x, y, z], { scale: [1, 0.85, 1] });
-  for (let x = 17.6; x < 27; x += 0.9) {
+  for (let x = 17.6; x < YARD.fenceX + 0.5; x += 0.9) {
     blob(x, 0.9, -6.9, 1.1, (Math.round(x * 10) % 2 ? m.hedge : m.hedgeLight));
     blob(x, 0.9, 5.6, 1.1, (Math.round(x * 10) % 2 ? m.hedgeLight : m.hedge));
   }
   for (const [x, y, z] of [[18.1, 1.5, -6.0], [18.6, 1.1, -5.8], [19.3, 1.7, -6.1], [19.9, 1.25, -5.9], [20.6, 1.6, -6.2], [18.9, 2.0, -6.3]] as const) blob(x, y, z, 0.32, m.bougainvillea);
-  b.add(new BoxGeometry(0.15, 1.9, 13), m.fence, [27.5, 0.95, -0.5]);
-  for (const [x, z, h, r] of [[25.5, -4.5, 3.2, 1.6], [26.2, -1.2, 3.8, 1.9], [25.8, 2.6, 3.4, 1.7], [24.3, 4.0, 2.4, 1.1], [24.6, -5.8, 2.6, 1.2]] as const) {
+  // The back fence (moved back in Phase 5 to make room for the obstacle course), and the trees round the edge.
+  b.add(new BoxGeometry(0.15, 1.9, 13), m.fence, [YARD.fenceX + 0.075, 0.95, -0.5]);
+  for (const [x, z, h, r] of [[28.7, -4.6, 3.2, 1.6], [29.3, -1.9, 3.8, 1.9], [28.9, 3.4, 3.4, 1.7], [24.3, 3.9, 2.4, 1.1], [24.6, -5.0, 2.6, 1.2]] as const) {
     b.add(new CylinderGeometry(0.1, 0.14, h, 8), m.trunk, [x, h / 2, z]);
+    b.addCollider([x, h / 2, z], [0.28, h, 0.28], { thin: true });
     blob(x, h, z, r);
     blob(x + 0.5, h - 0.4, z + 0.6, r * 0.75, m.hedgeLight);
   }
-  // The sky and distant trees, far behind the fence.
+  // The sky and distant trees, far behind the fence; and a soft sky all round for looking about from out here.
   b.add(new PlaneGeometry(80, 26), m.sky, [42, 9, 0], { rotation: [0, -Math.PI / 2, 0], receive: false });
+  b.addObject(skyDome(), [24, 0, 0]);
+  // The wing's roof, for the view from outside (inside, the ceilings hide it): a flat roof with a white fascia.
+  const roofY = CEILING + 0.02;
+  b.add(new BoxGeometry(WING.east + WALL + 0.35 - (WING.west - 0.45), 0.2, WING.south - WING.north + 1.1), m.roof, [(WING.east + WALL + 0.35 + WING.west - 0.45) / 2, roofY + 0.1, (WING.north + WING.south) / 2], { cast: false, receive: false });
+  b.add(new BoxGeometry(0.05, 0.24, WING.south - WING.north + 1.06), m.fascia, [WING.east + WALL + 0.37, roofY + 0.1, (WING.north + WING.south) / 2], { cast: false, receive: false });
+  obstacleCourse(b, m);
   b.castByDefault = cast;
+}
+
+/** A big soft sky round the backyard: pale at the horizon, bluer overhead, a hazy green below it. */
+function skyDome(): Mesh {
+  const geometry = new SphereGeometry(48, 32, 16);
+  const colors: number[] = [];
+  const horizon = new Color('#e9f1ee');
+  const top = new Color('#a9cde6');
+  const ground = new Color('#b9c9a8');
+  const c = new Color();
+  const position = geometry.getAttribute('position');
+  for (let i = 0; i < position.count; i++) {
+    const t = position.getY(i) / 48;
+    if (t >= 0) c.copy(horizon).lerp(top, Math.min(1, t * 1.6));
+    else c.copy(horizon).lerp(ground, Math.min(1, -t * 4));
+    colors.push(c.r, c.g, c.b);
+  }
+  geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
+  const dome = new Mesh(geometry, new MeshBasicMaterial({ name: 'skyDome', vertexColors: true, side: BackSide, depthWrite: false, fog: false }));
+  dome.name = 'Sky';
+  dome.renderOrder = -1;
+  return dome;
 }
 
 /** A square white umbrella: a pole (unless `armed`, when the caller has drawn the cantilever) and a low pyramid canopy. */

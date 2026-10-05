@@ -11,6 +11,7 @@ import {
   backyardSkyTexture,
   clockFaceTexture,
   doorSignTexture,
+  courseSignTexture,
   flagstoneTexture,
   gardenTexture,
   greyPlankTexture,
@@ -188,6 +189,23 @@ export function createRoomMaterials() {
       const map = backyardSkyTexture();
       return new MeshBasicMaterial({ name: 'sky', color: map ? '#ffffff' : '#d6e4ea', map });
     })(),
+    // Liam's Obstacle Course (Phase 5), out on the lawn.
+    courseLane: outdoor('courseLane', '#95c06c', 1),
+    hillGrass: outdoor('hillGrass', '#5f9440', 1),
+    hurdleWhite: outdoor('hurdleWhite', '#f6f4ee', 0.6),
+    hurdleRed: outdoor('hurdleRed', '#e0503f', 0.6),
+    poleYellow: outdoor('poleYellow', '#f2c53d', 0.5),
+    poleBlue: outdoor('poleBlue', '#3f7fd0', 0.5),
+    flagTeal: outdoor('flagTeal', '#35b3a6', 0.7, { side: DoubleSide }),
+    flagCoral: outdoor('flagCoral', '#f07a5a', 0.7, { side: DoubleSide }),
+    flagSun: outdoor('flagSun', '#f4c443', 0.7, { side: DoubleSide }),
+    signPost: outdoor('signPost', '#8a5b34', 0.9),
+    courseSign: (() => {
+      const map = courseSignTexture();
+      return mat('courseSign', map ? '#ffffff' : '#d9a86a', 0.85, { map, emissive: map ? '#ffffff' : '#d9a86a', emissiveMap: map, emissiveIntensity: 0.32 });
+    })(),
+    roof: mat('roof', '#7f7468', 0.9),
+    fascia: mat('fascia', '#f1ebe1', 0.7),
     clockFace: textured('clockFace', clockFaceTexture(), '#f3efe6', 0.8),
     doorSign: textured('doorSign', doorSignTexture(), '#efe6d6', 0.9),
     sunPatch: (() => {

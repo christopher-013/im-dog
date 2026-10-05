@@ -28,11 +28,12 @@ Shared, tool-independent instructions for every coding agent working in this rep
   played it on the desktop and on their phone (the live site), tested it and approved it; the phone and browser
   weren't recorded, so don't claim broader mobile testing or measured phone performance.
   Details: `docs/HOME_REFERENCE.md`, `docs/HUMAN_SYSTEM.md`, `docs/ACTIVITIES.md`, `docs/DOG_LOGIC.md`.
-- **Phase 5 has started** (2026-10-04, at the owner's request): its first feature is **FSD, "Full Self Dog"**, an
-  autopilot button that plays Moke through the house and his activities at random, including watching the Padres game
-  with the camera zoomed in on the TV (D27). Scope and status: `docs/PHASE_5.md`. The rest of Phase 5 isn't defined:
-  add milestones there only as the owner approves them. Don't add more humans, more rooms, the outdoors or another
-  mini-game without the owner's approval. Also carried over: `docs/PHASE_4.md` → "Carried forward", and the Known
+- **Phase 5 has started** (2026-10-04, at the owner's request): **FSD, "Full Self Dog"**, an autopilot button that
+  plays Moke through the house and his activities at random, including watching the Padres game with the camera
+  zoomed in on the TV (D27); and **the backyard with Liam's Obstacle Course** (one slider open, the contained yard, a
+  fireworks "Moke is tired!" finish, a hamburger patty reward indoors; D28). Scope and status: `docs/PHASE_5.md`. Add
+  milestones there only as the owner approves them. Don't add more humans, more rooms, outdoors beyond this backyard
+  or another mini-game without the owner's approval. Also carried over: `docs/PHASE_4.md` → "Carried forward", and the Known
   Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"

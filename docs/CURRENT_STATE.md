@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-10-04. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; every owner-approved push to `main` republishes https://christopher-013.github.io/im-dog/. Phases 1–4 are complete; Phase 4 is tagged `phase-4-complete`. Phase 5 has started (FSD, Full Self Dog). An optional, private-service player Feedback feature is being prepared locally (D22, `docs/FEEDBACK.md`), but is not active on the public site until Cloudflare and GitHub configuration, end-to-end testing and an owner-approved push._
+_Last updated: 2026-10-05. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; every owner-approved push to `main` republishes https://christopher-013.github.io/im-dog/. Phases 1–4 are complete; Phase 4 is tagged `phase-4-complete`. Phase 5 has started (FSD, Full Self Dog; the backyard and Liam's Obstacle Course). An optional, private-service player Feedback feature is being prepared locally (D22, `docs/FEEDBACK.md`), but is not active on the public site until Cloudflare and GitHub configuration, end-to-end testing and an owner-approved push._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -17,11 +17,12 @@ played it on the desktop and on their phone (the published game), asked for the 
 below). **Carried forward:** a recorded device/browser list and measured phone performance. Scope, history and
 what's carried forward: `docs/PHASE_4.md`.
 
-**Phase 5: started** 2026-10-04 at the owner's request, with its first feature, FSD ("Full Self Dog"). Scope and
-status: `docs/PHASE_5.md`; the rest of the phase isn't defined yet.
+**Phase 5: started** 2026-10-04 at the owner's request: FSD ("Full Self Dog"), then the playable backyard with
+Liam's Obstacle Course. Scope and status: `docs/PHASE_5.md`.
 
 ## Current Milestone
-**5.1 FSD, Full Self Dog: built, waiting for the owner to try it** (`docs/PHASE_5.md`). Phase 4 is closed.
+**5.1 FSD, Full Self Dog** and **5.2 the backyard and Liam's Obstacle Course: built, waiting for the owner to try
+them** (`docs/PHASE_5.md`). Phase 4 is closed.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
@@ -42,6 +43,20 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-05, owner request, Phase 5.2): **the backyard and Liam's Obstacle Course** (D28). One gym slider
+stands open; the backyard is walkable and contained (hedges, a fence moved back to x 30, the house), with solid
+furniture, a sky dome and a roof over the wing for the view from outside. On the lawn behind the patio furniture,
+a small loop: an arch, the sign "Liam's Obstacle Course", two hurdles to hop, five weave poles, a gentle hill.
+Rules in `activities/ObstacleCourse.ts` (pure), scenery in `world/home/obstacleCourse.ts`, numbers in
+`config/obstacleCourse.ts`. Finishing: fireworks (`ui/Fireworks.ts`, a `fireworks` sound) and "Moke is tired!"; then
+`CourseReward`: the human waits inside the slider with a hamburger patty (`Treat` type `patty`) and gives it to him
+when he comes in. FSD runs the course and collects the patty. `Home.bounds` is now `PLAY_BOUNDS` (house + yard);
+lighting uses `Home.houseBounds`. `StaticSceneBuilder.addCollider` takes a full `rotation` (the hill's ramps).
+Verified: unit tests, Rapier tests in the real house (out the door, contained, hurdle, hill, a whole lap scored by
+the rules, FSD's lap), the real human's walk and handover, screenshots, headless runs (`docs/PHASE_5.md`). Not
+verified by a person, on a phone, or with the fireworks animating at full speed (the headless browser here draws
+about one frame a second; the fireworks were checked on their own).
+
 Claude Code (2026-10-04, owner request, Phase 5): **FSD, Full Self Dog.** A translucent FSD button at the top right
 (left of II on touch), G, or the left stick pressed on a controller hands Moke to an autopilot that goes round the
 house through his activities at random (toys, fetch, the whole Sock Heist, the carrot and dinner begging, Treat Hunt,

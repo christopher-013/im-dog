@@ -17,6 +17,8 @@ interface Fake extends FsdWorld {
   doorRinging: boolean;
   ballgameOn: boolean;
   holdingPaper: boolean;
+  course: { phase: string } | null;
+  rewardWaiting: boolean;
   interactables: FsdTarget[];
   current: string | null;
   surfaces: FsdSurface[];
@@ -32,6 +34,8 @@ function world(): Fake & { onPress?: (press: string, current: string | null) => 
     doorRinging: false,
     ballgameOn: false,
     holdingPaper: false,
+    course: null,
+    rewardWaiting: false,
     interactables: [],
     current: null,
     screens: [{ id: 'living', x: 4, y: 1, z: -5.5, facing: 0 }],

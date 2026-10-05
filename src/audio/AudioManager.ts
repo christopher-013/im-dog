@@ -1,10 +1,13 @@
 import { AUDIO, MUSIC } from '../config/audio';
 import { MusicPlayer, SONGS, type SongId } from './music';
-import { bark, chirp, crunch, squeak, discovery, doorbell, drop, growl, lap, pickup, pour, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
+import { bark, chirp, crunch, squeak, discovery, doorbell, drop, fireworks, growl, lap, pickup, pour, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
 
-export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'lap' | 'pour' | 'discovery' | 'doorbell' | 'chirp' | 'squeak';
+export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'lap' | 'pour' | 'discovery' | 'doorbell' | 'chirp' | 'squeak' | 'fireworks';
 
-const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop, surprise, whoosh, treatBag, crunch, lap, pour, discovery, doorbell, chirp, squeak };
+/** Sounds longer than a second, and how long to keep them connected (ms). */
+const LASTS: Partial<Record<SoundName, number>> = { fireworks: 3600 };
+
+const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop, surprise, whoosh, treatBag, crunch, lap, pour, discovery, doorbell, chirp, squeak, fireworks };
 
 /** Safari's Audio Session API (feature-detected; not in the TypeScript DOM types yet). */
 type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };
@@ -93,8 +96,8 @@ export class AudioManager {
     level.connect(master);
     const pitch = 1 + (Math.random() * 2 - 1) * AUDIO.pitchVariation;
     SOUNDS[name](ctx, level, ctx.currentTime + 0.005, pitch, noise);
-    // Let the graph be collected once the sound is over.
-    window.setTimeout(() => level.disconnect(), 1000);
+    // Let the graph be collected once the sound is over (most are under a second).
+    window.setTimeout(() => level.disconnect(), LASTS[name] ?? 1000);
   }
 
   /**

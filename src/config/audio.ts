@@ -20,6 +20,8 @@ export const AUDIO = {
   chirp: 0.3,
   /** The squeaky fish toy, on each bite. */
   squeak: 0.32,
+  /** Fireworks after Liam's Obstacle Course: the fanfare and the pops. */
+  fireworks: 0.4,
   /** Classic descending DING-DONG; the whole chime ends before the one-second audio cleanup. */
   doorbellChime: {
     notes: [659.25, 523.25],

@@ -232,7 +232,39 @@ GO PADRES!"**. Moving him stops watching; so does the broadcast ending before th
 human needed, and it doesn't pause the human's routine. Tuning: `HOME_ACTIVITIES.watchGame` in
 `config/homeActivities.ts`. No Dog Logic entry.
 
+### Liam's Obstacle Course (`ObstacleCourse.ts`, `CourseReward.ts`; owner request, 2026-10-04, Phase 5)
+A tribute to Liam's feedback. Out through the gym's open slider, behind the patio furniture, is a small loop on the
+lawn (`HOME_REFERENCE.md`). Near it, the HUD says **"Liam's Obstacle Course! Start at the arch."** Through the arch
+(going round, south first) starts a run, and the HUD walks him through it:
+1. **Jump the hurdles! (0/2):** a hurdle counts when he crosses it in the air (or with his feet up); he can't trot
+   through them, and going round them doesn't count.
+2. **Weave in and out of the poles! (0/5):** each pole passed on the other side from the last; the same side twice
+   ("Oops! In and out, one pole at a time.") starts the weave again.
+3. **Run up and over the hill!:** up onto its top, and down the far side.
+4. **Back through the arch to finish!**
+
+Stations count in order and only going forward; nothing fails, so it's always "keep going". Going back indoors
+calls off a run. Finishing: **fireworks over the whole screen and "Moke is tired!"** with the time it took
+(`ui/Fireworks.ts`, the `fireworks` sound), Moke hops for joy and says "Phew! I did Liam's course!". Each hurdle and
+pole gets a little click; the start a whoosh.
+
+**The reward** (`CourseReward`, a dog activity that borrows the human): the human goes and waits just inside the
+open slider holding out a **hamburger patty** ("Moke! Look what I made you!"). While he's still outside the HUD says
+"Head back inside: someone is waiting with something good…". When he comes in and up to them they kneel and give it
+("You did it! A hamburger patty for my champion!"); he eats it: "Obstacle course + hamburger = best day ever!". If he
+stays out two minutes it goes down on the floor there for him; the Sock Heist borrowing the human calls it off and it
+waits for later (he's owed it until he's had it). Run it again for another. Tuning: `config/obstacleCourse.ts`. No
+Dog Logic entry.
+
+FSD runs the course too (the `course` routine: the same moves as a player, then the `patty` routine to collect).
+
 ## Tests
+`activities/ObstacleCourse.test.ts` (the rules: a whole lap, the HUD lines, going round the hurdles, weaving the
+same side, going backwards, going indoors), `world/Backyard.test.ts` (Rapier: out through the slider to the course,
+held in by the hedges, fence and house, a hurdle stops a trot but a hop clears it, the hill, a whole lap scored by
+the rules), `DogActivities.test.ts` → "The obstacle course's reward" (the real human walks to the doors, waits,
+feeds him once he's in; the floor fallback; the Sock Heist), `FullSelfDog.house.test.ts` (FSD out through the
+slider and round the course),
 `world/tv/TvChannels.test.ts` (every show and the whole broadcast drawn against a checking stand-in canvas; three
 different shows, swaps, pausing; the special broadcast in sync on all three TVs, its home run once per broadcast at
 `HOME_RUN_AT`, back to each TV's own show, the next one on schedule), `activities/WatchTheGame.test.ts` (offered only

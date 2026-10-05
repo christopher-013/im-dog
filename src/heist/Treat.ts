@@ -5,7 +5,7 @@ import type { AttentionTarget } from '../player/AttentionSystem';
 import type { ScentSource } from '../senses/ScentSystem';
 
 /** What each kind of treat is called (its smell, and "Eat …"). */
-const TREAT_NAMES = { biscuit: 'Treat', carrot: 'Carrot', meatball: 'Meatball' } as const;
+const TREAT_NAMES = { biscuit: 'Treat', carrot: 'Carrot', meatball: 'Meatball', patty: 'Hamburger Patty' } as const;
 
 /** Where a treat is: still in the jar, in someone's hand, down on the floor for Moke, or eaten. */
 export type TreatState = 'stored' | 'held' | 'placed' | 'eaten';
@@ -31,9 +31,9 @@ export class Treat {
     readonly id = 'treat',
     /** How far its smell carries (m): further for a hidden one (Treat Hunt). */
     scentRadius = 6,
-    readonly type: 'biscuit' | 'carrot' | 'meatball' = 'biscuit',
+    readonly type: keyof typeof TREAT_NAMES = 'biscuit',
   ) {
-    this.view = type === 'carrot' ? createCarrotView() : type === 'meatball' ? createMeatballView() : createTreatView();
+    this.view = type === 'carrot' ? createCarrotView() : type === 'meatball' ? createMeatballView() : type === 'patty' ? createPattyView() : createTreatView();
     const name = TREAT_NAMES[type];
     this.view.visible = false;
     const treat = this;
@@ -163,6 +163,23 @@ function createMeatballView(): Group {
   ball.scale.set(1, 0.9, 1);
   const sauce = new Mesh(new SphereGeometry(0.0175, 12, 6, 0, Math.PI * 2, 0, Math.PI / 3), new MeshStandardMaterial({ color: '#b8372a', roughness: 0.5 }));
   root.add(ball, sauce);
+  return root;
+}
+
+/** A small plain hamburger patty, the obstacle-course reward (Phase 5): browned, with grill lines across the top. */
+function createPattyView(): Group {
+  const root = new Group();
+  root.name = 'Hamburger patty';
+  const patty = new Mesh(new CylinderGeometry(0.04, 0.042, 0.016, 18), new MeshStandardMaterial({ color: '#6b3f26', roughness: 0.85 }));
+  patty.position.y = 0.008;
+  root.add(patty);
+  const char = new MeshStandardMaterial({ color: '#3a2116', roughness: 0.9 });
+  for (const x of [-0.02, 0, 0.02]) {
+    const line = new Mesh(new CylinderGeometry(0.003, 0.003, 0.064 - Math.abs(x) * 1.2, 6), char);
+    line.rotation.x = Math.PI / 2;
+    line.position.set(x, 0.0165, 0);
+    root.add(line);
+  }
   return root;
 }
 

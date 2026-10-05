@@ -1,4 +1,6 @@
+import { courseForward, coursePoint } from '../activities/ObstacleCourse';
 import { FSD } from '../config/autopilot';
+import { COURSE } from '../config/obstacleCourse';
 import type { Point2 } from '../human/NavGrid';
 import type { Vec3Like } from '../physics/CharacterBody';
 
@@ -77,6 +79,10 @@ export interface FsdWorld {
   /** The World Series special is on, and its home run is still to come. */
   readonly ballgameOn: boolean;
   readonly holdingPaper: boolean;
+  /** Liam's Obstacle Course (Phase 5): where his run is ('idle', 'running', 'done'), or null if there's none. */
+  readonly course: { readonly phase: string } | null;
+  /** He's finished the course and the hamburger patty is waiting for him indoors. */
+  readonly rewardWaiting: boolean;
   readonly interactables: readonly FsdTarget[];
   /** The prompt showing right now (InteractionSystem.current), or null. */
   readonly current: string | null;
@@ -433,6 +439,17 @@ export class FullSelfDog {
         plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.interact('bathroom:paper'), this.waitUntil((x) => x.holdingPaper, 5)],
       },
       {
+        id: 'course', status: "Off to Liam's Obstacle Course!", weight: 1.6,
+        available: (w) => free(w) && !!w.course && w.course.phase !== 'running',
+        plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.go(coursePoint(-0.45), 0.35, true), this.runCourse(),
+          this.wait(2.5, 'Phew! Moke is tired!')],
+      },
+      {
+        id: 'patty', status: 'Going in for his hamburger patty!', weight: 0, urgent: true,
+        available: (w) => w.rewardWaiting && !!w.human && !w.heistRunning,
+        plan: (w) => [...emptyMouth(w), this.goToHuman(0.7), this.waitUntil((x) => !x.rewardWaiting, 8, 'A hamburger patty! Yum!'), this.wait(2)],
+      },
+      {
         id: 'explore', status: 'Exploring', weight: 2.2,
         available: () => true,
         plan: (w) => {
@@ -462,6 +479,61 @@ export class FullSelfDog {
   private waitUntil(until: (w: FsdWorld) => boolean, timeout: number, status?: string): Step {
     let left = timeout;
     return { status, still: true, timeout: Infinity, update: (dt, w) => (until(w) || (left -= dt) <= 0 ? 'done' : 'running') };
+  }
+
+  /**
+   * Round Liam's Obstacle Course like a player: through the arch, a hop over each hurdle, in and out of the weave
+   * poles, up and over the hill, and back through the arch. Open lawn, so straight lines between the moves.
+   */
+  private runCourse(): Step {
+    type Move = { x: number; z: number; within: number; run?: boolean; jumpAt?: number; status: string };
+    const moves: Move[] = [];
+    const at = (a: number, status: string, off = 0, extra: Partial<Move> = {}) => moves.push({ ...coursePoint(a, off), within: 0.2, status, ...extra });
+    at(-0.2, 'Through the arch!');
+    at(0.25, 'Through the arch!');
+    for (const h of COURSE.hurdles.at) at(h + 0.22, 'Jumping the hurdles!', 0, { run: true, jumpAt: 0.22 * COURSE.radius + 0.45 });
+    const wv = COURSE.weave;
+    for (let i = 0; i < wv.count; i++) at(wv.from + i * wv.step, 'Weaving the poles!', (i % 2 ? -1 : 1) * 0.28);
+    at(wv.from + wv.count * wv.step, 'Weaving the poles!');
+    const { at: hill, halfLength } = COURSE.hill;
+    const along = (s: number) => {
+      const p = coursePoint(hill);
+      const f = courseForward(hill);
+      return { x: p.x + f.x * s, z: p.z + f.z * s };
+    };
+    moves.push({ ...along(-halfLength - 0.4), within: 0.2, status: 'Up the hill!' });
+    moves.push({ ...along(halfLength + 0.5), within: 0.2, run: true, status: 'Up the hill… and down!' });
+    for (let a = 4.9; a < Math.PI * 2 + 0.3; a += 0.3) at(a, 'Racing back to the arch!');
+    let index = 0;
+    let time = 0;
+    let jumped = false;
+    let status = moves[0]!.status;
+    return {
+      get status() { return status; },
+      timeout: Infinity,
+      update: (dt, w, cmd) => {
+        const m = moves[index];
+        if (!m) return 'done';
+        status = m.status;
+        time += dt;
+        if (time > 6) return 'failed';
+        const p = w.moke.position;
+        const d = flat(p, m);
+        if (d < m.within && (!m.jumpAt || (jumped && w.moke.grounded))) {
+          index++;
+          time = 0;
+          jumped = false;
+          return index >= moves.length ? 'done' : 'running';
+        }
+        if (m.jumpAt && !jumped && d <= m.jumpAt && w.moke.grounded) {
+          cmd.presses.add('jump');
+          jumped = true;
+        }
+        aim(p, m, cmd, Math.min(1, d / 0.5));
+        cmd.run = !!m.run;
+        return 'running';
+      },
+    };
   }
 
   /** Keeps away from the human (the Sock Heist chase), a new spot every so often, until `until` (or `timeout`). */
@@ -568,7 +640,7 @@ export class FullSelfDog {
         const p = w.moke.position;
         phaseTime += dt;
         if (p.y >= surface.height - 0.12 && w.moke.grounded && flat(p, center) < 1.6) return 'done';
-        runUp ??= this.runUpFor(surface, p);
+        runUp ??= this.runUpFor(surface, p, w);
         if (!runUp) return 'failed';
         if (phase === 'approach') {
           if (flat(p, runUp.from) > 0.25) return route.steer(dt, w, { x: runUp.from.x, y: 0, z: runUp.from.z }, cmd, false) ? 'running' : 'failed';
@@ -613,32 +685,37 @@ export class FullSelfDog {
   // ------------------------------------------------------------------ places
 
   /**
-   * Where a hop starts: open floor a run-up (`hopRunUp`) out from the middle of a long side (else a short side), and
+   * Where a hop starts: open floor a run-up (`hopRunUp`, or a bit less) out from the middle of a long side (else a short side), in the same room, and
    * how close to the middle he jumps. A spot with no footprint (a nap spot on a sofa): open floor that far out, toward
    * where he is.
    */
-  private runUpFor(s: { x: number; z: number; halfX?: number; halfZ?: number }, from: Point2): { from: Point2; jumpAt: number } | null {
+  private runUpFor(s: { x: number; z: number; halfX?: number; halfZ?: number }, from: Point2, w: FsdWorld): { from: Point2; jumpAt: number } | null {
     const out = this.tuning.hopRunUp;
+    // In the same room: never the lawn the other side of the wall behind a couch.
+    const room = w.roomName(s.x, s.z);
+    const sameRoom = (q: Point2) => w.roomName(q.x, q.z) === room;
     if (s.halfX === undefined || s.halfZ === undefined) {
       const d = Math.max(1e-3, flat(from, s));
       const toward = { x: s.x + ((from.x - s.x) / d) * (out + 0.5), z: s.z + ((from.z - s.z) / d) * (out + 0.5) };
       const at = this.nav.nearestWalkable(toward.x, toward.z, 1.2) ?? this.nav.nearestWalkable(s.x, s.z, 2.5);
-      return at ? { from: at, jumpAt: 0.7 } : null;
+      return at && sameRoom(at) ? { from: at, jumpAt: 0.7 } : null;
     }
     const alongZ = s.halfX >= s.halfZ;
-    const sides = [
-      ...(alongZ ? [[0, -1], [0, 1]] : [[-1, 0], [1, 0]]),
-      ...(alongZ ? [[-1, 0], [1, 0]] : [[0, -1], [0, 1]]),
-    ] as const;
+    const long = alongZ ? [[0, -1], [0, 1]] as const : [[-1, 0], [1, 0]] as const;
+    const short = alongZ ? [[-1, 0], [1, 0]] as const : [[0, -1], [0, 1]] as const;
     let best: { from: Point2; jumpAt: number } | null = null;
-    for (const [i, [dx, dz]] of sides.entries()) {
-      const half = dx !== 0 ? s.halfX : s.halfZ;
-      const q = { x: s.x + dx * (half + out), z: s.z + dz * (half + out) };
-      if (!this.nav.isWalkable(q.x, q.z)) continue;
-      const option = { from: q, jumpAt: half + this.tuning.hopJumpBeyond };
-      // The long sides first; between two open ones, the nearer.
-      if (!best || (i < 2 && flat(q, from) < flat(best.from, from))) best = option;
-      if (i === 1 && best) break;
+    // The long sides first (a full run-up, else a shorter one: a coffee table in front), the nearer of two; then the
+    // ends.
+    for (const [sides, outs] of [[long, [out, out * 0.75, out * 0.55]], [short, [out]]] as const) {
+      for (const run of outs) {
+        for (const [dx, dz] of sides) {
+          const half = dx !== 0 ? s.halfX : s.halfZ;
+          const q = { x: s.x + dx * (half + run), z: s.z + dz * (half + run) };
+          if (!this.nav.isWalkable(q.x, q.z) || !sameRoom(q)) continue;
+          if (!best || flat(q, from) < flat(best.from, from)) best = { from: q, jumpAt: half + this.tuning.hopJumpBeyond };
+        }
+        if (best) return best;
+      }
     }
     return best;
   }

@@ -389,6 +389,56 @@ export function doorSignTexture(): CanvasTexture | null {
   });
 }
 
+/** The sign by the obstacle course's arch: "Liam's Obstacle Course", painted on a wooden board with paw prints. */
+export function courseSignTexture(): CanvasTexture | null {
+  return canvasTexture(1024, 512, 47, (ctx, w, h, rand) => {
+    // Planks: warm wood, a few grain lines.
+    ctx.fillStyle = '#d9a86a';
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 1; i < 4; i++) {
+      ctx.fillStyle = 'rgba(110, 66, 30, 0.35)';
+      ctx.fillRect(0, (h / 4) * i - 2, w, 4);
+    }
+    ctx.strokeStyle = 'rgba(120, 75, 35, 0.18)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 40; i++) {
+      const y = rand() * h;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.bezierCurveTo(w * 0.3, y + (rand() - 0.5) * 18, w * 0.7, y + (rand() - 0.5) * 18, w, y + (rand() - 0.5) * 10);
+      ctx.stroke();
+    }
+    // A painted border.
+    ctx.strokeStyle = '#fdf6ea';
+    ctx.lineWidth = 14;
+    ctx.strokeRect(22, 22, w - 44, h - 44);
+    // The words.
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#3d2a1c';
+    ctx.font = 'bold 118px Fredoka, "Trebuchet MS", "Arial Rounded MT Bold", sans-serif';
+    ctx.fillText("Liam's", w / 2, h * 0.33);
+    ctx.font = 'bold 92px Fredoka, "Trebuchet MS", "Arial Rounded MT Bold", sans-serif';
+    ctx.fillText('Obstacle Course', w / 2, h * 0.62);
+    // Paw prints along the bottom.
+    ctx.fillStyle = '#e46b4f';
+    for (const [x, y, turn] of [[150, 425, -0.3], [260, 405, 0.2], [w - 260, 405, -0.2], [w - 150, 425, 0.3]] as const) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(turn);
+      ctx.beginPath();
+      ctx.ellipse(0, 8, 20, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+      for (const [tx, ty] of [[-20, -14], [-7, -24], [7, -24], [20, -14]] as const) {
+        ctx.beginPath();
+        ctx.ellipse(tx, ty, 7, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  });
+}
+
 /** A soft, warm pool of sunlight (additive): brightest in the middle, fading to nothing at the edges. */
 export function sunPatchTexture(): CanvasTexture | null {
   return canvasTexture(128, 128, 43, (ctx, w, h) => {

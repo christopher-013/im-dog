@@ -104,7 +104,8 @@ sessions.
 exit out of it if they are done by pressing any button. Add one more show that is like 'Star Trek: The Next
 Generation'… the captain, the first officer, the android and the security chief on the bridge… going into warp
 speed with the words 'Engage'."
-- **Watch TV** (`activities/WatchTv.ts`): see `ACTIVITIES.md`. Any button, click or tap exits.
+- **Watch TV** (`activities/WatchTv.ts`): see `ACTIVITIES.md`. The camera eases into a close-up of that TV, like the
+  ballgame. Any button, click or tap exits.
 - **STAR VOYAGERS** (`world/tv/StarVoyagers.ts`, channel 9): an original homage (no real names, ship or insignia):
   the title among the stars, the bridge crew at their posts, the captain points at the viewscreen, **"ENGAGE!"**, the
   stars stretch into warp, the ship flashes away, "next time: a new world!" (23 s). With four shows on three TVs, a

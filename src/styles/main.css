@@ -1840,25 +1840,17 @@ html[data-input='touch'] .fsd {
   }
 }
 
-/* Watch TV: the show full screen over everything, until any button or a tap. */
+/* Watch TV: over the camera's close-up of the TV, the show's name and how to stop; a tap anywhere stops. */
 .tv-view {
   position: absolute;
   inset: 0;
   z-index: 40;
   display: none;
-  background: #000;
   cursor: pointer;
 }
 
 .tv-view.is-visible {
   display: block;
-}
-
-.tv-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
 }
 
 .tv-title,

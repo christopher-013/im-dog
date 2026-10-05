@@ -43,6 +43,11 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-05, owner request): **Watch TV uses the Padres game's transition.** Instead of a drawn full-screen
+picture (with Moke's head from behind), the camera eases into the same close-up of the real TV as Watch the Game,
+sharp, and back out when any button stops it; the show's name and "press any button" stay on top. `drawFull` and its
+TV-set drawing are gone. Checked in the game (easing in, the close-up, easing out; no console errors).
+
 Claude Code (2026-10-05, owner request): **FSD's rainbow path.** While FSD drives, a glowing rainbow ribbon on the floor
 shows where Moke is about to run, like a self-driving car's on-screen path: from his paws along the rest of his route
 (up to 7 m), corners rounded off: a solid rainbow road (owner, from Tesla screenshots: the colours run through the rainbow along

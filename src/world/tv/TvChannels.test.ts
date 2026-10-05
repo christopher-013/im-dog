@@ -108,20 +108,10 @@ describe('The TVs (four shows, three sets)', () => {
   });
 });
 
-describe('Watching a TV full screen (Watch TV)', () => {
-  it('draws exactly what that TV is showing, as big as fits the window, without a single bad number', () => {
-    for (const [w, h] of [[1920, 1080], [390, 844], [844, 390]] as const) {
-      const tv = new TvChannels(screens(), mulberry32(3));
-      for (let i = 0; i < 3; i++) {
-        const { ctx, problems } = fakeContext(w, h);
-        for (let t = 0; t < 30; t++) {
-          tv.update(0.5);
-          tv.drawFull(i, ctx);
-        }
-        expect(problems.slice(0, 5), `TV ${i} at ${w}×${h}`).toEqual([]);
-      }
-      expect(tv.showOn(0)).toBe(tv.onAir[0]);
-    }
+describe('Watch TV', () => {
+  it('knows which show each TV is on', () => {
+    const tv = new TvChannels(screens(), mulberry32(3));
+    for (let i = 0; i < 3; i++) expect(tv.showOn(i)).toBe(tv.onAir[i]);
   });
 });
 

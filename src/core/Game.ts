@@ -190,9 +190,8 @@ export class Game {
   private kitchenBeg: KitchenBeg | null = null;
   private dinnerBeg: DinnerBeg | null = null;
   private watchGame: WatchTheGame | null = null;
-  /** Watch TV (Phase 5): any TV's show full screen, until any button; and when its picture was last drawn. */
+  /** Watch TV (Phase 5): any TV's show, close up like the ballgame, until any button. */
   private watchTv: WatchTv | null = null;
-  private tvDrawnAgo = 0;
   /** FSD, Full Self Dog (Phase 5): the autopilot, whether it's driving, and this frame's command. */
   private fsd: FullSelfDog | null = null;
   private fsdOn = false;
@@ -590,7 +589,6 @@ export class Game {
         moke.animation.watch(screen !== null);
         const show = screen ? this.room.tv.showOn(this.room.tvIndex(screen.id)) : null;
         this.ui.showTv(screen ? (show ? `${show.name} · CH ${String(show.channel).padStart(2, '0')}` : 'TV') : null);
-        this.tvDrawnAgo = Infinity;
       },
     });
     this.interactions.register(this.watchTv.interactable);
@@ -777,17 +775,6 @@ export class Game {
     this.courseReward?.earn();
   }
 
-  /** Watch TV: the show on that TV, full screen, redrawn up to 30 times a second (the shows animate on twos anyway). */
-  private drawTv(dt: number): void {
-    const screen = this.watchTv?.watching;
-    if (!screen) return;
-    this.tvDrawnAgo += dt;
-    if (this.tvDrawnAgo < 1 / 30) return;
-    this.tvDrawnAgo = 0;
-    const ctx = this.ui.tvCanvas.getContext('2d');
-    if (ctx) this.room.tv.drawFull(this.room.tvIndex(screen.id), ctx);
-  }
-
   /** The squeaky fish in his mouth: he chomps on it the whole time he holds it. Returns the fish while he does. */
   private updateChewing(playing: boolean): Prop | null {
     const fish = this.pickup?.carried?.id === 'fish' ? this.pickup.carried : null;
@@ -939,7 +926,6 @@ export class Game {
     // Watching the ballgame (or any show): eyes on the screen.
     const screen = this.watchGame?.watchingScreen ?? this.watchTv?.watching;
     if (screen && this.moke) this.moke.lookAt = screen;
-    this.drawTv(dt);
     const chewing = this.updateChewing(playing);
     this.moke?.update(dt, alpha);
     // FSD's way ahead, in rainbow on the floor (only while it drives and he's on his way somewhere).
@@ -1101,7 +1087,8 @@ export class Game {
    * the follow camera carries on underneath, so it picks up exactly where it was.
    */
   private updateTvCloseUp(dt: number): void {
-    const watching = this.watchGame?.watchingScreen ?? null;
+    // The ballgame, or any show he's sat down to watch (Watch TV): the same close-up.
+    const watching = this.watchGame?.watchingScreen ?? this.watchTv?.watching ?? null;
     if (watching) this.closeUpScreen = watching;
     this.closeUp = damp(this.closeUp, watching ? 1 : 0, TV_CLOSE_UP.blendRate, dt);
     const screen = this.closeUpScreen;

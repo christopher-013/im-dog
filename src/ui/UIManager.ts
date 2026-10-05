@@ -275,7 +275,7 @@ export class UIManager {
     if (!on) this.setFsdStatus('');
   }
 
-  /** Watch TV: the full-screen view on (with the show's name and channel) or off. */
+  /** Watch TV: the show's name and channel, and how to stop, over the close-up (or off). */
   showTv(title: string | null): void {
     const view = this.el('tv-view');
     view.classList.toggle('is-visible', title !== null);
@@ -290,19 +290,6 @@ export class UIManager {
         hint.style.animation = '';
       }
     }
-  }
-
-  /** The full-screen TV's canvas, sized to the window (device pixels, at most 2×). */
-  get tvCanvas(): HTMLCanvasElement {
-    const canvas = this.el('tv-canvas') as HTMLCanvasElement;
-    const ratio = Math.min(2, window.devicePixelRatio || 1);
-    const w = Math.max(1, Math.round(canvas.clientWidth * ratio));
-    const h = Math.max(1, Math.round(canvas.clientHeight * ratio));
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w;
-      canvas.height = h;
-    }
-    return canvas;
   }
 
   /** What Moke's up to while FSD drives ("Answering the door!"). Cheap to call every frame. */

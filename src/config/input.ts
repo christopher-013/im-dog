@@ -146,7 +146,7 @@ export const TOUCH_CONTROL_HINTS: readonly GamepadControlHint[] = [
   { label: 'Look around', input: 'Right thumb: drag anywhere on the right' },
   { label: 'Interact · pick up · drop · give · eat', input: 'Tap the paw button (it says what it will do)' },
   { label: 'Jump · bark or growl · trick · run', input: 'Hold the paw button: they pop out. Slide onto one and let go, or tap one.' },
-  { label: 'FSD: Full Self Dog (Moke plays by himself)', input: 'The FSD button, top corner. Move to take over.' },
+  { label: 'FSD: Full Self Dog (Moke plays by himself)', input: 'The Engage FSD button, above the paw. Move to take over.' },
   { label: 'Pause', input: 'II, top corner' },
 ];
 

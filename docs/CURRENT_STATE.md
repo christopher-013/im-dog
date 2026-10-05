@@ -43,7 +43,14 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code (2026-10-05, owner request): **Watch TV uses the Padres game's transition.** Instead of a drawn full-screen
+Claude Code (2026-10-05, owner request): **The Engage FSD button moved to the bottom right.** On desktop it sits in
+the lower-right corner. On touch it sits just above the paw button, and when the paw menu opens (`TouchInput.setMenu`
+sets `data-paw-open` on `<html>`), it slides up above the menu's arc so it is never covered. All of this is in CSS in
+`src/styles/main.css`. It was checked by headless screenshots at desktop size, phone landscape (844×390) and phone
+portrait (390×844), with the menu open and closed: no overlaps and no console errors. It hasn't been checked on a real
+phone.
+
+Before that, Claude Code (2026-10-05, owner request): **Watch TV uses the Padres game's transition.** Instead of a drawn full-screen
 picture (with Moke's head from behind), the camera eases into the same close-up of the real TV as Watch the Game,
 sharp, and back out when any button stops it; the show's name and "press any button" stay on top. `drawFull` and its
 TV-set drawing are gone. Checked in the game (easing in, the close-up, easing out; no console errors).

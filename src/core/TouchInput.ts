@@ -344,6 +344,8 @@ export class TouchInput {
     if (open === this.menuOpen) return;
     this.menuOpen = open;
     this.actions?.classList.toggle('is-open', open);
+    // Others make room for it (the FSD button lifts clear).
+    if (typeof document !== 'undefined') document.documentElement.toggleAttribute('data-paw-open', open);
   }
 
   private button(name: TouchButton): HTMLElement | null {

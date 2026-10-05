@@ -7,7 +7,7 @@
 himself, going round the house and through his activities at random, until you take over.
 
 ## In scope (the owner's brief, 2026-10-04)
-- **The FSD button:** top right, translucent; switching it on hands Moke to the autopilot. Its own status line says
+- **The FSD button:** bottom right (moved there 2026-10-05; above the paw on touch), translucent; switching it on hands Moke to the autopilot. Its own status line says
   what he's up to.
 - **Moke drives himself** round the house, through the activities at random: picking up and playing with the toys,
   begging for a carrot, answering the door, getting up on the table, and the rest (below).
@@ -35,7 +35,7 @@ sessions.
 | 5.3 | Watch TV full screen, and a fourth show (STAR VOYAGERS) | **Built** (2026-10-05): see below. |
 
 ## 5.1 FSD: how it works
-- **On and off:** the **FSD** button (top right, left of the II button on touch) or **G** on a keyboard (with the mouse
+- **On and off:** the **Engage FSD** button (bottom right; on touch above the paw, lifting clear of its pop-out buttons) or **G** on a keyboard (with the mouse
   captured you can't click a button). Moving Moke yourself (keys, stick or thumb) switches it off, like taking the
   wheel. A toast says which.
 - **A virtual player** (`src/autopilot/FullSelfDog.ts`, D27): each frame it decides a direction (run or walk) and

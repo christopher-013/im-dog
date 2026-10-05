@@ -22,7 +22,7 @@ so the list fits a phone without scrolling (2026-10-01).
 | F | Bark or growl, at random | Working. Bark: a little hop, "Arf!" and a synthesized bark; the human can hear it. Growl: Moke plants himself, pins his ears, squints, shows tiny teeth and makes a deep, rumbly "grrrr". |
 | Q | Do a trick | Working: a random trick, never the same twice in a row: belly up, beg, give paw, or spin. He stays put for it; moving or E cuts it short. No belly-up with something in his mouth, no begging under the furniture. |
 | R | Sniff mode | Working: about 4 s of scent wisps from nearby things (sock, toys, bed, a treat) |
-| G | **FSD, Full Self Dog** on or off (Phase 5): Moke plays by himself | Working. The same as the FSD button (top right), which you can't click while the mouse is captured. Moving Moke yourself switches it off. |
+| G | **FSD, Full Self Dog** on or off (Phase 5): Moke plays by himself | Working. The same as the Engage FSD button (bottom right), which you can't click while the mouse is captured. Moving Moke yourself switches it off. |
 | W A S D or Space while resting | Get up out of the bed | Working |
 | Esc | Pause and release the mouse | Working. Esc never resumes (it also closes the Controls dialog); resume with RESUME, Enter/Space on it, or a click. |
 | Enter / Space on a menu button | Press that button (PLAY, CONTROLS, RESUME…) | Working |
@@ -34,8 +34,8 @@ to back out through the door and down the hallway; he lets go after enough dista
 **Watch TV (Phase 5):** in front of any TV, interact (E, A, the paw) to watch its show full screen; any key or button,
 a click or a tap stops watching.
 
-**FSD, Full Self Dog (Phase 5):** the translucent **Engage FSD** button (it reads **FSD Engaged!** while it drives) at the top right (on touch, just left of the II
-button), or G on a keyboard, hands Moke to the autopilot: he goes round the house through his activities at random
+**FSD, Full Self Dog (Phase 5):** the translucent **Engage FSD** button (it reads **FSD Engaged!** while it drives) at the bottom right (on touch, just above the paw
+button, and lifted clear of the paw's buttons while they're out), or G on a keyboard, hands Moke to the autopilot: he goes round the house through his activities at random
 (the toys, fetch, the sock heist, begging, the door, naps, the coffee table, the pillows, the toilet paper, Malibu),
 and when the Padres game is on he sits and watches it while the camera zooms in on the screen. A line under the
 button says what he's up to. Moving him yourself (keys, stick or thumb) takes back over; so does pressing the button

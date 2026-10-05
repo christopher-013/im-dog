@@ -5,7 +5,7 @@ https://im-dog.com redirects there), built the
 same way as the owner's Adtona and Pictayo Workers: the built game (`dist/`) as static assets, the **Feedback** form's
 endpoint at `/api/feedback`, and an anonymous **player counter** at `/api/ping`, all on the same origin
 (`src/feedback/worker.ts`, `src/feedback/usage.ts`). The GitHub Pages copy (https://christopher-013.github.io/im-dog/)
-keeps publishing until im-dog.com is live and checked; there, the Feedback button stays hidden and nothing is counted.
+also publishes, but its Feedback button stays hidden and nothing is counted there.
 
 ## Feedback
 
@@ -54,10 +54,10 @@ The Worker keeps, in KV, one number per day per event (for about 13 months) plus
 active days, the first and best days). No name, identifier, cookie, IP address or device detail is stored: the
 address is only the rate limiter's key (separate from feedback's). The figures appear in a public Issue, **"I'M DOG?
 usage log"**, created the first time someone is counted: its top shows players to date, today, the last 7 and 30 days,
-active days and the best day, rewritten at most once a minute; each day the Cron adds a comment with yesterday's
+active days and the best day, rewritten at most once every 15 minutes to avoid excessive KV reads; each day the Cron adds a comment with yesterday's
 players and visits (days with nobody are skipped). Watching the repository gets you those by email.
 
-## One-time setup (owner)
+## Setup and recovery checklist (owner)
 
 Everything below uses your Cloudflare login (the account that already holds im-dog.com and adtona.com) or your GitHub
 account, so it's yours to run, from a terminal in the repository folder. Paste the token only at Wrangler's prompt or
@@ -99,10 +99,10 @@ into Cloudflare's page, never into a chat, a commit or a command line.
      one new Issue with no name, email, IP or browser in it, and one private row:
      `npx wrangler d1 execute im-dog-feedback --remote --command "SELECT id, created_at, country, input_mode, issue_number FROM feedback_private ORDER BY created_at DESC LIMIT 5"`.
      Close the test Issue.
-   - The counter: press PLAY and walk Moke around for half a minute. Within a minute or so an **I'M DOG? usage log**
+   - The counter: press PLAY and walk Moke around for half a minute. Within 15 minutes or so an **I'M DOG? usage log**
      Issue appears showing 1 player. Keep that Issue open: it's the running log.
 
-After that, the GitHub Pages copy can be turned into a pointer to im-dog.com (a later, separate change).
+Turning the GitHub Pages copy into a pointer to im-dog.com would be a later, separate change.
 
 ## Operations and privacy
 
@@ -115,9 +115,17 @@ After that, the GitHub Pages copy can be turned into a pointer to im-dog.com (a 
   and acknowledgement box out of the form on 2026-09-29) says what's public, what's private and
   what the counter keeps. Comments are public, and people may still type personal things there: the notice asks them
   not to. Children under 13 are asked to have a parent or guardian send feedback.
+- Check the site's Worker in Cloudflare → Workers & Pages → **im-dog** → Observability for
+  `feedback_retention_purge_failed` or `usage_digest_failed` after the daily Cron. A failed job now fails the Cron
+  invocation as well; fix a retention failure promptly and rerun the purge. Invocation/request logs are disabled;
+  only explicit, data-free maintenance errors are recorded.
+- The usage counter uses KV's approximate read-modify-write totals. The 15-minute log refresh cuts its rolling-window
+  reads, but every accepted ping still writes daily and total keys. Watch KV quota as the public audience grows;
+  on a Free account the daily write quota can be reached. Do not treat the public log as exact analytics.
 - If the token is misused: revoke it in GitHub, then `npx wrangler secret delete GITHUB_TOKEN`; the form fails closed
   and the usage log stops updating (counting carries on).
-- Worker request logging is off (`observability` in `wrangler.jsonc`), so feedback bodies don't land in logs.
+- Static responses use `public/_headers`: frame protection, `nosniff`, no referrer, and immutable caching only for
+  Vite's fingerprinted `/app/*` files. HTML and `sw.js` still revalidate. API responses set their own headers.
 
 ## Search engines (Google and Bing)
 

@@ -264,6 +264,11 @@ export default {
     return handleRequest(request, env, ctx);
   },
   async scheduled(_event: unknown, env: FeedbackEnv): Promise<void> {
-    await Promise.allSettled([purgePrivateFeedback(env), postDailyDigest(env)]);
+    // Always attempt both jobs, but never turn a failed 30-day privacy purge into a successful Cron invocation.
+    const [purge, digest] = await Promise.allSettled([purgePrivateFeedback(env), postDailyDigest(env)]);
+    if (purge.status === 'rejected') console.error(JSON.stringify({ event: 'feedback_retention_purge_failed' }));
+    if (digest.status === 'rejected') console.error(JSON.stringify({ event: 'usage_digest_failed' }));
+    // Keep the exception generic: a database or GitHub error could contain private data or credentials.
+    if (purge.status === 'rejected' || digest.status === 'rejected') throw new Error('im-dog scheduled maintenance failed');
   },
 };

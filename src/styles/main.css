@@ -59,6 +59,9 @@ body {
   position: fixed;
   inset: 0;
   overflow: hidden;
+  /* Hidden is still programmatically scrollable: focusing a dialog after a phone rotation can
+     scroll the whole fixed game when the (tall) debug overlay is present. Clip never scrolls. */
+  overflow: clip;
 }
 
 #viewport {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import worker, { handleFeedback, handleRequest, purgePrivateFeedback, type FeedbackEnv } from './worker';
+import worker, { handleFeedback, handleRequest, type FeedbackEnv } from './worker';
 
 function setup() {
   const rows = new Map<string, { ip: string; created: number; issue: number | null }>();
@@ -231,12 +231,35 @@ describe('private feedback Worker', () => {
     expect((await handleFeedback(t.request(t.fields, 'http://localhost:8787'), env, t.fetcher)).status).toBe(201);
   });
 
-  it('purges active private records older than 30 days', async () => {
+  it('runs the scheduled retention purge for old private records', async () => {
     const t = setup();
-    const now = 40 * 24 * 60 * 60;
     await t.env.FEEDBACK_DB.prepare('INSERT INTO feedback_private (id, created_at, name, email, ip, country, user_agent, issue_number) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)')
       .bind('old', 0, null, null, '203.0.113.44', null, null).run();
-    await purgePrivateFeedback(t.env, now);
+    await worker.scheduled(undefined, t.env);
     expect(t.rows.size).toBe(0);
+  });
+
+  it('makes a failed retention purge visible without logging private database details', async () => {
+    const t = setup();
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const failing = {
+      ...t.env,
+      FEEDBACK_DB: {
+        prepare() {
+          return {
+            bind() {
+              return { run: async () => { throw new Error('private database detail'); } };
+            },
+          };
+        },
+      },
+    } as unknown as FeedbackEnv;
+    try {
+      await expect(worker.scheduled(undefined, failing)).rejects.toThrow('im-dog scheduled maintenance failed');
+      expect(errorLog).toHaveBeenCalledWith('{"event":"feedback_retention_purge_failed"}');
+      expect(errorLog.mock.calls.flat().join(' ')).not.toContain('private database detail');
+    } finally {
+      errorLog.mockRestore();
+    }
   });
 });

@@ -30,7 +30,7 @@ rebuilds and republishes it through GitHub Actions (`.github/workflows/deploy-pa
 also runs in phone and tablet browsers (touch controls, portrait or landscape).
 The start and pause menus include **About I'M DOG?**, with an owner-approved photo of the real Moke and a spoiler-light
 introduction. Other private reference photos remain excluded from the public build.
-An optional **Feedback** lightbox is prepared for those menus. It stays hidden until its private Cloudflare submission service is configured and tested; see [Feedback setup](docs/FEEDBACK.md). No GitHub write token is included in the game.
+On www.im-dog.com the menus also offer a **Feedback** lightbox backed by a private Cloudflare service; the GitHub Pages copy hides it. Comments become a public GitHub Issue, while optional contact details remain private. See [Feedback and privacy](docs/FEEDBACK.md). No GitHub write token is included in the game.
 
 ## Requirements
 - Node.js **22.12+** (tested with Node 24) and npm

@@ -11,7 +11,7 @@ import { USAGE } from '../config/site';
  * device detail is ever stored: the address is only the rate limiter's key, and nothing is written about the person.
  *
  * The figures are published to a single public Issue, "I'M DOG? usage log": its body is rewritten with the current
- * numbers (at most once a minute), and a daily comment from the Cron keeps the history.
+ * numbers (at most once every 15 minutes), and a daily comment from the Cron keeps the history.
  */
 
 export interface Kv {
@@ -50,8 +50,8 @@ const MAX_PING_BYTES = 256;
 const COUNT_TTL_SECONDS = 400 * 24 * 60 * 60;
 /** The rolling windows (and the most days read to build them). */
 const WINDOW_DAYS = 30;
-/** The log's body is rewritten at most this often, so a burst of players can't become a burst of GitHub writes. */
-const LOG_SYNC_MIN_MS = 60_000;
+/** Building the rolling windows reads 60 daily KV keys; don't do that for every burst of visitors. */
+const LOG_SYNC_MIN_MS = 15 * 60_000;
 
 const dayKey = (day: string, event: UsageEvent) => `count:${day}:${event}`;
 const totalKey = (event: UsageEvent) => `count:total:${event}`;
@@ -103,13 +103,41 @@ function allowedOrigins(value: string | undefined): string[] {
 }
 
 function corsHeaders(origin: string): Headers {
-  const headers = new Headers({ 'Cache-Control': 'no-store', 'Vary': 'Origin' });
+  const headers = new Headers({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Vary': 'Origin' });
   if (origin) {
     headers.set('Access-Control-Allow-Origin', origin);
     headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     headers.set('Access-Control-Allow-Headers', 'Content-Type');
   }
   return headers;
+}
+
+/** A public endpoint must not buffer an unbounded body before deciding it is too large. */
+async function readPingBody(request: Request): Promise<string | null> {
+  const length = request.headers.get('Content-Length');
+  if (length && Number(length) > MAX_PING_BYTES) return null;
+  const reader = request.body?.getReader();
+  if (!reader) return null;
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_PING_BYTES) {
+        await reader.cancel();
+        return null;
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return new TextDecoder().decode(bytes);
 }
 
 /** One ping from the game. Always answers without content: the game neither needs nor reads a reply. */
@@ -124,8 +152,8 @@ export async function handlePing(request: Request, env: UsageEnv, ctx?: WorkerCo
 
   let event: unknown;
   try {
-    const raw = await request.text();
-    if (raw.length > MAX_PING_BYTES) return quiet();
+    const raw = await readPingBody(request);
+    if (!raw) return quiet();
     event = (JSON.parse(raw) as { event?: unknown } | null)?.event;
   } catch {
     return quiet();
@@ -179,9 +207,11 @@ export async function eventStats(counts: Kv, event: UsageEvent, today: string, f
   let last7 = 0;
   let last30 = 0;
   let todayCount = 0;
+  const start = Date.parse(`${today}T00:00:00Z`);
+  const days = Array.from({ length: WINDOW_DAYS }, (_, i) => utcDay(new Date(start - i * 86_400_000)));
+  const daily = await Promise.all(days.map((day) => counts.get(dayKey(day, event))));
   for (let i = 0; i < WINDOW_DAYS; i++) {
-    const day = utcDay(new Date(Date.parse(`${today}T00:00:00Z`) - i * 86_400_000));
-    let n = readInt(await counts.get(dayKey(day, event)));
+    let n = readInt(daily[i] ?? null);
     if (i === 0) n = todayCount = Math.max(n, own?.today ?? 0);
     if (i < 7) last7 += n;
     last30 += n;
@@ -258,15 +288,14 @@ async function logIssue(env: UsageEnv, counts: Kv, fetcher: typeof fetch, body: 
   return number;
 }
 
-/** Rewrites the log's body with the current numbers (at most once a minute unless `force`). */
+/** Rewrites the log's body with the current numbers (at most once per 15 minutes unless `force`). */
 export async function syncLog(env: UsageEnv, counts: Kv, fetcher: typeof fetch = fetch, fresh?: Recorded, force = false): Promise<void> {
   if (!env.GITHUB_TOKEN) return;
   if (!force && Date.now() - readInt(await counts.get(LOG_SYNC_KEY)) < LOG_SYNC_MIN_MS) return;
   await counts.put(LOG_SYNC_KEY, String(Date.now()));
   const now = new Date();
   const today = utcDay(now);
-  const stats = [];
-  for (const event of USAGE_EVENTS) stats.push(await eventStats(counts, event, today, fresh));
+  const stats = await Promise.all(USAGE_EVENTS.map((event) => eventStats(counts, event, today, fresh)));
   const body = logBody(stats, today, now);
   const issue = await logIssue(env, counts, fetcher, body);
   if (issue) await github(env, fetcher, `/issues/${issue}`, 'PATCH', { body });

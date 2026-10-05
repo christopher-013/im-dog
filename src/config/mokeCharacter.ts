@@ -16,6 +16,14 @@ export const MOKE_CHARACTER = {
     eyeHeight: 0.33,
     /** Top of the fluffy head. He ducks under anything lower than about this (see MOKE_ANIMATION.duckBelowHeadroom). */
     headTop: 0.43,
+    /**
+     * How far his muzzle and head fluff reach in front of his middle, and his tail plume behind it (m, at about head
+     * height): more than his round collision body (MOKE_BODY.radius). Where they'd be inside a wall or furniture, he's
+     * drawn shifted back out of it (MokeController's end probes), so he never looks to have his face in a wall. The stand-in measures about 0.24
+     * both ways; a `moke.glb` should come out the same (docs/MOKE_3D_SPEC.md).
+     */
+    noseReach: 0.24,
+    tailReach: 0.22,
   },
 
   /** The final model file and how it's placed. */

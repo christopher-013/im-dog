@@ -1,5 +1,6 @@
 import { Vector3 } from 'three';
-import { JUMP, MOVEMENT, type JumpTuning, type MovementTuning } from '../config/movement';
+import { MOKE_CHARACTER } from '../config/mokeCharacter';
+import { JUMP, MOKE_BODY, MOVEMENT, type JumpTuning, type MovementTuning } from '../config/movement';
 import type { CharacterBody, Vec3Like } from '../physics/CharacterBody';
 import { angleDelta, moveToward } from '../utils/math';
 import { createLocomotionState, gaitForSpeed, stepLocomotion, type Gait, type LocomotionState, type MoveIntent } from './Locomotion';
@@ -14,6 +15,22 @@ const BLOCKED_STEPS = 2;
 const AIRBORNE_STEPS = 2;
 /** Standing means something solid this close below his feet, straight under his middle (m). */
 const SUPPORT_REACH = 0.025;
+
+/** How far his nose and tail reach past his middle, and the probe that keeps them drawn out of walls (see `updateEndShift`). */
+export interface EndReach {
+  readonly nose: number;
+  readonly tail: number;
+  readonly above: number;
+  readonly radius: number;
+  /** The most the drawn Moke is ever moved off his body (m). */
+  readonly maxShift: number;
+}
+
+export const MOKE_END_REACH: EndReach = {
+  nose: MOKE_CHARACTER.size.noseReach,
+  tail: MOKE_CHARACTER.size.tailReach,
+  ...MOKE_BODY.endProbe,
+};
 
 /**
  * Take-off speed (m/s) that lifts his feet exactly `rise` metres at the top of the jump, for this controller's
@@ -58,12 +75,18 @@ export class MokeController {
   private jumpRequest = 0;
   private readonly desired: Vec3Like = { x: 0, y: 0, z: 0 };
   private readonly applied: Vec3Like = { x: 0, y: 0, z: 0 };
+  private readonly into = { x: 0, z: 0 };
+  /** How far the drawn Moke is moved off his body to keep his nose and tail out of walls (see `updateEndShift`). */
+  readonly visualShift = { x: 0, z: 0 };
+  private readonly previousShift = { x: 0, z: 0 };
 
   constructor(
     private readonly body: CharacterBody,
     heading: number,
     readonly tuning: MovementTuning = MOVEMENT,
     readonly jumpTuning: JumpTuning = JUMP,
+    /** His nose and tail kept out of walls; null to leave them be. */
+    readonly ends: EndReach | null = MOKE_END_REACH,
   ) {
     this.locomotion = createLocomotionState(heading);
     this.previousHeading = heading;
@@ -74,6 +97,9 @@ export class MokeController {
     this.syncPositionFromBody();
     this.previousPosition.copy(this.position);
     this.lastFooting.copy(this.position);
+    this.updateEndShift();
+    this.previousShift.x = this.visualShift.x;
+    this.previousShift.z = this.visualShift.z;
   }
 
   get heading(): number {
@@ -123,6 +149,52 @@ export class MokeController {
     this.syncPositionFromBody();
     this.probeHeadroom();
     this.guardAgainstWedging(dt);
+    this.updateEndShift();
+  }
+
+  /**
+   * His round collision body is smaller than he is: his muzzle and head fluff stick out in front, his tail plume
+   * behind. Up against a wall (or the couch, or backed into a corner) they would look to be inside it. So a small ball
+   * is swept out from his middle at head height, forward and back along his facing, and if an end would be inside
+   * something, the drawn Moke is shifted back out of it by that much (`visualShift`, a few centimetres at most).
+   * Only how he's drawn: where he stands, collides, jumps and reaches things is unchanged.
+   */
+  private updateEndShift(): void {
+    const e = this.ends;
+    const shift = this.visualShift;
+    this.previousShift.x = shift.x;
+    this.previousShift.z = shift.z;
+    shift.x = 0;
+    shift.z = 0;
+    if (!e) return;
+    // Ducking under something low, his head is lower: so is the probe.
+    const above = Math.max(e.radius + 0.04, Math.min(e.above, this.headroom - e.radius - 0.02));
+    const heading = this.locomotion.heading;
+    const fx = Math.sin(heading);
+    const fz = Math.cos(heading);
+    for (const [sign, reach] of [[1, e.nose], [-1, e.tail]] as const) {
+      const length = reach - e.radius;
+      if (length <= 0) continue;
+      const free = this.body.endClearance(fx * sign, fz * sign, above, e.radius, length, this.into);
+      if (free >= length) continue;
+      // How deep that end is in what it touched (a flat face), straight out of it.
+      const w = this.into;
+      const depth = (length - free) * Math.max(0.2, fx * sign * w.x + fz * sign * w.z);
+      shift.x -= w.x * depth;
+      shift.z -= w.z * depth;
+    }
+    const size = Math.hypot(shift.x, shift.z);
+    if (size > e.maxShift) {
+      shift.x *= e.maxShift / size;
+      shift.z *= e.maxShift / size;
+    }
+  }
+
+  /** `visualShift` blended between the last two fixed steps (alpha 0..1), like the position. */
+  interpolatedShift(alpha: number, out: { x: number; z: number }): { x: number; z: number } {
+    out.x = this.previousShift.x + (this.visualShift.x - this.previousShift.x) * alpha;
+    out.z = this.previousShift.z + (this.visualShift.z - this.previousShift.z) * alpha;
+    return out;
   }
 
   /**
@@ -203,6 +275,7 @@ export class MokeController {
     this.actualSpeed = Math.hypot(this.applied.x, this.applied.z) / dt;
     this.syncPositionFromBody();
     this.probeHeadroom();
+    this.updateEndShift();
   }
 
   private probeHeadroom(): void {
@@ -232,6 +305,9 @@ export class MokeController {
     this.previousPosition.copy(this.position);
     this.previousHeading = heading;
     this.probeHeadroom();
+    this.updateEndShift();
+    this.previousShift.x = this.visualShift.x;
+    this.previousShift.z = this.visualShift.z;
   }
 
   private syncPositionFromBody(): void {

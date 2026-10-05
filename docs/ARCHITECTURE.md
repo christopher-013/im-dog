@@ -56,7 +56,7 @@ src/
     PlayerSettings.ts     mouse sensitivity / invert-Y, saved in localStorage with safe fallbacks (tested)
   player/
     Locomotion.ts         pure movement model: speed, heading, gaits (tested; no three/Rapier)
-    MokeController.ts     gameplay body: locomotion + collision + interpolation (tested with real Rapier)
+    MokeController.ts     gameplay body: locomotion + collision + interpolation; end probes that draw his nose and tail out of walls (visualShift, render only) (tested with real Rapier)
     MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking, sit/stretch, look-at, tricks (tested)
     MokeVisual.ts         the visual interface (object, attachments, update, dispose) + createMokeVisual(): model or stand-in (tested)
     ToonMokeVisual.ts     the procedural stand-in: Moke built in code after the real dog (curly fur, soft shading, silhouette line, face, collar), animated procedurally (tested)

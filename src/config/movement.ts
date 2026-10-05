@@ -102,6 +102,12 @@ export const MOKE_BODY = {
    */
   minSlopeSlide: 0.05,
   snapToGround: 0.1,
+  /**
+   * Keeping his nose and tail drawn out of walls and furniture (MOKE_CHARACTER.size.noseReach/tailReach): a ball this
+   * big, this high above his feet (lower when he ducks), swept out from his middle along his facing each fixed step.
+   * The drawn Moke is moved back out by at most `maxShift` (m); his body (and so all gameplay) stays put.
+   */
+  endProbe: { above: 0.24, radius: 0.06, maxShift: 0.12 },
   /** Pushes the ball and toy along (see CharacterBody). Slightly inside the capsule, so it never snags on walls. */
   toyBumper: { radius: 0.155, halfHeight: 0.06, centerAboveFeet: 0.07 },
 } as const;

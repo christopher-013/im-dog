@@ -44,6 +44,19 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-05, owner request with a screenshot of Moke's face inside a wall): **Moke is drawn out of
+walls and furniture.** His collision body (0.17 m radius) is smaller than he looks: the stand-in's muzzle and head
+fluff reach about 0.24 m in front of his middle and the tail plume about the same behind
+(`MOKE_CHARACTER.size.noseReach/tailReach`). Each fixed step `MokeController.updateEndShift` sweeps a small ball
+from his middle at head height (lower when he ducks) forward and back along his facing, against walls and solid
+furniture (not thin legs). Where an end would be inside something, the drawn Moke is shifted straight back out of
+it, by up to 12 cm (`visualShift`, interpolated like his position; `Moke.update` applies it). **Render only:** his
+body, collisions, jumps, reach and FSD's routes are unchanged. (A first try that stopped the body itself short of
+walls broke couch jumps, nap spots and a tight passage in the house tests, so it was dropped.) Verified: 583 tests
+(new: nose against a wall drawn back to touch it, open floor and side-on unshifted, turning into a wall, tail
+against one); in the game, Moke run nose-first into the kitchen island: before, his face was inside it; after, his
+nose rests on its side. Not checked: the human's legs (characters aren't probed), a real phone.
+
 Claude Code (2026-10-05, owner request, with their screenshot): **Liam's Obstacle Course made easier to find and
 to do, and a green FSD button.**
 - A paved path in from the patio: straight out along the course's middle line, then curving right onto the lane up

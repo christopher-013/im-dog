@@ -24,6 +24,7 @@ export class Moke {
   /** Something to glance at (world position), from the AttentionSystem. Visual only. */
   lookAt: Vec3Like | null = null;
   private readonly look = { yaw: 0, pitch: 0 };
+  private readonly shift = { x: 0, z: 0 };
 
   constructor(
     readonly controller: MokeController,
@@ -42,7 +43,9 @@ export class Moke {
     const c = this.controller;
     c.interpolatedPosition(alpha, this.renderPosition);
     const heading = c.interpolatedHeading(alpha);
-    this.visual.object.position.copy(this.renderPosition);
+    // Drawn a touch off his body where his nose or tail would otherwise be inside a wall (MokeController).
+    const shift = c.interpolatedShift(alpha, this.shift);
+    this.visual.object.position.set(this.renderPosition.x + shift.x, this.renderPosition.y, this.renderPosition.z + shift.z);
     this.visual.object.rotation.y = heading;
 
     this.animation.update(dt, {

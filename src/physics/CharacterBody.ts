@@ -1,4 +1,4 @@
-import type { Collider, KinematicCharacterController, Ray, RigidBody, Vector } from '@dimforge/rapier3d-compat';
+import type { Ball, Collider, KinematicCharacterController, Ray, RigidBody, Vector } from '@dimforge/rapier3d-compat';
 import { interactionGroups, LAYER, WORLD_QUERY_GROUPS } from './collisionGroups';
 
 /** Moke's capsule collides with everything except toys (the bumper handles those). */
@@ -12,6 +12,8 @@ const CHARACTER_QUERY_GROUPS = interactionGroups(0xffff, LAYER.character);
 const OBSTACLE_QUERY_GROUPS = interactionGroups(0xffff, LAYER.world | LAYER.worldThin | LAYER.character);
 /** Checking for room, the capsule is lifted this much off the floor it would stand on (m), so the floor isn't in the way. */
 const ROOM_LIFT = 0.02;
+/** What his nose and tail keep out of: solid walls and furniture (not thin legs: he squeezes between chair legs). */
+const END_PROBE_GROUPS = interactionGroups(0xffff, LAYER.world);
 
 export interface Vec3Like {
   x: number;
@@ -159,6 +161,40 @@ export class CharacterBody {
     }, undefined, groups, this.collider);
     return found;
   }
+
+  /**
+   * How far a ball of `radius`, `above` metres over the feet, can go from the capsule's middle along the flat unit
+   * direction (dx, dz) before touching a wall or furniture, up to `max`. `into` gets the flat unit direction into
+   * what it touched (or the sweep's own direction when nothing, or when it starts inside something).
+   */
+  endClearance(dx: number, dz: number, above: number, radius: number, max: number, into: { x: number; z: number }): number {
+    const { rapier, world } = this.physics;
+    if (this.probeBall?.radius !== radius) this.probeBall = new rapier.Ball(radius);
+    const origin = this.probeOrigin;
+    origin.x = this.center.x;
+    origin.y = this.center.y - this.centerHeight + above;
+    origin.z = this.center.z;
+    const direction = this.probeDirection;
+    direction.x = dx;
+    direction.z = dz;
+    into.x = dx;
+    into.z = dz;
+    const hit = world.castShape(origin, IDENTITY, direction, this.probeBall, 0, max, true, undefined, END_PROBE_GROUPS, this.collider);
+    if (!hit) return max;
+    // The ball's own contact normal points from its middle to what it touched: into it. (A ball, unrotated, so
+    // its local frame is the world's.)
+    const n = hit.normal2;
+    const flat = Math.hypot(n.x, n.z);
+    if (flat > 0.3) {
+      into.x = n.x / flat;
+      into.z = n.z / flat;
+    }
+    return hit.time_of_impact;
+  }
+
+  private probeBall: Ball | null = null;
+  private readonly probeOrigin: Vec3Like = { x: 0, y: 0, z: 0 };
+  private readonly probeDirection: Vec3Like = { x: 0, y: 0, z: 0 };
 
   /** Free space straight above the capsule centre, capped at `max` metres. */
   spaceAbove(max: number): number {

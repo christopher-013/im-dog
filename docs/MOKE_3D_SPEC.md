@@ -65,7 +65,8 @@ by `MOKE_CHARACTER.model.scale`.
 **Clearance.** The coffee table is 0.40 m high underneath, lower than his head. He fits under it by ducking (the
 `duck` clip, section 8). Under the table the game applies only about **60%** of that pose, so the full `duck` pose
 must lower his head top by about **8 cm** (to ≈ 0.35 m) without the fur clipping badly. His collision capsule is 0.17 m in radius and 0.36 m tall (`MOKE_BODY`), and the model may
-overhang it a little.
+overhang it a little: the game keeps his nose and tail drawn out of walls using `MOKE_CHARACTER.size.noseReach` and
+`tailReach` (about 0.24 m and 0.22 m from his middle), so set those to the model's real reach.
 
 ## 3. Geometry and triangle budget
 - **Budget: 15k–30k triangles** for the whole dog including eyes, mouth interior, collar and tag; **hard cap 40k.**

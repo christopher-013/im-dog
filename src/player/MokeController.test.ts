@@ -4,7 +4,7 @@ import { JUMP, MOKE_BODY, MOVEMENT } from '../config/movement';
 import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld, type StaticBox } from '../physics/PhysicsWorld';
 import type { MoveIntent } from './Locomotion';
-import { jumpSpeed, MokeController } from './MokeController';
+import { jumpSpeed, MOKE_END_REACH, MokeController } from './MokeController';
 
 // Integration tests: the real Rapier character controller in a tiny test room.
 const DT = 1 / 60;
@@ -63,6 +63,48 @@ describe('MokeController with Rapier', () => {
     expect(moke.actualSpeed).toBeLessThan(0.05);
     // Blocked head-on, so he doesn't keep "stored" run speed to burst off with.
     expect(moke.locomotion.speed).toBeLessThan(0.5);
+  });
+
+  describe('his nose and tail are drawn out of walls (his body stays where it is)', () => {
+    // A wall with its face at x = 1 (Moke's body stops at 1 - R).
+    const wall = box(1.06, 1, 0, 0.06, 1, 5);
+    const drawnNose = (moke: MokeController) =>
+      moke.position.x + moke.visualShift.x + Math.sin(moke.heading) * MOKE_END_REACH.nose;
+
+    it('nose up against a wall: drawn back just enough, the body exactly where it stopped before', async () => {
+      const { moke, simulate } = await setup([wall], Math.PI / 2);
+      simulate(run(1, 0), 2);
+      expect(moke.position.x).toBeGreaterThan(1 - R - 0.03);
+      expect(moke.visualShift.x).toBeLessThan(-0.03);
+      expect(drawnNose(moke)).toBeLessThan(1.005);
+      expect(drawnNose(moke)).toBeGreaterThan(0.97);
+      expect(Math.abs(moke.visualShift.z)).toBeLessThan(0.005);
+    });
+
+    it('in the open, and side-on to a wall, he is drawn right where he is', async () => {
+      const open = await setup([], 0);
+      open.simulate(run(0, 1), 1);
+      expect(Math.hypot(open.moke.visualShift.x, open.moke.visualShift.z)).toBe(0);
+      const alongside = await setup([box(0.25, 1, 0, 0.06, 1, 5)], 0);
+      alongside.simulate(run(0, 1), 1);
+      expect(Math.hypot(alongside.moke.visualShift.x, alongside.moke.visualShift.z)).toBeLessThan(0.002);
+    });
+
+    it('turning his face into a wall (no walking), and backing his tail into one', async () => {
+      const { moke, simulate } = await setup([wall], 0);
+      simulate(run(1, 0), 0.6);
+      simulate(STAND, 0.3);
+      // Facing the wall, close: drawn back off it.
+      expect(Math.sin(moke.heading)).toBeGreaterThan(0.9);
+      expect(drawnNose(moke)).toBeLessThan(1.005);
+      const tail = await setup([box(-1.06, 1, 0, 0.06, 1, 5)], Math.PI / 2);
+      // Walking backwards isn't a thing he does: put him right against it, facing away.
+      tail.moke.teleport({ x: -1 + R + 0.01, y: 0, z: 0 }, Math.PI / 2);
+      tail.simulate(STAND, 0.2);
+      const drawnTail = tail.moke.position.x + tail.moke.visualShift.x - MOKE_END_REACH.tail;
+      expect(tail.moke.visualShift.x).toBeGreaterThan(0.02);
+      expect(drawnTail).toBeGreaterThan(-1.005);
+    });
   });
 
   it('slides along a wall when running into it at an angle', async () => {

@@ -1,5 +1,5 @@
-import { BoxGeometry, CylinderGeometry, ExtrudeGeometry, PlaneGeometry, RingGeometry, Shape, SphereGeometry, TorusGeometry } from 'three';
-import { coursePoint, courseYaw } from '../../activities/ObstacleCourse';
+import { BoxGeometry, BufferAttribute, BufferGeometry, CylinderGeometry, ExtrudeGeometry, PlaneGeometry, RingGeometry, Shape, SphereGeometry, TorusGeometry } from 'three';
+import { courseEntryPath, coursePoint, courseYaw } from '../../activities/ObstacleCourse';
 import { COURSE } from '../../config/obstacleCourse';
 import type { RoomMaterials } from '../materials';
 import type { StaticSceneBuilder } from '../StaticSceneBuilder';
@@ -34,7 +34,7 @@ export function obstacleCourse(b: StaticSceneBuilder, m: RoomMaterials): void {
   const w = COURSE.weave;
   for (let i = 0; i < w.count; i++) at(w.from + i * w.step, () => pole(b, m, i));
   at(COURSE.hill.at, () => hill(b, m));
-  sign(b, m);
+  b.add(entryPath(), m.coursePath, [0, 0, 0], { cast: false });
   b.castByDefault = cast;
 }
 
@@ -58,11 +58,18 @@ function arch(b: StaticSceneBuilder, m: RoomMaterials): void {
     flag.translate(0, -0.03, 0);
     b.add(flag, flags[i % 3]!, [x, y, 0], { rotation: [0, 0, angle - Math.PI / 2 + Math.PI / 4] });
   }
-  // The banner hung inside the top, facing the way you come in: START (and FINISH).
-  const by = h + 0.18;
-  b.add(new BoxGeometry(1.0, 0.34, 0.025), m.hurdleWhite, [0, by, 0]);
-  b.add(new PlaneGeometry(0.96, 0.3), m.startBanner, [0, by, -0.022], { rotation: [0, Math.PI, 0], cast: false });
-  for (const side of [-1, 1]) b.add(new CylinderGeometry(0.006, 0.006, 0.42, 6), m.hurdleWhite, [side * 0.42, by + 0.3, 0]);
+  // The banner hung inside the top, facing the way you come in: the course's name, START AND FINISH.
+  const { width: bw, height: bh, above } = COURSE.arch.banner;
+  const by = h + above;
+  b.add(new BoxGeometry(bw + 0.04, bh + 0.04, 0.025), m.hurdleWhite, [0, by, 0]);
+  b.add(new PlaneGeometry(bw, bh), m.startBanner, [0, by, -0.022], { rotation: [0, Math.PI, 0], cast: false });
+  // Hung from the arch by two cords.
+  for (const side of [-1, 1]) {
+    const x = side * bw * 0.36;
+    const top = h + Math.sqrt(hw * hw - x * x);
+    const from = by + bh / 2 + 0.02;
+    b.add(new CylinderGeometry(0.006, 0.006, top - from, 6), m.hurdleWhite, [x, (top + from) / 2, 0]);
+  }
 }
 
 /** A low hurdle across the lane: two posts, a red-and-white striped board and a top bar. Solid: he hops it. */
@@ -127,18 +134,50 @@ function hill(b: StaticSceneBuilder, m: RoomMaterials): void {
   b.addCollider([0, h / 2, 0], [2 * W, h, 2 * F]);
 }
 
-/** The sign by the arch, facing the house: "Liam's Obstacle Course" on a board between two posts. */
-function sign(b: StaticSceneBuilder, m: RoomMaterials): void {
-  const { x, z, width, height, postHeight } = COURSE.sign;
-  // Facing the house (-x): local +z is world -x.
-  b.at([x, LAWN, z], -Math.PI / 2, () => {
-    for (const side of [-1, 1]) {
-      b.add(new BoxGeometry(0.09, postHeight + height, 0.09), m.signPost, [side * (width / 2 - 0.06), (postHeight + height) / 2, -0.08]);
+/**
+ * The paved path in from the patio (COURSE.entry): a flat ribbon along its middle line, `width` wide, just above the
+ * lawn and the patio's edge. The texture repeats along it, one chevron every `chevrons` metres, pointing the way.
+ */
+function entryPath(): BufferGeometry {
+  const points = courseEntryPath();
+  const { width, chevrons } = COURSE.entry;
+  const n = points.length;
+  const positions = new Float32Array(n * 2 * 3);
+  const normals = new Float32Array(n * 2 * 3);
+  const uvs = new Float32Array(n * 2 * 2);
+  const index: number[] = [];
+  let along = 0;
+  for (let i = 0; i < n; i++) {
+    const p = points[i]!;
+    if (i > 0) along += Math.hypot(p.x - points[i - 1]!.x, p.z - points[i - 1]!.z);
+    const q = points[Math.min(n - 1, i + 1)]!;
+    const o = points[Math.max(0, i - 1)]!;
+    const d = Math.hypot(q.x - o.x, q.z - o.z) || 1;
+    const fx = (q.x - o.x) / d;
+    const fz = (q.z - o.z) / d;
+    for (const [side, v] of [[-1, 0], [1, 1]] as const) {
+      const k = (i * 2 + v) * 3;
+      // Across the way (left -, right +), flat on the ground.
+      positions[k] = p.x - fz * (width / 2) * side;
+      positions[k + 1] = PATH_Y;
+      positions[k + 2] = p.z + fx * (width / 2) * side;
+      normals[k + 1] = 1;
+      const u = (i * 2 + v) * 2;
+      uvs[u] = v;
+      uvs[u + 1] = along / chevrons;
     }
-    // A little roof over it.
-    b.add(new BoxGeometry(width + 0.16, 0.05, 0.22), m.signPost, [0, postHeight + height + 0.05, -0.05]);
-    b.add(new BoxGeometry(width, height, 0.04), m.signPost, [0, postHeight + height / 2, -0.03]);
-    b.add(new PlaneGeometry(width - 0.04, height - 0.04), m.courseSign, [0, postHeight + height / 2, -0.004], { cast: false });
-    b.addCollider([0, (postHeight + height) / 2, -0.04], [width, postHeight + height, 0.1], { thin: true });
-  });
+    if (i < n - 1) {
+      const a = i * 2;
+      index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new BufferAttribute(normals, 3));
+  geometry.setAttribute('uv', new BufferAttribute(uvs, 2));
+  geometry.setIndex(index);
+  return geometry;
 }
+
+/** The path's surface: a hair above the patio's top (-0.004) and so a touch above the lawn. */
+const PATH_Y = 0.0;

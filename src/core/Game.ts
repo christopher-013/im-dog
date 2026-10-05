@@ -32,6 +32,7 @@ import { SITE, USAGE } from '../config/site';
 import { pinger, UsageCounter } from './UsageCounter';
 import { KitchenBeg } from '../activities/KitchenBeg';
 import { CourseReward } from '../activities/CourseReward';
+import { CourseAssist } from '../activities/CourseAssist';
 import { ObstacleCourse } from '../activities/ObstacleCourse';
 import { COURSE_REWARD, COURSE_RULES, COURSE_TEXT } from '../config/obstacleCourse';
 import { PillowDig } from '../activities/PillowDig';
@@ -180,6 +181,8 @@ export class Game {
     onObstacle: () => this.audio.play('pickup'),
     onComplete: (seconds) => this.completeCourse(seconds),
   });
+  /** One-press help with each hurdle and weave pole (not while FSD drives: it does the course its own way). */
+  private readonly courseAssist = new CourseAssist(this.course, () => this.fsdOn);
   private readonly pattyTreat = new Treat('patty', 4, 'patty');
   private courseReward: CourseReward | null = null;
   private readonly frontDoor = new FrontDoor();
@@ -610,6 +613,7 @@ export class Game {
     });
     this.interactions.register(this.pillowDig.interactable);
     this.interactions.register(this.toiletPaper.interactable);
+    this.interactions.register(this.courseAssist.interactable);
     this.scent.register(this.pattyTreat.scent);
     this.attention.register(this.pattyTreat.attention);
     this.interactions.register(this.pattyTreat.interactable);
@@ -979,7 +983,7 @@ export class Game {
   private readonly fixedUpdate = (step: number): void => {
     if (!this.moke || !this.physics) return;
     const c = this.moke.controller;
-    this.updateMoveIntent();
+    this.updateMoveIntent(step);
     const glideTarget = this.rest.glideTarget;
     const paperTarget = this.toiletPaper?.approachTarget;
     const watching = this.watchGame?.watchingScreen ?? null;
@@ -1027,7 +1031,7 @@ export class Game {
    * WASD relative to the camera: W = away from it. While keys stay held, the reference angle only
    * follows the player's own mouse turns (see MoveBasis), so automatic camera motion can't bend his path.
    */
-  private updateMoveIntent(): void {
+  private updateMoveIntent(step: number): void {
     const input = this.input.state;
     // Watching TV full screen: he sits still (any button ends it, in frame()).
     if (this.watchTv?.watching) {
@@ -1047,6 +1051,21 @@ export class Game {
         this.moveIntent.walk = cmd?.walk ?? false;
         this.moveIntent.run = cmd?.run ?? false;
         return;
+      }
+    }
+    if (this.courseAssist.active && this.moke) {
+      // Helping over a hurdle or round a weave pole: moving yourself takes over.
+      if (moving) this.courseAssist.cancel();
+      else {
+        const cmd = this.courseAssist.steer(step, this.moke.controller);
+        if (cmd) {
+          this.moveIntent.x = cmd.x;
+          this.moveIntent.z = cmd.z;
+          this.moveIntent.walk = false;
+          this.moveIntent.run = cmd.run;
+          if (cmd.jump) this.jump();
+          return;
+        }
       }
     }
     const yaw = this.moveBasis.update(moving, this.followCamera.yaw, this.followCamera.takeManualYawDelta());
@@ -1115,7 +1134,10 @@ export class Game {
     if (!this.fsd || this.fsdOn === on) return;
     this.fsdOn = on;
     this.fsdCmd = null;
-    if (on) this.fsd.reset();
+    if (on) {
+      this.fsd.reset();
+      this.courseAssist.cancel();
+    }
     this.ui.setFsd(on);
     this.ui.showToast(toast ?? (on ? 'FSD on: Moke is driving himself. Move to take over.' : 'FSD off: Moke is all yours.'), 2600);
   }
@@ -1313,6 +1335,7 @@ export class Game {
     };
     this.barkForActivities = false;
     this.course.update(step, c, this.room.roomAt(c.position.x, c.position.z).id === 'backyard');
+    this.courseAssist.update(c);
     this.director.update(step, ctx);
 
     // KITCHEN = FOOD?: hanging about the stove while dinner cooks.

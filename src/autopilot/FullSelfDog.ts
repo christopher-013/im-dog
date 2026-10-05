@@ -1,6 +1,6 @@
 import { courseForward, coursePoint } from '../activities/ObstacleCourse';
 import { FSD } from '../config/autopilot';
-import { COURSE } from '../config/obstacleCourse';
+import { COURSE, HURDLE_HOP } from '../config/obstacleCourse';
 import type { Point2 } from '../human/NavGrid';
 import type { Vec3Like } from '../physics/CharacterBody';
 
@@ -539,7 +539,7 @@ export class FullSelfDog {
     const at = (a: number, status: string, off = 0, extra: Partial<Move> = {}) => moves.push({ ...coursePoint(a, off), within: 0.2, status, ...extra });
     at(-0.2, 'Through the arch!');
     at(0.25, 'Through the arch!');
-    for (const h of COURSE.hurdles.at) at(h + 0.22, 'Jumping the hurdles!', 0, { run: true, jumpAt: 0.22 * COURSE.radius + 0.45 });
+    for (const h of COURSE.hurdles.at) at(h + HURDLE_HOP.landPast, 'Jumping the hurdles!', 0, { run: true, jumpAt: HURDLE_HOP.jumpAt });
     const wv = COURSE.weave;
     for (let i = 0; i < wv.count; i++) at(wv.from + i * wv.step, 'Weaving the poles!', (i % 2 ? -1 : 1) * 0.28);
     at(wv.from + wv.count * wv.step, 'Weaving the poles!');

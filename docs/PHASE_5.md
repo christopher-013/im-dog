@@ -91,13 +91,20 @@ sessions.
 - **Out the door:** the gym's southern slider stands open (slid in front of its fixed pane), and the backyard is part
   of the one connected space: solid patio and lawn, solid furniture, held in by the hedges, the back fence (moved
   back to make room) and the house (D28). A soft sky dome and a roof over the wing make it look right from outside.
-- **Liam's Obstacle Course**, on the lawn behind the patio furniture: a small loop with a start/finish arch, the sign
-  "Liam's Obstacle Course", two low hurdles to hop, five weave poles to go in and out of, and a gentle hill to run up
+- **Liam's Obstacle Course**, on the lawn behind the patio furniture: a small loop with a start/finish arch whose
+  banner reads "Liam's Obstacle Course · START AND FINISH" (the sign at the back was taken down, owner 2026-10-05), a
+  paved path in from the patio (straight out, then curving right to the START arrow), two low hurdles to hop, five weave poles to go in and out of, and a gentle hill to run up
   and down. The HUD walks him through it; stations count in order; nothing fails. Details: `ACTIVITIES.md`,
   `HOME_REFERENCE.md`; numbers in `config/obstacleCourse.ts`.
 - **Done:** fireworks over the screen and **"Moke is tired!"** with his time, then the human waits just inside the
   open slider with a **hamburger patty** and gives it to him when he comes in (`CourseReward`).
 - **FSD** runs the course too, then goes in for the patty.
+- **One-press help** (owner, 2026-10-05: "easier to navigate"): during a run, coming up to the next hurdle the paw
+  (E, or the paw on touch) reads **Jump Hurdle**, and at the weave poles **Weave Pole n/5**. One press and Moke does
+  that one obstacle by himself (a run-up and a hop; round the pole on the right side), scored by the course's own
+  rules; moving yourself takes over at any time, and doing it all yourself still works. `activities/CourseAssist.ts`,
+  `COURSE_ASSIST` in config. Not offered while FSD drives.
+- **The FSD button** turns light green and pulses gently while FSD drives (still, with reduced motion).
 
 ## 5.3 Watch TV full screen, and STAR VOYAGERS (owner's request, 2026-10-05)
 "If Moke is close to the TV they can watch whatever show is playing as a full screen display of the show; they can

@@ -11,7 +11,7 @@ import {
   backyardSkyTexture,
   clockFaceTexture,
   doorSignTexture,
-  courseSignTexture,
+  coursePathTexture,
   startArrowTexture,
   startBannerTexture,
   flagstoneTexture,
@@ -201,10 +201,9 @@ export function createRoomMaterials() {
     flagTeal: outdoor('flagTeal', '#35b3a6', 0.7, { side: DoubleSide }),
     flagCoral: outdoor('flagCoral', '#f07a5a', 0.7, { side: DoubleSide }),
     flagSun: outdoor('flagSun', '#f4c443', 0.7, { side: DoubleSide }),
-    signPost: outdoor('signPost', '#8a5b34', 0.9),
-    courseSign: (() => {
-      const map = courseSignTexture();
-      return mat('courseSign', map ? '#ffffff' : '#d9a86a', 0.85, { map, emissive: map ? '#ffffff' : '#d9a86a', emissiveMap: map, emissiveIntensity: 0.32 });
+    coursePath: (() => {
+      const map = coursePathTexture();
+      return mat('coursePath', map ? '#ffffff' : '#d9b98a', 0.95, { map, polygonOffset: true, polygonOffsetFactor: -1 });
     })(),
     startBanner: (() => {
       const map = startBannerTexture();

@@ -44,7 +44,24 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code (2026-10-05, owner request): **an independent engineering audit** (performance, security/privacy,
+Claude Code (2026-10-05, owner request, with their screenshot): **Liam's Obstacle Course made easier to find and
+to do, and a green FSD button.**
+- A paved path in from the patio: straight out along the course's middle line, then curving right onto the lane up
+  to the START arrow (`COURSE.entry`, `courseEntryPath()`).
+- The sign at the back is gone; the arch is bigger and its banner reads "Liam's Obstacle Course" and
+  START AND FINISH.
+- **One-press help** (`activities/CourseAssist.ts`): during a run the paw/E offers **Jump Hurdle** before each
+  hurdle and **Weave Pole n/5** at the poles; one press and Moke does that obstacle, scored by the course's own
+  rules. Moving takes over; doing it by hand still works; not while FSD drives.
+- **FSD Engaged!** is light green and pulses (no pulse with reduced motion).
+Verified: typecheck, 576 tests (new: `CourseAssist.test.ts` with the real Moke body: the path walked from the patio
+starts a run; both hurdles and all five poles done with seven presses; a press right up against a hurdle backs up
+and hops; moving cancels; nothing offered under FSD; FSD's own course test still passes), build. In the dev game
+(headless, desktop size): seven real E presses did both hurdles and all five poles, the prompts read "Jump Hurdle"
+and "Weave Pole 1/5"…"5/5", screenshots of the path, arch banner and green button; no console errors. Emulated phone (844×390, touch): the paw's bubble read "Jump Hurdle" and one tap hopped
+the first hurdle. Not tried on a real phone.
+
+Before that, Claude Code (2026-10-05, owner request): **an independent engineering audit** (performance, security/privacy,
 reliability, usability, mobile), in the manner of Codex's Phase 4 audit (`6dd0e0b`). It made two small fixes:
 - **WebGL context loss left the house about 20% darker.** The soft environment lighting is rendered once on the GPU,
   and a lost context loses it. It's now rebuilt when the context comes back (`Game` → `onContextRestored`,

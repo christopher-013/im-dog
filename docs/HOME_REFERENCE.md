@@ -76,10 +76,10 @@ ends of the table.) Walking out of the hallway: the dining room is on your left 
 - **Liam's Obstacle Course** (owner request, 2026-10-04, after Liam's feedback; `obstacleCourse.ts`, numbers in
   `config/obstacleCourse.ts`): on the lawn behind the patio furniture, a loop (radius 3 m round x 27.6,
   z −0.4; widened 2026-10-05 at the owner's request) of mown lane. A start/finish arch with bunting on its south
-  side, which you walk into from the patio heading away from the house, with a red **START & FINISH** banner and a big
-  white **START** arrow painted on the lane in front of it; a wooden sign up high at the back of the course by the
-  fence, facing the house,
-  **"Liam's Obstacle Course"** with paw prints, two low red-and-white hurdles (0.2 m: he has to hop them), five
+  side, which you walk into from the patio heading away from the house, with a red banner, **"Liam's Obstacle Course"** and
+  **START AND FINISH** between paw prints (since 2026-10-05; the wooden sign at the back was taken down), a big white
+  **START** arrow painted on the lane in front of it, and a paved sandstone path with cream chevrons leading in from
+  the patio: straight out along the course's middle line, then curving right onto the lane up to the arrow; two low red-and-white hurdles (0.2 m: he has to hop them), five
   yellow and blue weave poles, and a gentle grassy hill (0.28 m high, ramps of about 20°) to run up and down. See
   `ACTIVITIES.md`.
 

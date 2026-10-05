@@ -246,14 +246,23 @@ World Series special it's Watch the Game instead (with its own close-up). No hum
 
 ### Liam's Obstacle Course (`ObstacleCourse.ts`, `CourseReward.ts`; owner request, 2026-10-04, Phase 5)
 A tribute to Liam's feedback. Out through the gym's open slider, behind the patio furniture, is a small loop on the
-lawn (`HOME_REFERENCE.md`). Near it, the HUD says **"Liam's Obstacle Course! Start at the arch."** A START arrow on the
-lane and a START & FINISH banner show where: through the arch (heading away from the house) starts a run, and the HUD walks him through it:
+lawn (`HOME_REFERENCE.md`). Near it, the HUD says **"Liam's Obstacle Course! Start at the arch."** A paved path leads
+there from the patio (straight out, then curving right onto the lane), a START arrow on the lane and the arch's
+banner ("Liam's Obstacle Course · START AND FINISH") show where: through the arch (heading away from the house) starts a run, and the HUD walks him through it:
 1. **Jump the hurdles! (0/2):** a hurdle counts when he crosses it in the air (or with his feet up); he can't trot
    through them, and going round them doesn't count.
 2. **Weave in and out of the poles! (0/5):** each pole passed on the other side from the last; the same side twice
    ("Oops! In and out, one pole at a time.") starts the weave again.
 3. **Run up and over the hill!:** up onto its top, and down the far side.
 4. **Back through the arch to finish!**
+
+**One-press help** (`CourseAssist.ts`, owner request 2026-10-05): during a run, from about 2.8 m before the next
+hurdle the prompt reads **Jump Hurdle**, and at the weave poles **Weave Pole n/5**. One press of the paw (E, the
+paw on touch, A on a controller) and Moke does just that obstacle: back to a run-up spot if he's too close or off
+to the side, then a run and a hop; or round the pole on the side the rules want (the first on the outside, then the
+other side from the last). The course's own rules score it, exactly as if the player had done it. Moving takes over
+at once, and doing them by hand still works. Not offered while FSD drives (it does the course its own way). The hill
+and the finish are his to run.
 
 Stations count in order and only going forward; nothing fails, so it's always "keep going". Going back indoors
 calls off a run. Finishing: **fireworks over the whole screen and "Moke is tired!"** with the time it took

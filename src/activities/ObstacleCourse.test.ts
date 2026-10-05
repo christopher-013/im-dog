@@ -49,9 +49,8 @@ describe("Liam's Obstacle Course (the rules)", () => {
     const start = coursePoint(0);
     expect(start.z).toBeCloseTo(COURSE.center.z + COURSE.radius, 6);
     expect(courseForward(0).x).toBeCloseTo(1, 6);
-    // A quarter of the way round: the back of the course, by the fence (and the sign).
+    // A quarter of the way round: the back of the course, by the fence.
     expect(coursePoint(Math.PI / 2).x).toBeCloseTo(COURSE.center.x + COURSE.radius, 6);
-    expect(COURSE.sign.x).toBeGreaterThan(coursePoint(Math.PI / 2, COURSE.laneHalfWidth).x);
     const back = courseAngle(coursePoint(2.4, 0.3).x, coursePoint(2.4, 0.3).z);
     expect(back.a).toBeCloseTo(2.4, 6);
     expect(back.off).toBeCloseTo(0.3, 6);

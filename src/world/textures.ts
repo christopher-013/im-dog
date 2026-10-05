@@ -389,68 +389,76 @@ export function doorSignTexture(): CanvasTexture | null {
   });
 }
 
-/** The sign by the obstacle course's arch: "Liam's Obstacle Course", painted on a wooden board with paw prints. */
-export function courseSignTexture(): CanvasTexture | null {
-  return canvasTexture(1024, 512, 47, (ctx, w, h, rand) => {
-    // Planks: warm wood, a few grain lines.
-    ctx.fillStyle = '#d9a86a';
+/**
+ * The path in to the obstacle course: warm sandstone pavers, a little uneven, with a cream chevron pointing the way
+ * (up the texture). One tile is one chevron's worth of path; it repeats along it.
+ */
+export function coursePathTexture(): CanvasTexture | null {
+  return canvasTexture(256, 256, 61, (ctx, w, h, rand) => {
+    ctx.fillStyle = '#cfa877';
     ctx.fillRect(0, 0, w, h);
-    for (let i = 1; i < 4; i++) {
-      ctx.fillStyle = 'rgba(110, 66, 30, 0.35)';
-      ctx.fillRect(0, (h / 4) * i - 2, w, 4);
+    // Pavers: two staggered rows, mortar lines between, each a slightly different shade.
+    const rows = 2;
+    const rowH = h / rows;
+    for (let r = 0; r < rows; r++) {
+      const shift = r % 2 ? w / 4 : 0;
+      for (let c = -1; c < 3; c++) {
+        const x = c * (w / 2) + shift;
+        const v = 0.92 + rand() * 0.14;
+        ctx.fillStyle = `rgb(${Math.round(222 * v)}, ${Math.round(186 * v)}, ${Math.round(136 * v)})`;
+        ctx.fillRect(x + 4, r * rowH + 4, w / 2 - 8, rowH - 8);
+      }
     }
-    ctx.strokeStyle = 'rgba(120, 75, 35, 0.18)';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 40; i++) {
-      const y = rand() * h;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.bezierCurveTo(w * 0.3, y + (rand() - 0.5) * 18, w * 0.7, y + (rand() - 0.5) * 18, w, y + (rand() - 0.5) * 10);
-      ctx.stroke();
+    // Speckles.
+    for (let i = 0; i < 260; i++) {
+      ctx.fillStyle = rand() < 0.5 ? 'rgba(120, 84, 48, 0.18)' : 'rgba(255, 245, 225, 0.22)';
+      ctx.fillRect(rand() * w, rand() * h, 2 + rand() * 3, 2 + rand() * 3);
     }
-    // A painted border.
+    // The chevron, the way to go.
+    ctx.fillStyle = 'rgba(255, 248, 232, 0.92)';
+    ctx.beginPath();
+    ctx.moveTo(w / 2, h * 0.24);
+    ctx.lineTo(w * 0.8, h * 0.56);
+    ctx.lineTo(w * 0.8, h * 0.76);
+    ctx.lineTo(w / 2, h * 0.46);
+    ctx.lineTo(w * 0.2, h * 0.76);
+    ctx.lineTo(w * 0.2, h * 0.56);
+    ctx.closePath();
+    ctx.fill();
+  }, true);
+}
+
+/** The banner on the course's arch: "Liam's Obstacle Course", and START AND FINISH under it, between paw prints. */
+export function startBannerTexture(): CanvasTexture | null {
+  return canvasTexture(1024, 360, 53, (ctx, w, h) => {
+    ctx.fillStyle = '#e0503f';
+    ctx.fillRect(0, 0, w, h);
     ctx.strokeStyle = '#fdf6ea';
-    ctx.lineWidth = 14;
-    ctx.strokeRect(22, 22, w - 44, h - 44);
-    // The words.
+    ctx.lineWidth = 10;
+    ctx.strokeRect(16, 16, w - 32, h - 32);
+    ctx.fillStyle = '#fdf6ea';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#3d2a1c';
-    ctx.font = 'bold 118px Fredoka, "Trebuchet MS", "Arial Rounded MT Bold", sans-serif';
-    ctx.fillText("Liam's", w / 2, h * 0.33);
-    ctx.font = 'bold 92px Fredoka, "Trebuchet MS", "Arial Rounded MT Bold", sans-serif';
-    ctx.fillText('Obstacle Course', w / 2, h * 0.62);
-    // Paw prints along the bottom.
-    ctx.fillStyle = '#e46b4f';
-    for (const [x, y, turn] of [[150, 425, -0.3], [260, 405, 0.2], [w - 260, 405, -0.2], [w - 150, 425, 0.3]] as const) {
+    ctx.font = 'bold 112px Fredoka, "Trebuchet MS", "Arial Rounded MT Bold", sans-serif';
+    ctx.fillText("Liam's Obstacle Course", w / 2, h * 0.38, w - 90);
+    ctx.font = 'bold 66px Fredoka, "Trebuchet MS", "Arial Rounded MT Bold", sans-serif';
+    ctx.fillText('START AND FINISH', w / 2, h * 0.74, w - 300);
+    // Paw prints either side of START AND FINISH.
+    ctx.fillStyle = '#f7c948';
+    for (const [x, turn] of [[95, -0.3], [w - 95, 0.3]] as const) {
       ctx.save();
-      ctx.translate(x, y);
+      ctx.translate(x, h * 0.75);
       ctx.rotate(turn);
       ctx.beginPath();
-      ctx.ellipse(0, 8, 20, 16, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 10, 24, 19, 0, 0, Math.PI * 2);
       ctx.fill();
-      for (const [tx, ty] of [[-20, -14], [-7, -24], [7, -24], [20, -14]] as const) {
+      for (const [tx, ty] of [[-24, -16], [-8, -28], [8, -28], [24, -16]] as const) {
         ctx.beginPath();
-        ctx.ellipse(tx, ty, 7, 9, 0, 0, Math.PI * 2);
+        ctx.ellipse(tx, ty, 8, 10, 0, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
     }
-  });
-}
-
-/** The banner on the course's arch: START, with FINISH under it. */
-export function startBannerTexture(): CanvasTexture | null {
-  return canvasTexture(512, 160, 53, (ctx, w, h) => {
-    ctx.fillStyle = '#e0503f';
-    ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = '#fdf6ea';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = 'bold 92px Fredoka, "Trebuchet MS", "Arial Rounded MT Bold", sans-serif';
-    ctx.fillText('START', w / 2, h * 0.42);
-    ctx.font = 'bold 30px Fredoka, "Trebuchet MS", sans-serif';
-    ctx.fillText('& FINISH', w / 2, h * 0.85);
   });
 }
 

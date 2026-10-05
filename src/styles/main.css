@@ -1829,10 +1829,29 @@ html[data-input='touch'][data-paw-open] .fsd {
   opacity: 0.85;
 }
 
+/* FSD Engaged!: light green, gently pulsing while it drives (owner, 2026-10-05). Dark green words to stay readable. */
 .fsd-button[aria-pressed='true'] {
-  border-color: rgba(255, 255, 255, 0.9);
-  background: rgba(239, 116, 89, 0.82);
-  box-shadow: 0 0 0 4px rgba(239, 116, 89, 0.25), 0 6px 18px rgba(43, 37, 48, 0.2);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: rgba(150, 232, 150, 0.92);
+  color: #1d4d26;
+  box-shadow: 0 0 0 4px rgba(150, 232, 150, 0.3), 0 6px 18px rgba(43, 37, 48, 0.2);
+  animation: fsd-pulse 1.6s ease-in-out infinite;
+}
+
+.fsd-button[aria-pressed='true']:hover {
+  background: rgba(166, 240, 166, 0.96);
+}
+
+@keyframes fsd-pulse {
+  0%,
+  100% {
+    background-color: rgba(150, 232, 150, 0.92);
+    box-shadow: 0 0 0 3px rgba(150, 232, 150, 0.3), 0 6px 18px rgba(43, 37, 48, 0.2);
+  }
+  50% {
+    background-color: rgba(190, 248, 186, 0.98);
+    box-shadow: 0 0 0 10px rgba(150, 232, 150, 0.12), 0 0 26px rgba(150, 232, 150, 0.75);
+  }
 }
 
 /* What Moke is up to, under the button, while FSD drives. */
@@ -2337,7 +2356,8 @@ html[data-input='touch'] .tv-hint-touch {
     transition-duration: 0.01s;
   }
   .touch-actions.has-target .touch-interact,
-  .heist-chip::before {
+  .heist-chip::before,
+  .fsd-button[aria-pressed='true'] {
     animation: none;
   }
   .touch-small,

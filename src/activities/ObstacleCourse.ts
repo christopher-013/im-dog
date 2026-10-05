@@ -29,6 +29,36 @@ export function courseAngle(x: number, z: number): { a: number; off: number } {
   return { a, off: Math.hypot(dx, dz) - COURSE.radius };
 }
 
+/**
+ * The way in from the patio (COURSE.entry), as points along its middle line about `step` apart: straight out along z,
+ * a smooth curve to the right that meets the lane heading the way round, then along the lane to the START arrow.
+ */
+export function courseEntryPath(): { x: number; z: number }[] {
+  const { straight, joinAt, endAt, step } = COURSE.entry;
+  const points: { x: number; z: number }[] = [];
+  for (let x = straight.fromX; x < straight.toX; x += step) points.push({ x, z: straight.z });
+  // The curve: a quadratic from the end of the straight, whose control point is where the straight line (heading +x)
+  // meets the lane's way round at `joinAt` (traced back), so it leaves the one and joins the other without a kink.
+  const p0 = { x: straight.toX, z: straight.z };
+  const p2 = coursePoint(joinAt);
+  const f = courseForward(joinAt);
+  const back = (p2.z - straight.z) / f.z;
+  const c = { x: p2.x - f.x * back, z: straight.z };
+  const length = Math.hypot(c.x - p0.x, c.z - p0.z) + Math.hypot(p2.x - c.x, p2.z - c.z);
+  const n = Math.max(2, Math.ceil(length / step));
+  for (let i = 0; i < n; i++) {
+    const u = i / n;
+    const a = (1 - u) * (1 - u);
+    const b = 2 * (1 - u) * u;
+    const d = u * u;
+    points.push({ x: a * p0.x + b * c.x + d * p2.x, z: a * p0.z + b * c.z + d * p2.z });
+  }
+  const da = step / COURSE.radius;
+  for (let a = joinAt; a < endAt; a += da) points.push(coursePoint(a));
+  points.push(coursePoint(endAt));
+  return points;
+}
+
 export type CourseStation = 'hurdles' | 'weave' | 'hill' | 'finish';
 export type CoursePhase = 'idle' | 'running' | 'done';
 
@@ -67,6 +97,11 @@ export class ObstacleCourse {
   private oops = 0;
 
   constructor(private readonly events: CourseEvents = {}) {}
+
+  /** Which side (outward +1, inward -1) he passed the last weave pole on; 0 before the first. */
+  get lastWeaveSide(): number {
+    return this.station === 'weave' && this.count > 0 ? this.weaveSide : 0;
+  }
 
   get hurdleCount(): number {
     return COURSE.hurdles.at.length;

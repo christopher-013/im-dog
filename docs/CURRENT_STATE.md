@@ -43,6 +43,8 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-05, owner request): the FSD button now says **Engage FSD** (and **FSD Engaged** while it drives), and it's bigger: 196×65 px on a desktop, 152×54 px on a phone (it was about 80×45), the same width on and off so it doesn't jump. Checked in screenshots at 960×540 and 390×844.
+
 Claude Code (2026-10-05, owner request, Phase 5.3): **Watch TV, and STAR VOYAGERS.** In front of any TV, "Watch TV"
 shows whatever it's on full screen (`activities/WatchTv.ts`, `TvChannels.drawFull`, the `#tv-view` overlay) until any
 key, button, stick push, click or tap (`InputState.wasAnyPressed`/`pressAny`); pausing ends it; the World Series

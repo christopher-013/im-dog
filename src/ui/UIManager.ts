@@ -270,10 +270,11 @@ export class UIManager {
   setFsd(on: boolean): void {
     const button = this.el('btn-fsd');
     if (button.getAttribute('aria-pressed') !== String(on)) button.setAttribute('aria-pressed', String(on));
+    // "Engage FSD" to switch it on; "FSD Engaged" while it drives.
+    this.el('fsd-mark').textContent = on ? 'FSD Engaged' : 'Engage FSD';
     if (!on) this.setFsdStatus('');
   }
 
-  /** What Moke's up to while FSD drives ("Answering the door!"). Cheap to call every frame. */
   /** Watch TV: the full-screen view on (with the show's name and channel) or off. */
   showTv(title: string | null): void {
     const view = this.el('tv-view');
@@ -304,6 +305,7 @@ export class UIManager {
     return canvas;
   }
 
+  /** What Moke's up to while FSD drives ("Answering the door!"). Cheap to call every frame. */
   setFsdStatus(text: string): void {
     const status = this.el('fsd-status');
     if (status.textContent !== text) status.textContent = text;

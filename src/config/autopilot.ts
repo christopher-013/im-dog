@@ -66,7 +66,7 @@ export const FSD = {
 /** The rainbow path drawn on the floor ahead of Moke while FSD drives (autopilot/FsdPathView.ts). Metres, seconds. */
 export const FSD_PATH = {
   /** How wide the ribbon is, how far ahead it reaches, and how high over the floor (clear of the rugs). */
-  width: 0.34,
+  width: 0.46,
   maxLength: 7,
   height: 0.018,
   /** A sample every this far along it, at most this many; corners rounded off this far each side. */
@@ -74,6 +74,6 @@ export const FSD_PATH = {
   maxSamples: 110,
   cornerCut: 0.35,
   /** How see-through at most (0..1), and how fast it fades in and out (1/s). */
-  opacity: 0.95,
+  opacity: 0.88,
   fadeRate: 6,
 } as const;

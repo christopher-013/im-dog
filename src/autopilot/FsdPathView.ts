@@ -5,7 +5,8 @@ import type { Point2 } from '../human/NavGrid';
 /**
  * The rainbow path FSD draws on the floor ahead of Moke while it drives (owner request, 2026-10-05: like the path a
  * self-driving car's screen shows): a soft, translucent ribbon from his paws along the route he's about to take,
- * rainbow colours flowing along it and bright chevrons pulsing forward, fading in at his feet and out at the far end.
+ * like the rainbow road on a self-driving car's screen: a solid ribbon whose colours run through the rainbow along its
+ * length and keep flowing forward, a soft sheen rolling over it, fading out at the far end.
  * Drawing only: it reads FSD's trail (FullSelfDog.trail) and knows nothing else.
  */
 export class FsdPathView {
@@ -58,17 +59,15 @@ export class FsdPathView {
         void main() {
           float s = vUv.x;                      // metres along, from his paws
           float across = abs(vUv.y - 0.5) * 2.0; // 0 down the middle, 1 at the edges
-          float edge = 1.0 - smoothstep(0.45, 1.0, across);
-          float ends = smoothstep(0.05, 0.6, s) * (1.0 - smoothstep(length - 1.6, length, s));
-          // The rainbow, flowing forward along the path: rich colours, so it reads on a pale floor too.
-          vec3 col = hsv2rgb(vec3(fract(s * 0.16 - time * 0.3), 0.85, 1.0));
-          // Chevrons (pointing the way he's going) pulsing forward.
-          float chev = fract((s - across * 0.22) * 1.6 - time * 1.4);
-          float pulse = smoothstep(0.0, 0.12, chev) * (1.0 - smoothstep(0.28, 0.5, chev));
-          // A brighter line down the middle, like a lane's centre.
-          float spine = 1.0 - smoothstep(0.0, 0.22, across);
-          float a = opacity * ends * clamp(edge * (0.6 + 0.4 * pulse) + spine * 0.25, 0.0, 1.0);
-          gl_FragColor = vec4(col * (0.85 + 0.35 * pulse + 0.2 * spine), a);
+          // A solid road: crisp edges (just softened), from under him to a fade at the far end.
+          float edge = 1.0 - smoothstep(0.82, 1.0, across);
+          float ends = smoothstep(0.0, 0.2, s) * (1.0 - smoothstep(length - 1.8, length, s));
+          // The rainbow along its length, flowing forward the whole time.
+          vec3 col = hsv2rgb(vec3(fract(s * 0.2 - time * 0.4), 0.82, 1.0));
+          // A soft sheen rolling forward over it.
+          float sheen = 0.5 + 0.5 * sin((s - time * 2.2) * 2.6);
+          float a = opacity * ends * edge;
+          gl_FragColor = vec4(col * (0.88 + 0.18 * sheen), a);
           #include <colorspace_fragment>
         }`,
     });

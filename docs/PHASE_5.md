@@ -66,7 +66,7 @@ sessions.
   hopeless goal never costs a whole-house search. Tuning: `src/config/autopilot.ts`.
 - **Controls:** the FSD button, G, or the left stick pressed on a controller.
 - **The rainbow path** (2026-10-05): while FSD drives, a glowing rainbow ribbon on the floor shows the way Moke is
-  about to run, colours and chevrons flowing forward (`autopilot/FsdPathView.ts`, `FullSelfDog.trail`, `FSD_PATH`).
+  about to run: a solid rainbow road, its colours flowing forward (`autopilot/FsdPathView.ts`, `FullSelfDog.trail`, `FSD_PATH`).
 - **Fetch** is a real game (2026-10-05): ask until they give in, then fetch and bring the ball back after each throw.
   Liam's Obstacle Course waits 2 minutes, then comes at most every 5 minutes. Squeezes (a treat under the dining
   table) use a finer grid at Moke's exact size for the last few metres.

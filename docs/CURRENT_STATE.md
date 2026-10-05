@@ -43,6 +43,22 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-05, owner request: "FSD doesn't complete all the tasks"): **FSD verified and fixed in the real
+game.**
+- **Fetch** now really plays: it keeps asking (a bark or a trick every few seconds) until the human gives in, then
+  fetches the ball after each throw, brings it back and drops it at their feet (`playFetch`; `FsdWorld.play` reads
+  Make Human Play's phase). Seen in the game: 4 asks, then 4 throws fetched.
+- **The squeaky fish:** it always chewed (checked), now for 9–13 s so it's obvious.
+- **Liam's Obstacle Course** is rarer: not in FSD's first 2 minutes, then at most every 5 minutes (strict per-routine
+  `cooldown`/`notBefore`).
+- **Getting stuck:** getting down off something tries other directions (with a hop) when one is blocked (it used to
+  stick on the hearth forever); naps skip the sofas (Dig & Toss Pillows wins there); hop run-ups work from another
+  room; a second, finer grid at Moke's exact size (built while loading) handles squeezes: to a treat under the dining
+  table, and back out from between the dining chairs (where it once stuck for 400 s). The fine grid is only for the
+  last 4 m and checked with patch labels first, so it never costs a hitch.
+- Verified with 8-minute headless runs of the real game: every routine starts, nearly all finish (a few give up and
+  he moves on), worst FSD frame under 10 ms, no console errors; new Rapier tests for the squeeze and the chairs.
+
 Claude Code (2026-10-05, owner request): **Watch TV, closer and framed.** "Watch TV" now only appears when Moke is
 stopped, close (2.1 m at most), in front of a TV and facing it (`HOME_ACTIVITIES.watchTv`); FSD walks up to 1.8 m,
 turns to face the screen and stands still first. The full-screen view now shows the picture inside a TV set (bezel,

@@ -65,6 +65,9 @@ sessions.
   connects first. Both use `NavGrid.region` / `nearestReachable` (connected patches of floor, labelled once), so a
   hopeless goal never costs a whole-house search. Tuning: `src/config/autopilot.ts`.
 - **Controls:** the FSD button, G, or the left stick pressed on a controller.
+- **Fetch** is a real game (2026-10-05): ask until they give in, then fetch and bring the ball back after each throw.
+  Liam's Obstacle Course waits 2 minutes, then comes at most every 5 minutes. Squeezes (a treat under the dining
+  table) use a finer grid at Moke's exact size for the last few metres.
 
 ## Verification (2026-10-04)
 - Unit tests (`autopilot/FullSelfDog.test.ts`, 10): exploring, the doorbell cutting in, routing round walls, watching

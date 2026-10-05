@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { FSD } from '../config/autopilot';
+import { HEIST } from '../config/heist';
 import { MISCHIEF_TABLES, PILLOW_SOFAS } from '../config/mischief';
 import { MOKE_BODY, MOVEMENT } from '../config/movement';
 import { NavGrid } from '../human/NavGrid';
@@ -15,8 +17,10 @@ import { FullSelfDog, type FsdSurface, type FsdTarget, type FsdWorld } from './F
 const DT = 1 / 60;
 const home = new Home();
 const nav = new NavGrid(home.colliders, { bounds: home.bounds, cell: 0.1, agentRadius: MOKE_BODY.radius + 0.04, minY: 0.03, maxY: 0.38 });
+/** The game's finer grid at his exact size, for squeezes. */
+const tightNav = new NavGrid(home.colliders, { bounds: home.bounds, cell: 0.05, agentRadius: MOKE_BODY.radius + 0.01, minY: 0.03, maxY: 0.38 });
 
-async function drive(opts: { targets?: FsdTarget[]; surfaces?: FsdSurface[]; doorRinging?: boolean; random?: () => number; course?: ObstacleCourse; start?: { x: number; z: number } }) {
+async function drive(opts: { targets?: FsdTarget[]; surfaces?: FsdSurface[]; doorRinging?: boolean; random?: () => number; course?: ObstacleCourse; start?: { x: number; z: number }; tuning?: typeof FSD; tight?: boolean }) {
   const physics = await PhysicsWorld.create();
   physics.addStaticBoxes(home.colliders);
   physics.commitStaticGeometry();
@@ -41,13 +45,14 @@ async function drive(opts: { targets?: FsdTarget[]; surfaces?: FsdSurface[]; doo
     holdingPaper: false,
     course: opts.course ?? null,
     rewardWaiting: false,
+    play: { phase: 'idle' },
     interactables: targets,
     get current() { return current; },
     screens: TV_SCREENS,
     surfaces: opts.surfaces ?? [],
     roomName: (x, z) => home.roomAt(x, z).name,
   };
-  const fsd = new FullSelfDog(nav, opts.random ?? (() => 0));
+  const fsd = new FullSelfDog(nav, opts.random ?? (() => 0), opts.tuning, opts.tight ? () => tightNav : undefined);
   const pressed: string[] = [];
   const run = (seconds: number, each?: () => void) => {
     for (let i = 0; i < seconds / DT; i++) {
@@ -100,7 +105,8 @@ describe('FSD in the real house (Rapier)', () => {
   it("goes out through the open slider and runs Liam's Obstacle Course all the way round, by its rules", async () => {
     let done = 0;
     const course = new ObstacleCourse({ onComplete: () => done++ });
-    const d = await drive({ course, start: { x: 15.4, z: (BACKYARD_DOORWAY.zMin + BACKYARD_DOORWAY.zMax) / 2 } });
+    // (FSD normally leaves the course for its first couple of minutes.)
+    const d = await drive({ course, start: { x: 15.4, z: (BACKYARD_DOORWAY.zMin + BACKYARD_DOORWAY.zMax) / 2 }, tuning: { ...FSD, courseFirstAfter: 0 } as unknown as typeof FSD });
     d.run(70);
     expect(d.fsd.stats.started.get('course')).toBeGreaterThanOrEqual(1);
     expect(d.fsd.stats.failed.get('course') ?? 0).toBe(0);
@@ -122,4 +128,29 @@ describe('FSD in the real house (Rapier)', () => {
     expect(wentOut).toBe(false);
     expect(up, 'seconds up on the couch').toBeGreaterThan(2);
   }, 60_000);
+
+  it('squeezes between the dining chairs to a treat hidden under the table', async () => {
+    const spot = home.landmarks.underDiningTable;
+    const treat: FsdTarget = { id: 'eat:hunt', label: 'Eat Treat', enabled: true, position: { x: spot.x, y: 0, z: spot.z }, interactionDistance: HEIST.eatReach };
+    const d = await drive({ targets: [treat], start: { x: 8.0, z: 1.2 }, tight: true });
+    let ateAt: number | null = null;
+    d.run(30, () => {
+      if (ateAt === null && d.pressed.includes('interact')) ateAt = Math.hypot(d.c.position.x - spot.x, d.c.position.z - spot.z);
+    });
+    expect(ateAt, 'pressed Eat').not.toBeNull();
+    expect(ateAt!, 'with the treat in reach').toBeLessThan(HEIST.eatReach);
+    expect(d.fsd.stats.failed.get('eatTreat') ?? 0).toBe(0);
+  }, 60_000);
+
+  it('gets back out from between the dining chairs (where he once got stuck) to go somewhere else', async () => {
+    const d = await drive({ doorRinging: true, start: { x: 9.0, z: -2.5 }, tight: true,
+      targets: [{ id: 'door:bark', label: 'Bark', enabled: true, position: { x: 8.0, y: 0, z: 2.0 }, interactionDistance: 0.9 }] });
+    let got = false;
+    d.run(25, () => {
+      if (!got && d.pressed.includes('interact')) got = true;
+    });
+    expect(got, 'out from the chairs and over to the kitchen').toBe(true);
+    expect(d.fsd.stats.failed.get('door') ?? 0).toBe(0);
+  }, 60_000);
 });
+

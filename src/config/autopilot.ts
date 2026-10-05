@@ -32,13 +32,28 @@ export const FSD = {
   tableFor: [6, 9] as const,
   digFor: [6, 8] as const,
   carryFor: [4, 7] as const,
-  chewFor: [4, 6] as const,
+  chewFor: [9, 13] as const,
   /** Waiting for a "beg" prompt (sitting still beside the human) at most this long. */
   begWait: 9,
   /** Watching a show full screen (Watch TV), how long (s) before he presses a button to stop. */
   tvFor: [8, 14] as const,
   /** …from a spot this close to the screen (Watch TV is only offered close up, m). */
   tvWithin: 1.8,
+  /** Liam's Obstacle Course: not in FSD's first couple of minutes, then at most this often (s). */
+  courseFirstAfter: 120,
+  courseEvery: 300,
+  /**
+   * Fetch with the human: a bark or a trick this often while asking (they need a few asks), drop it this close to
+   * them, chase it once it's this far from them (a throw, not a drop at their feet), and play at most this long.
+   */
+  fetchAskEvery: 2.6,
+  fetchDropAt: 0.9,
+  fetchChaseBeyond: 1.6,
+  fetchFor: 75,
+  /** The fine grid (for squeezes) is only used within this of where he's going, or to get out of a pocket (m). */
+  tightWithin: 4,
+  /** Getting down off something: this long trying one way before another (s). */
+  hopOffTry: 1.6,
   /** Watching the ballgame: how far in front of the TV he sits (m). */
   watchDistance: 1.6,
   /** Running off with the sock: how far from the human he heads (m), and how often he picks a new spot (s). */

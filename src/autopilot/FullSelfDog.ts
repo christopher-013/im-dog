@@ -83,6 +83,8 @@ export interface FsdWorld {
   readonly course: { readonly phase: string } | null;
   /** He's finished the course and the hamburger patty is waiting for him indoors. */
   readonly rewardWaiting: boolean;
+  /** Make Human Play (fetch with the human): 'asking' (they're holding out), 'playing', or 'idle'. */
+  readonly play: { readonly phase: 'idle' | 'asking' | 'playing' };
   readonly interactables: readonly FsdTarget[];
   /** The prompt showing right now (InteractionSystem.current), or null. */
   readonly current: string | null;
@@ -129,6 +131,10 @@ interface Routine {
   readonly weight: number;
   /** Urgent routines cut in on whatever he's doing. */
   readonly urgent?: boolean;
+  /** Its own rest after it's done (s), strict: never picked sooner, even with nothing else to do. */
+  readonly cooldown?: number;
+  /** Not before FSD has been on this long (s). */
+  readonly notBefore?: number;
   available(w: FsdWorld): boolean;
   plan(w: FsdWorld): Step[];
 }
@@ -152,6 +158,8 @@ export class FullSelfDog {
   private readonly lastDone = new Map<string, number>();
   private readonly watchSpots = new Map<string, Point2 | null>();
   private now = 0;
+  /** Seconds since FSD was last switched on. */
+  private sinceOn = 0;
   private readonly cmd: FsdCommand = { x: 0, z: 0, run: false, walk: false, presses: new Set() };
   private readonly routines: Routine[];
 
@@ -159,9 +167,18 @@ export class FullSelfDog {
     private readonly nav: FsdNav,
     private readonly random: () => number = Math.random,
     private readonly tuning: Tuning = FSD,
+    /**
+     * A finer grid at his exact size, for the squeezes the usual (cautious) one rules out: between the dining chairs to
+     * a treat under the table. Made the first time it's needed.
+     */
+    tightNav?: () => FsdNav,
   ) {
+    let tight: FsdNav | null = null;
+    this.tight = tightNav ? () => (tight ??= tightNav()) : null;
     this.routines = this.buildRoutines();
   }
+
+  private readonly tight: (() => FsdNav) | null;
 
   /** Starts fresh (turned on again). */
   reset(): void {
@@ -170,6 +187,7 @@ export class FullSelfDog {
     this.status = '';
     this.pause = 0;
     this.lastDone.clear();
+    this.sinceOn = 0;
   }
 
   /** Each rendered frame while playing. The command is reused: read it before the next call. */
@@ -179,6 +197,7 @@ export class FullSelfDog {
     cmd.run = cmd.walk = false;
     cmd.presses.clear();
     this.now += dt;
+    this.sinceOn += dt;
 
     // An urgent routine cuts in (unless that one's already running).
     const urgent = this.routines.find((r) => r.urgent && r.id !== this.routineId && r.available(w) && !this.cooling(r));
@@ -246,6 +265,13 @@ export class FullSelfDog {
     return this.routines.some((r) => r.id === this.routineId && r.urgent);
   }
 
+  /** A routine with its own strict rest (or start delay) that isn't over yet. */
+  private resting(r: Routine): boolean {
+    if (r.notBefore !== undefined && this.sinceOn < r.notBefore) return true;
+    const done = this.lastDone.get(r.id);
+    return r.cooldown !== undefined && done !== undefined && this.now - done < r.cooldown;
+  }
+
   private cooling(r: Routine): boolean {
     const done = this.lastDone.get(r.id);
     return done !== undefined && this.now - done < (r.urgent ? 3 : this.tuning.routineCooldown);
@@ -253,7 +279,7 @@ export class FullSelfDog {
 
   /** A weighted random pick among what he could do now (anything off cooldown; if nothing is, anything at all). */
   private pick(w: FsdWorld): Routine | null {
-    const open = this.routines.filter((r) => !r.urgent && r.available(w));
+    const open = this.routines.filter((r) => !r.urgent && r.available(w) && !this.resting(r));
     const fresh = open.filter((r) => !this.cooling(r));
     const choices = fresh.length ? fresh : open;
     let total = choices.reduce((s, r) => s + r.weight, 0);
@@ -279,6 +305,9 @@ export class FullSelfDog {
     const emptyMouth = (w: FsdWorld): Step[] => (w.moke.carrying && w.moke.carrying !== 'paper' ? [this.interact('pickup:drop')] : []);
     const offFurniture = (w: FsdWorld): Step[] => (w.moke.position.y > 0.2 ? [this.hopOff()] : []);
     const humanFree = (w: FsdWorld) => !!w.human && w.human.available && free(w);
+    // Where he naps: his beds and the hearth. Not the sofas: up there "Dig & Toss Pillows" comes first (its own routine).
+    const onSofa = (w: FsdWorld, p: Point2) => w.surfaces.some((s) => s.kind === 'sofa' && Math.abs(p.x - s.x) <= s.halfX + 0.15 && Math.abs(p.z - s.z) <= s.halfZ + 0.15);
+    const napSpots = (w: FsdWorld) => w.interactables.filter((t) => t.id.startsWith('rest:') && !t.id.endsWith(':getUp') && !onSofa(w, t.position));
     const toys = [
       ['ball', 'Playing with the tennis ball'],
       ['toy', 'Playing with the rope toy'],
@@ -358,8 +387,7 @@ export class FullSelfDog {
       {
         id: 'fetch', status: 'Asking for a game of fetch', weight: 1.6,
         available: (w) => humanFree(w) && enabled(w, 'pickup:ball'),
-        plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.interact('pickup:ball'), this.goToHuman(1.1),
-          this.interact('pickup:drop'), this.wait(0.8), this.press('bark'), this.wait(1.4), this.press('trick'), this.wait(5)],
+        plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.interact('pickup:ball'), this.goToHuman(1.1), this.playFetch()],
       },
       {
         id: 'sock', status: 'Stealing a sock…', weight: 1.4,
@@ -406,9 +434,9 @@ export class FullSelfDog {
       },
       {
         id: 'nap', status: 'Looking for a nap spot', weight: 1.4,
-        available: (w) => free(w) && w.interactables.some((t) => t.id.startsWith('rest:') && !t.id.endsWith(':getUp')),
+        available: (w) => free(w) && napSpots(w).length > 0,
         plan: (w) => {
-          const spots = w.interactables.filter((t) => t.id.startsWith('rest:') && !t.id.endsWith(':getUp'));
+          const spots = napSpots(w);
           const spot = spots[Math.floor(this.random() * spots.length)]!;
           const up = spot.position.y > 0.15 ? [this.hopOn({ x: spot.position.x, z: spot.position.z, height: spot.position.y })] : [];
           return [...emptyMouth(w), ...offFurniture(w), ...up, this.interact(spot.id),
@@ -452,7 +480,8 @@ export class FullSelfDog {
         },
       },
       {
-        id: 'course', status: "Off to Liam's Obstacle Course!", weight: 1.6,
+        id: 'course', status: "Off to Liam's Obstacle Course!", weight: 1,
+        cooldown: this.tuning.courseEvery, notBefore: this.tuning.courseFirstAfter,
         available: (w) => free(w) && !!w.course && w.course.phase !== 'running',
         plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.go(coursePoint(-0.45), 0.35, true), this.runCourse(),
           this.wait(2.5, 'Phew! Moke is tired!')],
@@ -549,6 +578,68 @@ export class FullSelfDog {
     };
   }
 
+  /**
+   * A game of fetch with the human (Make Human Play), from bringing them the ball: keep asking (a bark, a trick, every
+   * couple of seconds) until they give in; then, each time they throw it, run and get it, bring it back and drop it at
+   * their feet; wait while they pick it up. Done when they've had enough (or never gave in).
+   */
+  private playFetch(): Step {
+    const route = new Route(this.nav, this.tuning, this.tight);
+    let time = 0;
+    let sinceAsk = 0;
+    let asks = 0;
+    let played = false;
+    let status = 'Asking for a game of fetch';
+    return {
+      timeout: Infinity,
+      get status() { return status; },
+      update: (dt, w, cmd) => {
+        time += dt;
+        sinceAsk += dt;
+        const human = w.human;
+        const phase = w.play.phase;
+        if (!human || time > this.tuning.fetchFor) return played ? 'done' : 'failed';
+        if (phase === 'playing') played = true;
+        else if (played) return 'done';
+        else if (phase === 'idle' && time > 4) return 'failed';
+        const p = w.moke.position;
+        const dHuman = flat(p, human.position);
+        const ball = w.interactables.find((t) => t.id === 'pickup:ball');
+        const carrying = w.moke.carrying === 'ball';
+        if (phase !== 'playing') {
+          // Asking: stay close with it, and keep at them.
+          status = 'Asking for a game of fetch';
+          if (dHuman > 1.3) return route.steer(dt, w, human.position, cmd, false) ? 'running' : 'failed';
+          if (sinceAsk > this.tuning.fetchAskEvery) {
+            sinceAsk = 0;
+            cmd.presses.add(asks++ % 2 ? 'trick' : 'bark');
+          }
+          return 'running';
+        }
+        if (carrying) {
+          // Bring it back and drop it at their feet.
+          status = 'Bringing the ball back!';
+          if (dHuman > this.tuning.fetchDropAt) return route.steer(dt, w, human.position, cmd, true) ? 'running' : 'failed';
+          if (w.current === 'pickup:drop') cmd.presses.add('interact');
+          return 'running';
+        }
+        // Thrown and lying loose, away from them: go get it!
+        if (ball?.enabled && flat(ball.position, human.position) > this.tuning.fetchChaseBeyond) {
+          status = 'Fetch!';
+          if (w.current === 'pickup:ball') {
+            cmd.presses.add('interact');
+            return 'running';
+          }
+          return route.steer(dt, w, ball.position, cmd, true) ? 'running' : 'failed';
+        }
+        // In their hand, or at their feet: wait, watching, ready to go.
+        status = 'Ready… throw it!';
+        if (dHuman > 2.2) return route.steer(dt, w, human.position, cmd, false) ? 'running' : 'failed';
+        return 'running';
+      },
+    };
+  }
+
   /** Turns on the spot to face `at` (a little walk toward it), then stands still. */
   private face(at: Point2): Step {
     let time = 0;
@@ -573,7 +664,7 @@ export class FullSelfDog {
 
   /** Keeps away from the human (the Sock Heist chase), a new spot every so often, until `until` (or `timeout`). */
   private keepAway(until: (w: FsdWorld) => boolean, timeout: number): Step {
-    const route = new Route(this.nav, this.tuning);
+    const route = new Route(this.nav, this.tuning, this.tight);
     let spot: Point2 | null = null;
     let since = 0;
     let left = timeout;
@@ -587,8 +678,8 @@ export class FullSelfDog {
           since = 0;
           route.replan();
         }
-        // Cornered (no way there, or stuck): somewhere else next frame.
-        if (!route.steer(dt, w, { x: spot.x, y: 0, z: spot.z }, cmd, true)) spot = null;
+        // Cornered (no way there, or stuck): somewhere else, in a moment.
+        if (!route.steer(dt, w, { x: spot.x, y: 0, z: spot.z }, cmd, true)) since = this.tuning.fleeEvery - 0.5;
         return 'running';
       },
     };
@@ -615,7 +706,7 @@ export class FullSelfDog {
 
   /** Off to wherever `where` says (re-read each frame). Done within `within`; fails if there's no way there. */
   private goTo(where: (w: FsdWorld) => Vec3Like | null, within: number, run = false, status?: string): Step {
-    const route = new Route(this.nav, this.tuning);
+    const route = new Route(this.nav, this.tuning, this.tight);
     return {
       status,
       update: (dt, w, cmd) => {
@@ -632,7 +723,7 @@ export class FullSelfDog {
    * come up (another prompt can win for a moment). Fails if it's gone.
    */
   private interact(id: string, wait = 3): Step {
-    const route = new Route(this.nav, this.tuning);
+    const route = new Route(this.nav, this.tuning, this.tight);
     let inRange = 0;
     return {
       update: (dt, w, cmd) => {
@@ -664,7 +755,7 @@ export class FullSelfDog {
    * tries; between them, back to the start of the run-up.
    */
   private hopOn(surface: { x: number; z: number; height: number; halfX?: number; halfZ?: number }): Step {
-    const route = new Route(this.nav, this.tuning);
+    const route = new Route(this.nav, this.tuning, this.tight);
     let runUp: { from: Point2; jumpAt: number } | null = null;
     let phase: 'approach' | 'runUp' | 'air' = 'approach';
     let phaseTime = 0;
@@ -704,12 +795,22 @@ export class FullSelfDog {
 
   /** Down off whatever he's on: walk off toward open floor a body-length or so away (not the floor under a table). */
   private hopOff(): Step {
-    let floor: Point2 | null = null;
+    let floors: Point2[] | null = null;
+    let index = 0;
+    let time = 0;
     return {
-      update: (_dt, w, cmd) => {
+      update: (dt, w, cmd) => {
         const p = w.moke.position;
         if (p.y < 0.08 && w.moke.grounded) return 'done';
-        floor ??= this.floorAround(p);
+        floors ??= this.floorsAround(p);
+        // That way's blocked (a wall, a fireplace): the next way, with a hop.
+        time += dt;
+        if (time > this.tuning.hopOffTry) {
+          time = 0;
+          index++;
+          if (w.moke.grounded) cmd.presses.add('jump');
+        }
+        const floor = floors[index];
         if (!floor) return 'failed';
         aim(p, floor, cmd, 0.8);
         return 'running';
@@ -732,8 +833,16 @@ export class FullSelfDog {
     if (s.halfX === undefined || s.halfZ === undefined) {
       const d = Math.max(1e-3, flat(from, s));
       const toward = { x: s.x + ((from.x - s.x) / d) * (out + 0.5), z: s.z + ((from.z - s.z) / d) * (out + 0.5) };
-      const at = this.nav.nearestWalkable(toward.x, toward.z, 1.2) ?? this.nav.nearestWalkable(s.x, s.z, 2.5);
-      return at && sameRoom(at) ? { from: at, jumpAt: 0.7 } : null;
+      const near = this.nav.nearestWalkable(toward.x, toward.z, 1.2);
+      if (near && sameRoom(near)) return { from: near, jumpAt: 0.7 };
+      // He's coming from another room (or outside): open floor round the spot in its own room, the nearest to him.
+      let best: Point2 | null = null;
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2;
+        const q = { x: s.x + Math.sin(a) * (out + 0.5), z: s.z + Math.cos(a) * (out + 0.5) };
+        if (this.nav.isWalkable(q.x, q.z) && sameRoom(q) && (!best || flat(q, from) < flat(best, from))) best = q;
+      }
+      return best ? { from: best, jumpAt: 0.7 } : null;
     }
     const alongZ = s.halfX >= s.halfZ;
     const long = alongZ ? [[0, -1], [0, 1]] as const : [[-1, 0], [1, 0]] as const;
@@ -756,17 +865,23 @@ export class FullSelfDog {
   }
 
   /** Open floor around `p`, about a metre off (nearest first). */
-  private floorAround(p: Point2): Point2 | null {
-    let best: Point2 | null = null;
-    for (const r of [0.8, 1.1, 1.5]) {
-      for (let k = 0; k < 16; k++) {
-        const a = (k / 16) * Math.PI * 2;
+  private floorsAround(p: Point2): Point2[] {
+    // Open floor in every direction, nearest first, one per direction (so each try is a different way off).
+    const found: { q: Point2; d: number; a: number }[] = [];
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      for (const r of [0.8, 1.1, 1.5, 2]) {
         const q = { x: p.x + Math.sin(a) * r, z: p.z + Math.cos(a) * r };
-        if (this.nav.isWalkable(q.x, q.z) && (!best || flat(q, p) < flat(best, p))) best = q;
+        if (!this.nav.isWalkable(q.x, q.z)) continue;
+        found.push({ q, d: r, a });
+        break;
       }
-      if (best) return best;
     }
-    return this.nav.nearestWalkable(p.x, p.z, 2);
+    found.sort((x, y) => x.d - y.d);
+    const out = found.map((f) => f.q);
+    const last = this.nav.nearestWalkable(p.x, p.z, 2.5);
+    if (last) out.push(last);
+    return out;
   }
 
   /**
@@ -851,7 +966,7 @@ class Route {
   /** Getting out of a pocket of floor first (see steer). */
   private escape: Point2 | null = null;
 
-  constructor(private readonly nav: FsdNav, private readonly tuning: Tuning) {}
+  constructor(private readonly nav: FsdNav, private readonly tuning: Tuning, private readonly tight: (() => FsdNav) | null = null) {}
 
   /** Somewhere new: plan afresh next time (and forget being stuck). */
   replan(): void {
@@ -870,7 +985,17 @@ class Route {
       // Head for the nearest floor he can actually get to (a treat tucked in a tight spot): cheap, where a search for
       // a cut-off goal would comb the whole house first.
       const goal = this.nav.nearestReachable(p, to);
-      if (goal) {
+      // The usual grid can't quite get there (a squeeze between chairs to a treat), or he's in a pocket it thinks is
+      // closed off: the tight grid, for the last few metres only (it's four times the cells, so never a long route).
+      const near = this.tuning.tightWithin;
+      const tight = this.tight && (!goal || flat(goal, to) > 0.2) ? this.tight() : null;
+      const out = !goal ? this.nav.nearestReachable(to, p, near) : null;
+      if (tight && goal && flat(p, to) <= near && tight.nearestReachable(p, to, 0.05) && tight.findPath(p, to, this.path)) {
+        this.escape = null;
+      } else if (tight && out && tight.nearestReachable(p, out, 0.05) && tight.findPath(p, out, this.path)) {
+        // Out of the pocket on the tight grid first, then plan on as usual.
+        this.escape = out;
+      } else if (goal) {
         if (!this.nav.findPath(p, goal, this.path)) return false;
         this.escape = null;
       } else {

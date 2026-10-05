@@ -5,6 +5,7 @@ import { AudioManager } from '../audio/AudioManager';
 import { ASSET_MANIFEST, MOKE_MODEL_AVAILABLE } from '../config/assets';
 import { MOKE_ATTENTION } from '../config/attention';
 import { CAMERA, TV_CLOSE_UP } from '../config/camera';
+import { FSD } from '../config/autopilot';
 import { tvCloseUp } from '../camera/TvCloseUp';
 import { damp, smoothstep } from '../utils/math';
 import { CAMERA_LENS, RENDER } from '../config/engine';
@@ -1127,7 +1128,12 @@ export class Game {
    */
   private spawnFsd(moke: Moke): void {
     const nav = new NavGrid(this.room.colliders, { bounds: this.room.bounds, cell: 0.1, agentRadius: MOKE_BODY.radius + 0.04, minY: 0.03, maxY: 0.38 });
-    this.fsd = new FullSelfDog(nav);
+    // And a finer one at his exact size, for squeezes: built now, while loading, with its patches of floor labelled,
+    // so it never costs a hitch in play.
+    const tightNav = new NavGrid(this.room.colliders, { bounds: this.room.bounds, cell: 0.05, agentRadius: MOKE_BODY.radius + 0.01, minY: 0.03, maxY: 0.38 });
+    tightNav.region(0, 0);
+    nav.region(0, 0);
+    this.fsd = new FullSelfDog(nav, Math.random, FSD, () => tightNav);
     const game = this;
     const c = moke.controller;
     const surfaces = [
@@ -1162,6 +1168,12 @@ export class Game {
       get ballgameOn() { return game.room.tv.homeRunToCome; },
       get holdingPaper() { return game.toiletPaper?.holdingPaper ?? false; },
       course: this.course,
+      play: {
+        get phase() {
+          const play = game.director?.find<MakeHumanPlay>('makeHumanPlay');
+          return play?.state === 'ACTIVE' ? 'playing' as const : play?.state === 'STARTING' ? 'asking' as const : 'idle' as const;
+        },
+      },
       get rewardWaiting() { return !!game.courseReward?.pending && game.pattyTreat.state === 'held'; },
       interactables: this.interactions.all,
       get current() { return game.interactions.current?.id ?? null; },

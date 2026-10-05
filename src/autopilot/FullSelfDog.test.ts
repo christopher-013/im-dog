@@ -19,6 +19,7 @@ interface Fake extends FsdWorld {
   holdingPaper: boolean;
   course: { phase: string } | null;
   rewardWaiting: boolean;
+  play: { phase: 'idle' | 'asking' | 'playing' };
   interactables: FsdTarget[];
   current: string | null;
   surfaces: FsdSurface[];
@@ -36,6 +37,7 @@ function world(): Fake & { onPress?: (press: string, current: string | null) => 
     holdingPaper: false,
     course: null,
     rewardWaiting: false,
+    play: { phase: 'idle' },
     interactables: [],
     current: null,
     screens: [{ id: 'living', x: 4, y: 1, z: -5.5, facing: 0 }],
@@ -211,6 +213,19 @@ describe('FSD, Full Self Dog (the autopilot)', () => {
     expect(w.doorRinging, 'he got out and barked at the door').toBe(false);
     expect(fsd.stats.done.get('door')).toBe(1);
     expect(fsd.stats.failed.get('door') ?? 0).toBe(0);
+  });
+
+  it("leaves Liam's Obstacle Course for the first couple of minutes, then does it at most every few minutes", () => {
+    const w = world();
+    (w as { course: { phase: string } | null }).course = { phase: 'idle' };
+    // random() = 0 picks the first open routine: the course, whenever it's allowed.
+    const fsd = new FullSelfDog(nav, () => 0);
+    w.step(FSD.courseFirstAfter - 5, fsd);
+    expect(fsd.stats.started.get('course') ?? 0).toBe(0);
+    w.step(30, fsd);
+    expect(fsd.stats.started.get('course')).toBe(1);
+    w.step(FSD.courseEvery - 60, fsd);
+    expect(fsd.stats.started.get('course')).toBe(1);
   });
 
   it('lets whatever he is in the middle of finish (eating, a trick, pets) before moving on', () => {

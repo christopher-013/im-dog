@@ -234,8 +234,8 @@ human needed, and it doesn't pause the human's routine. Tuning: `HOME_ACTIVITIES
 
 ### Liam's Obstacle Course (`ObstacleCourse.ts`, `CourseReward.ts`; owner request, 2026-10-04, Phase 5)
 A tribute to Liam's feedback. Out through the gym's open slider, behind the patio furniture, is a small loop on the
-lawn (`HOME_REFERENCE.md`). Near it, the HUD says **"Liam's Obstacle Course! Start at the arch."** Through the arch
-(going round, south first) starts a run, and the HUD walks him through it:
+lawn (`HOME_REFERENCE.md`). Near it, the HUD says **"Liam's Obstacle Course! Start at the arch."** A START arrow on the
+lane and a START & FINISH banner show where: through the arch (heading away from the house) starts a run, and the HUD walks him through it:
 1. **Jump the hurdles! (0/2):** a hurdle counts when he crosses it in the air (or with his feet up); he can't trot
    through them, and going round them doesn't count.
 2. **Weave in and out of the poles! (0/5):** each pole passed on the other side from the last; the same side twice

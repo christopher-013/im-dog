@@ -297,7 +297,7 @@ export function backyard(b: StaticSceneBuilder, m: RoomMaterials): void {
   for (const [x, y, z] of [[18.1, 1.5, -6.0], [18.6, 1.1, -5.8], [19.3, 1.7, -6.1], [19.9, 1.25, -5.9], [20.6, 1.6, -6.2], [18.9, 2.0, -6.3]] as const) blob(x, y, z, 0.32, m.bougainvillea);
   // The back fence (moved back in Phase 5 to make room for the obstacle course), and the trees round the edge.
   b.add(new BoxGeometry(0.15, 1.9, 13), m.fence, [YARD.fenceX + 0.075, 0.95, -0.5]);
-  for (const [x, z, h, r] of [[28.7, -4.6, 3.2, 1.6], [29.3, -1.9, 3.8, 1.9], [28.9, 3.4, 3.4, 1.7], [24.3, 3.9, 2.4, 1.1], [24.6, -5.0, 2.6, 1.2]] as const) {
+  for (const [x, z, h, r] of [[29.0, -4.8, 3.2, 1.6], [31.3, -3.4, 3.8, 1.9], [30.9, 3.6, 3.4, 1.7], [24.3, 3.9, 2.4, 1.1], [24.6, -5.0, 2.6, 1.2]] as const) {
     b.add(new CylinderGeometry(0.1, 0.14, h, 8), m.trunk, [x, h / 2, z]);
     b.addCollider([x, h / 2, z], [0.28, h, 0.28], { thin: true });
     blob(x, h, z, r);

@@ -43,8 +43,15 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-05, owner request from a screenshot): **Liam's Obstacle Course, roomier and clearer.** The loop is
+wider (radius 2.1 → 3 m; the fence moved back to x 32.2 and two trees with it), with the same stations (the weave
+poles a little further apart, the hill a little longer). The start is now on the loop's south side, where you walk
+into the arch face-on from the patio, with a START & FINISH banner on the arch and a big START arrow painted on the
+lane (`COURSE.turn`, `courseYaw`, `startArrow`). The sign moved to the back of the course by the fence, up on taller
+posts (1.3 m) with a bigger board. Tests updated and passing; checked in screenshots.
+
 Claude Code (2026-10-05, owner request, Phase 5.2): **the backyard and Liam's Obstacle Course** (D28). One gym slider
-stands open; the backyard is walkable and contained (hedges, a fence moved back to x 30, the house), with solid
+stands open; the backyard is walkable and contained (hedges, a fence moved back to x 32.2, the house), with solid
 furniture, a sky dome and a roof over the wing for the view from outside. On the lawn behind the patio furniture,
 a small loop: an arch, the sign "Liam's Obstacle Course", two hurdles to hop, five weave poles, a gentle hill.
 Rules in `activities/ObstacleCourse.ts` (pure), scenery in `world/home/obstacleCourse.ts`, numbers in

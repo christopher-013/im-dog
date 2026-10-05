@@ -439,6 +439,44 @@ export function courseSignTexture(): CanvasTexture | null {
   });
 }
 
+/** The banner on the course's arch: START, with FINISH under it. */
+export function startBannerTexture(): CanvasTexture | null {
+  return canvasTexture(512, 160, 53, (ctx, w, h) => {
+    ctx.fillStyle = '#e0503f';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#fdf6ea';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 92px Fredoka, "Trebuchet MS", "Arial Rounded MT Bold", sans-serif';
+    ctx.fillText('START', w / 2, h * 0.42);
+    ctx.font = 'bold 30px Fredoka, "Trebuchet MS", sans-serif';
+    ctx.fillText('& FINISH', w / 2, h * 0.85);
+  });
+}
+
+/** Painted on the lane before the arch: a big arrow the way round, and START. Transparent round it. */
+export function startArrowTexture(): CanvasTexture | null {
+  return canvasTexture(256, 320, 59, (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(255, 250, 240, 0.95)';
+    // The arrow, pointing up the texture (the way round).
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 8);
+    ctx.lineTo(w - 18, 120);
+    ctx.lineTo(w * 0.66, 120);
+    ctx.lineTo(w * 0.66, 210);
+    ctx.lineTo(w * 0.34, 210);
+    ctx.lineTo(w * 0.34, 120);
+    ctx.lineTo(18, 120);
+    ctx.closePath();
+    ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 70px Fredoka, "Trebuchet MS", "Arial Rounded MT Bold", sans-serif';
+    ctx.fillText('START', w / 2, 268);
+  });
+}
+
 /** A soft, warm pool of sunlight (additive): brightest in the middle, fading to nothing at the edges. */
 export function sunPatchTexture(): CanvasTexture | null {
   return canvasTexture(128, 128, 43, (ctx, w, h) => {

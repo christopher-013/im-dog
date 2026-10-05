@@ -1,5 +1,5 @@
 import { BoxGeometry, CylinderGeometry, ExtrudeGeometry, PlaneGeometry, RingGeometry, Shape, SphereGeometry, TorusGeometry } from 'three';
-import { coursePoint } from '../../activities/ObstacleCourse';
+import { coursePoint, courseYaw } from '../../activities/ObstacleCourse';
 import { COURSE } from '../../config/obstacleCourse';
 import type { RoomMaterials } from '../materials';
 import type { StaticSceneBuilder } from '../StaticSceneBuilder';
@@ -21,10 +21,15 @@ export function obstacleCourse(b: StaticSceneBuilder, m: RoomMaterials): void {
 
   const at = (a: number, build: () => void) => {
     const p = coursePoint(a);
-    b.at([p.x, LAWN, p.z], a, build);
+    b.at([p.x, LAWN, p.z], courseYaw(a), build);
   };
 
   at(COURSE.arch.at, () => arch(b, m));
+  // START, painted on the lane just before the arch, with a big arrow the way round.
+  at(COURSE.arch.at - COURSE.startArrow.before, () => {
+    const { length, width } = COURSE.startArrow;
+    b.add(new PlaneGeometry(width, length), m.startArrow, [0, 0.011, 0], { rotation: [-Math.PI / 2, 0, Math.PI], cast: false, receive: false });
+  });
   for (const a of COURSE.hurdles.at) at(a, () => hurdle(b, m));
   const w = COURSE.weave;
   for (let i = 0; i < w.count; i++) at(w.from + i * w.step, () => pole(b, m, i));
@@ -53,6 +58,11 @@ function arch(b: StaticSceneBuilder, m: RoomMaterials): void {
     flag.translate(0, -0.03, 0);
     b.add(flag, flags[i % 3]!, [x, y, 0], { rotation: [0, 0, angle - Math.PI / 2 + Math.PI / 4] });
   }
+  // The banner hung inside the top, facing the way you come in: START (and FINISH).
+  const by = h + 0.18;
+  b.add(new BoxGeometry(1.0, 0.34, 0.025), m.hurdleWhite, [0, by, 0]);
+  b.add(new PlaneGeometry(0.96, 0.3), m.startBanner, [0, by, -0.022], { rotation: [0, Math.PI, 0], cast: false });
+  for (const side of [-1, 1]) b.add(new CylinderGeometry(0.006, 0.006, 0.42, 6), m.hurdleWhite, [side * 0.42, by + 0.3, 0]);
 }
 
 /** A low hurdle across the lane: two posts, a red-and-white striped board and a top bar. Solid: he hops it. */
@@ -123,8 +133,10 @@ function sign(b: StaticSceneBuilder, m: RoomMaterials): void {
   // Facing the house (-x): local +z is world -x.
   b.at([x, LAWN, z], -Math.PI / 2, () => {
     for (const side of [-1, 1]) {
-      b.add(new BoxGeometry(0.07, postHeight + height, 0.07), m.signPost, [side * (width / 2 - 0.05), (postHeight + height) / 2, -0.07]);
+      b.add(new BoxGeometry(0.09, postHeight + height, 0.09), m.signPost, [side * (width / 2 - 0.06), (postHeight + height) / 2, -0.08]);
     }
+    // A little roof over it.
+    b.add(new BoxGeometry(width + 0.16, 0.05, 0.22), m.signPost, [0, postHeight + height + 0.05, -0.05]);
     b.add(new BoxGeometry(width, height, 0.04), m.signPost, [0, postHeight + height / 2, -0.03]);
     b.add(new PlaneGeometry(width - 0.04, height - 0.04), m.courseSign, [0, postHeight + height / 2, -0.004], { cast: false });
     b.addCollider([0, (postHeight + height) / 2, -0.04], [width, postHeight + height, 0.1], { thin: true });

@@ -12,6 +12,8 @@ import {
   clockFaceTexture,
   doorSignTexture,
   courseSignTexture,
+  startArrowTexture,
+  startBannerTexture,
   flagstoneTexture,
   gardenTexture,
   greyPlankTexture,
@@ -203,6 +205,14 @@ export function createRoomMaterials() {
     courseSign: (() => {
       const map = courseSignTexture();
       return mat('courseSign', map ? '#ffffff' : '#d9a86a', 0.85, { map, emissive: map ? '#ffffff' : '#d9a86a', emissiveMap: map, emissiveIntensity: 0.32 });
+    })(),
+    startBanner: (() => {
+      const map = startBannerTexture();
+      return mat('startBanner', map ? '#ffffff' : '#e0503f', 0.8, { map, emissive: map ? '#ffffff' : '#e0503f', emissiveMap: map, emissiveIntensity: 0.32 });
+    })(),
+    startArrow: (() => {
+      const map = startArrowTexture();
+      return mat('startArrow', '#ffffff', 0.9, { map, transparent: true, opacity: map ? 1 : 0, depthWrite: false, emissive: '#ffffff', emissiveMap: map, emissiveIntensity: 0.3, polygonOffset: true, polygonOffsetFactor: -2 });
     })(),
     roof: mat('roof', '#7f7468', 0.9),
     fascia: mat('fascia', '#f1ebe1', 0.7),

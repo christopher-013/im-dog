@@ -70,12 +70,15 @@ ends of the table.) Walking out of the hallway: the dining room is on your left 
 - **The backyard (playable since Phase 5, `YARD`):** a flagstone patio, a stone BBQ island with a grill and covered
   bar chairs under a white umbrella, a long bench with pillows, an ottoman and two wicker lounge chairs under a big
   cantilever umbrella, pots with small trees, then lawn, hedges with bougainvillea, trees, a fence and sky. The ground
-  and every piece of furniture are solid; the hedges (north and south), the back fence (moved back to x 30 to make
+  and every piece of furniture are solid; the hedges (north and south), the back fence (moved back to x 32.2 to make
   room) and the house hold Moke in. A soft sky dome all round, and a flat roof with a white fascia over the wing, for
   the view from outside (`gymAndYard.ts`). The human stays indoors.
 - **Liam's Obstacle Course** (owner request, 2026-10-04, after Liam's feedback; `obstacleCourse.ts`, numbers in
-  `config/obstacleCourse.ts`): on the lawn behind the patio furniture, a small loop (radius 2.1 m round x 26.4,
-  z −0.6) of mown lane. A start/finish arch with bunting at its west end, a wooden sign beside it facing the house,
+  `config/obstacleCourse.ts`): on the lawn behind the patio furniture, a loop (radius 3 m round x 27.6,
+  z −0.4; widened 2026-10-05 at the owner's request) of mown lane. A start/finish arch with bunting on its south
+  side, which you walk into from the patio heading away from the house, with a red **START & FINISH** banner and a big
+  white **START** arrow painted on the lane in front of it; a wooden sign up high at the back of the course by the
+  fence, facing the house,
   **"Liam's Obstacle Course"** with paw prints, two low red-and-white hurdles (0.2 m: he has to hop them), five
   yellow and blue weave poles, and a gentle grassy hill (0.28 m high, ramps of about 20°) to run up and down. See
   `ACTIVITIES.md`.

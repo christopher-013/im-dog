@@ -6,20 +6,26 @@ const TAU = Math.PI * 2;
 /** A point on the course's loop at angle `a` (see COURSE), `out` metres outward from its middle line. */
 export function coursePoint(a: number, out = 0): { x: number; z: number } {
   const r = COURSE.radius + out;
-  return { x: COURSE.center.x - Math.cos(a) * r, z: COURSE.center.z + Math.sin(a) * r };
+  const t = a + COURSE.turn;
+  return { x: COURSE.center.x - Math.cos(t) * r, z: COURSE.center.z + Math.sin(t) * r };
+}
+
+/** The yaw that faces the way round the loop at angle `a` (local +z forward). */
+export function courseYaw(a: number): number {
+  return a + COURSE.turn;
 }
 
 /** The way round the loop at angle `a` (a unit vector, flat). */
 export function courseForward(a: number): { x: number; z: number } {
-  return { x: Math.sin(a), z: Math.cos(a) };
+  return { x: Math.sin(a + COURSE.turn), z: Math.cos(a + COURSE.turn) };
 }
 
 /** Where a floor point is on the loop: its angle (0…2π) and how far it is from the middle line (outward +). */
 export function courseAngle(x: number, z: number): { a: number; off: number } {
   const dx = x - COURSE.center.x;
   const dz = z - COURSE.center.z;
-  let a = Math.atan2(dz, -dx);
-  if (a < 0) a += TAU;
+  let a = Math.atan2(dz, -dx) - COURSE.turn;
+  a = ((a % TAU) + TAU) % TAU;
   return { a, off: Math.hypot(dx, dz) - COURSE.radius };
 }
 

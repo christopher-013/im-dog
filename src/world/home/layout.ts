@@ -69,7 +69,7 @@ export const BACKYARD_DOORWAY = (() => {
  * The backyard (Phase 5): the patio and the lawn behind the house, between the hedges and the back fence. Where Moke
  * can go out there (the hedges, the fence and the house are its edges).
  */
-export const YARD = { minX: WING.east + WALL, maxX: 29.9, minZ: -5.4, maxZ: 4.4, fenceX: 30 } as const;
+export const YARD = { minX: WING.east + WALL, maxX: 32.1, minZ: -5.4, maxZ: 4.4, fenceX: 32.2 } as const;
 
 export type RoomId = 'livingRoom' | 'hallway' | 'bathroom' | 'kitchen' | 'familyRoom' | 'diningRoom' | 'gym' | 'backyard';
 

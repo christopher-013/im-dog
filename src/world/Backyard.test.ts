@@ -89,8 +89,8 @@ describe('The backyard (Phase 5)', () => {
     const north = await setup({ x: 23, z: -3.5 });
     expect(north.walkTo(23, -8, 4)).toBe(false);
     expect(north.moke.position.z).toBeGreaterThan(YARD.minZ - 0.05);
-    const east = await setup({ x: 28.6, z: -0.6 });
-    expect(east.walkTo(33, -0.6, 4)).toBe(false);
+    const east = await setup({ x: YARD.maxX - 1, z: 3.6 });
+    expect(east.walkTo(YARD.maxX + 3, 3.6, 4)).toBe(false);
     expect(east.moke.position.x).toBeLessThan(YARD.maxX + 0.05);
     const corner = await setup({ x: 17.6, z: -5 });
     expect(corner.walkTo(14, -5, 4)).toBe(false);

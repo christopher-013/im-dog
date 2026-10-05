@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COURSE } from '../config/obstacleCourse';
-import { ObstacleCourse, courseAngle, coursePoint } from './ObstacleCourse';
+import { ObstacleCourse, courseAngle, courseForward, coursePoint } from './ObstacleCourse';
 
 const DT = 1 / 60;
 /** Radians per step (about 3.5 m/s round the loop). */
@@ -45,10 +45,13 @@ function run(course: ObstacleCourse, lap: Lap = {}, outside = true, each?: () =>
 }
 
 describe("Liam's Obstacle Course (the rules)", () => {
-  it('maps the loop: the arch at the west end, angles growing round to the south', () => {
-    const west = coursePoint(0);
-    expect(west.x).toBeCloseTo(COURSE.center.x - COURSE.radius, 6);
-    expect(coursePoint(Math.PI / 2).z).toBeGreaterThan(COURSE.center.z);
+  it('maps the loop: the arch on its south side, walked into heading away from the house, then round by the back', () => {
+    const start = coursePoint(0);
+    expect(start.z).toBeCloseTo(COURSE.center.z + COURSE.radius, 6);
+    expect(courseForward(0).x).toBeCloseTo(1, 6);
+    // A quarter of the way round: the back of the course, by the fence (and the sign).
+    expect(coursePoint(Math.PI / 2).x).toBeCloseTo(COURSE.center.x + COURSE.radius, 6);
+    expect(COURSE.sign.x).toBeGreaterThan(coursePoint(Math.PI / 2, COURSE.laneHalfWidth).x);
     const back = courseAngle(coursePoint(2.4, 0.3).x, coursePoint(2.4, 0.3).z);
     expect(back.a).toBeCloseTo(2.4, 6);
     expect(back.off).toBeCloseTo(0.3, 6);

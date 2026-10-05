@@ -2,27 +2,33 @@
  * Liam's Obstacle Course (Phase 5, owner request 2026-10-04, after Liam's feedback): a small loop on the backyard
  * lawn, behind the patio furniture. Metres and seconds; angles in radians.
  *
- * The loop is a circle. A point on it at angle `a` is `center + radius · (-cos a, sin a)`: `a = 0` is its west end
- * (nearest the house, where the arch is), and going round means `a` growing (south, east, north, back to the arch).
+ * The loop is a circle. A point on it at angle `a` is `center + radius · (-cos(a + turn), sin(a + turn))`. `a = 0` is
+ * where the start/finish arch is: its south side, where you walk into it from the patio heading away from the house
+ * (east). Going round means `a` growing: east, up the back by the fence, along the north side, back past the patio.
+ * (Owner, 2026-10-05: wider, the sign at the back and higher, and a START arrow.)
  */
 export const COURSE = {
-  center: { x: 26.4, z: -0.6 },
-  radius: 2.1,
+  center: { x: 27.6, z: -0.4 },
+  radius: 3.0,
+  /** Where `a = 0` is round the circle (a quarter turn from its west end: the south side). */
+  turn: Math.PI / 2,
   /** Half the width of the mown lane round the loop. */
   laneHalfWidth: 0.55,
-  /** The start/finish arch (its posts this far either side of the lane's middle). */
+  /** The start/finish arch (its posts this far either side of the lane's middle), START on the side you come from. */
   arch: { at: 0, halfWidth: 0.62, height: 1.25 },
-  /** The sign beside the arch, facing the house: "Liam's Obstacle Course". */
-  sign: { x: 23.75, z: -1.55, width: 1.1, height: 0.55, postHeight: 0.62 },
+  /** The START arrow painted on the lane, this far before the arch (rad). */
+  startArrow: { before: 0.32, length: 1.1, width: 0.9 },
+  /** The sign at the back of the course, by the fence, up high and facing the house: "Liam's Obstacle Course". */
+  sign: { x: 31.55, z: -0.4, width: 1.8, height: 0.8, postHeight: 1.3 },
   /** Two low hurdles to hop: where on the loop, the bar's height (its top), and half its length across the lane. */
   hurdles: { at: [0.55, 1.0], height: 0.2, halfWidth: 0.42 },
   /** Weave poles on the lane's middle line: in, out, in, out. */
-  weave: { from: 1.65, step: 0.3, count: 5, height: 0.75, radius: 0.025 },
+  weave: { from: 1.65, step: 0.22, count: 5, height: 0.75, radius: 0.025 },
   /**
    * A gentle grassy hill across the lane, straight along the loop's direction there: up a ramp, a short flat top,
    * down the other side. `halfLength` is from its middle to either foot, `flatHalf` half the flat top.
    */
-  hill: { at: 3.85, halfLength: 1.0, flatHalf: 0.25, top: 0.28, halfWidth: 0.7 },
+  hill: { at: 3.85, halfLength: 1.2, flatHalf: 0.3, top: 0.28, halfWidth: 0.7 },
 } as const;
 
 export const COURSE_RULES = {

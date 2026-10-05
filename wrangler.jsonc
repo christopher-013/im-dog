@@ -4,13 +4,15 @@
 // repository. Setup and checks: docs/FEEDBACK.md.
 {
 	"name": "im-dog",
-	"main": "./src/feedback/worker.ts",
+	"main": "./src/feedback/entry.ts",
 	// The owner's Cloudflare account (an ID, not a secret): saves the deploy from having to guess.
 	"account_id": "81cc81e7dd4531da3968862517ab5e2b",
 	"compatibility_date": "2026-09-01",
-	// Feedback arrives in request bodies: keep them out of logs.
+	// Keep request/invocation details (including feedback metadata) out of logs. Explicit, data-free maintenance
+	// errors are logged so a failed 30-day privacy purge cannot go unnoticed in Workers Logs.
 	"observability": {
-		"enabled": false
+		"enabled": true,
+		"logs": { "invocation_logs": false }
 	},
 	// www.im-dog.com, the game's one address (D26), points at this Worker (Cloudflare adds the DNS record on deploy).
 	// Only this Worker's domains are listed: a deploy releases any others. im-dog.com redirects here from its own tiny

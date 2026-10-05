@@ -71,6 +71,44 @@ describe('the player counter (/api/ping)', () => {
     expect([...t.store.keys()].filter((k) => k.startsWith('count:'))).toEqual([]);
   });
 
+  it('rejects an oversized declared ping without reading its body or using the limiter', async () => {
+    const t = setup();
+    const request = new Request('https://www.im-dog.com/api/ping', {
+      method: 'POST',
+      headers: { Origin: t.env.ALLOWED_ORIGINS, 'Content-Length': '1000000' },
+      body: '{"event":"play"}',
+    });
+    expect((await handlePing(request, t.env)).status).toBe(204);
+    expect(request.bodyUsed).toBe(false);
+    expect(t.limited.size).toBe(0);
+    expect(t.store.size).toBe(0);
+  });
+
+  it('cancels an oversized streamed ping after the byte limit, even without Content-Length', async () => {
+    const t = setup();
+    let pulls = 0;
+    let cancelled = false;
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls++;
+        controller.enqueue(new Uint8Array(130));
+        if (pulls > 10) controller.close();
+      },
+      cancel() { cancelled = true; },
+    }, { highWaterMark: 0 });
+    const request = new Request('https://www.im-dog.com/api/ping', {
+      method: 'POST',
+      headers: { Origin: t.env.ALLOWED_ORIGINS },
+      body: stream,
+      duplex: 'half',
+    } as RequestInit & { duplex: 'half' });
+    expect((await handlePing(request, t.env)).status).toBe(204);
+    expect(cancelled).toBe(true);
+    expect(pulls).toBe(2);
+    expect(t.limited.size).toBe(0);
+    expect(t.store.size).toBe(0);
+  });
+
   it('only counts pings from the site, and not when the rate limiter says no (or is missing)', async () => {
     const t = setup();
     expect((await t.ping('play', 'https://evil.example')).status).toBe(403);
@@ -84,7 +122,7 @@ describe('the player counter (/api/ping)', () => {
     expect(t.store.get(`count:${t.today}:play`)).toBeUndefined();
   });
 
-  it('publishes to the usage log Issue (created once), at most once a minute', async () => {
+  it('publishes to the usage log Issue (created once), at most once per 15 minutes', async () => {
     const t = setup();
     await t.ping('play');
     await Promise.all(t.waits);
@@ -94,8 +132,14 @@ describe('the player counter (/api/ping)', () => {
     await t.ping('play');
     await Promise.all(t.waits);
     expect(t.calls).toHaveLength(2); // throttled
+    t.store.set('log:synced', String(Date.now() - 14 * 60_000));
+    await syncLog(t.env, t.kv, t.fetcher);
+    expect(t.calls).toHaveLength(2);
+    t.store.set('log:synced', String(Date.now() - 16 * 60_000));
+    await syncLog(t.env, t.kv, t.fetcher);
+    expect(t.calls).toHaveLength(3);
     await syncLog(t.env, t.kv, t.fetcher, undefined, true);
-    expect(t.calls.map((c) => c.method)).toEqual(['POST', 'PATCH', 'PATCH']); // the known Issue, not a new one
+    expect(t.calls.map((c) => c.method)).toEqual(['POST', 'PATCH', 'PATCH', 'PATCH']); // the known Issue, not a new one
   });
 
   it('writes a readable board: the running total, today, the windows and the best day', () => {

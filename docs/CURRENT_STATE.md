@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-10-05. Repo: **public** `christopher-013/im-dog` (D13), branch `main`; every owner-approved push to `main` republishes https://christopher-013.github.io/im-dog/. Phases 1–4 are complete; Phase 4 is tagged `phase-4-complete`. Phase 5 has started (FSD, Full Self Dog; the backyard and Liam's Obstacle Course). An optional, private-service player Feedback feature is being prepared locally (D22, `docs/FEEDBACK.md`), but is not active on the public site until Cloudflare and GitHub configuration, end-to-end testing and an owner-approved push._
+_Last updated: 2026-10-05. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–4 are complete; Phase 5 has started (FSD and Liam's Obstacle Course). The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -43,6 +43,10 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+OpenAI Codex (2026-10-05, project-wide engineering audit): reviewed the game loop, renderer/quality, input and touch cleanup, navigation and activity tests, PWA/build privacy guards, public assets, feedback/usage Worker, and deployment workflows. Baseline and final strict typecheck, 80 test files / 575 tests, and production build passed; `npm audit` reported 0 vulnerabilities. A local Worker dry run and HTTP smoke passed (static cache/security headers, allowed/foreign-origin pings, feedback fail-closed without a local secret). Browser smoke covered the dev game, the built preview, desktop play and five emulated phone viewport sizes. A several-minute FSD run traversed the house/backyard and completed Sock Heist's trade, treat, discovery and reset while also triggering other activities; no runtime errors were observed. Debug-frame samples ranged roughly 143–297 draw calls and 211k–362k triangles, but these browser readings are **not** physical-phone GPU, heat or battery measurements. Fixed one reproducible debug-mode rotation bug: `#app` used scrollable `overflow: hidden`, allowing focus to shift the entire fixed game off-screen on a short landscape viewport; `overflow: clip` kept the viewport at the top through the same resize sequence. Corrected the README/agent handoff's stale feedback-hosting descriptions. No new gameplay or deployment was part of the audit itself; the owner subsequently approved this commit and push.
+
+OpenAI Codex (2026-10-05, owner request, release-hardening pass): bounded `/api/ping` body reads to 256 bytes before decoding; made scheduled retention/digest failures visible without logging private details; enabled explicit Worker maintenance logs while disabling invocation/request logs; reduced usage-log rolling-window refreshes to once per 15 minutes; added static security headers and immutable caching only for fingerprinted `/app/*` assets. A real local Wrangler launch caught a pre-existing deployment blocker: the Worker's main file also exported test helpers, which the runtime rejected; `src/feedback/entry.ts` now exports only the handler. Added oversized-body, failed-purge and entry-point regression tests, and a build guard for `_headers`. No gameplay or Phase 5 behavior was changed. Verification: `npm run typecheck`, 80 test files / 575 tests, `npm run build` including the private-reference and header guard, `git diff --check`, full and production-only `npm audit` (0 reported vulnerabilities), Wrangler dry run, and a local-only Wrangler launch with HTTP checks (HTML and service worker revalidate; `/app/*` immutable; ping valid/oversized/foreign-origin responses 204/204/403). No Cloudflare deployment, live-site update, full gameplay replay or physical-device test was done during the local pass; the owner subsequently approved this commit and push.
+
 Claude Code (2026-10-05, owner request): **The Engage FSD button moved to the bottom right.** On desktop it sits in
 the lower-right corner. On touch it sits just above the paw button, and when the paw menu opens (`TouchInput.setMenu`
 sets `data-paw-open` on `<html>`), it slides up above the menu's arc so it is never covered. All of this is in CSS in
@@ -1066,6 +1070,11 @@ From Milestone 4, verified in the browser (dev server and a production-build loa
 - **Not yet judged hands-on with a physical mouse and keyboard.**
 
 ## Known Issues
+New in the 2026-10-05 audit:
+- **Touch accessibility is incomplete:** `#touch-controls` stays `aria-hidden="true"` during play, and its actions use pointer handlers without an equivalent assistive-technology click path. Pointer/touch play works; screen-reader activation of these controls was not verified. Address as a focused accessibility task rather than exposing buttons that still cannot be activated.
+- **Feedback privacy notice is not linked from the form.** The notice exists at `/feedback-privacy`, but an earlier owner change removed its form link and acknowledgement. Ask the owner before reversing that decision; it matters because comments become public Issues and optional contact/network details are processed privately.
+- **Controller compatibility with non-standard mappings remains unverified.** The connected controller advertised an empty browser `mapping`; automated browser tests could detect it but could not physically press its buttons. Test the owner's device before claiming support for this layout.
+
 New with Phase 4:
 - **The owner still needs to judge the human and home's likeness.** Codex reviewed the reconstructed human live from
   rear, side and front views, but this is still a code-built stylized character rather than a bespoke authored model.

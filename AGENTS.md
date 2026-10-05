@@ -47,7 +47,9 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - TypeScript (strict), three.js (WebGL 2), Vite, and HTML/CSS/DOM overlays for all UI. No UI framework.
 - Rapier (`@dimforge/rapier3d-compat`) for physics and collision, lazy-loaded.
 - Vitest for unit tests. Runtime dependencies are only `three`, Rapier and the self-hosted Fredoka font. Node 22.12+.
-- No backend, database or accounts. The build is a static site with relative paths.
+- Gameplay has no backend or player accounts. The build is a static site with relative paths; the public
+  www.im-dog.com host also has a narrowly scoped Cloudflare Worker for feedback and anonymous usage counts
+  (D22–D26, `docs/FEEDBACK.md`). Never put its credentials in the game bundle.
 - Do not migrate to React, React Three Fiber, Unity, Unreal, Godot or any other framework or engine without explicit owner approval.
 
 ## Shared workflow

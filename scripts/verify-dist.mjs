@@ -1,4 +1,4 @@
-// Post-build guard: the production build must never contain the private Moke reference photos.
+// Post-build guard: private references must not ship, and public-release response headers must ship.
 // Runs automatically at the end of `npm run build`.
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -33,6 +33,25 @@ if (existsSync(referenceDir)) {
 }
 
 const problems = [];
+const wranglerConfig = readFileSync(path.join(root, 'wrangler.jsonc'), 'utf8');
+if (!/"main"\s*:\s*"\.\/src\/feedback\/entry\.ts"/.test(wranglerConfig)) {
+  problems.push('wrangler.jsonc (Worker must use the handler-only entry point)');
+}
+const headersFile = path.join(distDir, '_headers');
+if (!existsSync(headersFile)) {
+  problems.push('_headers (missing security and cache rules)');
+} else {
+  const headers = readFileSync(headersFile, 'utf8');
+  if (!/\/\*\s*\n(?:[^\n]*\n)*?\s*Content-Security-Policy: frame-ancestors 'none';/.test(headers)) {
+    problems.push('_headers (missing page frame protection)');
+  }
+  if (!/\/app\/\*\s*\n\s*Cache-Control: public, max-age=31536000, immutable/.test(headers)) {
+    problems.push('_headers (missing fingerprinted-asset cache rule)');
+  }
+  if (/\/sw\.js\s*\n\s*Cache-Control:.*immutable/i.test(headers) || /\/index\.html\s*\n\s*Cache-Control:.*immutable/i.test(headers)) {
+    problems.push('_headers (HTML or service worker must not be immutable)');
+  }
+}
 let checked = 0;
 for (const file of walk(distDir)) {
   checked++;
@@ -43,7 +62,7 @@ for (const file of walk(distDir)) {
 }
 
 if (problems.length > 0) {
-  console.error(`verify-dist: private reference material found in dist/:\n  ${problems.join('\n  ')}`);
+  console.error(`verify-dist: release guard failed:\n  ${problems.join('\n  ')}`);
   process.exit(1);
 }
 

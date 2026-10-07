@@ -1,4 +1,4 @@
-import { CONTROL_HINTS, GAMEPAD_CONTROL_HINTS, KEY_BINDINGS, TOUCH_CONTROL_HINTS, type Action, type GamepadControlHint } from '../config/input';
+import { CONTROL_HINTS, FACE_BUTTON_LAYOUTS, GAMEPAD_CONTROL_HINTS, KEY_BINDINGS, TOUCH_CONTROL_HINTS, type Action, type FaceButtonLayout, type GamepadControlHint } from '../config/input';
 import type { DogLogicEntry } from '../config/dogLogic';
 import type { InputMode } from '../core/InputMode';
 import { keyLabel } from '../core/InputState';
@@ -169,6 +169,7 @@ export class UIManager {
     const music = this.el<HTMLSelectElement>('setting-music');
     const volume = this.el<HTMLInputElement>('setting-music-volume');
     const volumeReadout = this.el<HTMLOutputElement>('setting-music-volume-value');
+    const buttons = this.el<HTMLSelectElement>('setting-controller-buttons');
     const current = { ...initial };
 
     slider.min = String(SENSITIVITY_RANGE.min);
@@ -177,6 +178,7 @@ export class UIManager {
     slider.value = String(current.mouseSensitivity);
     invert.checked = current.invertY;
     music.value = current.music;
+    buttons.value = current.controllerButtons;
     volume.min = String(MUSIC_VOLUME_RANGE.min);
     volume.max = String(MUSIC_VOLUME_RANGE.max);
     volume.step = String(MUSIC_VOLUME_RANGE.step);
@@ -202,6 +204,10 @@ export class UIManager {
     volume.addEventListener('input', () => {
       current.musicVolume = Number(volume.value);
       showVolume();
+      onChange({ ...current });
+    });
+    buttons.addEventListener('change', () => {
+      if ((FACE_BUTTON_LAYOUTS as readonly string[]).includes(buttons.value)) current.controllerButtons = buttons.value as FaceButtonLayout;
       onChange({ ...current });
     });
   }

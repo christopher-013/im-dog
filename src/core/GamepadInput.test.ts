@@ -1,13 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { GAMEPAD, KEY_BINDINGS } from '../config/input';
 import { GamepadInput, applyStickDeadzone, type GamepadLike } from './GamepadInput';
 import { InputState } from './InputState';
 
-const pad = (axes: readonly number[] = [0, 0, 0, 0], down: readonly number[] = []): GamepadLike => ({
+const pad = (axes: readonly number[] = [0, 0, 0, 0], down: readonly number[] = [], mapping: GamepadMappingType = 'standard'): GamepadLike => ({
   connected: true,
   id: 'Test USB Controller',
   index: 0,
-  mapping: 'standard',
+  mapping,
   axes,
   buttons: Array.from({ length: 16 }, (_, index) => ({
     pressed: down.includes(index),
@@ -87,5 +87,48 @@ describe('GamepadInput', () => {
     expect(gamepad.connected).toBe(false);
     expect(input.isDown('run')).toBe(false);
     expect(input.getMoveAxis({ x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe('GamepadInput: face-button order (owner, 2026-10-07: A, B and X did the wrong things)', () => {
+  afterEach(() => (GAMEPAD.faceButtons = 'auto'));
+  /** What pressing each of the pad's first four buttons does, one at a time. */
+  const actionsOf = (mapping: GamepadMappingType) => {
+    const done: string[] = [];
+    for (const button of [0, 1, 2, 3]) {
+      const input = new InputState(KEY_BINDINGS);
+      const gamepad = new GamepadInput();
+      gamepad.update([pad(undefined, [button], mapping)], input, 1 / 60);
+      input.beginFrame();
+      done.push((['interact', 'jump', 'trick', 'bark'] as const).find((a) => input.wasPressed(a)) ?? '-');
+    }
+    return done;
+  };
+
+  it('a standard pad (A B X Y = 0 1 2 3): A interact, B jump, X trick, Y bark', () => {
+    expect(actionsOf('standard')).toEqual(['interact', 'jump', 'trick', 'bark']);
+  });
+
+  it("a pad the browser can't map, in DirectInput order (X A B Y = 0 1 2 3): still A interact, B jump, X trick, Y bark", () => {
+    // Buttons 0..3 are X, A, B, Y on this pad.
+    expect(actionsOf('')).toEqual(['trick', 'interact', 'jump', 'bark']);
+  });
+
+  it('the pause-screen setting overrides the guess either way', () => {
+    GAMEPAD.faceButtons = 'standard';
+    expect(actionsOf('')).toEqual(['interact', 'jump', 'trick', 'bark']);
+    GAMEPAD.faceButtons = 'directinput';
+    expect(actionsOf('standard')).toEqual(['trick', 'interact', 'jump', 'bark']);
+  });
+
+  it('a button held while the setting changes is let go as the button it was pressed as', () => {
+    const input = new InputState(KEY_BINDINGS);
+    const gamepad = new GamepadInput();
+    gamepad.update([pad(undefined, [1], '')], input, 1 / 60);
+    expect(input.isDown('interact')).toBe(true);
+    GAMEPAD.faceButtons = 'standard';
+    gamepad.update([pad(undefined, [], '')], input, 1 / 60);
+    expect(input.isDown('interact')).toBe(false);
+    expect(input.isDown('jump')).toBe(false);
   });
 });

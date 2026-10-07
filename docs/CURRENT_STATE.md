@@ -44,6 +44,18 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-07, owner request): **controller A/B/X fixed for DirectInput pads.** The owner's Xbox-lettered
+pad barked on Y but A, B and X did the wrong things: the signature of a pad the browser can't map, which reports
+its face buttons as X A B Y (0 1 2 3) instead of the standard A B X Y. `GamepadInput` now reads face buttons through
+`GAMEPAD.faceButtons`: **auto** (default: standard when `gamepad.mapping === 'standard'`, DirectInput otherwise),
+**standard** or **directinput** (`DIRECTINPUT_FACE_BUTTONS`), and lets a held button go as the button it was pressed
+as. The pause screen has a new **Controller buttons** setting (Auto / Standard / Swapped), saved with the others
+(`PlayerSettings.controllerButtons`); the debug panel's Input section shows the order in use. Verified: 587 tests
+(new: standard and DirectInput pads, the override both ways, a held button across a change; settings round-trip),
+typecheck, build; in the dev game a simulated non-standard pad's A (button 1) held reads as interact; the pause
+screen at 1280×720 and 844×390 fits. **Not verified with the owner's actual controller** (its name isn't known): if
+Auto still gets it wrong, the setting fixes it, and the debug panel's pad name would say why.
+
 Claude Code (2026-10-05, owner request with a screenshot of Moke's face inside a wall): **Moke is drawn out of
 walls and furniture.** His collision body (0.17 m radius) is smaller than he looks: the stand-in's muzzle and head
 fluff reach about 0.24 m in front of his middle and the tail plume about the same behind

@@ -1,4 +1,4 @@
-import { GAMEPAD } from '../config/input';
+import { DIRECTINPUT_FACE_BUTTONS, GAMEPAD, type FaceButtonLayout } from '../config/input';
 import type { InputState, Vec2Like } from './InputState';
 
 type GamepadButtonLike = Pick<GamepadButton, 'pressed' | 'value'>;
@@ -27,7 +27,8 @@ export function applyStickDeadzone(x: number, y: number, deadzone = GAMEPAD.dead
 /** Polls the browser Gamepad API and translates a standard controller into InputState. */
 export class GamepadInput {
   private activeIndex: number | null = null;
-  private readonly buttonsDown = new Set<number>();
+  /** Buttons held, by the pad's own index, and the (standard) button each was pressed as. */
+  private readonly buttonsDown = new Map<number, string>();
   /** Reused every frame (no allocation in the input path). */
   private readonly stick: Vec2Like = { x: 0, y: 0 };
   private readonly look: Vec2Like = { x: 0, y: 0 };
@@ -35,6 +36,8 @@ export class GamepadInput {
   connected = false;
   name = '';
   mapping = '';
+  /** The face-button order in use for this pad (see GAMEPAD.faceButtons). */
+  layout: Exclude<FaceButtonLayout, 'auto'> = 'standard';
   /** True if a button was pressed or a stick moved this frame (the player is using the controller). */
   used = false;
 
@@ -50,18 +53,23 @@ export class GamepadInput {
     this.activeIndex = pad.index;
     this.name = pad.id;
     this.mapping = pad.mapping;
+    const choice = GAMEPAD.faceButtons;
+    this.layout = choice === 'auto' ? (pad.mapping === 'standard' ? 'standard' : 'directinput') : choice;
 
     for (let i = 0; i < pad.buttons.length; i++) {
       const down = this.isDown(pad, i);
-      if (down && !this.buttonsDown.has(i)) {
-        this.buttonsDown.add(i);
-        input.keyDown(buttonId(i));
+      const held = this.buttonsDown.get(i);
+      if (down && held === undefined) {
+        const id = buttonId(this.standardIndex(i));
+        this.buttonsDown.set(i, id);
+        input.keyDown(id);
         this.used = true;
-      } else if (down && !input.isKeyDown(buttonId(i))) {
+      } else if (down && held !== undefined && !input.isKeyDown(held)) {
         // Still held, but the input state was reset (pause, focus loss): hold it again, without a new press.
-        input.keyHeld(buttonId(i));
-      } else if (!down && this.buttonsDown.delete(i)) {
-        input.keyUp(buttonId(i));
+        input.keyHeld(held);
+      } else if (!down && held !== undefined) {
+        this.buttonsDown.delete(i);
+        input.keyUp(held);
       }
     }
 
@@ -93,13 +101,18 @@ export class GamepadInput {
     return gamepads.find((pad): pad is GamepadLike => Boolean(pad?.connected)) ?? null;
   }
 
+  /** The standard button (A B X Y = 0 1 2 3…) that the pad's button `index` is, in this pad's face-button order. */
+  private standardIndex(index: number): number {
+    return this.layout === 'directinput' ? DIRECTINPUT_FACE_BUTTONS[index] ?? index : index;
+  }
+
   private isDown(pad: GamepadLike, index: number): boolean {
     const button = pad.buttons[index];
     return Boolean(button && (button.pressed || button.value >= GAMEPAD.buttonThreshold));
   }
 
   private disconnect(input: InputState): void {
-    for (const index of this.buttonsDown) input.keyUp(buttonId(index));
+    for (const id of this.buttonsDown.values()) input.keyUp(id);
     this.buttonsDown.clear();
     input.setAnalogMove(0, 0);
     this.activeIndex = null;

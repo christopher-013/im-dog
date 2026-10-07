@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { MOUSE } from '../config/input';
+import { GAMEPAD, MOUSE } from '../config/input';
 import { applySettings, DEFAULT_SETTINGS, loadSettings, parseSettings, saveSettings, SENSITIVITY_RANGE } from './PlayerSettings';
 
 function memoryStore() {
@@ -15,8 +15,11 @@ afterEach(() => applySettings(DEFAULT_SETTINGS));
 describe('PlayerSettings', () => {
   it('round-trips through storage', () => {
     const store = memoryStore();
-    saveSettings({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6 }, store);
-    expect(loadSettings(store)).toEqual({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6 });
+    saveSettings({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6, controllerButtons: 'directinput' }, store);
+    expect(loadSettings(store)).toEqual({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6, controllerButtons: 'directinput' });
+    // Saved before the controller-buttons option: automatic; nonsense: automatic too.
+    expect(parseSettings('{"mouseSensitivity":1.5}').controllerButtons).toBe('auto');
+    expect(parseSettings('{"controllerButtons":"nintendo"}').controllerButtons).toBe('auto');
     // Settings saved before the Music option existed: the Hawaiian song, at full volume.
     expect(parseSettings('{"mouseSensitivity":1.5,"invertY":true}')).toMatchObject({ music: 'hawaiian', musicVolume: 1 });
     // Saved when Music was a plain on/off switch.
@@ -52,8 +55,9 @@ describe('PlayerSettings', () => {
   });
 
   it('applies to the live mouse config', () => {
-    applySettings({ mouseSensitivity: 2, invertY: true, music: 'hawaiian', musicVolume: 1 });
+    applySettings({ mouseSensitivity: 2, invertY: true, music: 'hawaiian', musicVolume: 1, controllerButtons: 'standard' });
     expect(MOUSE.sensitivityScale).toBe(2);
     expect(MOUSE.invertY).toBe(true);
+    expect(GAMEPAD.faceButtons).toBe('standard');
   });
 });

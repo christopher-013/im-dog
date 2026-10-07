@@ -77,6 +77,15 @@ may hide a newly connected controller until one of its buttons is pressed.
 | Menu / Start | Pause or resume; closes the Controls dialog if it's open |
 | View / Back | Toggle the debug panel |
 
+**Button order (2026-10-07).** The table above is by the letters on an Xbox-style pad. Browsers report most
+controllers in the standard order (A B X Y = buttons 0 1 2 3), but a pad they can't map (many generic, Logitech and
+8BitDo pads in DirectInput mode) reports X A B Y instead, which made A jump, B do a trick and X interact. On **Auto**
+(the default) the game reads a pad the browser marks as non-standard in that DirectInput order, so the letters do what
+the table says. If a controller still gets them wrong, pause and set **Controller buttons** to **Standard** or
+**Swapped** (remembered in this browser). Only the four face buttons change; the D-pad, sticks, shoulders, triggers,
+Start and Back are read the same way. The debug panel (`?debug`, Input) shows the pad's name, the browser's mapping
+and the order in use.
+
 Keyboard and mouse remain active while a controller is connected; prompts switch to whichever you last used.
 
 ## Touch: phones and tablets

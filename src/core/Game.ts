@@ -1452,6 +1452,7 @@ export class Game {
         move: `${move.x.toFixed(2)}, ${move.y.toFixed(2)}`,
         gamepad: this.input.gamepad.connected ? this.input.gamepad.name : '—',
         mapping: this.input.gamepad.mapping || '—',
+        buttons: this.input.gamepad.connected ? this.input.gamepad.layout : '—',
       };
     });
     this.debug.addSection('Sock Heist', (): DebugValues => {

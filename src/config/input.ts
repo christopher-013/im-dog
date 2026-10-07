@@ -61,12 +61,27 @@ export interface GamepadSettings {
   lookPixelsPerSecond: number;
   /** Analog/trigger value considered pressed. */
   buttonThreshold: number;
+  /**
+   * Which order the controller reports its face buttons in (the pause screen's "Controller buttons", default auto).
+   * 'standard': the browser's standard layout, A B X Y = buttons 0 1 2 3. 'directinput': the order many generic,
+   * Logitech and 8BitDo pads use when the browser can't map them, X A B Y = 0 1 2 3 (owner, 2026-10-07: on such a
+   * pad A jumped, B did a trick and X interacted; only Y was right). 'auto': standard when the browser says the pad
+   * is mapped as standard, DirectInput otherwise.
+   */
+  faceButtons: FaceButtonLayout;
 }
+
+export const FACE_BUTTON_LAYOUTS = ['auto', 'standard', 'directinput'] as const;
+export type FaceButtonLayout = (typeof FACE_BUTTON_LAYOUTS)[number];
+
+/** A DirectInput-order pad's face buttons (X A B Y as 0 1 2 3), as the standard buttons they are (A B X Y = 0 1 2 3). */
+export const DIRECTINPUT_FACE_BUTTONS: readonly number[] = [2, 0, 1, 3];
 
 export const GAMEPAD: GamepadSettings = {
   deadzone: 0.18,
   lookPixelsPerSecond: 720,
   buttonThreshold: 0.5,
+  faceButtons: 'auto',
 };
 
 /** Touch controls (phones and tablets). Distances are CSS pixels. */

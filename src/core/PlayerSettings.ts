@@ -1,4 +1,4 @@
-import { MOUSE } from '../config/input';
+import { FACE_BUTTON_LAYOUTS, GAMEPAD, MOUSE, type FaceButtonLayout } from '../config/input';
 import { clamp } from '../utils/math';
 
 /** Player-adjustable settings, remembered in this browser only. */
@@ -10,13 +10,15 @@ export interface PlayerSettings {
   music: MusicChoice;
   /** Music loudness: 1 is the level it was mixed at. */
   musicVolume: number;
+  /** The controller's face-button order (GAMEPAD.faceButtons): auto, standard or DirectInput. */
+  controllerButtons: FaceButtonLayout;
 }
 
 /** The pause screen's Music choices (the songs are in audio/music.ts). */
 export const MUSIC_CHOICES = ['hawaiian', 'japan', 'off'] as const;
 export type MusicChoice = (typeof MUSIC_CHOICES)[number];
 
-export const DEFAULT_SETTINGS: Readonly<PlayerSettings> = { mouseSensitivity: 1, invertY: false, music: 'hawaiian', musicVolume: 1 };
+export const DEFAULT_SETTINGS: Readonly<PlayerSettings> = { mouseSensitivity: 1, invertY: false, music: 'hawaiian', musicVolume: 1, controllerButtons: 'auto' };
 export const SENSITIVITY_RANGE = { min: 0.25, max: 3, step: 0.05 } as const;
 export const MUSIC_VOLUME_RANGE = { min: 0, max: 1.5, step: 0.05 } as const;
 
@@ -40,6 +42,7 @@ export function parseSettings(raw: string | null): PlayerSettings {
     if (typeof value.musicVolume === 'number' && Number.isFinite(value.musicVolume)) {
       settings.musicVolume = clamp(value.musicVolume, MUSIC_VOLUME_RANGE.min, MUSIC_VOLUME_RANGE.max);
     }
+    if ((FACE_BUTTON_LAYOUTS as readonly unknown[]).includes(value.controllerButtons)) settings.controllerButtons = value.controllerButtons as FaceButtonLayout;
   } catch {
     // Corrupt JSON: keep defaults.
   }
@@ -74,4 +77,5 @@ export function saveSettings(settings: PlayerSettings, storage: KeyValueStore | 
 export function applySettings(settings: PlayerSettings): void {
   MOUSE.sensitivityScale = settings.mouseSensitivity;
   MOUSE.invertY = settings.invertY;
+  GAMEPAD.faceButtons = settings.controllerButtons;
 }

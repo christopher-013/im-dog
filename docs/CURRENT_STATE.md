@@ -47,7 +47,7 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code (2026-10-16, owner request; on the working branch, **not pushed to `main`**): **the announcer says Moke
+Claude Code (2026-10-16, owner request; pushed to `main`): **the announcer says Moke
 "Moke-ee".** `DogProfile.spoken` is the name spelled for text-to-speech, used only by the announcer: "Mokey" for Moke
 ("Mokey!" when he's picked), "Dougie" and "Nori" as written. Nothing on screen changes (he's "Moke" everywhere).
 Verified: typecheck, 637 tests (Moke's `spoken`), build; in the browser with the speech stubbed, picking Moke by

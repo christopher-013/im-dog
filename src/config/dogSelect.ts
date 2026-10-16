@@ -30,9 +30,13 @@ export const DOG_SELECT = {
   fov: 28,
   lookHeight: 0.24,
   margin: 0.34,
-  /** Shares of the screen height kept clear for the name card below and the title above (0..1). */
+  /**
+   * Shares of the screen height kept clear for the name card below and the title above (0..1); the dogs need this
+   * much height (m, half of it) in the space between.
+   */
   cardShare: 0.34,
-  titleShare: 0.15,
+  titleShare: 0.2,
+  halfHeight: 0.33,
   background: '#f6e7d2',
   floor: '#ead3b4',
   spotlight: '#fff2d6',
@@ -46,6 +50,10 @@ export const DOG_SELECT = {
 export const ANNOUNCER = {
   choose: 'Choose your dog!',
   begin: 'Begin!',
+  /** Called out as a dog is picked (an arrow, a swipe, a click or tap on them): "Moke!", "Dougie!". */
+  dogName: (name: string) => `${name}!`,
+  /** No line runs longer than this (s): if the browser never says one ended, the music comes back up anyway. */
+  longestLine: 3,
   pitch: 0.3,
   rate: 0.78,
   volume: 1,

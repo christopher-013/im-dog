@@ -312,9 +312,10 @@ body {
   background: linear-gradient(to bottom, rgba(251, 241, 228, 0.55) 0%, rgba(251, 241, 228, 0) 22%, rgba(251, 241, 228, 0) 62%, rgba(251, 241, 228, 0.7) 100%);
 }
 
+/* Down from the top edge, nearer the dogs (owner request): more on tall screens, almost none on a phone on its side. */
 .select-title {
   justify-self: center;
-  margin: 0;
+  margin: clamp(0px, 10vh - 32px, 120px) 0 0;
   font-size: clamp(30px, min(7.5vw, 9vh), 68px);
   font-weight: 700;
   line-height: 1.05;

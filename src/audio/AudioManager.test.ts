@@ -138,6 +138,42 @@ describe('AudioManager (phones)', () => {
     }
   });
 
+  it("plays Choose Your Dog's fight theme on that screen (before play begins), then hands over to the chosen song", () => {
+    vi.useFakeTimers();
+    try {
+      const audio = new AudioManager();
+      audio.setMusic('japan', 1);
+      audio.unlock(); // the PLAY press
+      audio.selectMusic(true);
+      expect(audio.musicPlaying).toBe('fight');
+      audio.duckForVoice(true); // the announcer: it dips, it doesn't stop
+      expect(audio.musicPlaying).toBe('fight');
+      audio.duckForVoice(false);
+      audio.selectMusic(false); // BEGIN...
+      audio.startMusic();
+      expect(audio.musicPlaying).toBe('japan');
+      vi.advanceTimersByTime(3000);
+      expect(audio.musicPlaying).toBe('japan');
+
+      const back = new AudioManager();
+      back.unlock();
+      back.selectMusic(true);
+      back.selectMusic(false); // BACK to the title: quiet again
+      vi.advanceTimersByTime(3000);
+      expect(back.musicPlaying).toBe(null);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps Choose Your Dog quiet too when the player turned the music off', () => {
+    const audio = new AudioManager();
+    audio.setMusic('off', 1);
+    audio.unlock();
+    audio.selectMusic(true);
+    expect(audio.musicPlaying).toBe(null);
+  });
+
   it('keeps the music off from the start when the player turned it off', () => {
     const audio = new AudioManager();
     audio.setMusic('off', 1);

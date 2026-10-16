@@ -65,6 +65,8 @@ export const MUSIC = {
   level: 0.09,
   /** On the pause screen it carries on, a little quieter (fraction of `level`). */
   pausedLevel: 0.45,
+  /** While the Choose Your Dog announcer speaks, the music dips to this (fraction), so the voice comes through. */
+  voiceDuck: 0.4,
   /** Fade in and out (s). */
   fade: 1.5,
   /** Notes are scheduled this far ahead (s), topped up this often (s). */

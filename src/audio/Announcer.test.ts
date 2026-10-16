@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ANNOUNCER } from '../config/dogSelect';
 import { Announcer, pickAnnouncerVoice, type SpeechLike } from './Announcer';
 
@@ -13,6 +13,50 @@ function fakeSpeech(voices: SpeechSynthesisVoice[] = []) {
 }
 
 describe('the Choose Your Dog announcer', () => {
+  it("calls out each dog's name as it's picked", () => {
+    const f = fakeSpeech([voice('Daniel', 'en-GB')]);
+    const announcer = new Announcer(f.speech, f.make);
+    announcer.say(ANNOUNCER.dogName('Moke'));
+    announcer.say(ANNOUNCER.dogName('Dougie'));
+    expect(f.said.map((u) => u.text)).toEqual(['Moke!', 'Dougie!']);
+  });
+
+  it('says when it starts and stops talking (the music dips under it), ignoring lines it cut off', () => {
+    vi.useFakeTimers();
+    try {
+      const f = fakeSpeech();
+      const announcer = new Announcer(f.speech, f.make);
+      const heard: boolean[] = [];
+      announcer.onSpeaking = (speaking) => heard.push(speaking);
+      announcer.say('Choose your dog!');
+      const first = f.said[0]!;
+      first.onstart?.({} as SpeechSynthesisEvent);
+      expect(heard).toEqual([true]);
+      announcer.say('Moke!'); // cuts the first line off...
+      const second = f.said[1]!;
+      first.onend?.({} as SpeechSynthesisEvent); // ...whose late "ended" mustn't bring the music back up
+      second.onstart?.({} as SpeechSynthesisEvent);
+      expect(heard).toEqual([true]);
+      second.onend?.({} as SpeechSynthesisEvent);
+      expect(heard).toEqual([true, false]);
+
+      // A browser that never says a line ended: the music comes back up anyway.
+      announcer.say('Begin!');
+      f.said[2]!.onstart?.({} as SpeechSynthesisEvent);
+      expect(heard).toEqual([true, false, true]);
+      vi.advanceTimersByTime(ANNOUNCER.longestLine * 1000 + 10);
+      expect(heard).toEqual([true, false, true, false]);
+
+      // Stopping (BACK) while it talks: the music comes back up.
+      announcer.say('Dougie!');
+      f.said[3]!.onstart?.({} as SpeechSynthesisEvent);
+      announcer.stop();
+      expect(heard).toEqual([true, false, true, false, true, false]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('says its lines low and slow (deep, theatrical), cutting off anything it was still saying', () => {
     const f = fakeSpeech([voice('Samantha'), voice('Daniel', 'en-GB')]);
     const announcer = new Announcer(f.speech, f.make);

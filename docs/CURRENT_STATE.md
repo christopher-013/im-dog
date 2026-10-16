@@ -24,7 +24,9 @@ Liam's Obstacle Course. Scope and status: `docs/PHASE_5.md`.
 **5.1 FSD, Full Self Dog**, **5.2 the backyard and Liam's Obstacle Course** and **5.3 Watch TV full screen (with
 STAR VOYAGERS)**: built and published to the live site, waiting for the owner's verdict (`docs/PHASE_5.md`). Phase 4
 is closed. **5.4 Dougie and Choose Your Dog** (2026-10-16, D29): built, committed and pushed to `main` at the owner's
-request (published to the live site), waiting for the owner's verdict.
+request (published to the live site); a follow-up (title lower, a fight theme, the names called out) is
+committed on the working branch `claude/milestones-5-9-qagq4b`, **not on `main`** (not live yet). Waiting for the
+owner's verdict.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
@@ -45,6 +47,17 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-16, owner request; on the working branch, **not pushed to `main`**): **Choose Your Dog follow-up** (5.4) after the owner saw it
+live. The title "CHOOSE YOUR DOG" sits lower, nearer the dogs (`.select-title` margin from the screen height;
+`DOG_SELECT.titleShare` 0.15 → 0.2 and `halfHeight` 0.33 so the dogs move down with it, the same size). **"Paws Up!"**,
+an original 8-bit fight theme (`FIGHT_THEME` in `audio/music.ts`: E minor, 148 BPM, a new `drive` bass, 16 bars,
+trimmed ×1.9 to sit level with "Aloha, Moke"), plays from PLAY to BEGIN/BACK (`AudioManager.selectMusic`), follows
+the Music setting, and dips to 40 % while the announcer talks (`Announcer.onSpeaking` → `duckForVoice`; a 3 s
+safety in case a browser never says a line ended). The announcer now calls out the dog's name ("Moke!", "Dougie!")
+on every pick: arrows, swipes, keys, the controller, and a click or tap on a dog or its chip (also the one already
+highlighted). The owner asked for music "like Mortal Kombat style": it's in that genre's style but composed for the
+game; no melody, riff, sample or shout from any game was used (D29, `ASSETS.md`). Verification below.
+
 Claude Code (2026-10-16, owner request, committed and pushed to `main`): **Dougie, a second playable dog, and a Choose Your Dog
 screen** (milestone 5.4, D29). Details: `docs/PHASE_5.md` → 5.4, `docs/ARCHITECTURE.md` → Playable dogs.
 - **Flow:** PLAY → Choose Your Dog (`select` state) → BEGIN → play; BACK → the title. The house and physics load
@@ -1276,6 +1289,23 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+### Choose Your Dog follow-up: title lower, fight theme, names called (2026-10-16, Claude Code; working branch only)
+Headless Chromium with SwiftShader, no speech voices installed: **nobody has heard the theme or the names yet**.
+- **Typecheck, 88 test files / 629 tests (9 new), production build, `verify-dist`: pass.** New tests: "Paws Up!" (16
+  full bars, strong-beat notes fit the chords, eighth-note root/octave bass, stabs on 1, the "and" of 2 and 4, kicks
+  on every beat, snare on 2 and 4); the Music setting still lists only the two songs; `AudioManager` plays the theme
+  on Choose Your Dog before play, hands over to the chosen song at BEGIN, is quiet after BACK and with music off,
+  keeps playing while ducked; the announcer's name lines, its speaking events (a cut-off line's late "ended" is
+  ignored, the 3 s safety, stop()).
+- **Loudness** (offline render, same method for all three): "Paws Up!" at ×1.9 is −33.7 dB (phone filter −35.0)
+  against "Aloha, Moke" −34.1 (−34.7); peaks around −20 dB, no clipping.
+- **Browser (dev), speech stubbed to record:** 1770×1280 (the owner's screenshot size): the title moved from 12–83 px
+  to 108–179 px; PLAY → "Choose your dog!" and the theme playing; → "Dougie!"; a click on Moke "Moke!"; again on Moke
+  "Moke!"; the Dougie chip "Dougie!"; Esc → the title with no music; PLAY again, BEGIN → "Begin!" and "Aloha, Moke".
+  Emulated phone 390×844 with touch and the real (voiceless) speech API: swipe left "Dougie!", tap Moke "Moke!",
+  swipe right "Dougie!", BEGIN as Dougie, music handed over. Screenshots at 1770×1280, 1366×768, 390×844 and 844×390:
+  title, dogs and card clear of each other. Console clean.
+
 ### Dougie and Choose Your Dog (2026-10-16, Claude Code; pushed to `main`)
 Headless Chromium with SwiftShader in a cloud container; **no physical device, no real GPU, and no speech voices
 installed** (so the announcer's actual sound wasn't heard: the requests to speak were checked, the audio wasn't).

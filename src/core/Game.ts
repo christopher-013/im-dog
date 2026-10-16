@@ -299,12 +299,13 @@ export class Game {
     this.followCamera = new ThirdPersonCamera(this.camera, this.updateCameraTarget());
 
     ui.setDog(this.dog);
+    this.announcer.onSpeaking = (speaking) => this.audio.duckForVoice(speaking);
     ui.bindDogSelect({
       onStep: (step) => this.stepDog(step),
-      onPick: (index) => this.highlightDog(() => this.selection?.select(index) ?? false),
+      onPick: (index) => this.highlightDog(() => this.selection?.select(index) ?? false, true),
       onTap: (ndcX) => {
         const index = this.preview?.dogAt(ndcX) ?? -1;
-        if (index >= 0) this.highlightDog(() => this.selection?.select(index) ?? false);
+        if (index >= 0) this.highlightDog(() => this.selection?.select(index) ?? false, true);
       },
       onBegin: () => this.beginWithDog(true),
       onBack: () => this.backToTitle(),
@@ -887,13 +888,14 @@ export class Game {
   }
 
   /**
-   * PLAY: Choose Your Dog. The PLAY click (or A) is the gesture that lets sound and speech start, so the announcer
-   * says "Choose your dog!" now (the words are on screen either way). The 3D stage is built here and compiled in the
-   * background; the house keeps showing until it's ready.
+   * PLAY: Choose Your Dog. The PLAY click (or A) is the gesture that lets sound and speech start, so the fight theme
+   * starts and the announcer says "Choose your dog!" now (the words are on screen either way). The 3D stage is built
+   * here and compiled in the background; the house keeps showing until it's ready.
    */
   private openDogSelect(): void {
     if (this.state !== 'menu') return;
     this.audio.unlock();
+    this.audio.selectMusic(true);
     this.selection = new DogSelection(DOGS.map((dog) => dog.id), this.dog.id);
     const preview = (this.preview = new DogPreview(DOGS, this.assets.getGLTF('moke')));
     this.gfx.syncSize(this.camera);
@@ -909,10 +911,17 @@ export class Game {
     this.highlightDog(() => (step < 0 ? this.selection?.prev() : this.selection?.next()) ?? false);
   }
 
-  private highlightDog(change: () => boolean): void {
-    if (this.state !== 'select' || !this.selection || !change()) return;
-    this.ui.setSelectedDog(DOGS, this.selection.position);
+  /**
+   * Moves the highlight; the announcer calls out the dog's name. `picked`: a click or tap on a dog (or its name), which
+   * calls the name out even when that dog was already highlighted.
+   */
+  private highlightDog(change: () => boolean, picked = false): void {
+    if (this.state !== 'select' || !this.selection) return;
+    const changed = change();
+    if (!changed && !picked) return;
+    if (changed) this.ui.setSelectedDog(DOGS, this.selection.position);
     this.audio.play('dogSwitch');
+    this.announcer.say(ANNOUNCER.dogName(dogById(this.selection.current).name));
   }
 
   /**
@@ -940,6 +949,7 @@ export class Game {
   }
 
   private closeDogSelect(): void {
+    this.audio.selectMusic(false);
     this.preview?.dispose();
     this.preview = null;
     this.selection = null;

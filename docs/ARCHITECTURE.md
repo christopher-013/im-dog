@@ -243,8 +243,9 @@ unchanged; the classes keep Moke's name because he came first. What's per dog li
 - **progress:** `DogLogicMemory` reads and writes the chosen dog's key. Moke keeps `imdog.dogLogic` (so no existing
   save moves); Dougie's is `imdog.dogLogic.dougie`. The last dog chosen is `imdog.dog` (`core/DogChoice.ts`).
 - **choosing:** `core/DogSelection.ts` (pure: the highlight, wrapping, picks, swipes), `player/DogPreview.ts` (the 3D
-  stage), `audio/Announcer.ts` (the browser's own speech voice, pitched down; the words are always on screen too) and
-  three original synthesized sounds (`announce`, `dogSwitch`, `begin`).
+  stage), `audio/Announcer.ts` (the browser's own speech voice, pitched down: "Choose your dog!", the name of each dog
+  picked, "Begin!"; the words are always on screen too; it reports when it's talking so the music can dip), three
+  original synthesized sounds (`announce`, `dogSwitch`, `begin`) and the screen's own music (`FIGHT_THEME`, below).
 
 The dog is only chosen before play starts, so `Moke.setVisual` never has to move something held in the mouth.
 
@@ -407,11 +408,14 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 
 ## Background music (`audio/music.ts`, tuning `MUSIC` in `config/audio.ts`)
 - Two original 8-bit songs, stored as data (`SONGS`): "Aloha, Moke" (the Hawaii option) and "Irasshaimase!" (Konbini).
+  Choose Your Dog has its own, "Paws Up!" (`FIGHT_THEME`; `TUNES` holds all three): `AudioManager.selectMusic(true)`
+  from PLAY to BEGIN or BACK, instead of the background song, still following the Music setting; while the announcer
+  talks, `duckForVoice` dips whichever tune is playing to `MUSIC.voiceDuck`.
   A `Song` is chords per bar, a melody (notes with optional slides), an optional bells line, "sparse" bars (just
   bells and a held bass note: the door chime and the school chime), a `Band` (each instrument's sound and the
-  rhythm section's patterns) and a loudness trim so both songs sit at the same level. `songEvents()` turns a song
+  rhythm section's patterns) and a loudness trim so every tune sits at the same level. `songEvents()` turns a song
   into timed notes (swing applied); tests check that every bar is full and every strong-beat melody note fits its
-  chord, for both songs.
+  chord, for every tune.
 - `MusicSequencer` (pure timing, tested) hands out the notes a little ahead of the audio clock (lookahead 0.35 s,
   topped up every 0.1 s) and loops seamlessly. After a stall it skips late notes rather than playing a burst.
 - `MusicPlayer` plays one song with its band: triangle bass, pulse-wave chords (strums or stabs), a pulse-wave lead

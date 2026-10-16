@@ -224,10 +224,9 @@ export class DogPreview {
     const narrow = aspect < DOG_SELECT.narrow.below;
     this.spacing = narrow ? DOG_SELECT.narrow.spacing : DOG_SELECT.spacing;
     const halfWidth = ((this.total - 1) * this.spacing) / 2 + (narrow ? DOG_SELECT.narrow.margin : DOG_SELECT.margin);
-    const halfHeight = 0.36;
     const tanV = Math.tan((DOG_SELECT.fov * Math.PI) / 360);
     const usable = 1 - DOG_SELECT.cardShare - DOG_SELECT.titleShare;
-    const distance = Math.max(halfWidth / (tanV * aspect), halfHeight / (tanV * usable), 1.2);
+    const distance = Math.max(halfWidth / (tanV * aspect), DOG_SELECT.halfHeight / (tanV * usable), 1.2);
     c.position.set(0, DOG_SELECT.lookHeight + distance * 0.12, distance);
     this.target.set(0, DOG_SELECT.lookHeight, 0);
     c.lookAt(this.target);

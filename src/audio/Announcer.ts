@@ -10,14 +10,20 @@ export interface SpeechLike {
 type UtteranceFactory = (text: string) => SpeechSynthesisUtterance;
 
 /**
- * The Choose Your Dog announcer (2026-10-16): "Choose your dog!" and "Begin!" in a deep, slow, theatrical delivery.
- * It's the browser's own text-to-speech voice (Web Speech API), pitched down and slowed: an original presentation,
- * not anyone's recorded or imitated voice. How it sounds depends on the device's voices; some browsers have none,
- * or block speech, in which case it simply says nothing (the words are always on screen too). Called only from
- * the PLAY and BEGIN clicks, so it never tries to talk before a user gesture.
+ * The Choose Your Dog announcer (2026-10-16): "Choose your dog!", each dog's name as it's picked ("Moke!",
+ * "Dougie!") and "Begin!", in a deep, slow, theatrical delivery. It's the browser's own text-to-speech voice (Web
+ * Speech API), pitched down and slowed: an original presentation, not anyone's recorded or imitated voice. How it
+ * sounds depends on the device's voices; some browsers have none, or block speech, in which case it simply says
+ * nothing (the words are always on screen too). It only ever speaks after the PLAY press (a user gesture).
  */
 export class Announcer {
+  /** Told when it starts and stops talking, so the music can dip under the voice. */
+  onSpeaking: ((speaking: boolean) => void) | null = null;
   private voice: SpeechSynthesisVoice | null = null;
+  /** The line being said (events from lines it cut off are ignored). */
+  private current: SpeechSynthesisUtterance | null = null;
+  private speakingNow = false;
+  private quietTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly speech: SpeechLike | null = browserSpeech(),
@@ -46,6 +52,16 @@ export class Announcer {
       } else {
         line.lang = ANNOUNCER.lang;
       }
+      this.current = line;
+      line.onstart = () => {
+        if (this.current === line) this.setSpeaking(true);
+      };
+      line.onend = () => {
+        if (this.current === line) this.setSpeaking(false);
+      };
+      line.onerror = () => {
+        if (this.current === line) this.setSpeaking(false);
+      };
       speech.speak(line);
       return true;
     } catch {
@@ -54,11 +70,22 @@ export class Announcer {
   }
 
   stop(): void {
+    this.current = null;
+    this.setSpeaking(false);
     try {
       this.speech?.cancel();
     } catch {
       // Nothing to stop.
     }
+  }
+
+  /** Some browsers never say a line has ended: after ANNOUNCER.longestLine it counts as over anyway. */
+  private setSpeaking(speaking: boolean): void {
+    if (this.quietTimer) clearTimeout(this.quietTimer);
+    this.quietTimer = speaking ? setTimeout(() => this.setSpeaking(false), ANNOUNCER.longestLine * 1000) : null;
+    if (speaking === this.speakingNow) return;
+    this.speakingNow = speaking;
+    this.onSpeaking?.(speaking);
   }
 
   /** An English voice, preferring ones known to be low (see ANNOUNCER.preferredVoices); null for the default. */

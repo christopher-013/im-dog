@@ -9,10 +9,15 @@
 //   groove: an octave-jumping bass, off-beat chord stabs, a thin pulse lead and a little drum machine. Midway the
 //   bells play the Westminster Quarters, the chime every Japanese school rings (1793, public domain). The real
 //   stores' jingles (FamilyMart's, Don Quijote's) are other people's compositions, so they aren't copied here.
+// - "Paws Up!" (Choose Your Dog only, not a Music setting): an arcade fighting game's character-select theme, in
+//   8-bit. Fast and in a minor key: a pumping octave bass, power-chord stabs on a 3-3-2 rhythm, four-on-the-floor
+//   kicks and a heroic pulse lead. Written for this game in that genre's style; no real game's music is copied.
 
 import { MUSIC } from '../config/audio';
 
-type ChordName = 'C6' | 'Cmaj7' | 'F' | 'F6' | 'D7' | 'G7' | 'A7' | 'Fmaj7' | 'Dm7' | 'Gm7' | 'C7' | 'Bbmaj7' | 'Am7';
+type ChordName =
+  | 'C6' | 'Cmaj7' | 'F' | 'F6' | 'D7' | 'G7' | 'A7' | 'Fmaj7' | 'Dm7' | 'Gm7' | 'C7' | 'Bbmaj7' | 'Am7'
+  | 'Em' | 'C' | 'D' | 'B7' | 'Am';
 
 interface Chord {
   /** Bass notes (MIDI): the root, and the note for beat 3 (usually the fifth). */
@@ -39,6 +44,12 @@ export const CHORDS: Readonly<Record<ChordName, Chord>> = {
   C7: { bass: [48, 43], voicing: [60, 64, 67, 70], tones: [0, 4, 7, 10] },
   Bbmaj7: { bass: [46, 41], voicing: [62, 65, 69, 70], tones: [10, 2, 5, 9] },
   Am7: { bass: [45, 52], voicing: [60, 64, 67, 69], tones: [9, 0, 4, 7] },
+  // Plain triads for the fight theme, stacked low and tight so the stabs punch.
+  Em: { bass: [40, 47], voicing: [59, 64, 67, 71], tones: [4, 7, 11] },
+  C: { bass: [48, 43], voicing: [60, 64, 67, 72], tones: [0, 4, 7] },
+  D: { bass: [50, 45], voicing: [62, 66, 69, 74], tones: [2, 6, 9] },
+  B7: { bass: [47, 42], voicing: [59, 63, 66, 69], tones: [11, 3, 6, 9] },
+  Am: { bass: [45, 52], voicing: [57, 60, 64, 69], tones: [9, 0, 4] },
 };
 
 /** A note: MIDI (null = rest), length in beats, and optionally a slide up from this many semitones below. */
@@ -64,8 +75,11 @@ export interface Band {
     tone: number;
     level: number;
   };
-  /** 'twoFeel': root and fifth, stepping into chord changes. 'bounce': root, octave, fifth, octave on the beats. */
-  bass: { style: 'twoFeel' | 'bounce'; level: number };
+  /**
+   * 'twoFeel': root and fifth, stepping into chord changes. 'bounce': root, octave, fifth, octave on the beats.
+   * 'drive': pumping eighths, root and octave, with the fifth near the end of the bar.
+   */
+  bass: { style: 'twoFeel' | 'bounce' | 'drive'; level: number };
   /** One bar of percussion: beat, drum, velocity. */
   drums: readonly (readonly [beat: number, drum: Drum, velocity: number])[];
   /** Chime bells (the `bells` line). */
@@ -74,10 +88,13 @@ export interface Band {
   mellow: number;
 }
 
+/** The background songs (the pause screen's Music setting). */
 export type SongId = 'hawaiian' | 'japan';
+/** Every tune: the background songs, and Choose Your Dog's theme. */
+export type TuneId = SongId | 'fight';
 
 export interface Song {
-  id: SongId;
+  id: TuneId;
   title: string;
   bpm: number;
   /** Where off-beat eighths land within the beat: 0.5 is straight, ~0.6 a lazy lilt. */
@@ -245,7 +262,77 @@ const IRASSHAIMASE: Song = {
   gain: 2.15,
 };
 
+// ---- "Paws Up!"
+
+/** The fight theme's tune, in E minor: a dotted call ("dum — da-dum dum"), answered higher, then the B7 cliffhanger. */
+const PAWS_A: readonly Note[] = [
+  [76, 1.5], [71, 0.5], [76, 1], [79, 1],
+  [78, 0.5], [79, 0.5], [78, 1], [76, 1], [71, 1],
+  [72, 1.5], [76, 0.5], [79, 1], [76, 1],
+  [74, 1.5], [78, 0.5], [81, 1], [78, 1],
+  [76, 1.5], [71, 0.5], [76, 1], [79, 1],
+  [83, 1], [81, 0.5], [79, 0.5], [78, 1], [79, 1],
+  [76, 1], [79, 1], [84, 1], [83, 1],
+  [83, 2], [75, 1], [78, 1],
+];
+/** The second half climbs to the top and runs back down into the B7, ready for the next round. */
+const PAWS_B: readonly Note[] = [
+  [81, 1.5], [76, 0.5], [81, 1], [84, 1],
+  [83, 0.5], [84, 0.5], [83, 1], [81, 1], [76, 1],
+  [79, 1.5], [76, 0.5], [79, 1], [83, 1],
+  [83, 0.5], [81, 0.5], [79, 1], [78, 1], [76, 1],
+  [84, 1], [83, 1], [81, 1], [79, 1],
+  [81, 1], [79, 1], [78, 1], [74, 1],
+  [75, 1], [78, 1], [81, 1], [83, 1],
+  [83, 2], [null, 1], [71, 1],
+];
+
+const PAWS_UP: Song = {
+  id: 'fight',
+  title: 'Paws Up!',
+  bpm: 148,
+  swing: 0.5,
+  bars: ['Em', 'Em', 'C', 'D', 'Em', 'Em', 'C', 'B7', 'Am', 'Am', 'Em', 'Em', 'C', 'D', 'B7', 'B7'],
+  melody: [...PAWS_A, ...PAWS_B],
+  band: {
+    lead: { duty: 0.25, tone: 3600, vibrato: 12, level: 0.19 },
+    echo: { time: 0.3, feedback: 0.2, wet: 0.14 },
+    // Power stabs on the 3-3-2 rhythm (beats 1, the "and" of 2, and 4): the push of a fight theme.
+    comp: {
+      steps: [
+        [0, 'down', 1],
+        [1.5, 'down', 0.85],
+        [3, 'down', 0.9],
+      ],
+      ring: 0.16,
+      spread: 0.003,
+      duty: 0.5,
+      tone: 2200,
+      level: 0.06,
+    },
+    bass: { style: 'drive', level: 0.22 },
+    // Four on the floor, a snare on 2 and 4, hats on every eighth.
+    drums: [
+      [0, 'kick', 1],
+      [1, 'kick', 0.8],
+      [2, 'kick', 0.95],
+      [3, 'kick', 0.8],
+      [1, 'snare', 0.8],
+      [3, 'snare', 0.85],
+      ...[0, 1, 2, 3, 4, 5, 6, 7].map((e) => [e / 2, 'hat', e % 2 ? 0.7 : 0.35] as const),
+    ],
+    bell: { level: 0 },
+    mellow: 9000,
+  },
+  // Offline renders at gain 1: −39.3 dB (−40.6 dB through a phone-speaker filter) against "Aloha, Moke"'s −34.1
+  // (−34.7), measured the same way on the same day. ×1.9 puts it within ~0.5 dB of it on both.
+  gain: 1.9,
+};
+
 export const SONGS: Readonly<Record<SongId, Song>> = { hawaiian: ALOHA, japan: IRASSHAIMASE };
+/** Choose Your Dog's theme. */
+export const FIGHT_THEME = PAWS_UP;
+export const TUNES: Readonly<Record<TuneId, Song>> = { ...SONGS, fight: FIGHT_THEME };
 /** The first song ("Aloha, Moke"). */
 export const SONG = ALOHA;
 
@@ -306,6 +393,13 @@ export function songEvents(song: Song = SONG): MusicEvent[] {
       } else {
         add('bass', b + 2, b + 3, [chord.bass[1]], 0.9);
         add('bass', b + 3, b + 4, [next.bass[0] - 1], 0.8);
+      }
+    } else if (band.bass.style === 'drive') {
+      // Pumping eighths: root and octave, with the fifth on beat 4 (then the octave).
+      const [root, fifth] = chord.bass;
+      for (let e = 0; e < 8; e++) {
+        const midi = e === 6 ? fifth : e % 2 ? root + 12 : root;
+        add('bass', b + e / 2, b + (e + 1) / 2, [midi], e % 2 ? 0.75 : 1);
       }
     } else {
       // Root, octave, fifth, octave: or a step into the next chord on beat 4 when it changes.

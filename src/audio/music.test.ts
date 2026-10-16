@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHORDS, MusicSequencer, SONG, SONGS, songEvents, type Note, type Scheduled, type Song } from './music';
+import { CHORDS, FIGHT_THEME, MusicSequencer, SONG, SONGS, TUNES, songEvents, type Note, type Scheduled, type Song } from './music';
 
 /** Checks a line of notes fills the song exactly, with no note tied over a bar line. */
 function fillsBars(song: Song, notes: readonly Note[]): void {
@@ -12,11 +12,20 @@ function fillsBars(song: Song, notes: readonly Note[]): void {
   expect(at).toBe(song.bars.length * 4);
 }
 
+/** The background songs are 24 bars; Choose Your Dog's short fight theme, 16. */
+const BARS: Readonly<Record<keyof typeof TUNES, number>> = { hawaiian: 24, japan: 24, fight: 16 };
+
 describe('the background music', () => {
-  for (const song of Object.values(SONGS)) {
+  it('the Music setting offers the background songs only (the fight theme belongs to Choose Your Dog)', () => {
+    expect(Object.keys(SONGS)).toEqual(['hawaiian', 'japan']);
+    expect(Object.keys(TUNES)).toEqual(['hawaiian', 'japan', 'fight']);
+  });
+
+  for (const [id, song] of Object.entries(TUNES) as [keyof typeof TUNES, Song][]) {
     describe(`"${song.title}"`, () => {
-      it('is 24 bars, and every line fills every bar exactly, with no note tied over a bar line', () => {
-        expect(song.bars).toHaveLength(24);
+      it(`is ${BARS[id]} bars, and every line fills every bar exactly, with no note tied over a bar line`, () => {
+        expect(song.id).toBe(id);
+        expect(song.bars).toHaveLength(BARS[id]);
         fillsBars(song, song.melody);
         if (song.bells) fillsBars(song, song.bells);
       });
@@ -76,6 +85,30 @@ describe('the background music', () => {
     const bar = 4 * 4;
     const inBar = events.filter((e) => e.beat >= bar && e.beat < bar + 4);
     for (const voice of ['kick', 'snare', 'hat', 'comp', 'bass', 'lead']) expect(inBar.some((e) => e.voice === voice)).toBe(true);
+  });
+
+  it('"Paws Up!" (Choose Your Dog): a fast minor-key fight theme, pumping bass, power stabs on 3-3-2, four on the floor', () => {
+    const song = FIGHT_THEME;
+    expect(song.bpm).toBeGreaterThanOrEqual(140);
+    expect(song.bars[0]).toBe('Em');
+    expect(song.swing).toBe(0.5); // straight, driving eighths
+    const events = songEvents(song);
+    for (let bar = 0; bar < song.bars.length; bar++) {
+      const inBar = (voice: string) =>
+        events.filter((e) => e.voice === voice && e.beat >= bar * 4 && e.beat < bar * 4 + 4).map((e) => e.beat - bar * 4);
+      // Eighth notes in the bass, root and octave.
+      const bass = events.filter((e) => e.voice === 'bass' && e.beat >= bar * 4 && e.beat < bar * 4 + 4);
+      expect(bass.map((e) => e.beat - bar * 4)).toEqual([0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5]);
+      const root = CHORDS[song.bars[bar]!].bass[0];
+      expect(bass[0]!.notes[0]).toBe(root);
+      expect(bass[1]!.notes[0]).toBe(root + 12);
+      expect(inBar('comp')).toEqual([0, 1.5, 3]);
+      expect(inBar('kick')).toEqual([0, 1, 2, 3]);
+      expect(inBar('snare')).toEqual([1, 3]);
+      expect(inBar('hat')).toHaveLength(8);
+    }
+    // Trimmed up to sit level with the other tunes (see its gain note).
+    expect(song.gain).toBeGreaterThan(1);
   });
 
   it('hands out every note exactly once per loop, a little ahead of time, and loops without a seam', () => {

@@ -1,5 +1,5 @@
 import { AUDIO, MUSIC } from '../config/audio';
-import { MusicPlayer, SONGS, type SongId } from './music';
+import { MusicPlayer, TUNES, type SongId, type TuneId } from './music';
 import { announce, bark, begin, chirp, crunch, dogSwitch, squeak, discovery, doorbell, drop, fireworks, growl, lap, pickup, pour, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
 
 export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'lap' | 'pour' | 'discovery' | 'doorbell' | 'chirp' | 'squeak' | 'fireworks' | 'announce' | 'dogSwitch' | 'begin';
@@ -25,14 +25,18 @@ export class AudioManager {
   private failed = false;
   /** A resume() in flight, so sounds asked for meanwhile can wait for it instead of being lost. */
   private waking: Promise<void> | null = null;
-  /** One player per song, made the first time it's chosen (null: this browser can't make it). */
-  private readonly players = new Map<SongId, MusicPlayer | null>();
+  /** One player per tune, made the first time it's wanted (null: this browser can't make it). */
+  private readonly players = new Map<TuneId, MusicPlayer | null>();
   /** The player's Music settings (pause screen). */
   private musicChoice: SongId | 'off' = 'hawaiian';
   private musicVolume = 1;
   /** Play has begun (PLAY was pressed), so the music may run. */
   private musicStarted = false;
   private musicDucked = false;
+  /** Choose Your Dog is up: its own theme plays instead of the background song. */
+  private selectTheme = false;
+  /** The announcer is talking: the music dips under the voice. */
+  private voiceDucked = false;
 
   get status(): string {
     if (this.failed) return 'unavailable';
@@ -110,9 +114,9 @@ export class AudioManager {
     this.updateMusic();
   }
 
-  /** The song playing now, if any. */
-  get musicPlaying(): SongId | null {
-    for (const [id, player] of this.players) if (player?.isPlaying && id === this.wantedSong()) return id;
+  /** The tune playing now, if any. */
+  get musicPlaying(): TuneId | null {
+    for (const [id, player] of this.players) if (player?.isPlaying && id === this.wantedTune()) return id;
     return null;
   }
 
@@ -128,19 +132,38 @@ export class AudioManager {
     this.updateMusic();
   }
 
-  private wantedSong(): SongId | null {
-    return this.musicStarted && this.musicChoice !== 'off' && this.musicVolume > 0.001 ? this.musicChoice : null;
+  /**
+   * Choose Your Dog's fight theme ("Paws Up!") while the screen is up (call after unlock(), from PLAY), off again at
+   * BEGIN or BACK. It follows the Music settings: with the music off, the screen is quiet too.
+   */
+  selectMusic(on: boolean): void {
+    this.selectTheme = on;
+    this.updateMusic();
+  }
+
+  /** The music dips while the announcer speaks (see MUSIC.voiceDuck). */
+  duckForVoice(speaking: boolean): void {
+    if (speaking === this.voiceDucked) return;
+    this.voiceDucked = speaking;
+    this.updateMusic();
+  }
+
+  private wantedTune(): TuneId | null {
+    if (this.musicChoice === 'off' || this.musicVolume <= 0.001) return null;
+    if (this.selectTheme) return 'fight';
+    return this.musicStarted ? this.musicChoice : null;
   }
 
   private updateMusic(): void {
     const ctx = this.ctx;
     const master = this.master;
     if (!ctx || !master) return;
-    const wanted = this.wantedSong();
+    const wanted = this.wantedTune();
     for (const [id, player] of this.players) if (id !== wanted) player?.stop();
     if (!wanted) return;
     if (!this.players.has(wanted)) this.players.set(wanted, createMusic(ctx, master, wanted));
-    this.players.get(wanted)?.play(this.musicVolume * (this.musicDucked ? MUSIC.pausedLevel : 1));
+    const level = this.musicVolume * (this.musicDucked ? MUSIC.pausedLevel : 1) * (this.voiceDucked ? MUSIC.voiceDuck : 1);
+    this.players.get(wanted)?.play(level);
   }
 
   dispose(): void {
@@ -165,9 +188,9 @@ function preferAudibleSession(): void {
 }
 
 /** The background music, if this browser can make it: a problem there must never cost the sound effects. */
-function createMusic(ctx: AudioContext, out: AudioNode, song: SongId): MusicPlayer | null {
+function createMusic(ctx: AudioContext, out: AudioNode, tune: TuneId): MusicPlayer | null {
   try {
-    return new MusicPlayer(ctx, out, SONGS[song]);
+    return new MusicPlayer(ctx, out, TUNES[tune]);
   } catch (err) {
     console.warn('Music is unavailable:', err);
     return null;

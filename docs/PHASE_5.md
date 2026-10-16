@@ -132,6 +132,16 @@ begins… Dougie must be able to do everything Moke currently can."
   browser's speech voice says "Choose your dog!" low and slow; BEGIN brings "BEGIN!" over the game with a hit and the
   spoken "Begin!". Started from the PLAY / BEGIN clicks (browsers' autoplay rules). Where there's no speech voice,
   or the device is muted, the words are still on screen. Not a copy or imitation of any game's announcer.
+- **Follow-up (owner request, 2026-10-16):** "move the Choose your Dog text lower. Play 8-bit style fighting music in
+  the background… When the user clicks and selects either Moke and Dougie have the announcer say the dog name."
+  - The title sits lower, nearer the dogs (a share of the screen height: about 100 px lower on a tall desktop window,
+    50 px on a phone upright, barely at all on a phone on its side); the dogs moved down a little with it.
+  - **"Paws Up!"**, an original 8-bit fight theme in the style of an arcade fighting game's character select (E minor,
+    148 BPM, a pumping octave bass, power stabs, four-on-the-floor kicks, a pulse lead), plays while the screen is up and
+    hands over to the chosen background song at BEGIN; BACK leaves the title quiet as before. It follows the Music
+    setting (off means off here too) and dips under the announcer's voice. No real game's music is copied.
+  - The announcer calls out the dog's name ("Moke!", "Dougie!") whenever one is picked: an arrow, a swipe, a key or
+    the controller, or a click or tap on a dog or its name (also when that dog is already highlighted).
 - **Dougie:** the same toon build and size as Moke, with his own markings (dark charcoal coat and long ears, a white
   patch on top of his head, cream-tan eyebrows, cheeks and muzzle, white chest and socks, tan flashes on his
   forelegs, a white tail tip), brown eyes and a sage collar with "Dougie" on the tag. Same mouth socket, so he carries

@@ -48,6 +48,14 @@ export class TvChannels {
   onHomeRun: (() => void) | null = null;
   /** The TV being shown close up (drawn sharper), or null. */
   private detailIndex: number | null = null;
+  /**
+   * Per TV (in the order of the materials): is its screen in the camera's view? One that isn't skips its redraws and
+   * texture uploads (the shows run on their own clocks, so it shows the right moment as soon as it's back in view).
+   * Set each frame by the game; all true until then.
+   */
+  readonly inView: boolean[];
+  /** Pictures drawn so far (tests, debug). */
+  redraws = 0;
 
   constructor(
     materials: readonly MeshBasicMaterial[],
@@ -65,6 +73,7 @@ export class TvChannels {
       [order[i], order[j]] = [order[j]!, order[i]!];
     }
     this.screens = materials.map((material, i) => this.createScreen(material, order[i % order.length]!, i / (materials.length * options.fps)));
+    this.inView = materials.map(() => true);
     this.switchIn = this.nextSwitch();
     this.specialIn = this.between(options.special.firstAfter);
     for (const screen of this.screens) this.draw(screen);
@@ -135,14 +144,15 @@ export class TvChannels {
       if (this.specialIn <= 0) this.startSpecial();
     }
     const frame = 1 / this.options.fps;
-    for (const screen of this.screens) {
+    this.screens.forEach((screen, i) => {
       screen.static = Math.max(0, screen.static - dt);
       screen.osd = Math.max(0, screen.osd - dt);
       screen.sinceFrame += dt;
-      if (screen.sinceFrame < frame) continue;
+      // Out of view: no drawing or uploading (it's due as soon as it's back in view).
+      if (screen.sinceFrame < frame || !this.inView[i]) return;
       screen.sinceFrame %= frame;
       this.draw(screen);
-    }
+    });
   }
 
   /** Which show TV `index` is on right now. */
@@ -239,6 +249,7 @@ export class TvChannels {
   }
 
   private draw(screen: Screen): void {
+    this.redraws++;
     // Close up, the sharp canvas: the same drawing, scaled up (the shows are drawn as shapes, so they stay crisp).
     const sharp = screen.detailed ? screen.detail : null;
     const ctx = sharp?.ctx ?? screen.ctx;

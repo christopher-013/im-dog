@@ -1,7 +1,7 @@
 import { Group, Vector3 } from 'three';
 import type { StaticBox } from '../physics/PhysicsWorld';
 import { HOME_BOUNDS, PLAY_BOUNDS, ROOMS, roomAt, type RoomArea } from './home/layout';
-import { FIRE, HOME_PLACES, KITCHEN_TREATS, NAP_SPOTS, TREAT_HIDING_SPOTS, type HomePlace, type NapSpot, type Spot } from './home/places';
+import { FIRE, HOME_PLACES, KITCHEN_TREATS, NAP_SPOTS, TREAT_HIDING_SPOTS, TV_SCREENS, type HomePlace, type NapSpot, type Spot, type TvScreenSpot } from './home/places';
 import { buildWing } from './home/Wing';
 import { LivingRoom } from './LivingRoom';
 import { createRoomMaterials } from './materials';
@@ -39,6 +39,8 @@ export class Home {
   readonly houseBounds = HOME_BOUNDS;
   /** What's on the three TVs (a different show on each). */
   readonly tv: TvChannels;
+  /** The TVs' screens, in `tv`'s order (see tvIndex): where each is, for `tv.inView`. */
+  readonly tvScreens: readonly TvScreenSpot[] = (['living', 'family', 'dining'] as const).map((id) => TV_SCREENS.find((s) => s.id === id)!);
 
   constructor() {
     const materials = createRoomMaterials();

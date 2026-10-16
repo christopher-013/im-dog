@@ -125,7 +125,7 @@ src/
       homeFurniture.ts    the wing's furniture: sectional, fireplace, built-ins, island, stools, range, fridge, trestle table, chairs…
     HouseholdEffects.ts   signs of life: the steaming pot, dinner on the table; the FOOD smell
     tv/                   what's on the three TVs (Home owns it, Game updates it): original shows drawn in code on canvases
-      TvChannels.ts       one canvas and material per TV, 12 frames/s; each on a different show, two swap now and then (snow, channel number);
+      TvChannels.ts       one canvas and material per TV, 12 frames/s, only while in the camera's view (`inView`, set by Game); each on a different show, two swap now and then (snow, channel number);
                           now and then the special broadcast cuts in on all three at once, in sync, fires `onHomeRun` once, then each TV goes back to its show (tested);
                           `setDetail(i)` draws one TV `TV.detailScale` (2.5×) sharper on its own canvas while the camera's close up on it
       Gearbots.ts         GEARBOTS: trucks and jets that transform into robots (80s cartoon style)

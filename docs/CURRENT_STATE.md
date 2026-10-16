@@ -47,6 +47,38 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-16, owner request: an independent engineering audit, run after Codex's audit and FSD fixes;
+on the working branch, **not pushed to `main`**). Baseline `3d4a4a0`: strict typecheck, 89 files / 645 tests, build
+and private-photo check, `npm audit` (0) all pass.
+- **FSD (Codex's `3d4a4a0` fix), measured with a wall diagnostic** (6 simulated minutes per run, headless, real
+  physics; logs every second-plus standing still with a wall a short ray ahead, every jump with a wall ahead, every
+  failed routine). Before the fix: 15 jumps at one kitchen wall in ~70 s while "Exploring" (a hop resets the old stuck
+  timer, so it never gave up). After: two full runs with **no wall standing or jumping while exploring**; what remains
+  is intended (hops onto tables, sofas and nap spots, digging the couch pillows, drinking at the bowl); 5 of 38 and 1
+  of 37 routines failed (they rest 20 s and he moves on). All 16 Treat Hunt hiding spots stay reachable under the new
+  0.45 m final-approach cap (two via the fine grid). One extra run's page crashed at ~100 s while two software-GPU
+  browsers ran at once; a full 6-minute rerun alone didn't crash (geometries and textures flat throughout). Not proven
+  either way; nothing points at the game.
+- **Performance (fixed): the TVs.** A CPU profile of the game's per-frame work (rendering excluded) during FSD play
+  showed the slow frames were almost all `Home.update` → `TvChannels` redrawing a TV's canvas (up to ~30 ms in the
+  headless browser), and all three TVs redrew and re-uploaded 12 times a second wherever Moke was. Now `Game` marks each
+  screen in or out of the camera's view frustum each frame (`TvChannels.inView`, from `Home.tvScreens`) and only TVs in
+  view redraw; the shows keep their clocks, so a TV drawn again shows the right moment (next frame). Same 60 s of FSD
+  play: mean frame CPU 1.43 → 0.97 ms, p95 3.9 → 2.5, p99 8.0 → 5.4, frames over 16 ms 10 → 2, TV redraws 2,160 →
+  555. In the running game the TV in front of the camera keeps animating. New test: out-of-view TVs cost nothing and
+  redraw the moment they're back. Numbers are headless CPU, not phone or GPU timings.
+- **Not changed, noted:** route planning (`NavGrid.findPath`) occasionally takes 10–29 ms on a long FSD re-plan
+  (a spike, not a trend); `Game.ts` is 1,640 lines and growing with each activity (the main maintainability risk:
+  new systems should keep landing in their own classes, as they mostly do); the static `_headers` CSP has no
+  `script-src` (tightening needs a check of every inline script first); touch players have no way back from Choose
+  Your Dog (owner request) but reloading.
+- **Checked and fine:** the feedback Worker (origin allowlist, method/type, body cap, field validation, honeypot,
+  fail-closed rate limit, parameterised SQL, @-mention neutralising, private fields kept out of public Issues, 30-day
+  purge); no `innerHTML`/`eval` in the game; `public/` files documented and approved; the service worker updates on
+  one ordinary reload (network-first pages, content-hashed assets); JS heap steady (~89 MB after GC) over a minute
+  of FSD; Codex's preview-model ownership fix is right.
+- Verification after the change: typecheck, 89 files / 646 tests, build and private-photo check.
+
 OpenAI Codex (2026-10-15 Pacific, owner-requested FSD repairs; owner approved commit and push): continued the reported wall-standing,
 wall-jumping and missing toilet-paper investigation against the clean `82f078f` baseline. Exploration now chooses
 reachable floor with space for its flourishes and uses a shorter nearby walk when distant samples miss. Route

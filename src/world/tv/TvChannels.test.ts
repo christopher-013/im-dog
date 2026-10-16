@@ -101,6 +101,28 @@ describe('The TVs (four shows, three sets)', () => {
     expect(tv.onAir.map((s) => s.name).join()).toBe(lineup);
   });
 
+  it("only redraws the TVs in view: one out of view costs nothing, and redraws the moment it's back", () => {
+    const tv = new TvChannels(screens(), mulberry32(4));
+    const step = 1 / 60;
+    const run = (seconds: number) => {
+      const before = tv.redraws;
+      for (let t = 0; t < seconds; t += step) tv.update(step);
+      return tv.redraws - before;
+    };
+    // All three in view: a dozen pictures a second each.
+    expect(run(2)).toBeGreaterThanOrEqual(3 * TV.fps * 2 - 3);
+    // Only one in view: only it redraws.
+    tv.inView[0] = false;
+    tv.inView[2] = false;
+    expect(run(2)).toBeLessThanOrEqual(TV.fps * 2 + 1);
+    // None in view (Moke in the backyard, say): nothing at all; the shows' clocks still run.
+    tv.inView[1] = false;
+    expect(run(5)).toBe(0);
+    // Back in view: drawn on the very next frame.
+    tv.inView[0] = true;
+    expect(run(step)).toBe(1);
+  });
+
   it('starts differently each time (the lineup is shuffled)', () => {
     const lineups = new Set<string>();
     for (let seed = 1; seed <= 20; seed++) lineups.add(new TvChannels(screens(), mulberry32(seed)).onAir.map((s) => s.name).join());

@@ -1,4 +1,4 @@
-import { Color, Matrix4, PerspectiveCamera, Quaternion, Scene, Vector3, type Object3D } from 'three';
+import { Color, Frustum, Matrix4, PerspectiveCamera, Quaternion, Scene, Sphere, Vector3, type Object3D } from 'three';
 import { MoveBasis } from '../camera/MoveBasis';
 import { ThirdPersonCamera, type CameraInput, type CameraTarget } from '../camera/ThirdPersonCamera';
 import { AudioManager } from '../audio/AudioManager';
@@ -241,6 +241,8 @@ export class Game {
   private zzzIn = 0;
 
   private readonly lookDelta: Vec2Like = { x: 0, y: 0 };
+  /** Which TVs the camera can see (TVs out of view skip their redraws: see TvChannels.inView). */
+  private readonly view = { frustum: new Frustum(), matrix: new Matrix4(), sphere: new Sphere() };
   private readonly moveAxis: Vec2Like = { x: 0, y: 0 };
   private readonly moveIntent: MoveIntent = { x: 0, z: 0, walk: false, run: false };
   /** The anonymous player counter: only on im-dog.com, where the site Worker takes the pings (config/site.ts). */
@@ -1069,7 +1071,6 @@ export class Game {
     this.dinnerTreat.update();
     this.pattyTreat.update();
     this.frontDoor.update(playing ? dt : 0);
-    this.room.update(playing ? dt : 0);
     this.household.update(dt, { effect: this.routine.effect, place: this.routine.place });
     this.updateBowls(playing ? dt : 0);
     this.updateNapping(playing ? dt : 0, playing);
@@ -1084,6 +1085,9 @@ export class Game {
     this.cameraInput.zoom = playing ? input.getZoomDelta() : 0;
     this.followCamera.update(dt, this.cameraInput, this.updateCameraTarget());
     this.updateTvCloseUp(dt);
+    // The TVs play on, redrawing only the ones in view (after the camera's moved, so it's this frame's view).
+    this.updateTvsInView();
+    this.room.update(playing ? dt : 0);
     // Walls can force the camera right up against Moke; hide him then rather than render his insides.
     if (this.moke) this.moke.visual.object.visible = !this.followCamera.isInsideTarget;
     if (this.barkedThisFrame) this.showBarkBubble();
@@ -1238,6 +1242,18 @@ export class Game {
    * view, drawn sharper), and back out when he's done. It overrides the follow camera's pose only for the frame;
    * the follow camera carries on underneath, so it picks up exactly where it was.
    */
+  /** Marks each TV in or out of the camera's view (its screen's bounding sphere against the view frustum). */
+  private updateTvsInView(): void {
+    const { frustum, matrix, sphere } = this.view;
+    this.camera.updateMatrixWorld();
+    frustum.setFromProjectionMatrix(matrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse));
+    this.room.tvScreens.forEach((screen, i) => {
+      sphere.center.set(screen.x, screen.y, screen.z);
+      sphere.radius = screen.width * 0.6;
+      this.room.tv.inView[i] = frustum.intersectsSphere(sphere);
+    });
+  }
+
   private updateTvCloseUp(dt: number): void {
     // The ballgame, or any show he's sat down to watch (Watch TV): the same close-up.
     const watching = this.watchGame?.watchingScreen ?? this.watchTv?.watching ?? null;

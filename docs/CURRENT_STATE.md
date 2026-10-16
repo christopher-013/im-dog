@@ -48,7 +48,7 @@ carries into Phase 2.
 
 ## Last Developer
 Claude Code (2026-10-16, owner request: an independent engineering audit, run after Codex's audit and FSD fixes;
-on the working branch, **not pushed to `main`**). Baseline `3d4a4a0`: strict typecheck, 89 files / 645 tests, build
+pushed to `main` at the owner's request). Baseline `3d4a4a0`: strict typecheck, 89 files / 645 tests, build
 and private-photo check, `npm audit` (0) all pass.
 - **FSD (Codex's `3d4a4a0` fix), measured with a wall diagnostic** (6 simulated minutes per run, headless, real
   physics; logs every second-plus standing still with a wall a short ray ahead, every jump with a wall ahead, every

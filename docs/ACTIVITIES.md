@@ -127,9 +127,11 @@ audible. The glow stops immediately when Moke answers or the visitor leaves. If 
 scheduled without granting a discovery. Ringing alone does not borrow the human or prevent other activities.
 
 One bark action starts Moke's automatic **bark → growl → bark → growl → bark → growl** routine, spaced 1.25 seconds
-apart. The human waits for its 7.5-second performance before walking over and opening the door. Repeated input
-does not restart the performance or shorten it. Pause freezes both the bell deadline and the guard routine.
-Once free, the human walks to the door, opens it outward, takes an Amazon-labelled parcel from the blue-uniformed
+apart. The human doesn't wait for it: they set off at once ("Coming, Moke! I'll get the door."), at a brisk 1.8 m/s
+(`answerSpeed`; an ordinary walk is 1.05), while the performance carries on. Repeated input does not restart the
+performance or shorten it. Pause freezes both the bell deadline and the guard routine. A barked-at door is urgent: the
+human puts down a game of fetch or tug for it, and doesn't wait for a Treat Hunt Moke is searching on his own (a
+chore, such as refilling the bowls, is finished first). Once free, the human walks to the door, opens it outward, takes an Amazon-labelled parcel from the blue-uniformed
 visitor, closes the door and praises Moke. **BARK = PROTECTOR** is earned only after the handoff, not from a remote
 bark. Moke declares that he defended the house. The human resumes the saved routine; another visitor is possible
 after a random **10–15 minutes** of game time (plus brief success feedback), never sooner than ten minutes after
@@ -277,7 +279,9 @@ stays out two minutes it goes down on the floor there for him; the Sock Heist bo
 waits for later (he's owed it until he's had it). Run it again for another. Tuning: `config/obstacleCourse.ts`. No
 Dog Logic entry.
 
-FSD runs the course too (the `course` routine: the same moves as a player, then the `patty` routine to collect).
+FSD runs the course too (the `course` routine: the same moves as a player, then the `patty` routine to collect: as
+soon as the human is on the way with it, he stays at their side, about 0.8 m, until he's had it). At the front door
+FSD barks, steps into the corner beside it out of the human's way, and waits there until the package is in.
 
 ## Tests
 `activities/ObstacleCourse.test.ts` (the rules: a whole lap, the HUD lines, going round the hurdles, weaving the

@@ -47,6 +47,37 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-16, owner request: during FSD the dog waits out its moments with the human, and the human
+answers the door faster; on the working branch, **not pushed to `main`**).
+- **The door:** the human used to wait out the dog's guard barks (7.5 s), then walk at 1.05 m/s, while FSD left
+  8 s after its bark. Now they set off at once ("Coming, Moke! I'll get the door.") at
+  `HOME_ACTIVITIES.delivery.answerSpeed` 1.8 m/s (his guard barks carry on meanwhile). FSD barks, steps into the
+  corner beside the door (`FSD.doorWaitAt`, out of the human's way down the hall), then waits until
+  `DoorDelivery.inProgress` is over (door opened, package in, door shut), up to `FSD.doorWaitFor` 60 s.
+- **The human gets free for the door:** a barked-at door (`DogActivity.urgent`) now calls off a game of fetch or tug
+  (`yieldsHuman`; `HumanActivityController.claim(role, true)` takes the human from a role that `yields`) and no
+  longer waits for a Treat Hunt he's searching on his own (`TreatHunt.holdsHuman` is false while the treat's hidden
+  and they're not pointing; the hints wait for them, and the point claims them again later). Chores aren't
+  interrupted, and nothing but the urgent door gets past a hunt. Before this, a ring during a hunt kept the door
+  unanswered until the hunt ended, and FSD gave up at the door.
+- **The hamburger patty:** FSD used to react only once the human was already holding it, and only waited 8 s. Now
+  it starts as soon as the reward is on its way (`rewardComing`) and stays within `FSD.stayWithin` 0.8 m of the human
+  (a new `stayWithHuman` step: follows them, still when close) until fed, up to `FSD.rewardWaitFor` 45 s.
+- Checked in the game (headless, real physics, FSD driving), each from a random household:
+  - human nearby: door open 2.8 s after the bark;
+  - human in the gym: 12.8 s, 1.8 m/s the whole way, no detour round the dog;
+  - human mid-game of fetch: they put it down at once, door open 7.5 s after the bark;
+  - human refilling the bowls (a chore): they finish (6 s), then come at 1.8 m/s.
+  
+  The dog waited in the corner every time and moved on within a frame of the door shutting (no failed door
+  routines). The patty, three runs: he followed the human to the slider at about 0.8 m and was fed (once straight
+  after a delivery). The Treat Hunt case was checked by hand: hunt under way, bark at the door, the delivery starts
+  at once and finishes, and the hunt carries on.
+- Tests: FSD waits at the door until the delivery's done, and stays with the human for the patty; the human sets off
+  at once at the brisk pace; the director's urgent rules (game called off, chore not, hunt search not blocking);
+  `claim(role, true)`.
+- Verification: typecheck, 90 files / 656 tests.
+
 Claude Code (2026-10-16, owner request after playing the live site; on the working branch, **not pushed to `main`**):
 five fixes.
 - **Bowls:** eating or drinking, the dog steps in to its bowl (`Game.bowlSpot`, glided like settling into bed):

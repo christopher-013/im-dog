@@ -20,6 +20,8 @@ interface Fake extends FsdWorld {
   paperAvailable: boolean;
   course: { phase: string } | null;
   rewardWaiting: boolean;
+  rewardComing: boolean;
+  deliveryOn: boolean;
   play: { phase: 'idle' | 'asking' | 'playing' };
   interactables: FsdTarget[];
   current: string | null;
@@ -39,6 +41,8 @@ function world(): Fake & { onPress?: (press: string, current: string | null) => 
     paperAvailable: false,
     course: null,
     rewardWaiting: false,
+    rewardComing: false,
+    deliveryOn: false,
     play: { phase: 'idle' },
     interactables: [],
     current: null,
@@ -184,6 +188,57 @@ describe('FSD, Full Self Dog (the autopilot)', () => {
     expect(presses).toContain('interact');
     expect(interactedAt).toBeLessThan(0.8);
     // Never through the wall (x 0 ± 0.1 below z 3).
+  });
+
+  it('after barking at the door, steps aside and stays put until the human has answered it and the package is in', () => {
+    const w = world();
+    const fsd = new FullSelfDog(nav, () => 0.3, { ...FSD, doorWaitAt: { x: 4.5, z: 2.2 } } as unknown as typeof FSD);
+    w.moke.position = { x: 3.5, y: 0, z: 3 };
+    w.doorRinging = true;
+    w.interactables.push(target('door:bark', 4, 3));
+    w.onPress = (press, current) => {
+      if (press === 'interact' && current === 'door:bark') { w.doorRinging = false; w.deliveryOn = true; }
+    };
+    w.step(4, fsd);
+    expect(w.deliveryOn).toBe(true);
+    expect(fsd.routineId).toBe('door');
+    // The human's on the way, then at the door: he waits beside it, still.
+    const at = { ...w.moke.position };
+    expect(Math.hypot(at.x - 4.5, at.z - 2.2)).toBeLessThan(0.35);
+    w.step(20, fsd);
+    expect(fsd.routineId).toBe('door');
+    expect(Math.hypot(w.moke.position.x - at.x, w.moke.position.z - at.z)).toBeLessThan(0.05);
+    expect(fsd.status).toMatch(/Guarding the door/);
+    // Package in: off he goes.
+    w.deliveryOn = false;
+    w.step(4, fsd);
+    expect(fsd.routineId).not.toBe('door');
+    expect(fsd.stats.failed.get('door') ?? 0).toBe(0);
+  });
+
+  it('after the obstacle course, stays with the human while they bring the hamburger patty, till he has had it', () => {
+    const w = world();
+    const fsd = new FullSelfDog(nav, () => 0.3);
+    const human = { x: -4, y: 0, z: -4 };
+    w.human = { position: human, available: false, effect: null, placeKind: null };
+    w.moke.position = { x: -2, y: 0, z: -2 };
+    w.rewardComing = true;
+    w.step(4, fsd);
+    expect(fsd.routineId).toBe('patty');
+    expect(Math.hypot(w.moke.position.x - human.x, w.moke.position.z - human.z)).toBeLessThan(FSD.stayWithin + 0.3);
+    // They walk off (to the slider, say): he follows them rather than wandering away.
+    human.x = -4; human.z = 2;
+    w.step(8, fsd);
+    expect(fsd.routineId).toBe('patty');
+    expect(Math.hypot(w.moke.position.x - human.x, w.moke.position.z - human.z)).toBeLessThan(FSD.stayWithin + 0.3);
+    // Holding it out, then fed.
+    w.rewardComing = false; w.rewardWaiting = true;
+    w.step(2, fsd);
+    expect(fsd.routineId).toBe('patty');
+    w.rewardWaiting = false;
+    w.step(4, fsd);
+    expect(fsd.stats.started.get('patty')).toBe(1);
+    expect(fsd.stats.failed.get('patty') ?? 0).toBe(0);
   });
 
   it('routes round walls, never through them', () => {

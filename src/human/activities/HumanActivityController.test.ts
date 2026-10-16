@@ -200,6 +200,22 @@ describe('HumanActivityController (the daily routine)', () => {
     expect(routine.stats.resumed).toBe(1);
   }, 30_000);
 
+  it('puts down a game with Moke (a role that yields) for something urgent, but never another role', async () => {
+    const { routine } = await setup(12);
+    const cancelled: string[] = [];
+    const role = (id: string, yields = false) => ({ id, yields, update: () => true, cancel: () => cancelled.push(id) });
+    const fetch = role('fetch', true);
+    expect(routine.claim(fetch)).toBe(true);
+    expect(routine.claim(role('chore'))).toBe(false);
+    const door = role('door');
+    expect(routine.claim(door, true)).toBe(true);
+    expect(cancelled).toEqual(['fetch']);
+    expect(routine.role).toBe(door);
+    // The door itself doesn't yield: nothing takes the human from it.
+    expect(routine.claim(role('door2'), true)).toBe(false);
+    expect(routine.role).toBe(door);
+  });
+
   it('finds another seat when Moke is lying in theirs', async () => {
     // Moke on the sectional's middle seat.
     const { routine, step } = await setup(5, { x: 13.75, y: 0.45, z: 0.98 });

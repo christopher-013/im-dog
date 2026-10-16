@@ -46,7 +46,7 @@ async function drive(opts: { targets?: FsdTarget[]; surfaces?: FsdSurface[]; doo
     holdingPaper: false,
     paperAvailable: false,
     course: opts.course ?? null,
-    rewardWaiting: false,
+    rewardWaiting: false, rewardComing: false, deliveryOn: false,
     play: { phase: 'idle' },
     interactables: targets,
     get current() { return current; },

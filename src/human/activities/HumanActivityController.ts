@@ -21,6 +21,8 @@ export interface HumanRole {
   update(dt: number, s: HumanSenses, intent: HumanIntent): boolean;
   /** The human is needed elsewhere (Sock Heist) or the game reset: stop at once. */
   cancel(): void;
+  /** A game with Moke they'll put down for something urgent (the door): `claim(role, true)` calls it off. */
+  readonly yields?: boolean;
 }
 
 /** A short moment with Moke on top of whatever they're doing (M4.5): see HumanReactions. */
@@ -196,8 +198,16 @@ export class HumanActivityController implements HumanIdleDriver {
     return place ? { activity, place } : null;
   }
 
-  /** A dog activity takes the human over. False if they're not available (the Sock Heist, another role). */
-  claim(role: HumanRole): boolean {
+  /**
+   * A dog activity takes the human over. False if they're not available (the Sock Heist, another role). With
+   * `takeOver`, a game they're playing with Moke (a role that `yields`) is called off for it.
+   */
+  claim(role: HumanRole, takeOver = false): boolean {
+    if (takeOver && this.driving && this.role?.yields && !this.reactions?.busy) {
+      const game = this.role;
+      this.role = null;
+      game.cancel();
+    }
     if (!this.driving || this.role || this.reactions?.busy) return false;
     this.save();
     this.role = role;

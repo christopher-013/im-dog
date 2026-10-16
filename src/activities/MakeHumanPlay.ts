@@ -62,6 +62,8 @@ export class MakeHumanPlay extends DogActivity {
   readonly id = 'makeHumanPlay' as const;
   readonly name = 'Make Human Play';
   readonly needsHuman = true;
+  // Fetch and tug: put down for the door.
+  override readonly yieldsHuman = true;
   throws = 0;
   asks = 0;
   /** How it ended, for debugging: fetched back, kept, ran off, or won tug. */
@@ -92,6 +94,7 @@ export class MakeHumanPlay extends DogActivity {
     id: 'makeHumanPlay',
     update: (dt, s, intent) => this.drive(dt, s, intent),
     cancel: () => this.cancel(),
+    yields: true,
   };
 
   constructor(

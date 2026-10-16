@@ -22,10 +22,22 @@ export class DogActivityDirector {
     }
     for (const activity of this.activities) activity.update(dt, ctx);
     let humanBusy = this.activities.some((a) => a.needsHuman && a.running);
+    // Something urgent (the door, once he's barked) needn't wait for an activity that's running without the human
+    // (a Treat Hunt he's searching on his own), and calls off a game they're playing with him (fetch, tug).
+    let urgentBlocked = this.activities.some((a) => a.holdsHuman && !a.yieldsHuman);
+    const inGame = this.activities.some((a) => a.holdsHuman && a.yieldsHuman);
     for (const activity of this.activities) {
       if (activity.state !== 'AVAILABLE') continue;
-      const allowed = activity.needsHuman ? !humanBusy && !ctx.heistRunning && ctx.human.available : true;
-      if (activity.tryStart(ctx, allowed) && activity.needsHuman) humanBusy = true;
+      const urgent = activity.needsHuman && activity.urgent;
+      const allowed = !activity.needsHuman ? true
+        : urgent ? !urgentBlocked && !ctx.heistRunning && (ctx.human.available || inGame)
+        : !humanBusy && !ctx.heistRunning && ctx.human.available;
+      if (activity.tryStart(ctx, allowed) && activity.needsHuman) {
+        humanBusy = urgentBlocked = true;
+        if (urgent && activity.running) {
+          for (const game of this.activities) if (game !== activity && game.yieldsHuman && game.running) game.cancel();
+        }
+      }
     }
   }
 

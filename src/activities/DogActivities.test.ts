@@ -115,6 +115,19 @@ class HumanProbe extends Probe {
   override readonly needsHuman = true;
 }
 
+class GameProbe extends HumanProbe {
+  override readonly yieldsHuman = true;
+}
+
+class UrgentProbe extends HumanProbe {
+  override readonly urgent = true;
+}
+
+/** Running, but not using the human just now (a Treat Hunt he's searching on his own). */
+class SearchProbe extends HumanProbe {
+  override get holdsHuman(): boolean { return false; }
+}
+
 describe('Door delivery (the whole house and the household human)', () => {
   async function deliveryWorld(seed = 41, random: () => number = () => 0) {
     const w = await world(seed);
@@ -167,6 +180,30 @@ describe('Door delivery (the whole house and the household human)', () => {
     w.tick(50);
     expect(w.counts().exchanges).toBe(2);
     expect(w.counts().rewards).toBe(2);
+  }, 60_000);
+
+  it('once he has barked, the human sets off for the door straight away at a brisk pace, and the visit counts as in progress until it is done', async () => {
+    const w = await deliveryWorld(50);
+    w.waitForRing();
+    expect(w.delivery.inProgress).toBe(false);
+    Object.assign(w.moke, { ...HOME_ACTIVITIES.delivery.stand, x: -2.2 });
+    w.delivery.noteBark(w.moke);
+    expect(w.delivery.inProgress).toBe(true);
+    let fastest = 0, opened = -1;
+    for (let i = 0; i < 40 / DT && opened < 0; i++) {
+      w.step(w.director);
+      fastest = Math.max(fastest, w.human.controller.speed);
+      if (w.counts().opens > 0) opened = i * DT;
+    }
+    // No waiting out his guard barks first: up and walking within the first second.
+    expect(w.said).toContain('Coming, Moke! I’ll get the door.');
+    expect(fastest).toBeGreaterThan(HUMAN.move.walkSpeed + 0.3);
+    expect(fastest).toBeLessThanOrEqual(HOME_ACTIVITIES.delivery.answerSpeed + 1e-6);
+    expect(opened).toBeGreaterThan(0);
+    expect(w.delivery.inProgress).toBe(true);
+    w.tick(20);
+    expect(w.counts().exchanges).toBe(1);
+    expect(w.delivery.inProgress).toBe(false);
   }, 60_000);
 
   it('queues a bark while the human is busy and cleans up an interrupted handoff without a false reward', async () => {
@@ -654,6 +691,49 @@ describe('DogActivity lifecycle', () => {
     director.update(DT, ctx);
     expect(probe.state).toBe('CANCELLED');
     expect(probe.cancelled).toBe(1);
+  });
+
+  it('lets something urgent (the door) call off a game with the human, but never a chore, and nothing else cuts in', () => {
+    const game = new GameProbe(3, 0.5), chore = new HumanProbe(3, 0.5), urgent = new UrgentProbe(3, 0.5), other = new HumanProbe(3, 0.5);
+    const ctx = context();
+    const director = new DogActivityDirector([game, other, urgent]);
+    game.trigger = true;
+    director.update(DT, ctx);
+    expect(game.running).toBe(true);
+    (ctx.human as { available: boolean }).available = false; // the game has them
+    other.trigger = true;
+    director.update(DT, ctx);
+    expect(other.state).toBe('AVAILABLE');
+    urgent.trigger = true;
+    director.update(DT, ctx);
+    expect(urgent.running).toBe(true);
+    expect(game.state).toBe('CANCELLED');
+    expect(other.state).toBe('AVAILABLE');
+    // A chore isn't put down.
+    const ctx2 = context();
+    const urgent2 = new UrgentProbe(3, 0.5);
+    const director2 = new DogActivityDirector([chore, urgent2]);
+    chore.trigger = true;
+    director2.update(DT, ctx2);
+    (ctx2.human as { available: boolean }).available = false;
+    urgent2.trigger = true;
+    director2.update(DT, ctx2);
+    expect(chore.running).toBe(true);
+    expect(urgent2.state).toBe('AVAILABLE');
+  });
+
+  it("lets something urgent start beside an activity that isn't using the human just now, but nothing else", () => {
+    const search = new SearchProbe(3, 0.5), urgent = new UrgentProbe(3, 0.5), other = new HumanProbe(3, 0.5);
+    const ctx = context();
+    const director = new DogActivityDirector([search, other, urgent]);
+    search.trigger = true;
+    director.update(DT, ctx);
+    expect(search.running).toBe(true);
+    other.trigger = urgent.trigger = true;
+    director.update(DT, ctx);
+    expect(other.state).toBe('AVAILABLE');
+    expect(urgent.running).toBe(true);
+    expect(search.running).toBe(true);
   });
 });
 

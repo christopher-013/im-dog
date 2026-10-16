@@ -99,6 +99,14 @@ export class TreatHunt extends DogActivity {
     return engaged && this.random() < this.tuning.engagedChance;
   }
 
+  /**
+   * Once the treat's hidden and he's hunting for it, the human is free (the hints wait for them, and pointing it out
+   * claims them again): the doorbell needn't wait for the hunt to end.
+   */
+  override get holdsHuman(): boolean {
+    return this.running && (this.state !== 'ACTIVE' || this.deps.routine.role === this.role);
+  }
+
   protected onStart(): void {
     if (!this.deps.routine.claim(this.role)) {
       this.enter('AVAILABLE');

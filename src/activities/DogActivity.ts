@@ -45,6 +45,10 @@ export abstract class DogActivity {
   abstract readonly name: string;
   /** Uses the human (only one such activity at a time). */
   abstract readonly needsHuman: boolean;
+  /** A game with Moke the human puts down for something `urgent` (fetch, tug: not a chore). */
+  readonly yieldsHuman: boolean = false;
+  /** Urgent enough to call off such a game (the doorbell, once he's barked at it). */
+  readonly urgent: boolean = false;
   state: DogActivityState = 'AVAILABLE';
   stateTime = 0;
   /** How many times it's gone well. */
@@ -64,6 +68,11 @@ export abstract class DogActivity {
 
   get running(): boolean {
     return this.state === 'STARTING' || this.state === 'ACTIVE';
+  }
+
+  /** Has the human right now (only one activity at a time may): by default, whenever one that needs them runs. */
+  get holdsHuman(): boolean {
+    return this.needsHuman && this.running;
   }
 
   /** The natural trigger: should it start now? (Called only while AVAILABLE and allowed.) */

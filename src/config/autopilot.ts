@@ -74,6 +74,16 @@ export const FSD = {
   paperVisitTo: BATHROOM.paperApproach,
   /** …and waits there this long (s) for its prompt: it only shows while the human is free to clean up. */
   paperPromptWait: 8,
+  /**
+   * After barking at the door he waits in the corner beside it (the entry hall's south-west corner, within bark reach
+   * of the door), out of the way of the human coming down the hall to answer it.
+   */
+  doorWaitAt: { x: -2.95, z: 1.05 },
+  /** Waiting with the human: at the door after barking (until the delivery's done), and for the patty (s). */
+  doorWaitFor: 60,
+  rewardWaitFor: 45,
+  /** Staying with the human (the patty): within this of them (m); they hand it over within COURSE_REWARD.reach. */
+  stayWithin: 0.8,
   /** Dragging the toilet paper: where he heads, out in the hall (game coordinates). */
   paperRunTo: { x: 2.4, z: 1.1 },
 } as const;

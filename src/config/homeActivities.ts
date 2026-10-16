@@ -15,6 +15,11 @@ export const HOME_ACTIVITIES = {
     guardVoices: ['bark', 'growl', 'bark', 'growl', 'bark', 'growl'] as const,
     guardEvery: 1.25,
     reach: 1.25,
+    /**
+     * Answering it: they set off for the door at once (while Moke keeps up his guard barks), at this brisk pace (m/s;
+     * an ordinary walk is HUMAN.move.walkSpeed, 1.05), so he isn't left waiting.
+     */
+    answerSpeed: 1.8,
     walkTimeout: 45,
     openTime: 1.1,
     exchangeTime: 2.2,

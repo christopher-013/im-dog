@@ -76,6 +76,8 @@ export interface FsdWorld {
    */
   readonly heistPhase: string;
   readonly doorRinging: boolean;
+  /** He's barked at the doorbell and the human hasn't finished with the delivery yet (on the way, or at the door). */
+  readonly deliveryOn: boolean;
   /** The World Series special is on, and its home run is still to come. */
   readonly ballgameOn: boolean;
   readonly holdingPaper: boolean;
@@ -85,6 +87,8 @@ export interface FsdWorld {
   readonly course: { readonly phase: string } | null;
   /** He's finished the course and the hamburger patty is waiting for him indoors. */
   readonly rewardWaiting: boolean;
+  /** …or the human's on the way with it (they've set off for the patio doors). */
+  readonly rewardComing: boolean;
   /** Make Human Play (fetch with the human): 'asking' (they're holding out), 'playing', or 'idle'. */
   readonly play: { readonly phase: 'idle' | 'asking' | 'playing' };
   readonly interactables: readonly FsdTarget[];
@@ -340,7 +344,11 @@ export class FullSelfDog {
       {
         id: 'door', status: 'Answering the door!', weight: 0, urgent: true,
         available: (w) => w.doorRinging && enabled(w, 'door:bark'),
-        plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.interact('door:bark'), this.wait(8)],
+        // Bark, step aside (out of the human's way), then stay and guard until the human has answered it (door
+        // opened, package in, door shut).
+        plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.interact('door:bark'), this.wait(1),
+          this.go(this.tuning.doorWaitAt, 0.3, false, 'Out of the way: the human is coming!'),
+          this.waitUntil((x) => !x.deliveryOn, this.tuning.doorWaitFor, 'Guarding the door till the package is in…')],
       },
       {
         id: 'giveSock', status: 'Trading the sock for a treat', weight: 0, urgent: true,
@@ -513,8 +521,10 @@ export class FullSelfDog {
       },
       {
         id: 'patty', status: 'Going in for his hamburger patty!', weight: 0, urgent: true,
-        available: (w) => w.rewardWaiting && !!w.human && !w.heistRunning,
-        plan: (w) => [...emptyMouth(w), this.goToHuman(0.7), this.waitUntil((x) => !x.rewardWaiting, 8, 'A hamburger patty! Yum!'), this.wait(2)],
+        // From the moment the human sets off with it: stay with them until it's fed to him (and eaten).
+        available: (w) => (w.rewardWaiting || w.rewardComing) && !!w.human && !w.heistRunning,
+        plan: (w) => [...emptyMouth(w), this.stayWithHuman((x) => !x.rewardWaiting && !x.rewardComing, this.tuning.rewardWaitFor, 'Waiting for a hamburger patty…'),
+          this.wait(2, 'A hamburger patty! Yum!')],
       },
       {
         id: 'explore', status: 'Exploring', weight: 2.2,
@@ -668,6 +678,29 @@ export class FullSelfDog {
         status = 'Ready… throw it!';
         if (dHuman > 2.2) return route.steer(dt, w, human.position, cmd, false) ? 'running' : 'failed';
         return 'running';
+      },
+    };
+  }
+
+  /**
+   * Stays close to the human (they may be on the move) until `until`: following when they get away, standing still
+   * beside them otherwise. Fails if they're gone, he can't keep up, or `timeout` runs out.
+   */
+  private stayWithHuman(until: (w: FsdWorld) => boolean, timeout: number, status?: string): Step {
+    const route = new Route(this.nav, this.tuning, this.tight, this.trail);
+    let left = timeout;
+    return {
+      status,
+      timeout: Infinity,
+      update: (dt, w, cmd) => {
+        if (until(w)) return 'done';
+        if ((left -= dt) <= 0 || !w.human) return 'failed';
+        const d = flat(w.moke.position, w.human.position);
+        if (d <= this.tuning.stayWithin) {
+          route.replan();
+          return 'running';
+        }
+        return route.steer(dt, w, w.human.position, cmd, d > this.tuning.runBeyond) ? 'running' : 'failed';
       },
     };
   }

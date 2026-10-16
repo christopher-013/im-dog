@@ -60,7 +60,7 @@ it('FSD enters the actual bathroom, pulls paper down the hall, lets the human cl
     human: { get position() { return human.controller.position; }, get available() { return routine.available; }, effect: null, placeKind: null },
     heistRunning: false, heistPhase: 'waiting', doorRinging: false, ballgameOn: false,
     get holdingPaper() { return paper.holdingPaper; }, get paperAvailable() { return paper.state === 'AVAILABLE'; },
-    course: null, rewardWaiting: false, play: { phase: 'idle' }, screens: [], surfaces: [],
+    course: null, rewardWaiting: false, rewardComing: false, deliveryOn: false, play: { phase: 'idle' }, screens: [], surfaces: [],
     interactables: [paper.interactable], get current() { return current; }, roomName: (x, z) => home.roomAt(x, z).name,
   };
   // With hunt, paper and explore available, this picks paper. Routing and activity rules remain real.

@@ -26,7 +26,7 @@ interface DeliveryDeps {
   onDefended(): void;
   random?: () => number;
 }
-type Step = 'done' | 'guard' | 'walk' | 'open' | 'exchange' | 'close';
+type Step = 'done' | 'walk' | 'open' | 'exchange' | 'close';
 type Tuning = typeof HOME_ACTIVITIES.delivery;
 
 /** The bell waits independently; only an acknowledged delivery borrows the household human. */
@@ -34,6 +34,8 @@ export class DoorDelivery extends DogActivity {
   readonly id = 'doorDelivery' as const;
   readonly name = 'Protect the House';
   readonly needsHuman = true;
+  /** Once he's barked at it, the human puts down a game of fetch or tug to answer it. */
+  override readonly urgent = true;
   readonly interactable: Interactable;
   ringing = false;
   guarding = false;
@@ -60,6 +62,11 @@ export class DoorDelivery extends DogActivity {
       get enabled() { return activity.ringing; },
       interact: () => deps.onBark(),
     };
+  }
+
+  /** Moke barked at the bell and the visit isn't over yet (the human's on the way, or at the door): worth waiting for. */
+  get inProgress(): boolean {
+    return this.acknowledged || this.running;
   }
 
   override get objective(): string | null {
@@ -119,11 +126,12 @@ export class DoorDelivery extends DogActivity {
 
   protected wants(): boolean { return this.acknowledged; }
   protected onStart(ctx: DogActivityContext): void {
-    if (!this.deps.routine.claim(this.role)) { this.enter('AVAILABLE'); return; }
+    if (!this.deps.routine.claim(this.role, true)) { this.enter('AVAILABLE'); return; }
     this.approach = flatDistance(ctx.moke.position, this.tuning.stand) < 0.4 ? this.tuning.alternateStand : this.tuning.stand;
     this.collected = false;
-    this.go(this.guarding ? 'guard' : 'walk');
-    this.deps.routine.say('What is it, brave little Moke?', 'happy');
+    // Straight to the door (his guard barks carry on meanwhile), at a brisk pace.
+    this.go('walk');
+    this.deps.routine.say('Coming, Moke! I’ll get the door.', 'happy');
   }
   protected onUpdate(): void {}
   protected onCancel(): void {
@@ -147,15 +155,8 @@ export class DoorDelivery extends DogActivity {
     this.elapsed += dt;
     const t = this.tuning;
     switch (this.step) {
-      case 'guard':
-        hold(intent, 'idle', s.moke, 0, s.moke);
-        if (!this.guarding) {
-          this.deps.routine.say('Thanks, Moke! I’ll get the door.', 'happy');
-          this.go('walk');
-        }
-        return true;
       case 'walk':
-        walkTo(intent, this.approach, undefined, 0.12);
+        walkTo(intent, this.approach, t.answerSpeed, 0.12);
         if (s.arrived && flatDistance(s.position, this.approach) < 0.3) { this.activate(); this.go('open'); }
         else if (this.elapsed > t.walkTimeout || (s.stuck ?? 0) > 4) { this.cancel(); return false; }
         return true;

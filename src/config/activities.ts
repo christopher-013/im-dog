@@ -218,6 +218,14 @@ export const MOKE_REACTIONS = {
 export const BOWL_REFILL = {
   /** Moke's feet within this of a bowl to eat or drink from it. */
   reach: 0.5,
+  /**
+   * Eating or drinking, he steps in to stand this far (m) from the bowl's middle on its open side, facing it: his
+   * mouth reaches ~0.21 m ahead of him with his head down, so his muzzle ends up in the bowl. At this speed (m/s) and
+   * turn rate (rad/s).
+   */
+  standoff: 0.2,
+  settleSpeed: 0.9,
+  settleTurnRate: 6,
   /** After a bowl's emptied, they come this long after (as soon as they're free); busy, they try again this often. */
   delay: 3,
   retry: 4,

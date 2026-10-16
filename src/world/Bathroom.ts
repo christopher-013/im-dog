@@ -71,7 +71,8 @@ export class BathroomView {
   private opening: number = BATHROOM_DOOR.ajar;
   private inside = false;
   private drawnSegments = 0;
-  private readonly paper = new MeshStandardMaterial({ color: '#fffdf8', roughness: 1, side: DoubleSide });
+  /** White paper: a little light of its own, and (like Moke's white fur) no tone mapping, so it reads white, not cream. */
+  private readonly paper = new MeshStandardMaterial({ color: '#ffffff', emissive: '#ffffff', emissiveIntensity: 0.8, roughness: 1, side: DoubleSide, toneMapped: false });
   private readonly wood = new MeshStandardMaterial({ color: '#f4f0e8', roughness: 0.78 });
   private readonly brass = new MeshStandardMaterial({ color: '#ad8952', metalness: 0.62, roughness: 0.38 });
 

@@ -15,7 +15,7 @@ export interface DogProfile {
   readonly called: string;
   /**
    * The name as the announcer's speech voice should say it, spelled for text-to-speech: "Mokey" so Moke is said
-   * "Moke-ee" (owner request, 2026-10-16), not "Moke" as written. Only ever spoken, never shown.
+   * "Moke-ee", "Duggie" so Dougie is said "Doug-ee" (owner requests, 2026-10-16). Only ever spoken, never shown.
    */
   readonly spoken: string;
   /** One line under the name on the Choose Your Dog screen. */
@@ -38,7 +38,8 @@ export const DOGS: readonly DogProfile[] = [
     id: 'dougie',
     name: 'Dougie',
     called: 'Dou-gie',
-    spoken: 'Dougie',
+    // Spelled so speech voices say "Doug-ee" (owner request), not "Doo-gee".
+    spoken: 'Duggie',
     tagline: 'Fluffy, tri-coloured and always cheerful',
     pronoun: 'he',
     look: DOUGIE_LOOK,

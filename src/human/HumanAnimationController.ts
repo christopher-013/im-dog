@@ -375,7 +375,9 @@ export class HumanAnimationController {
     // Sitting: thighs forward, shins down to the floor (or the stool's footrest), hips onto the seat.
     if (sit > 0.001) {
       const style = s.sitStyle;
-      const thigh = style === 'lounge' ? -1.5 : style === 'stool' ? -1.35 : -1.52;
+      // The thighs slope down a touch toward the knees, so with the hips up on the cushion the feet still reach the
+      // floor (or the stool's footrest).
+      const thigh = style === 'lounge' ? -1.42 : style === 'stool' ? -1.27 : -1.44;
       const kneeBend = style === 'lounge' ? 0.15 : style === 'stool' ? 1.25 : 1.5;
       p.hipL.x = lerp(p.hipL.x, thigh, sit);
       p.hipR.x = lerp(p.hipR.x, thigh, sit);

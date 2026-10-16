@@ -47,6 +47,9 @@ describe('the playable dogs', () => {
     expect(moke.logicKey).toBe('imdog.dogLogic');
     // The announcer says his name "Moke-ee"; on screen he's always "Moke".
     expect(moke.spoken).toBe('Mokey');
+    // And Dougie "Doug-ee": spelled for speech, still "Dougie" everywhere on screen.
+    expect(dougie.spoken).toBe('Duggie');
+    expect(dougie.name).toBe('Dougie');
     expect(moke.name).toBe('Moke');
     expect(moke.usesModel).toBe(true);
   });

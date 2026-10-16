@@ -144,9 +144,21 @@ describe('HumanActivityController (the daily routine)', () => {
     // Believable pacing: activities last, rather than flitting (≈ a minute each, not seconds).
     expect(switches).toBeLessThan(30);
     expect(routine.stats.finished).toBeGreaterThan(8);
+    // Meal prep comes round again 600–900 s after it last started (ROUTINE.prepRepeat), at the next free slot, which
+    // can fall just past the twenty minutes: carry on (a few more minutes at most) to see it.
+    for (let i = 0; i < (6 * 60) / DT && prepStarts.length < 2; i++) {
+      step();
+      const prep = routine.effect === 'prep';
+      if (prep && !prepping) prepStarts.push(routine.now);
+      prepping = prep;
+    }
     expect(prepStarts.length).toBeGreaterThanOrEqual(2);
     expect(prepStarts[0]!).toBeLessThan(600);
-    for (let i = 1; i < prepStarts.length; i++) expect(prepStarts[i]! - prepStarts[i - 1]!).toBeGreaterThanOrEqual(600);
+    for (let i = 1; i < prepStarts.length; i++) {
+      expect(prepStarts[i]! - prepStarts[i - 1]!).toBeGreaterThanOrEqual(ROUTINE.prepRepeat[0]);
+      // Due by the end of its window, then the current activity (and the walk to the kitchen) finishes first.
+      expect(prepStarts[i]! - prepStarts[i - 1]!).toBeLessThan(ROUTINE.prepRepeat[1] + 150);
+    }
   }, 60_000);
 
   it('cooks, then usually eats', async () => {

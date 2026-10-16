@@ -47,6 +47,29 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-16, owner request after playing the live site; on the working branch, **not pushed to `main`**):
+five fixes.
+- **Bowls:** eating or drinking, the dog steps in to its bowl (`Game.bowlSpot`, glided like settling into bed):
+  `BOWL_REFILL.standoff` 0.2 m out on the open side, facing it, so the muzzle is in the bowl (measured in the game:
+  mouth 3–5 cm from the bowl's middle, food and water). Steering away still ends the meal as before. Test:
+  `player/BowlReach.test.ts` (every dog's mouth lands in the bowl, eating and drinking).
+- **The human sitting:** thighs sank into cushions and torsos went through throw pillows. `HIP_ABOVE_SEAT` 0.10 →
+  0.14 (thighs about 8 cm thick now rest on the cushion), thighs sloping a little more (`-1.44` upright, `-1.27`
+  stool, `-1.42` lounge) so the feet still reach the floor; couch seat points 10 cm further forward (living-room and
+  window couches), and the sectional's two seats moved between its throw pillows (13.95 and 14.6, 5 cm forward).
+  Checked by rendering them seated at the living-room couch, the sectional, the window couch, a dining chair and the
+  stool. The twenty-minute routine test now waits (up to six more minutes) for the second meal prep, which the
+  schedule only promises 600–900 s after the first.
+- **Dougie said "Doug-ee":** `spoken: 'Duggie'` (not heard: no speech voices in the test browser).
+- **FSD and the toilet paper:** the pull needs the human free to clean up, but its prompt showed while they were
+  busy (answering the door), so FSD pressed it, nothing happened, and it left. The prompt now only shows while the
+  human is free (players too); FSD waits by the roll up to `FSD.paperPromptWait` 8 s, and a pull that never starts
+  is a failed try (20 s rest), not a done one. Checked in the game: human freed while waiting, he pulls; busy
+  throughout, no prompt, he gives up. New test: no prompt while the human is busy, back when free.
+- **White paper:** the trail (and the roll) is white with some light of its own and no tone mapping (as Moke's white
+  fur), so it reads white on the hall floor, not cream.
+- Verification: typecheck, 90 files / 650 tests, build and private-photo check.
+
 Claude Code (2026-10-16, owner request: an independent engineering audit, run after Codex's audit and FSD fixes;
 pushed to `main` at the owner's request). Baseline `3d4a4a0`: strict typecheck, 89 files / 645 tests, build
 and private-photo check, `npm audit` (0) all pass.

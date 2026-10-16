@@ -72,6 +72,8 @@ export const FSD = {
   fleeEvery: 3.5,
   /** Visit the roll's approach point before its pull prompt is visible. */
   paperVisitTo: BATHROOM.paperApproach,
+  /** …and waits there this long (s) for its prompt: it only shows while the human is free to clean up. */
+  paperPromptWait: 8,
   /** Dragging the toilet paper: where he heads, out in the hall (game coordinates). */
   paperRunTo: { x: 2.4, z: 1.1 },
 } as const;

@@ -485,8 +485,11 @@ export class FullSelfDog {
       {
         id: 'paper', status: 'Sneaking into the bathroom…', weight: 1.2,
         available: (w) => humanFree(w) && w.paperAvailable && !!target(w, 'bathroom:paper'),
+        // The pull needs the human free to clean up after: by the roll, he waits a moment for the prompt (it only
+        // shows then). If the pull still doesn't start, that's a failed try (a short rest), not a done one.
         plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.go(this.tuning.paperVisitTo, 0.2),
-          this.waitUntil((x) => enabled(x, 'bathroom:paper'), 2), this.interact('bathroom:paper'), this.waitUntil((x) => x.holdingPaper, 5)],
+          this.waitUntil((x) => enabled(x, 'bathroom:paper'), this.tuning.paperPromptWait, 'Waiting for the coast to be clear…'),
+          this.interact('bathroom:paper'), this.waitFor((x) => x.holdingPaper, 5)],
       },
       {
         id: 'tv', status: 'Off to watch some TV', weight: 1,
@@ -537,6 +540,12 @@ export class FullSelfDog {
   private wait(seconds: number, status?: string): Step {
     let left = seconds;
     return { status, still: true, timeout: Infinity, update: (dt) => ((left -= dt) <= 0 ? 'done' : 'running') };
+  }
+
+  /** Stands still until `until`; if it hasn't happened after `timeout`, the routine failed. */
+  private waitFor(until: (w: FsdWorld) => boolean, timeout: number, status?: string): Step {
+    let left = timeout;
+    return { status, still: true, timeout: Infinity, update: (dt, w) => (until(w) ? 'done' : (left -= dt) <= 0 ? 'failed' : 'running') };
   }
 
   /** Stands still until `until` (or gives up after `timeout`, which still counts as done). */

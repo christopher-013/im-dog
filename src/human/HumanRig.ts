@@ -84,7 +84,8 @@ export const HUMAN_SKELETON: Readonly<Record<HumanJoint, { readonly parent: Huma
 /** Standing hip height, the leg's length (hip joint to ankle), and how far above a seat the hip joints sit. */
 export const HIP_HEIGHT = HUMAN_SKELETON.hips.at[1];
 export const LEG_LENGTH = 0.44 + 0.41;
-export const HIP_ABOVE_SEAT = 0.1;
+/** High enough that the thighs (about 8 cm thick) rest on the cushion instead of sinking into it. */
+export const HIP_ABOVE_SEAT = 0.14;
 /** Upper arm, and forearm to the middle of the palm (the IK chain). */
 export const UPPER_ARM = 0.29;
 export const FOREARM_TO_PALM = 0.26 + 0.075;

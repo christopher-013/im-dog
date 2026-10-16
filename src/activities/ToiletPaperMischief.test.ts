@@ -131,6 +131,25 @@ describe('hall bathroom toilet-paper activity', () => {
     w.dispose();
   });
 
+  it("offers no pull while the human is busy (they couldn't come and clean up, so pressing would do nothing)", async () => {
+    const w = await setup();
+    try {
+      w.setHumanAvailable(false);
+      w.tick(0.2);
+      expect(w.view.mokeInside).toBe(true);
+      expect(w.paper.interactable.enabled).toBe(false);
+      // Free again: the prompt is back, and a press starts the pull.
+      w.setHumanAvailable(true);
+      w.tick(0.2);
+      expect(w.paper.interactable.enabled).toBe(true);
+      w.paper.interactable.interact();
+      w.tick(0.2);
+      expect(w.paper.running).toBe(true);
+    } finally {
+      w.dispose();
+    }
+  }, 60_000);
+
   it('clears the trail and frees replay if the human never becomes available after Moke lets go', async () => {
     const w = await setup();
     w.tick(0.1); w.paper.interactable.interact(); w.tick(1);

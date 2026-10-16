@@ -182,6 +182,8 @@ export class Game {
   /** What's in his bowls, and the human's errand to refill them. */
   private readonly bowls = new DogBowls(BOWLS);
   private bowlRefill: BowlRefill | null = null;
+  /** Where he stands to eat or drink from the bowl he's at (stepped into while he does), or null. */
+  private bowlSpot: { target: Vec3Like; heading: number } | null = null;
   /** Sounds due a little later in game time (the crunches of a meal), so pausing pauses them too. */
   private readonly laterSounds: { at: number; name: 'crunch' | 'lap' }[] = [];
   private gameTime = 0;
@@ -731,11 +733,19 @@ export class Game {
     this.bowls.onEmptied = (kind) => this.bowlRefill?.request(kind);
   }
 
-  /** Eats his dinner or has a drink at his bowl: he stays put, nose in the bowl, until it's all gone. */
+  /**
+   * Eats his dinner or has a drink at his bowl: he steps in to it (see fixedUpdate: `bowlSpot`) and stays there, nose
+   * in the bowl, until it's all gone.
+   */
   private eatFromBowl(kind: BowlKind): void {
     const moke = this.moke;
     if (!moke || !this.bowls.has(kind)) return;
     moke.animation.cancelTrick();
+    // On the bowl's open side (where the human kneels to fill it), facing it, close enough to reach in.
+    const bowl = this.bowls.position(kind);
+    const heading = BOWLS.facing;
+    const d = BOWL_REFILL.standoff;
+    this.bowlSpot = { target: { x: bowl.x - Math.sin(heading) * d, y: 0, z: bowl.z - Math.cos(heading) * d }, heading };
     if (kind === 'food') {
       const seconds = MOKE_ANIMATION.bowlEatDuration;
       moke.animation.eat(seconds);
@@ -1131,7 +1141,12 @@ export class Game {
     } else if (paperTarget) {
       c.glideTo(step, paperTarget, Math.atan2(BATHROOM.paper.x - c.position.x, BATHROOM.paper.z - c.position.z),
         BATHROOM_ACTIVITY.approachSpeed, BATHROOM_ACTIVITY.approachTurnRate);
+    } else if (this.bowlSpot && this.moke.animation.eating && this.moveIntent.x === 0 && this.moveIntent.z === 0) {
+      // At his bowl: a step in, nose over it, and he stays there till it's all gone (steering away still lets him
+      // go, below, as it always has).
+      c.glideTo(step, this.bowlSpot.target, this.bowlSpot.heading, BOWL_REFILL.settleSpeed, BOWL_REFILL.settleTurnRate);
     } else {
+      this.bowlSpot = null;
       // A trick holds him in place; heading off somewhere cuts it short.
       const tricking = this.moke.animation.holdsStillForTrick;
       if (tricking && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.moke.animation.cancelTrick();

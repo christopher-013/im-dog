@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-10-16. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–4 are complete; Phase 5 has started (FSD and Liam's Obstacle Course). The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
+_Last updated: 2026-10-16. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 isn't defined yet. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -17,16 +17,19 @@ played it on the desktop and on their phone (the published game), asked for the 
 below). **Carried forward:** a recorded device/browser list and measured phone performance. Scope, history and
 what's carried forward: `docs/PHASE_4.md`.
 
-**Phase 5: started** 2026-10-04 at the owner's request: FSD ("Full Self Dog"), then the playable backyard with
-Liam's Obstacle Course. Scope and status: `docs/PHASE_5.md`.
+**Phase 5: complete** ("FSD, Full Self Dog", started 2026-10-04 at the owner's request), closed by the owner on
+2026-10-16 and tagged `phase-5-complete`. Milestones 5.1–5.4 are done: FSD, the backyard with Liam's Obstacle
+Course, Watch TV full screen (with STAR VOYAGERS), and three playable dogs (Moke, Dougie, Nori) on Choose Your Dog.
+The owner played the published game and asked for the additions and fixes listed in `docs/PHASE_5.md`; the device
+and browser weren't recorded. **Carried forward:** a recorded device/browser list and measured phone performance,
+listening checks, a long FSD soak in a real browser, and the final dog models. Scope, history and what's carried
+forward: `docs/PHASE_5.md`.
+
+**Phase 6: not defined yet.** Suggestions for the owner: "Next Recommended Task" below.
 
 ## Current Milestone
-**5.1 FSD, Full Self Dog**, **5.2 the backyard and Liam's Obstacle Course** and **5.3 Watch TV full screen (with
-STAR VOYAGERS)**: built and published to the live site, waiting for the owner's verdict (`docs/PHASE_5.md`). Phase 4
-is closed. **5.4 Dougie and Choose Your Dog** (2026-10-16, D29): built, committed and pushed to `main` at the owner's
-request (published to the live site); a follow-up (title lower, a fight theme, the names called out) and **Nori, a
-third playable dog** (and Moke in the middle, no BACK button), pushed to `main` at the owner's request. Waiting for
-the owner's verdict.
+**None in progress.** Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
+`phase-5-complete`). The next step is defining Phase 6 with the owner.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
@@ -47,6 +50,12 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-16, owner request: "Mark this phase as complete"): **Phase 5 closed** and tagged
+`phase-5-complete`, as Phase 4 was. `docs/PHASE_5.md` (status, milestones done, where the success criteria
+stand, what was added during the phase, what's carried forward), `AGENTS.md`, `README.md` and this file updated; Phase 6
+suggestions below. Docs only; the closing commit is the one tagged. The published game is `840a210` (deployed to
+GitHub Pages and www.im-dog.com, both green).
+
 Claude Code (2026-10-16, owner request: during FSD the dog waits out its moments with the human, and the human
 answers the door faster; pushed to `main` at the owner's request).
 - **The door:** the human used to wait out the dog's guard barks (7.5 s), then walk at 1.05 m/s, while FSD left
@@ -1888,16 +1897,41 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-1. **Define Phase 5 with the owner:** write `docs/PHASE_5.md` (scope, milestones, success criteria) for approval
-   before any Phase 5 code. Commit or push only when the owner asks: a push to `main` publishes the game.
-2. **Play it on a real phone** once pushed (or `npm run dev:lan`): the paw for pets, naps and sniffing; frame rate
-   and warmth in the big house.
-3. **Owner listens to "Irasshaimase!"** (pause → Music → Japan Stores) and says whether it has the
-   convenience-store feel; adjust its band in `src/audio/music.ts` if not.
-3. **Carried-forward real-device checks** (`docs/MOBILE.md`): record the phone and browser, install the web app,
+1. **Define Phase 6 with the owner:** write `docs/PHASE_6.md` (scope, milestones, success criteria) for approval
+   before any Phase 6 code. Commit or push only when the owner asks: a push to `main` publishes the game.
+   Suggestions, for the owner to choose from (none approved):
+   - **Recommended: "The Pack".** The dogs you aren't playing live in the house too, each driven by FSD's virtual
+     player (D27, D29: every dog already shares the body, the activities and FSD). Dog-to-dog moments: play bows and
+     chases, tug-of-war between two dogs, stealing each other's toys, begging side by side, barking at the door
+     together, napping in a pile, and Dog Logic about each other. It reuses what exists, and it's the most direct way
+     to make the three dogs matter. It needs a decision (D30: a second dog body with its own FSD, never the player's
+     input), and phone performance with three dog bodies must be measured.
+   - **A day in the life:** a gentle clock from breakfast to bedtime; the human's routine follows it. A few "today"
+     goals ("nap in the sun", "get a hamburger patty"), a Dog Logic album screen and an end-of-day card give the
+     game some shape without scores or failure.
+   - **Halloween, then seasons:** trick-or-treaters ringing the bell (the delivery, reused), a costume for each dog,
+     pumpkins. Small and timely (Halloween is 2026-10-31); winter could follow.
+   - **Photo mode:** pause, orbit the camera, hide the HUD, save a framed picture. Cheap, and made for three dogs and
+     FSD.
+   - **Walkies:** the human takes the dog out on a lead: the front yard and one street, sniff spots, a squirrel, a
+     neighbour's dog. The biggest of these: new outdoors (D6, D28).
+   - **Alongside any of them, a short stabilization milestone:**
+     - record the phone and browser, and measure frame rate, heat and memory (carried since Phase 3);
+     - the listening checks;
+     - an hour-long FSD soak in a real browser;
+     - the touch accessibility gap (Known Issues);
+     - split `Game.ts` (1,667 lines) before it grows further.
+   - **Beyond Phase 6:**
+     - the final rigged models for all three dogs (`docs/MOKE_3D_SPEC.md`; built outside the repo);
+     - another family member (the owner's call);
+     - two players on one screen (two dogs);
+     - an obstacle-course time to beat.
+2. **Carried-forward real-device checks** (`docs/MOBILE.md`): record the phone and browser, install the web app,
    the phone sound check (silent switch on and off, after a lock), frame rate and warmth after 10+ minutes.
+3. **Listening:** "Irasshaimase!" (pause → Music → Japan Stores), the fight theme, the announcer's names.
 4. **Still carried forward:** the final `moke.glb` (`docs/MOKE_3D_SPEC.md`, including the `eat` and `jump` clips),
    Sock Heist tuning (`config/human.ts`, `config/heist.ts`), and the Phase 1 checks (pointer lock with a physical
    mouse, audio by ear, a physical controller, real-GPU frame rate, Firefox and Safari).
 
-**Not to start without the owner's approval:** Phase 5, more humans, more rooms, the outdoors, other mini-games.
+**Not to start without the owner's approval:** Phase 6, more humans, more rooms, more dogs, outdoors beyond the
+backyard, other mini-games.

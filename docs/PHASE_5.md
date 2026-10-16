@@ -1,7 +1,11 @@
 # Phase 5 — FSD, Full Self Dog
 
-> **Status: started 2026-10-04 at the owner's request.** The owner opened Phase 5 with its first feature, FSD. The
-> rest of the phase isn't defined yet: further milestones are added here as the owner approves them.
+> **Status: complete.** Closed by the owner on 2026-10-16 and tagged `phase-5-complete`. Started 2026-10-04 at the
+> owner's request with its first feature, FSD; the backyard, Watch TV and the playable dogs were added as the owner
+> asked for them. Every milestone is done. The owner played the published game (device and browser not recorded),
+> asked for a run of additions and fixes (below), and closed the phase. **Carried forward:** a recorded
+> device/browser list and measured phone performance, and the final dog models. Details: `ACTIVITIES.md`,
+> `HOME_REFERENCE.md`, `CURRENT_STATE.md`.
 
 **Goal:** let anyone watch what Moke can do. **FSD ("Full Self Dog")** is an autopilot: switch it on and Moke plays by
 himself, going round the house and through his activities at random, until you take over.
@@ -30,10 +34,10 @@ sessions.
 ## Milestones
 | # | Milestone | Status |
 |---|---|---|
-| 5.1 | FSD, Full Self Dog | **Built** (2026-10-04): see below. |
-| 5.2 | The backyard and Liam's Obstacle Course | **Built** (2026-10-05): see below. |
-| 5.3 | Watch TV full screen, and a fourth show (STAR VOYAGERS) | **Built** (2026-10-05): see below. |
-| 5.4 | Dougie and Nori, more playable dogs, and Choose Your Dog | **Built** (2026-10-16), pushed to `main` at the owner's request; waiting for the owner's verdict: see below. |
+| 5.1 | FSD, Full Self Dog | **Done** (built 2026-10-04): see below. |
+| 5.2 | The backyard and Liam's Obstacle Course | **Done** (built 2026-10-05): see below. |
+| 5.3 | Watch TV full screen, and a fourth show (STAR VOYAGERS) | **Done** (built 2026-10-05): see below. |
+| 5.4 | Dougie and Nori, more playable dogs, and Choose Your Dog | **Done** (built 2026-10-16): see below. |
 
 ## 5.1 FSD: how it works
 - **On and off:** the **Engage FSD** button (bottom right; on touch above the paw, lifting clear of its pop-out buttons) or **G** on a keyboard (with the mouse
@@ -192,3 +196,41 @@ begins… Dougie must be able to do everything Moke currently can."
 - 5.2: Moke can walk out through the open slider, round the backyard but never out of it, and do the course; the
   hurdles need a hop, the weave needs in-and-out, the hill goes up and down; finishing shows the fireworks card and
   the human gives him a hamburger patty back inside.
+
+## Where the success criteria stand (at the close, 2026-10-16)
+- **FSD goes round the house by himself; moving takes over:** met in tests and long headless runs of the real game,
+  and in the owner's play on the published game.
+- **Most routines get done, none gets him stuck, nothing errors:** met in headless runs after the 2026-10-15 fixes
+  (no wall standing or jumping while exploring; a failed routine rests 20 s and he moves on). Not soaked for hours
+  in a real browser.
+- **The ballgame, watched up close:** met.
+- **Everything still works without FSD:** met (off by default; the full suite passes).
+- **5.2, the backyard and the course:** met in tests and play-throughs; the patty is handed over inside.
+- **5.4, three playable dogs:** met in tests and browser checks (every dog's mouth socket, carrying, eating at the
+  bowls, their own Dog Logic, "she" for Nori). The announcer's spoken names weren't heard: the test browser has no
+  speech voices.
+
+## Added during Phase 5, at the owner's request
+- **Nori**, a third playable dog (a girl: the lines say "she" and "good girl"), Moke in the middle of Choose Your Dog
+  and its default, no BACK button; the announcer says "Mokey" and "Duggie" so the names sound right; an original
+  8-bit fight theme on the select screen.
+- **FSD reliability** (with Codex's 2026-10-15 fix, measured independently): no standing or jumping at walls; the
+  toilet-paper pull included in the random routines and waiting for its prompt; and (2026-10-16) waiting out its
+  moments with the human. At the door he barks, steps aside and stays until the package is in. After the course he
+  stays at the human's side until he's had his patty.
+- **The human answers the door fast:** straight away, at a brisk 1.8 m/s; a barked-at door calls off a game of fetch
+  or tug and doesn't wait for a Treat Hunt the dog is searching alone.
+- **Fixes from the owner's reports:** the dog steps right up to his bowls to eat and drink; the human sits on
+  cushions rather than sinking into them; the toilet-paper prompt only shows while the human can come and clean up;
+  the paper trail reads white.
+- **An independent engineering audit** (2026-10-16): only the TVs the camera can see are redrawn (the biggest steady
+  cost in the frame), and the codebase was judged healthy to keep building on.
+
+## Carried forward
+- **Recorded real-device coverage** (from Phases 3 and 4): which phone and browser, and measured frame rate, heat
+  and memory, now with three dogs, the backyard and FSD.
+- **Listening:** the announcer's names ("Mokey", "Duggie", "Nori"), the fight theme, Malibu's chirp, the squeak and
+  "Irasshaimase!" haven't been confirmed by ear; the bark is still a placeholder.
+- **FSD in a real browser for a long time** (an hour or more), and how it feels to watch.
+- **The final dog models:** `moke.glb` (from Phase 2), and now Dougie and Nori too; the toon stand-ins are not the
+  finished dogs.

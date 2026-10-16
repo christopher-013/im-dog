@@ -9,6 +9,7 @@ function memoryStore(initial: Record<string, string> = {}) {
 
 const moke = dogById('moke');
 const dougie = dogById('dougie');
+const nori = dogById('nori');
 
 describe("Dog Logic is each dog's own", () => {
   it("an existing player's Moke progress (saved before there were two dogs) loads exactly as it was", () => {
@@ -40,6 +41,17 @@ describe("Dog Logic is each dog's own", () => {
     expect(memory.has('pillows=fun')).toBe(false);
     // And Dougie's again next time.
     expect(new DogLogicMemory(store, dougie.logicKey).has('pillows=fun')).toBe(true);
+  });
+
+  it("Nori's are Nori's alone: three dogs, three separate memories", () => {
+    const store = memoryStore({ 'imdog.dogLogic': JSON.stringify(['sock=treat']), [dougie.logicKey]: JSON.stringify(['pillows=fun']) });
+    const memory = new DogLogicMemory(store, nori.logicKey);
+    expect(memory.has('sock=treat')).toBe(false);
+    expect(memory.has('pillows=fun')).toBe(false);
+    expect(memory.learn('bark+door=protect')).toBe(true);
+    expect(JSON.parse(store.data.get(nori.logicKey)!)).toEqual(['bark+door=protect']);
+    expect(JSON.parse(store.data.get('imdog.dogLogic')!)).toEqual(['sock=treat']);
+    expect(JSON.parse(store.data.get(dougie.logicKey)!)).toEqual(['pillows=fun']);
   });
 
   it('corrupt or blocked storage: the dog simply rediscovers things', () => {

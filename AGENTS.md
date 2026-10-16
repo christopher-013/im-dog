@@ -33,8 +33,8 @@ Shared, tool-independent instructions for every coding agent working in this rep
   zoomed in on the TV (D27); and **the backyard with Liam's Obstacle Course** (one slider open, the contained yard, a
   fireworks "Moke is tired!" finish, a hamburger patty reward indoors; D28). Scope and status: `docs/PHASE_5.md`. Add
   milestones there only as the owner approves them. Don't add more humans, more rooms, outdoors beyond this backyard
-  or another mini-game without the owner's approval. **Since 2026-10-16 there are two playable dogs, Moke and
-  Dougie** (D29), chosen on a "Choose Your Dog" screen after PLAY (milestone 5.4). Also carried over: `docs/PHASE_4.md` → "Carried forward", and the Known
+  or another mini-game without the owner's approval. **Since 2026-10-16 there are three playable dogs, Moke,
+  Dougie and Nori** (D29), chosen on a "Choose Your Dog" screen after PLAY (milestone 5.4). Also carried over: `docs/PHASE_4.md` → "Carried forward", and the Known
   Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"

@@ -33,7 +33,7 @@ sessions.
 | 5.1 | FSD, Full Self Dog | **Built** (2026-10-04): see below. |
 | 5.2 | The backyard and Liam's Obstacle Course | **Built** (2026-10-05): see below. |
 | 5.3 | Watch TV full screen, and a fourth show (STAR VOYAGERS) | **Built** (2026-10-05): see below. |
-| 5.4 | Dougie, a second playable dog, and Choose Your Dog | **Built** (2026-10-16), pushed to `main` at the owner's request; waiting for the owner's verdict: see below. |
+| 5.4 | Dougie and Nori, more playable dogs, and Choose Your Dog | **Built** (2026-10-16), pushed to `main` at the owner's request; waiting for the owner's verdict: see below. |
 
 ## 5.1 FSD: how it works
 - **On and off:** the **Engage FSD** button (bottom right; on touch above the paw, lifting clear of its pop-out buttons) or **G** on a keyboard (with the mouse
@@ -125,7 +125,7 @@ begins… Dougie must be able to do everything Moke currently can."
 - **Choose Your Dog** (between PLAY and the game): Moke and Dougie side by side in 3D, facing you; the highlighted one
   steps forward in a spotlight, looks at you, tilts its head, blinks, wags and does a little hop and a silent bark now
   and then (still with reduced motion). Switch with the arrow buttons, a click or tap on a dog, a swipe, ← → or A/D,
-  the D-pad or LB/RB; BEGIN (focused, so Enter works; A or Start on a controller); BACK (Esc, B) to the title. The
+  the D-pad or LB/RB; BEGIN (focused, so Enter works; A or Start on a controller); Esc or B back to the title. The
   name chips are a radio group; the name and a line about the dog are on the card. Desktop, phone portrait and
   landscape layouts.
 - **The announcer:** "CHOOSE YOUR DOG" slams onto the screen with an original drum-and-brass stinger, and the
@@ -138,7 +138,7 @@ begins… Dougie must be able to do everything Moke currently can."
     50 px on a phone upright, barely at all on a phone on its side); the dogs moved down a little with it.
   - **"Paws Up!"**, an original 8-bit fight theme in the style of an arcade fighting game's character select (E minor,
     148 BPM, a pumping octave bass, power stabs, four-on-the-floor kicks, a pulse lead), plays while the screen is up and
-    hands over to the chosen background song at BEGIN; BACK leaves the title quiet as before. It follows the Music
+    hands over to the chosen background song at BEGIN; going back leaves the title quiet as before. It follows the Music
     setting (off means off here too) and dips under the announcer's voice. No real game's music is copied.
   - The announcer calls out the dog's name ("Moke!", "Dougie!") whenever one is picked: an arrow, a swipe, a key or
     the controller, or a click or tap on a dog or its name (also when that dog is already highlighted).
@@ -148,6 +148,18 @@ begins… Dougie must be able to do everything Moke currently can."
   everything Moke does.
 - **Same game:** every activity, Sock Heist, the course, FSD and the controls are shared; the human and the HUD say
   "Dougie" when he's playing. His Dog Logic is his own; Moke's saved progress is untouched.
+- **Nori, the third dog (owner request, 2026-10-16):** "Add another dog to the options 'Nori' use the same process as
+  what was done for Dougie… add them as the 3rd dog to select." Built the same way from two private photos: the same
+  toon build and size, a curly light apricot coat (creamier face, muzzle, chest and feet, a deeper crown, back and
+  tail), caramel drop ears with darker ends, dark eyes, a black nose, and a teal collar with a gold "Nori" tag. Third
+  on Choose Your Dog (Moke, Dougie, Nori; the arrows wrap round), "Nori!" from the announcer, "Nori" in every line,
+  Dog Logic of Nori's own (`imdog.dogLogic.nori`). The stage was re-spaced for three (closer together, more room at
+  the ends; on a phone upright the arrows sit below the dogs).
+- **Then (owner request, 2026-10-16):** "remove the Back button on the Choose your dog screen, put Moke in the middle
+  and make Moke the first choice default dog." The dogs stand Dougie, Moke, Nori; the screen always opens on Moke
+  and every visit starts as Moke (the last choice is no longer remembered: `imdog.dog` and `core/DogChoice.ts` are
+  gone). The BACK button is gone; Esc and B still go back to the title, and on a touch screen there's no way back
+  but reloading.
 
 ## Success criteria
 - Switching FSD on makes Moke go round the house doing things, by himself, for as long as you leave it; moving takes

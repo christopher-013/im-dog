@@ -24,9 +24,9 @@ Liam's Obstacle Course. Scope and status: `docs/PHASE_5.md`.
 **5.1 FSD, Full Self Dog**, **5.2 the backyard and Liam's Obstacle Course** and **5.3 Watch TV full screen (with
 STAR VOYAGERS)**: built and published to the live site, waiting for the owner's verdict (`docs/PHASE_5.md`). Phase 4
 is closed. **5.4 Dougie and Choose Your Dog** (2026-10-16, D29): built, committed and pushed to `main` at the owner's
-request (published to the live site); a follow-up (title lower, a fight theme, the names called out) is
-committed on the working branch `claude/milestones-5-9-qagq4b`, **not on `main`** (not live yet). Waiting for the
-owner's verdict.
+request (published to the live site); a follow-up (title lower, a fight theme, the names called out) and **Nori, a
+third playable dog**, are on the working branch `claude/milestones-5-9-qagq4b`, **not on `main`** (not live yet).
+Waiting for the owner's verdict.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
@@ -47,6 +47,25 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-16, owner request; on the working branch, **not pushed to `main`**): **Choose Your Dog: no BACK
+button, Moke in the middle and always first.** `DOGS` is now Dougie, Moke, Nori; the screen opens on `DEFAULT_DOG`
+(Moke) every time and every visit starts as Moke, so the saved last choice (`imdog.dog`, `core/DogChoice.ts` and its
+two tests) is removed (`dogById` falls back to Moke). The BACK button is gone from `index.html`/`UIManager`; BEGIN
+sits alone, centred (`.select-buttons` one column, up to 280 px). Esc and B still go back to the title; on a touch
+screen there's no way back but reloading. Verification is under the Nori entry below.
+
+Claude Code (2026-10-16, owner request; on the working branch, **not pushed to `main`**): **Nori, a third playable
+dog** (5.4, D29), built exactly the way Dougie was, from two private photos the owner shared (only looked at; not in
+the repo, the build or any texture). `NORI_LOOK` in `config/dogLooks.ts`: Moke's toon build and size, a curly light
+apricot coat in vertex colours (creamier face, muzzle, chest and feet; a deeper crown, back and tail), caramel drop
+ears with darker ends, dark eyes, a black nose, a teal collar with a gold "Nori" tag. `DOGS` gains `nori` (third:
+Moke, Dougie, Nori), with `imdog.dogLogic.nori` for Nori's own Dog Logic; the select screen, chips, swipes, keys,
+controller, announcer ("Nori!") and every line ("Nori is tired!") follow from the roster. The stage was re-spaced for
+three: `DOG_SELECT.spacing` 0.62 → 0.56, `margin` 0.34 → 0.42 (the highlighted end dog no longer touches the screen
+edge), `narrow` 0.42 / 0.27 (bigger on a phone upright), a tap picks the nearest dog within `tapReach` 0.35 (was
+0.6, too wide for three), and on a phone upright the arrows sit below the dogs (`top: 57%`). Whether Nori is a boy
+or a girl isn't known; the game's lines say "he" for every dog (as for Dougie). Verification below.
+
 Claude Code (2026-10-16, owner request; on the working branch, **not pushed to `main`**): **Choose Your Dog follow-up** (5.4) after the owner saw it
 live. The title "CHOOSE YOUR DOG" sits lower, nearer the dogs (`.select-title` margin from the screen height;
 `DOG_SELECT.titleShare` 0.15 → 0.2 and `halfHeight` 0.33 so the dogs move down with it, the same size). **"Paws Up!"**,
@@ -60,7 +79,7 @@ game; no melody, riff, sample or shout from any game was used (D29, `ASSETS.md`)
 
 Claude Code (2026-10-16, owner request, committed and pushed to `main`): **Dougie, a second playable dog, and a Choose Your Dog
 screen** (milestone 5.4, D29). Details: `docs/PHASE_5.md` → 5.4, `docs/ARCHITECTURE.md` → Playable dogs.
-- **Flow:** PLAY → Choose Your Dog (`select` state) → BEGIN → play; BACK → the title. The house and physics load
+- **Flow:** PLAY → Choose Your Dog (`select` state) → BEGIN → play; Esc/B → the title (the BACK button was removed later). The house and physics load
   behind the title as before; the chosen dog's look, name and saved progress are applied at BEGIN, before play
   starts. No switching mid-game (reload to choose again).
 - **The screen:** both dogs in 3D (`player/DogPreview.ts`, drawn by the game's renderer instead of the house, all of it
@@ -81,7 +100,8 @@ screen** (milestone 5.4, D29). Details: `docs/PHASE_5.md` → 5.4, `docs/ARCHITE
   the chosen dog's name (`dogText` via `UIManager`; fixed texts marked `data-dog-text`). Title screen, About and page
   metadata still about the real Moke. Pronouns in lines ("he", "good boy") are unchanged for Dougie.
 - **Progress:** Dog Logic per dog: Moke keeps `imdog.dogLogic` (no migration; existing saves load as they were),
-  Dougie `imdog.dogLogic.dougie`. Last chosen dog: `imdog.dog`. Settings and onboarding stay shared.
+  Dougie `imdog.dogLogic.dougie`. Settings and onboarding stay shared. (The last chosen dog was remembered as
+  `imdog.dog` until the owner asked for Moke as the default every time: no longer.)
 - **Small fixes on the way:** the toilet-paper mischief reads the dog's mouth socket when it needs it (not at spawn),
   so a new look can't leave it pointing at a disposed one.
 Verification is under "Dougie and Choose Your Dog (2026-10-16)" in Verification Status.
@@ -1289,6 +1309,31 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+### Nori, the third dog (2026-10-16, Claude Code; working branch only)
+Headless Chromium with SwiftShader; no physical device; the photos were only viewed.
+- **Typecheck, 88 test files / 639 tests, production build, `verify-dist`: pass.** Tests extended to three dogs: the
+  roster (unique names and keys), Nori's look and key, `dogText` for Nori ("No-ri~") and every human/course/controls
+  line naming the dog being played for both Dougie and Nori; three separate Dog Logic memories; the highlight
+  wrapping through three; the stage's tap picking left/middle/right and nobody at the edges; and, run for **both
+  Dougie and Nori**: sockets, Moke's size, every animation state and trick finite, a toy riding in the mouth, a
+  preview copy, and **the real living room with Rapier** (walk to the sock, pick it up, jump onto the couch carrying
+  it, a trick and a bark, drop it on the seat). Nori's coat: warm apricot everywhere, never dark, ears deeper.
+  (`DougieVisual.test.ts` → `DogVisuals.test.ts`, `DougiePlays.test.ts` → `PlayableDogs.test.ts`.)
+- **Renders:** Moke, Dougie and Nori side by side (front, three-quarter, side) and Nori's face close up, compared by
+  eye with the photos.
+- **Browser (dev):** the select screen at 1770×1280, 390×844 and 844×390 with Moke and with Nori highlighted: all
+  three dogs, the title, arrows and card clear of each other. 1280×720 with the speech stubbed: → → → (Dougie!,
+  Nori!, wraps to Moke!), clicks on the middle and right dogs (Dougie!, Nori!), BEGIN as Nori: "Nori is tired!",
+  "Nori is waiting patiently.", the FSD tooltip, Nori's tag, `imdog.dog` = `nori`, the theme handing over to "Aloha,
+  Moke"; the select screen deactivated at once and faded out (an early screenshot under heavy load caught the fade).
+  Console clean.
+- **FSD as Nori, 5 simulated minutes:** food, water, toys, the fish, naps, the doorbell, pillows, Malibu, TV, the
+  obstacle course and the patty, the ballgame, pets, the table, fetch; no errors; 55 on-screen lines, **none saying
+  "Moke"**; four discoveries saved to `imdog.dogLogic.nori` only (Moke's and Dougie's keys untouched). Four routines
+  ended "failed" (fetch, a nap, pets, a toy: a step timed out or found no route); gameplay doesn't depend on the
+  look, and the same run as Moke had none (0 failed). A clean rerun as Nori, alone on the machine, was cut short by a
+  page reload at 111 s (a full Sock Heist, no failures by then); a second clean rerun is in progress.
+
 ### Choose Your Dog follow-up: title lower, fight theme, names called (2026-10-16, Claude Code; working branch only)
 Headless Chromium with SwiftShader, no speech voices installed: **nobody has heard the theme or the names yet**.
 - **Typecheck, 88 test files / 629 tests (9 new), production build, `verify-dist`: pass.** New tests: "Paws Up!" (16

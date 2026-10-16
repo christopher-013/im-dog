@@ -200,7 +200,7 @@ export class DogPreview {
         best = i;
       }
     }
-    return bestDistance < 0.6 ? best : -1;
+    return bestDistance < DOG_SELECT.tapReach ? best : -1;
   }
 
   dispose(): void {

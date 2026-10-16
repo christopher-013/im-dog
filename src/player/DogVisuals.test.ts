@@ -1,4 +1,4 @@
-import { Box3, Group, Mesh, Vector3, type Object3D } from 'three';
+import { Box3, Group, Mesh, Vector3, type BufferAttribute, type InterleavedBufferAttribute, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { MOKE_ANIMATION } from '../config/animation';
 import { dogById } from '../config/dogs';
@@ -15,6 +15,7 @@ import { TRICKS } from './Tricks';
 
 const DT = 1 / 60;
 const dougie = dogById('dougie');
+const nori = dogById('nori');
 const moke = dogById('moke');
 
 function pose(over: Partial<MokeAnimationState> = {}): MokeAnimationState {
@@ -39,17 +40,12 @@ function finite(root: Object3D): boolean {
   return ok;
 }
 
-describe("Dougie's look (the same toon build as Moke, his own markings)", () => {
-  it('is a procedural toon dog with working mouth, collar and back sockets', () => {
-    const { visual, kind } = createDogVisual(dougie, undefined, false);
-    expect(kind).toBe('stand-in');
-    expect(visual).toBeInstanceOf(ToonMokeVisual);
-    expect(visual.attachments.mouth.name).toBe('socket_mouth');
-    expect(visual.attachments.collar?.name).toBe('socket_collar');
-    expect(visual.attachments.back?.name).toBe('socket_back');
-    visual.dispose();
-  });
+/** Luminance of a vertex colour. */
+function luminance(color: BufferAttribute | InterleavedBufferAttribute, i: number): number {
+  return 0.2126 * color.getX(i) + 0.7152 * color.getY(i) + 0.0722 * color.getZ(i);
+}
 
+describe("Dougie's coat", () => {
   it('every fur mesh carries his coat colours (dark, white and tan); Moke has none and stays one colour', () => {
     const d = new ToonMokeVisual(dougie.look);
     const fur = furMeshes(d.object);
@@ -59,7 +55,7 @@ describe("Dougie's look (the same toon build as Moke, his own markings)", () => 
       const color = mesh.geometry.getAttribute('color');
       expect(color, mesh.name).toBeDefined();
       for (let i = 0; i < color.count; i += 37) {
-        const l = 0.2126 * color.getX(i) + 0.7152 * color.getY(i) + 0.0722 * color.getZ(i);
+        const l = luminance(color, i);
         shades.add(l < 0.1 ? 'dark' : l > 0.8 ? 'white' : 'mid');
       }
     }
@@ -69,9 +65,50 @@ describe("Dougie's look (the same toon build as Moke, his own markings)", () => 
     d.dispose();
     m.dispose();
   });
+});
 
-  it('has the same gameplay-compatible size as Moke (only his ears are longer)', () => {
-    const d = new ToonMokeVisual(dougie.look);
+describe("Nori's coat", () => {
+  it('is warm apricot all over (no dark or grey patches), with ears deeper than the rest of the coat', () => {
+    const n = new ToonMokeVisual(nori.look);
+    const fur = furMeshes(n.object);
+    expect(fur.length).toBeGreaterThanOrEqual(8);
+    const mean = (name?: string) => {
+      let sum = 0;
+      let count = 0;
+      for (const mesh of fur.filter((f) => name === undefined || f.name === name)) {
+        const color = mesh.geometry.getAttribute('color');
+        for (let i = 0; i < color.count; i++, count++) sum += luminance(color, i);
+      }
+      return sum / count;
+    };
+    for (const mesh of fur) {
+      const color = mesh.geometry.getAttribute('color');
+      expect(color, mesh.name).toBeDefined();
+      for (let i = 0; i < color.count; i += 29) {
+        // Apricot and cream: red over green over blue, and never dark (Dougie's charcoal is about 0.04).
+        expect(color.getX(i), mesh.name).toBeGreaterThan(color.getY(i));
+        expect(color.getY(i), mesh.name).toBeGreaterThan(color.getZ(i));
+        expect(luminance(color, i), mesh.name).toBeGreaterThan(0.25);
+      }
+    }
+    expect(mean('ear')).toBeLessThan(mean() - 0.05);
+    n.dispose();
+  });
+});
+
+describe.each([dougie, nori])("$name's build (the same toon dog as Moke, a look of their own)", (dog) => {
+  it('is a procedural toon dog with working mouth, collar and back sockets', () => {
+    const { visual, kind } = createDogVisual(dog, undefined, false);
+    expect(kind).toBe('stand-in');
+    expect(visual).toBeInstanceOf(ToonMokeVisual);
+    expect(visual.attachments.mouth.name).toBe('socket_mouth');
+    expect(visual.attachments.collar?.name).toBe('socket_collar');
+    expect(visual.attachments.back?.name).toBe('socket_back');
+    visual.dispose();
+  });
+
+  it('has the same gameplay-compatible size as Moke (only the ears differ)', () => {
+    const d = new ToonMokeVisual(dog.look);
     const m = new ToonMokeVisual(moke.look);
     d.update(DT, pose());
     m.update(DT, pose());
@@ -87,7 +124,7 @@ describe("Dougie's look (the same toon build as Moke, his own markings)", () => 
   });
 
   it('animates through everything a dog does: walking, running, jumping, sniffing, barking, growling, eating, drinking, carrying, chewing, tugging, digging, resting and every trick', () => {
-    const d = new ToonMokeVisual(dougie.look);
+    const d = new ToonMokeVisual(dog.look);
     const states: Partial<MokeAnimationState>[] = [
       { speed: 1.2, gait: 'trot' }, { speed: 4, gait: 'run', runBlend: 1 }, { air: 1, rise: 1 }, { air: 1, rise: -1 }, { land: 1 },
       { sniff: 1 }, { bark: 1 }, { growl: 1 }, { eat: 1 }, { drink: 1 }, { carry: 1 }, { carry: 1, chew: 1, chewPhase: 0.5 },
@@ -101,14 +138,14 @@ describe("Dougie's look (the same toon build as Moke, his own markings)", () => 
     d.dispose();
   });
 
-  it("carries things in his mouth: a held toy rides at the front of his face, and moves with his head", () => {
-    const d = new ToonMokeVisual(dougie.look);
+  it('carries things in the mouth: a held toy rides at the front of the face, and moves with the head', () => {
+    const d = new ToonMokeVisual(dog.look);
     const toy = new Group();
     d.attachments.mouth.add(toy);
     d.update(DT, pose({ carry: 1 }));
     d.object.updateMatrixWorld(true);
     const held = toy.getWorldPosition(new Vector3());
-    expect(held.z).toBeGreaterThan(0.08); // in front of his middle
+    expect(held.z).toBeGreaterThan(0.08); // in front of the middle
     expect(held.y).toBeGreaterThan(0.15);
     expect(held.y).toBeLessThan(0.4);
     d.update(DT, pose({ carry: 1, sniff: 1 }));
@@ -119,8 +156,8 @@ describe("Dougie's look (the same toon build as Moke, his own markings)", () => 
   });
 
   it('a preview copy is its own visual, never the game one', () => {
-    const a = createPreviewVisual(dougie, undefined);
-    const b = createDogVisual(dougie, undefined, false).visual;
+    const a = createPreviewVisual(dog, undefined);
+    const b = createDogVisual(dog, undefined, false).visual;
     expect(a).not.toBe(b);
     expect(a.object).not.toBe(b.object);
     a.dispose();

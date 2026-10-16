@@ -463,9 +463,9 @@ body {
 
 .select-buttons {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
+  grid-template-columns: 1fr;
   gap: 12px;
-  width: 100%;
+  width: min(280px, 100%);
   margin-top: 4px;
 }
 
@@ -519,10 +519,10 @@ html:not([data-input]) .select-hint [data-hint-for='keyboard'] {
   }
 }
 
-/* Narrow (a phone upright): arrows a little smaller and lower, by the dogs' feet. */
+/* Narrow (a phone upright): arrows a little smaller and lower, below the dogs' feet. */
 @media (max-width: 480px) {
   .select-arrow {
-    top: 50%;
+    top: 57%;
     width: 50px;
     height: 50px;
   }

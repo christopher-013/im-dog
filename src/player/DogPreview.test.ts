@@ -56,10 +56,13 @@ describe('Choose Your Dog: the 3D stage', () => {
     // Frame it as a desktop window would (the camera needs an aspect).
     (preview as unknown as { frame(aspect: number): void }).frame(16 / 9);
     run(preview, 1, 0, true);
-    expect(preview.dogAt(-0.3)).toBe(0);
-    expect(preview.dogAt(0.3)).toBe(1);
+    // Three dogs: left, middle and right.
+    expect(preview.dogAt(-0.4)).toBe(0);
+    expect(preview.dogAt(0.02)).toBe(1);
+    expect(preview.dogAt(0.4)).toBe(2);
     // Far out to the side, past every dog: nobody (the arrows are there for that).
     expect(preview.dogAt(-0.99)).toBe(-1);
+    expect(preview.dogAt(0.99)).toBe(-1);
     preview.dispose();
   });
 

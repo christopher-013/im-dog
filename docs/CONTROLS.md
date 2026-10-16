@@ -111,11 +111,11 @@ walks slowly anyway) and no sniff button (rarely used on a phone). Details and t
 |---|---|---|---|
 | Switch dog | ← → (or A / D), the arrow buttons, or click a dog or its name | D-pad left/right, or LB / RB | Swipe across the dogs, tap a dog, its name or the arrows |
 | Begin | Enter or Space on the focused BEGIN (it starts focused), or click BEGIN | A or Start (Menu) | Tap BEGIN |
-| Back to the title | Esc, or BACK | B | Tap BACK |
+| Back to the title | Esc | B | (none: reload the page) |
 
-Tab moves through the arrows, the dogs' names, BACK and BEGIN. The hint under the buttons follows the input in use.
-The dog last chosen is highlighted next time (remembered in this browser). There's no switching dog mid-game: reload
-the page and choose again from the title.
+Tab moves through the arrows, the dogs' names and BEGIN. There's no BACK button (owner request, 2026-10-16); Esc and
+B still go back. The hint under the button follows the input in use. The dogs stand Dougie, Moke, Nori, and the
+screen always opens on Moke, in the middle. There's no switching dog mid-game: reload the page and choose again.
 
 ## First play
 The first time on each kind of controls, a few seconds of how-to:

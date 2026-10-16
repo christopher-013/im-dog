@@ -78,8 +78,7 @@ import { createDogVisual, type MokeVisualChoice } from '../player/MokeVisual';
 import { DogPreview } from '../player/DogPreview';
 import { Announcer } from '../audio/Announcer';
 import { ANNOUNCER, DOG_SELECT } from '../config/dogSelect';
-import { DOGS, dogById, type DogProfile } from '../config/dogs';
-import { loadDogChoice, saveDogChoice } from './DogChoice';
+import { DEFAULT_DOG, DOGS, dogById, type DogProfile } from '../config/dogs';
 import { DogSelection } from './DogSelection';
 import type { Prop } from '../props/Prop';
 import { createRoomProps } from '../props/roomProps';
@@ -151,7 +150,7 @@ export class Game {
    * The dog being played (D29): their look on the one dog body, their name in every line, their own Dog Logic.
    * The last one chosen on this browser until Choose Your Dog says otherwise.
    */
-  private dog: DogProfile = dogById(loadDogChoice());
+  private dog: DogProfile = dogById(DEFAULT_DOG);
   /** Choose Your Dog, while it's up: who's highlighted, and the 3D stage. Null otherwise (nothing left behind). */
   private selection: DogSelection | null = null;
   private preview: DogPreview | null = null;
@@ -308,7 +307,6 @@ export class Game {
         if (index >= 0) this.highlightDog(() => this.selection?.select(index) ?? false, true);
       },
       onBegin: () => this.beginWithDog(true),
-      onBack: () => this.backToTitle(),
     });
     ui.bind({
       onPlay: () => this.openDogSelect(),
@@ -896,7 +894,7 @@ export class Game {
     if (this.state !== 'menu') return;
     this.audio.unlock();
     this.audio.selectMusic(true);
-    this.selection = new DogSelection(DOGS.map((dog) => dog.id), this.dog.id);
+    this.selection = new DogSelection(DOGS.map((dog) => dog.id), DEFAULT_DOG);
     const preview = (this.preview = new DogPreview(DOGS, this.assets.getGLTF('moke')));
     this.gfx.syncSize(this.camera);
     void preview.compile(this.gfx.renderer);
@@ -961,7 +959,6 @@ export class Game {
    * Dog Logic is remembered change. Remembered as the dog to start on next time.
    */
   private useDog(dog: DogProfile): void {
-    saveDogChoice(dog.id);
     if (dog.id === this.dog.id) return;
     this.dog = dog;
     this.logicMemory.switchTo(dog.logicKey);

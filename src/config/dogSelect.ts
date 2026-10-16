@@ -9,15 +9,17 @@ export const DOG_SELECT = {
   beginCaption: 1.4,
   /** A swipe on the dogs: at least this far sideways (CSS px), and more sideways than up or down. */
   swipeMin: 40,
+  /** A tap or click within this of a dog's middle (in normalized screen units, −1..1 across) picks that dog. */
+  tapReach: 0.35,
   /** The 3D preview: the dogs this far apart (m), the highlighted one this much bigger, the others this much smaller. */
-  spacing: 0.62,
+  spacing: 0.56,
   highlightScale: 1.18,
   restScale: 0.9,
   /** The highlighted dog steps forward, the others stand back (m), for a little depth. */
   litForward: 0.1,
   restBack: -0.22,
   /** A narrow screen (a phone upright: width/height below `below`): the dogs closer together, so they're bigger. */
-  narrow: { below: 0.8, spacing: 0.48, margin: 0.3 },
+  narrow: { below: 0.8, spacing: 0.42, margin: 0.27 },
   /** How quickly they slide and grow into place (1/s). */
   ease: 9,
   /** The highlighted dog's playful hop: every this many seconds (min, random extra), this high (m), this long (s). */
@@ -26,10 +28,13 @@ export const DOG_SELECT = {
   hopTime: 0.42,
   /** A happy little bark now and then (s, min + random extra). */
   barkEvery: [5, 4] as const,
-  /** Camera: field of view (deg), looking at this height (m); it backs off until every dog fits with this margin. */
+  /**
+   * Camera: field of view (deg), looking at this height (m); it backs off until every dog fits with this margin (m,
+   * beyond the outer dogs' middles: room for the highlighted one, bigger, and its spotlight at either end).
+   */
   fov: 28,
   lookHeight: 0.24,
-  margin: 0.34,
+  margin: 0.42,
   /**
    * Shares of the screen height kept clear for the name card below and the title above (0..1); the dogs need this
    * much height (m, half of it) in the space between.

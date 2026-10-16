@@ -1,6 +1,6 @@
 import { Vector3, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
-import { dogById } from '../config/dogs';
+import { dogById, type DogProfile } from '../config/dogs';
 import { MOKE_BODY, MOVEMENT } from '../config/movement';
 import { InteractionSystem } from '../interactions/InteractionSystem';
 import { PickupSystem } from '../interactions/PickupSystem';
@@ -13,23 +13,22 @@ import { Moke } from './Moke';
 import { MokeController } from './MokeController';
 import { createDogVisual } from './MokeVisual';
 
-// Dougie in the real living room with real Rapier, wired the way Game wires the player dog (D29): the same
-// controller, body and systems as Moke, only his look on top. Everything here is what a player does with him.
+// Dougie and Nori in the real living room with real Rapier, wired the way Game wires the player dog (D29): the same
+// controller, body and systems as Moke, only their look on top. Everything here is what a player does with them.
 const DT = 1 / 60;
-const dougie = dogById('dougie');
 
-async function setup() {
+async function setup(profile: DogProfile) {
   const room = new LivingRoom();
   const physics = await PhysicsWorld.create();
   physics.addStaticBoxes(room.colliders);
   physics.commitStaticGeometry();
   const controller = new MokeController(new CharacterBody(physics, room.spawn.position, MOKE_BODY), room.spawn.heading, { ...MOVEMENT });
-  const dog = new Moke(controller, createDogVisual(dougie, undefined, false).visual);
+  const dog = new Moke(controller, createDogVisual(profile, undefined, false).visual);
   const props = createRoomProps(physics, room);
   const interactions = new InteractionSystem(undefined, (o, d, max) => physics.rayDistance(o, d, max));
   const pickup = new PickupSystem<Prop>(interactions, controller, (o, d, max, radius) => physics.sweepWorldSphere(o, d, radius, max));
   for (const p of props) pickup.add(p);
-  // As in Game.spawnProps: what he carries rides in his visual's mouth socket.
+  // As in Game.spawnProps: what the dog carries rides in its visual's mouth socket.
   pickup.onPickUp = (prop) => {
     prop.holdIn(dog.visual.attachments.mouth);
     dog.carrying = true;
@@ -63,9 +62,9 @@ function isInside(child: Object3D, parent: Object3D): boolean {
   return false;
 }
 
-describe('Dougie plays the same game as Moke', () => {
-  it('walks to the sock, picks it up in his own mouth, carries it up onto the couch, does a trick and drops it', async () => {
-    const { room, physics, controller, dog, props, interactions, step, walkTo } = await setup();
+describe.each([dogById('dougie'), dogById('nori')])('$name plays the same game as Moke', (profile) => {
+  it('walks to the sock, picks it up in their own mouth, carries it up onto the couch, does a trick and drops it', async () => {
+    const { room, physics, controller, dog, props, interactions, step, walkTo } = await setup(profile);
     try {
       const sock = props.find((p) => p.id === 'sock')!;
       const { sock: at } = room.landmarks;
@@ -78,7 +77,7 @@ describe('Dougie plays the same game as Moke', () => {
       expect(isInside(sock.view, dog.visual.attachments.mouth)).toBe(true);
       expect(dog.carrying).toBe(true);
       for (let i = 0; i < 10; i++) step();
-      // In his mouth, out in front of him, at head height.
+      // In the mouth, out in front, at head height.
       dog.visual.object.updateMatrixWorld(true);
       const held = sock.view.getWorldPosition(new Vector3());
       const p = controller.position;

@@ -1,11 +1,11 @@
-import { DOUGIE_LOOK, MOKE_DOG_LOOK, type DogLook } from './dogLooks';
+import { DOUGIE_LOOK, MOKE_DOG_LOOK, NORI_LOOK, type DogLook } from './dogLooks';
 
 /**
- * The playable dogs (owner request, 2026-10-16; D29). Every dog plays exactly the same: one controller, one body
- * size (MOKE_CHARACTER.size), the same activities, FSD and input. What differs is only presentation, here: the name
- * the game and the human use, the look, and where their own Dog Logic progress is saved.
+ * The playable dogs (owner request, 2026-10-16; D29): Moke, Dougie and Nori. Every dog plays exactly the same: one
+ * controller, one body size (MOKE_CHARACTER.size), the same activities, FSD and input. What differs is only
+ * presentation, here: the name the game and the human use, the look, and where their own Dog Logic progress is saved.
  */
-export type DogId = 'moke' | 'dougie';
+export type DogId = 'moke' | 'dougie' | 'nori';
 
 export interface DogProfile {
   readonly id: DogId;
@@ -25,7 +25,17 @@ export interface DogProfile {
   readonly usesModel: boolean;
 }
 
+/** In the order they stand on Choose Your Dog: Moke in the middle (and highlighted first: DEFAULT_DOG). */
 export const DOGS: readonly DogProfile[] = [
+  {
+    id: 'dougie',
+    name: 'Dougie',
+    called: 'Dou-gie',
+    tagline: 'Fluffy, tri-coloured and always cheerful',
+    look: DOUGIE_LOOK,
+    logicKey: 'imdog.dogLogic.dougie',
+    usesModel: false,
+  },
   {
     id: 'moke',
     name: 'Moke',
@@ -36,16 +46,17 @@ export const DOGS: readonly DogProfile[] = [
     usesModel: true,
   },
   {
-    id: 'dougie',
-    name: 'Dougie',
-    called: 'Dou-gie',
-    tagline: 'Fluffy, tri-coloured and always cheerful',
-    look: DOUGIE_LOOK,
-    logicKey: 'imdog.dogLogic.dougie',
+    id: 'nori',
+    name: 'Nori',
+    called: 'No-ri',
+    tagline: 'Curly, apricot and full of bounce',
+    look: NORI_LOOK,
+    logicKey: 'imdog.dogLogic.nori',
     usesModel: false,
   },
 ];
 
+/** Every visit starts as Moke: the title shows him, and Choose Your Dog opens with him highlighted. */
 export const DEFAULT_DOG: DogId = 'moke';
 
 export function isDogId(value: unknown): value is DogId {
@@ -53,7 +64,7 @@ export function isDogId(value: unknown): value is DogId {
 }
 
 export function dogById(id: DogId): DogProfile {
-  return DOGS.find((dog) => dog.id === id) ?? DOGS[0]!;
+  return DOGS.find((dog) => dog.id === id) ?? DOGS.find((dog) => dog.id === DEFAULT_DOG)!;
 }
 
 /**

@@ -30,7 +30,6 @@ export interface DogSelectHandlers {
   onPick(index: number): void;
   onTap(ndcX: number): void;
   onBegin(): void;
-  onBack(): void;
 }
 
 /**
@@ -226,12 +225,11 @@ export class UIManager {
     }, durationMs);
   }
 
-  /** The arrows, BEGIN and BACK, and taps and swipes on the dogs themselves (mouse, pen or finger alike). */
+  /** The arrows, BEGIN, and taps and swipes on the dogs themselves (mouse, pen or finger alike). */
   private setUpDogSelect(): void {
     this.el('btn-dog-prev').addEventListener('click', () => this.selectHandlers?.onStep(-1));
     this.el('btn-dog-next').addEventListener('click', () => this.selectHandlers?.onStep(1));
     this.el('btn-dog-begin').addEventListener('click', () => this.selectHandlers?.onBegin());
-    this.el('btn-dog-back').addEventListener('click', () => this.selectHandlers?.onBack());
     const stage = this.el('select-stage');
     let start: { id: number; x: number; y: number } | null = null;
     stage.addEventListener('pointerdown', (e) => {

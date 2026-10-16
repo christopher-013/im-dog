@@ -30,7 +30,7 @@ src/
     senses.ts             sniff timing, wisp look, scent colours per category
     audio.ts              sound levels
     mokeLook.ts           Moke's look: palette, key light, crease shading, silhouette line, collar, blink timing
-    dogs.ts               the playable dogs (D29): Moke and Dougie, their names, taglines, looks and Dog Logic keys; dogText()
+    dogs.ts               the playable dogs (D29): Moke, Dougie and Nori, their names, taglines, looks and Dog Logic keys; dogText()
     dogLooks.ts           each dog's toon look: palette, collar, ears, and Dougie's coat markings (vertex-colour patches)
     dogSelect.ts          Choose Your Dog: the stage's layout and motion, the announcer's lines and delivery
     assets.ts             asset manifest (preloaded behind the loading screen)
@@ -173,7 +173,7 @@ scripts/sw-template.js    the service worker; vite.config.ts fills in the precac
 ## Game states and the frame
 `loading → menu ⇄ select → playing ⇄ paused`. **`select` is Choose Your Dog (D29):** PLAY (or A) opens it; the
 house isn't drawn while it's up, the game's renderer draws `DogPreview`'s little stage instead (one extra scene, no
-second WebGL context, disposed on leaving); BACK (Esc, B) returns to `menu`; BEGIN (Enter on the focused button, A or
+second WebGL context, disposed on leaving); Esc or B returns to `menu` (there's no BACK button); BEGIN (Enter on the focused button, A or
 Start) applies the chosen dog (`Game.useDog`: their visual on the one dog body via `Moke.setVisual`, their name via
 `UIManager.setDog`, their Dog Logic via `DogLogicMemory.switchTo`) and starts play. A finished Sock Heist no longer stops play: its "Sock Heist Complete" card shows
 over the game for a few seconds (there used to be a `complete` state with PLAY AGAIN / KEEP EXPLORING). Hiding the page (phone locked, app or tab switched) pauses. Each rendered frame:
@@ -230,7 +230,7 @@ so stalls are visible instead of being hidden by the simulation clamp.
   size; nothing else in the game knows it exists.
 
 ## Playable dogs (D29)
-Moke and Dougie are **one gameplay dog with two presentations**. Everything that plays (`MokeController`, the
+Moke, Dougie and Nori are **one gameplay dog with three presentations**. Everything that plays (`MokeController`, the
 capsule, `MokeAnimationController`, the interactions, activities, Sock Heist, FSD, the course) is shared and
 unchanged; the classes keep Moke's name because he came first. What's per dog lives in `config/dogs.ts`:
 - **the look:** `createDogVisual(dog)` gives Moke the usual `createMokeVisual` (moke.glb or the toon stand-in, as
@@ -241,7 +241,7 @@ unchanged; the classes keep Moke's name because he came first. What's per dog li
   the called-out "Mo-ke" for the chosen dog's name. A few fixed texts in `index.html` are marked `data-dog-text` /
   `data-dog-title`. The title screen, the About page and the page's metadata stay about the real Moke.
 - **progress:** `DogLogicMemory` reads and writes the chosen dog's key. Moke keeps `imdog.dogLogic` (so no existing
-  save moves); Dougie's is `imdog.dogLogic.dougie`. The last dog chosen is `imdog.dog` (`core/DogChoice.ts`).
+  save moves); Dougie's is `imdog.dogLogic.dougie`, Nori's `imdog.dogLogic.nori`. Every visit starts as Moke (`DEFAULT_DOG`), and Choose Your Dog opens on him; the choice isn't remembered.
 - **choosing:** `core/DogSelection.ts` (pure: the highlight, wrapping, picks, swipes), `player/DogPreview.ts` (the 3D
   stage), `audio/Announcer.ts` (the browser's own speech voice, pitched down: "Choose your dog!", the name of each dog
   picked, "Begin!"; the words are always on screen too; it reports when it's talking so the music can dip), three
@@ -409,7 +409,7 @@ input ─► MoveIntent ─► MokeController ─► MokeAnimationController ─
 ## Background music (`audio/music.ts`, tuning `MUSIC` in `config/audio.ts`)
 - Two original 8-bit songs, stored as data (`SONGS`): "Aloha, Moke" (the Hawaii option) and "Irasshaimase!" (Konbini).
   Choose Your Dog has its own, "Paws Up!" (`FIGHT_THEME`; `TUNES` holds all three): `AudioManager.selectMusic(true)`
-  from PLAY to BEGIN or BACK, instead of the background song, still following the Music setting; while the announcer
+  from PLAY to BEGIN or back to the title, instead of the background song, still following the Music setting; while the announcer
   talks, `duckForVoice` dips whichever tune is playing to `MUSIC.voiceDuck`.
   A `Song` is chords per bar, a melody (notes with optional slides), an optional bells line, "sparse" bars (just
   bells and a held bass note: the door chime and the school chime), a `Band` (each instrument's sound and the

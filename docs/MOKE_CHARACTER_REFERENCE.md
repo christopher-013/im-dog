@@ -198,3 +198,16 @@ toon build translates it (`DOUGIE_LOOK` in `src/config/dogLooks.ts`):
 - **Not shown or not known:** his real size (the photo gives no scale, so he's built at Moke's gameplay size), his
   tail (given a white tip, a common tri-colour marking: a stylistic guess), his back and belly. He wears a light
   collar in the photo; the game gives him a sage one with his name on the tag.
+
+## Nori, the third playable dog (2026-10-16, D29)
+From two photos the owner shared in chat of the same curly puppy (private: **not saved in the repository**; if wanted
+as a reference later, the owner can place them in `reference/`, which stays git-ignored). What they show, and how
+the game's toon build translates it (`NORI_LOOK` in `src/config/dogLooks.ts`):
+- **Coat:** a soft, curly, light apricot coat, lighter and creamier on the face, muzzle, chest and feet → an
+  apricot base with cream over the face, muzzle, chest, underside and lower legs.
+- **Crown, back and ears:** a deeper apricot on top, and floppy drop ears in a deeper caramel apricot, darkest at the
+  fringes → a deeper crown and back, caramel ears with darker ends, ears a little longer than Moke's.
+- **Eyes and nose:** dark eyes and a black nose → the same dark irises and glossy black nose as Moke's.
+- **Not shown or not known:** the real size (a puppy in the photos, but no scale: built at Moke's gameplay size like
+  every dog), the tail (given the deeper apricot), whether Nori is a boy or a girl (the game's lines keep saying
+  "he"). No collar in the photos; the game gives a teal one with a gold "Nori" tag.

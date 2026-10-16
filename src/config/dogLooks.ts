@@ -5,6 +5,8 @@ import { MOKE_LOOK } from './mokeLook';
  * which is the same for every dog (D29). Moke's look is `MOKE_LOOK`, unchanged. Dougie's is translated by hand from
  * the owner's private photo (never bundled or used as a texture): a fluffy dark charcoal coat, a white patch on top
  * of the head, warm cream-tan eyebrows, cheeks and muzzle, brown eyes, a white chest and white lower legs.
+ * Nori's is translated the same way from two private photos (2026-10-16): a curly, light apricot coat, creamier on
+ * the face, muzzle, chest and feet, deeper apricot ears, dark eyes and a black nose.
  * Colours are display colours (the fur skips tone mapping).
  */
 
@@ -174,4 +176,74 @@ export const DOUGIE_LOOK: DogLook = {
     tail: { base: DOUGIE_COAT.charcoal, patches: [{ color: DOUGIE_COAT.white, above: 0.07 }] },
   },
   earRadii: [0.05, 0.088, 0.058],
+};
+
+const NORI_COAT = {
+  apricot: '#ebc89c',
+  deep: '#dfb380',
+  cream: '#f6e6cd',
+  ear: '#d9a56d',
+  earTip: '#cc945a',
+} as const;
+
+/**
+ * Nori: the same toon build and size as Moke (the photos give no real size), in a soft apricot curly coat that's
+ * creamier on the face, muzzle, chest and feet and deeper along the back, the crown and the drop ears, with dark eyes,
+ * a black nose and a teal collar with a gold tag. The fur's lit/shade colours are neutral; the coat gives the colour.
+ */
+export const NORI_LOOK: DogLook = {
+  palette: {
+    furLit: '#ffffff',
+    furShade: '#d9cbc5',
+    earLit: '#ffffff',
+    earShade: '#d9cbc5',
+    noseLit: '#2e2729',
+    noseShade: '#110d0e',
+    tongueLit: '#f59aa5',
+    tongueShade: '#cf7482',
+    mouth: '#3a2226',
+    teeth: '#fffaf0',
+    line: '#9c7a5e',
+    iris: '#3b2519',
+    irisDark: '#170f0b',
+    pupil: '#0b0706',
+    eyeRim: '#0d0908',
+  },
+  collar: {
+    name: 'Nori',
+    lit: '#3aa39b',
+    shade: '#26736d',
+    tagLit: '#efc65c',
+    tagShade: '#b48a2c',
+    ringLit: '#eef0f4',
+    ringShade: '#a3a8b4',
+    text: '#5a3d0e',
+  },
+  coat: {
+    head: {
+      base: NORI_COAT.apricot,
+      patches: [
+        // A deeper apricot crown, a creamy face round the eyes, and cream cheeks and chin round the muzzle.
+        { color: NORI_COAT.deep, dir: [0, 1, -0.25], radius: 0.55, soft: 0.25 },
+        { color: NORI_COAT.cream, dir: [0, 0.1, 1], radius: 0.5, soft: 0.22 },
+        { color: NORI_COAT.cream, dir: [0, -0.7, 0.7], radius: 0.45, soft: 0.2 },
+      ],
+    },
+    muzzle: { base: NORI_COAT.cream },
+    ear: { base: NORI_COAT.ear, patches: [{ color: NORI_COAT.earTip, below: -0.035 }] },
+    body: {
+      base: NORI_COAT.apricot,
+      patches: [
+        // Deeper along the back, creamy down the front and underneath.
+        { color: NORI_COAT.deep, dir: [0, 1, -0.2], radius: 0.6, soft: 0.3 },
+        { color: NORI_COAT.cream, dir: [0, -0.25, 1], radius: 0.55, soft: 0.25 },
+        { color: NORI_COAT.cream, dir: [0, -1, 0.3], radius: 0.45, soft: 0.25 },
+      ],
+    },
+    chest: { base: NORI_COAT.cream },
+    frontLeg: { base: NORI_COAT.apricot, patches: [{ color: NORI_COAT.cream, below: -0.07 }] },
+    hindLeg: { base: NORI_COAT.apricot, patches: [{ color: NORI_COAT.cream, below: -0.08 }] },
+    tail: { base: NORI_COAT.deep },
+  },
+  earRadii: [0.048, 0.08, 0.056],
 };

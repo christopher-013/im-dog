@@ -25,11 +25,11 @@ and browser weren't recorded. **Carried forward:** a recorded device/browser lis
 listening checks, a long FSD soak in a real browser, and the final dog models. Scope, history and what's carried
 forward: `docs/PHASE_5.md`.
 
-**Phase 6: not defined yet.** Suggestions for the owner: "Next Recommended Task" below.
+**Phase 6: drafted, waiting for the owner's approval** ("A Day with Moke", `docs/PHASE_6.md`, 2026-10-16).
 
 ## Current Milestone
 **None in progress.** Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
-`phase-5-complete`). The next step is defining Phase 6 with the owner.
+`phase-5-complete`). The next step is the owner's approval of the Phase 6 plan.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.

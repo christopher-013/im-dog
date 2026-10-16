@@ -47,6 +47,21 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+OpenAI Codex (2026-10-15 Pacific time, independent project-wide audit; owner approved commit and push): reviewed the `3bd21c2` baseline,
+new dog-selection/model path, gameplay and FSD smoke, mobile selection/pause layouts, public asset and feedback
+boundaries, dependency advisories, and the production build. Fixed a cached-glTF resource-lifetime bug: closing the
+Choose Your Dog preview could dispose geometry/materials still owned by the loaded Moke model; added a regression
+test. Updated the README to reflect Phase 5 and all three playable dogs. Enlarged selection name buttons and the
+short-screen BEGIN button to at least 44 px; checked 390×844 and
+667×375 layouts. Patched the build-only transitive `source-map-js` dependency from 1.2.1 to 1.2.2. Final checks:
+strict typecheck, 88 test files / 638 tests, production build and private-photo guard, and `npm audit` (0 reported
+vulnerabilities) all pass. Development-browser smoke covered Moke, Dougie and Nori selection, movement, FSD roaming,
+manual takeover, pause and resume; built-site smoke covered selection and Dougie play. No runtime errors were seen.
+The optional missing-`moke.glb` notice remains expected. Browser debug samples at 1280×720 were about 149–165 fps,
+86–254 draw calls and 287k–344k triangles during selection, play and FSD; these are **not** GPU timings or phone
+measurements. No physical phone, full mini-game replay, live Cloudflare test or deployment was done during the
+audit. The owner subsequently requested committing these changes and pushing them to `main`.
+
 Claude Code (2026-10-16, owner request; pushed to `main`): **the announcer says Moke
 "Moke-ee".** `DogProfile.spoken` is the name spelled for text-to-speech, used only by the announcer: "Mokey" for Moke
 ("Mokey!" when he's picked), "Dougie" and "Nori" as written. Nothing on screen changes (he's "Moke" everywhere).

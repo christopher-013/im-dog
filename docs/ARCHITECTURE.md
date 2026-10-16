@@ -249,6 +249,8 @@ unchanged; the classes keep Moke's name because he came first. What's per dog li
   picked, "Begin!"; the words are always on screen too; it reports when it's talking so the music can dip), three
   original synthesized sounds (`announce`, `dogSwitch`, `begin`); the names it calls are each dog's `spoken` form
   ("Mokey" for Moke, said "Moke-ee") and the screen's own music (`FIGHT_THEME`, below).
+  Preview clones of a loaded `moke.glb` share the asset cache's mesh resources. Disposing the preview stops its
+  animation and removes its scene, but must not dispose those shared geometries or materials.
 
 The dog is only chosen before play starts, so `Moke.setVisual` never has to move something held in the mouth.
 

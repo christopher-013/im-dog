@@ -60,6 +60,7 @@ export class GltfMokeVisual implements MokeVisual {
   readonly clips: readonly MokeClipName[];
 
   private readonly model: Object3D;
+  private readonly ownsMeshResources: boolean;
   private readonly mixer: AnimationMixer;
   private readonly actions: ClipAction[] = [];
   private readonly available: Set<string>;
@@ -87,9 +88,10 @@ export class GltfMokeVisual implements MokeVisual {
   /** Every driven bone, for resetting to rest each frame. */
   private readonly driven: DrivenBone[];
 
-  constructor(gltf: { scene: Object3D; animations: readonly AnimationClip[] }, config: Config = MOKE_CHARACTER) {
+  constructor(gltf: { scene: Object3D; animations: readonly AnimationClip[] }, config: Config = MOKE_CHARACTER, ownsMeshResources = true) {
     this.object.name = 'MokeModel';
     this.model = gltf.scene;
+    this.ownsMeshResources = ownsMeshResources;
     let meshes = 0;
     this.model.traverse((node) => {
       if (!(node instanceof Mesh)) return;
@@ -176,11 +178,15 @@ export class GltfMokeVisual implements MokeVisual {
   dispose(): void {
     this.mixer.stopAllAction();
     this.mixer.uncacheRoot(this.model);
-    this.model.traverse((node) => {
-      if (!(node instanceof Mesh)) return;
-      node.geometry.dispose();
-      for (const material of ([] as Material[]).concat(node.material)) material.dispose();
-    });
+    // Loaded GLTFs are cached by AssetManager. Preview skeleton clones share their geometry and materials,
+    // so disposing a preview must not invalidate the cached model or the in-game dog.
+    if (this.ownsMeshResources) {
+      this.model.traverse((node) => {
+        if (!(node instanceof Mesh)) return;
+        node.geometry.dispose();
+        for (const material of ([] as Material[]).concat(node.material)) material.dispose();
+      });
+    }
     this.object.removeFromParent();
   }
 

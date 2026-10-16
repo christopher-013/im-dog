@@ -429,6 +429,7 @@ body {
 
 .select-chip {
   appearance: none;
+  min-height: 44px;
   padding: 0.3em 0.95em;
   border: 0;
   border-radius: var(--pill);
@@ -510,6 +511,7 @@ html:not([data-input]) .select-hint [data-hint-for='keyboard'] {
     display: none;
   }
   .select-buttons .btn {
+    min-height: 44px;
     padding-block: 0.55em;
     font-size: 1.05rem;
   }

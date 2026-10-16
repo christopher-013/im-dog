@@ -47,7 +47,7 @@ export function createMokeVisual(gltf: Pick<GLTF, 'scene' | 'animations'> | unde
   const help = 'See docs/MOKE_INTEGRATION.md.';
   if (gltf) {
     try {
-      const visual = new GltfMokeVisual(gltf);
+      const visual = new GltfMokeVisual(gltf, MOKE_CHARACTER, false);
       if (visual.issues.length) console.warn(`[moke] ${MOKE_CHARACTER.model.path} loaded with issues:\n- ${visual.issues.join('\n- ')}\n${help}`);
       return { visual, kind: 'model', notes: visual.issues };
     } catch (err) {
@@ -86,7 +86,7 @@ export function createDogVisual(
 export function createPreviewVisual(dog: DogProfile, gltf: Pick<GLTF, 'scene' | 'animations'> | undefined): MokeVisual {
   if (dog.usesModel && gltf) {
     try {
-      return new GltfMokeVisual({ scene: cloneSkinned(gltf.scene), animations: gltf.animations });
+      return new GltfMokeVisual({ scene: cloneSkinned(gltf.scene), animations: gltf.animations }, MOKE_CHARACTER, false);
     } catch {
       // Fall through to the toon build.
     }

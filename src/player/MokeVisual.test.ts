@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GltfMokeVisual } from './gltf/GltfMokeVisual';
 import { syntheticMoke } from './gltf/testing/syntheticMoke';
-import { createMokeVisual } from './MokeVisual';
+import { createMokeVisual, createPreviewVisual } from './MokeVisual';
+import { DOGS } from '../config/dogs';
+import { Mesh } from 'three';
 import { ToonMokeVisual } from './ToonMokeVisual';
 
 describe('choosing Moke\'s visual', () => {
@@ -14,6 +16,21 @@ describe('choosing Moke\'s visual', () => {
     expect(choice.visual).toBeInstanceOf(GltfMokeVisual);
     expect(choice.notes).toEqual([]);
     choice.visual.dispose();
+  });
+
+  it('closing the selection preview does not dispose the cached model used by gameplay', () => {
+    const gltf = syntheticMoke();
+    const mesh = gltf.scene.children.find((child): child is Mesh => child instanceof Mesh)!;
+    let geometryDisposals = 0;
+    let materialDisposals = 0;
+    mesh.geometry.addEventListener('dispose', () => geometryDisposals++);
+    (mesh.material as import('three').Material).addEventListener('dispose', () => materialDisposals++);
+    const preview = createPreviewVisual(DOGS.find((dog) => dog.id === 'moke')!, gltf);
+    preview.dispose();
+    const game = createMokeVisual(gltf, true);
+    game.visual.dispose();
+    expect(geometryDisposals).toBe(0);
+    expect(materialDisposals).toBe(0);
   });
 
   it('falls back to the procedural stand-in, with a clear warning, when there is no model', () => {

@@ -25,6 +25,10 @@ throwing the ball), each teaching a bit of **Dog Logic**. Plus the doorbell (bar
 the kitchen, the couch pillows, the toilet paper, playing with **Malibu** the bird and a squeaky fish to chew.
 See [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md).
 
+**Phase 5 (in progress, [docs/PHASE_5.md](docs/PHASE_5.md)):** Full Self Dog can take the controls, and Liam's
+Obstacle Course is in the backyard. PLAY now opens **Choose Your Dog**: Moke, Dougie and Nori share the same
+gameplay and activities, with different looks and separate Dog Logic progress.
+
 **Play it:** https://www.im-dog.com ([how it's hosted](docs/FEEDBACK.md)) · also https://christopher-013.github.io/im-dog/ (desktop Chrome or Edge; keyboard + mouse or a standard controller). Every push to `main`
 rebuilds and republishes it through GitHub Actions (`.github/workflows/deploy-pages.yml`). Since Phase 3 it
 also runs in phone and tablet browsers (touch controls, portrait or landscape).

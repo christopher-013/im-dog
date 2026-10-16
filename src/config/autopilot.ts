@@ -1,3 +1,5 @@
+import { BATHROOM } from '../world/home/layout';
+
 /**
  * FSD, "Full Self Dog" (Phase 5): the autopilot that plays Moke for you (src/autopilot/FullSelfDog.ts). Seconds and
  * metres; (min, max) pairs are random ranges.
@@ -9,10 +11,19 @@ export const FSD = {
   /** Further than this from where he's going, he runs; closer than this, he walks (to stop on the spot). */
   runBeyond: 4,
   walkWithin: 0.5,
-  /** Pushing but barely moving this long counts as stuck: he hops, then re-plans; stuck this long, he gives up. */
-  stuckSpeed: 0.06,
+  /** Horizontal displacement needed to count as progress (jumping on the spot never resets the watchdog). */
+  stuckProgressDistance: 0.18,
+  /** Without progress: one recovery hop and re-plan, then give up. */
   stuckHopAfter: 0.8,
   stuckGiveUpAfter: 3.2,
+  /** Don't squeeze straight toward a target beyond this from the reachable route's end. */
+  finalApproach: 0.45,
+  /** Exploration stops need space around them for a sniff, trick or playful hop. */
+  wanderClearance: 0.35,
+  /** If distant samples miss the playable floor, look for a shorter walk nearby. */
+  wanderFallbackDistance: 1.5,
+  /** A failed activity rests this long, even if ordinary activity cooldowns are being relaxed. */
+  failedCooldown: 20,
   /** Any one step gives up after this long (a door that never rang, a prompt that never came). */
   stepTimeout: 22,
   /** After he's done a routine, he leaves it alone this long (so he goes round the house, not round in circles). */
@@ -59,6 +70,8 @@ export const FSD = {
   /** Running off with the sock: how far from the human he heads (m), and how often he picks a new spot (s). */
   fleeDistance: 4,
   fleeEvery: 3.5,
+  /** Visit the roll's approach point before its pull prompt is visible. */
+  paperVisitTo: BATHROOM.paperApproach,
   /** Dragging the toilet paper: where he heads, out in the hall (game coordinates). */
   paperRunTo: { x: 2.4, z: 1.1 },
 } as const;

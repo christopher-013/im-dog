@@ -60,17 +60,37 @@ sessions.
 - **The Sock Heist, start to finish:** after taking the sock he goes and shows it off (a bark with it in his mouth gets
   him noticed), keeps away during the chase, waits while they fetch the treat, gives the sock up when it's offered and
   eats the treat (it follows `SockHeistController.phase`).
-- **Getting unstuck:** re-plans every few seconds, hops if pushing gets nowhere, gives a routine up after a while and
-  picks another. A treat tucked somewhere tight: he heads for the nearest floor he can reach and squeezes the last
-  bit. Squeezed into a pocket the grid thinks is closed off (between dining chairs): straight out to floor that
-  connects first. Both use `NavGrid.region` / `nearestReachable` (connected patches of floor, labelled once), so a
+- **Getting unstuck:** exploration chooses reachable floor with space around it; if distant samples miss, he takes
+  a shorter walk nearby. Recovery measures horizontal displacement, so hopping on the spot never resets it: one
+  recovery hop, then abandon the move after 3.2 seconds without progress. Failed activities rest for at least 20
+  seconds while he tries something else. A treat tucked somewhere tight: he heads for the nearest floor he can
+  reach and squeezes at most 0.45 m beyond it. Squeezed into a pocket the grid thinks is closed off (between dining
+  chairs): straight out to floor that connects first. Both use `NavGrid.region` / `nearestReachable` (connected patches of floor, labelled once), so a
   hopeless goal never costs a whole-house search. Tuning: `src/config/autopilot.ts`.
+- **Toilet paper:** included in the random routines. FSD reads whether the activity is ready independently of its
+  nearby-only prompt, visits `BATHROOM.paperApproach`, then waits for and presses Pull Toilet Paper. Once the dog
+  holds it, `paperRun` takes over and goes out into the hall; normal activity rules release the paper and call the
+  human to clean up. Before the 2026-10-15 Pacific fix, the routine required the nearby prompt before choosing to
+  visit, so it could only start by chance.
 - **Controls:** the FSD button, G, or the left stick pressed on a controller.
 - **The rainbow path** (2026-10-05): while FSD drives, a glowing rainbow ribbon on the floor shows the way Moke is
   about to run: a solid rainbow road, its colours flowing forward (`autopilot/FsdPathView.ts`, `FullSelfDog.trail`, `FSD_PATH`).
 - **Fetch** is a real game (2026-10-05): ask until they give in, then fetch and bring the ball back after each throw.
   Liam's Obstacle Course waits 2 minutes, then comes at most every 5 minutes. Squeezes (a treat under the dining
   table) use a finer grid at Moke's exact size for the last few metres.
+
+## Reliability follow-up verification (2026-10-15 Pacific)
+- Two seeded six-minute exploration simulations through the real house with Rapier. Baseline stalled pushes
+  lasted 20.3 / 22.0 s; repaired runs keep them under 4 s, never repeat a recovery hop without horizontal progress,
+  explore at least three rooms and complete at least ten exploration routines each.
+- Unit regressions cover disconnected targets, short local exploration fallback, jumping without horizontal
+  progress, failed urgent-routine retries, and selecting the paper routine before its nearby prompt appears.
+- `FullSelfDog.paper.test.ts` drives the real dog body and human cleanup logic through two complete bathroom visits,
+  pulls, trail releases and cleanups. Existing chair-gap, hidden-treat, furniture-hop and course tests still pass.
+- Final full suite: 89 files / 645 tests (`npm test -- --maxWorkers=2`); strict typecheck and build pass. Browser smoke
+  confirmed FSD engagement, roaming, toys, doorbell/table activities and pause without runtime errors. The final
+  browser run also completed Toilet Paper Mischief once, resumed exploring and watched the ballgame. This was not
+  a physical-phone test or a long browser soak. The owner subsequently requested committing and pushing these fixes to `main`.
 
 ## Verification (2026-10-04)
 - Unit tests (`autopilot/FullSelfDog.test.ts`, 10): exploring, the doorbell cutting in, routing round walls, watching

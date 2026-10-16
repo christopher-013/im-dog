@@ -1317,6 +1317,7 @@ export class Game {
       get doorRinging() { return game.delivery?.ringing ?? false; },
       get ballgameOn() { return game.room.tv.homeRunToCome; },
       get holdingPaper() { return game.toiletPaper?.holdingPaper ?? false; },
+      get paperAvailable() { return game.toiletPaper?.state === 'AVAILABLE'; },
       course: this.course,
       play: {
         get phase() {

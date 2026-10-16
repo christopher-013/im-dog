@@ -10,8 +10,9 @@ import { MokeController } from '../player/MokeController';
 import { Home } from '../world/Home';
 import { BACKYARD_DOORWAY, GYM, roomAt } from '../world/home/layout';
 import { ObstacleCourse } from '../activities/ObstacleCourse';
+import { mulberry32 } from '../utils/random';
 import { TV_SCREENS } from '../world/home/places';
-import { FullSelfDog, type FsdSurface, type FsdTarget, type FsdWorld } from './FullSelfDog';
+import { FullSelfDog, type FsdCommand, type FsdSurface, type FsdTarget, type FsdWorld } from './FullSelfDog';
 
 // FSD driving the real Moke body (Rapier) through the real house: the same navigation grid the game builds for it.
 const DT = 1 / 60;
@@ -43,6 +44,7 @@ async function drive(opts: { targets?: FsdTarget[]; surfaces?: FsdSurface[]; doo
     doorRinging: opts.doorRinging ?? false,
     ballgameOn: false,
     holdingPaper: false,
+    paperAvailable: false,
     course: opts.course ?? null,
     rewardWaiting: false,
     play: { phase: 'idle' },
@@ -54,7 +56,7 @@ async function drive(opts: { targets?: FsdTarget[]; surfaces?: FsdSurface[]; doo
   };
   const fsd = new FullSelfDog(nav, opts.random ?? (() => 0), opts.tuning, opts.tight ? () => tightNav : undefined);
   const pressed: string[] = [];
-  const run = (seconds: number, each?: () => void) => {
+  const run = (seconds: number, each?: (cmd: FsdCommand) => void) => {
     for (let i = 0; i < seconds / DT; i++) {
       current = targets.find((t) => t.enabled && Math.hypot(t.position.x - c.position.x, t.position.z - c.position.z) <= t.interactionDistance)?.id ?? null;
       const cmd = fsd.update(DT, w);
@@ -63,25 +65,62 @@ async function drive(opts: { targets?: FsdTarget[]; surfaces?: FsdSurface[]; doo
       c.fixedUpdate(DT, { x: cmd.x, z: cmd.z, walk: cmd.walk, run: cmd.run });
       physics.step();
       opts.course?.update(DT, { position: c.position, grounded: c.grounded }, roomAt(c.position.x, c.position.z).id === 'backyard');
-      each?.();
+      each?.(cmd);
     }
   };
-  return { c, fsd, run, pressed };
+  return { c, fsd, run, pressed, dispose: () => physics.world.free() };
 }
 
 describe('FSD in the real house (Rapier)', () => {
+  it.each([7, 23])('keeps exploring without prolonged wall pushing or repeated stationary hops (seed %i)', async (seed) => {
+    const d = await drive({ random: mulberry32(seed), tight: true });
+    let anchor = { x: d.c.position.x, z: d.c.position.z };
+    let stalled = 0;
+    let longest = 0;
+    let hops = 0;
+    let mostHops = 0;
+    const rooms = new Set<string>();
+    try {
+      d.run(360, (cmd) => {
+        rooms.add(roomAt(d.c.position.x, d.c.position.z).id);
+        if (Math.hypot(d.c.position.x - anchor.x, d.c.position.z - anchor.z) > 0.18 || Math.hypot(cmd.x, cmd.z) < 0.1) {
+          anchor = { x: d.c.position.x, z: d.c.position.z };
+          stalled = 0;
+          hops = 0;
+        } else {
+          stalled += DT;
+          if (cmd.presses.has('jump')) hops++;
+          longest = Math.max(longest, stalled);
+          mostHops = Math.max(mostHops, hops);
+        }
+      });
+      expect(longest, 'longest attempted move without horizontal progress').toBeLessThan(4);
+      expect(mostHops, 'hops without horizontal progress').toBeLessThanOrEqual(1);
+      expect(rooms.size, 'rooms explored').toBeGreaterThanOrEqual(3);
+      expect(d.fsd.stats.done.get('explore') ?? 0, 'completed exploration routines').toBeGreaterThanOrEqual(10);
+    } finally {
+      d.dispose();
+    }
+  }, 60_000);
+
   it('runs Moke from the living room, down the hall, through the kitchen and dining room into the gym, to the bird cage', async () => {
     const cage = { x: GYM.cage.x - 0.7, y: 0, z: GYM.cage.z };
     const d = await drive({ doorRinging: true, targets: [{ id: 'door:bark', label: 'Bark', enabled: true, position: cage, interactionDistance: 0.9 }] });
     let arrived = -1;
+    let arrivedDistance = Infinity;
+    let arrivedRoom = '';
     let t = 0;
     d.run(40, () => {
       t += DT;
-      if (arrived < 0 && d.pressed.includes('interact')) arrived = t;
+      if (arrived < 0 && d.pressed.includes('interact')) {
+        arrived = t;
+        arrivedDistance = Math.hypot(d.c.position.x - cage.x, d.c.position.z - cage.z);
+        arrivedRoom = home.roomAt(d.c.position.x, d.c.position.z).id;
+      }
     });
     expect(arrived, 'pressed interact at the far end of the house').toBeGreaterThan(0);
-    expect(home.roomAt(d.c.position.x, d.c.position.z).id).toBe('gym');
-    expect(Math.hypot(d.c.position.x - cage.x, d.c.position.z - cage.z)).toBeLessThan(0.9);
+    expect(arrivedRoom).toBe('gym');
+    expect(arrivedDistance).toBeLessThan(0.9);
     expect(d.fsd.stats.failed.size).toBe(0);
   }, 60_000);
 

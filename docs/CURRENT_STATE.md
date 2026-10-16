@@ -47,6 +47,27 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+OpenAI Codex (2026-10-15 Pacific, owner-requested FSD repairs; owner approved commit and push): continued the reported wall-standing,
+wall-jumping and missing toilet-paper investigation against the clean `82f078f` baseline. Exploration now chooses
+reachable floor with space for its flourishes and uses a shorter nearby walk when distant samples miss. Route
+recovery measures horizontal displacement, so a jump on the spot cannot reset the timer; it tries one recovery
+hop, abandons a stalled move after 3.2 s and gives failed activities a strict 20 s retry delay. The final straight
+squeeze beyond a reachable route is capped, preserving the fine-grid chair-gap escape and treat approach.
+The paper routine already existed but required its nearby-only prompt before visiting the bathroom. `FsdWorld`
+now exposes whether the paper activity is ready; FSD walks to the roll's approach point before looking for the
+prompt, then its existing `paperRun` pulls the trail into the hall for normal human cleanup.
+Verification: seven new regression cases, including two seeded six-minute real-house/Rapier exploration runs
+(before: 20.3 / 22.0 s pushing without horizontal progress; after: under 4 s, at most one stationary recovery hop,
+at least three rooms and ten completed exploration routines per run). A real-physics integration test starts in
+the living room, enters the bathroom, pulls the paper, receives the human's scolding/cleanup and repeats twice.
+Final `npm test -- --maxWorkers=2`: 89 files / 645 tests pass; production build, strict typecheck and private-photo
+check pass (30 output files, 18 references, none leaked). An unrestricted suite run while the browser was running
+timed out in the unrelated DogPreview animation test; subsequent runs with two test workers passed.
+Browser smoke covered FSD engagement, roaming, toy pickup, doorbell/table activities and pause. The final browser
+run also completed Toilet Paper Mischief (success count 1), resumed exploring and chose to watch the ballgame.
+No runtime errors were observed (the missing optional `moke.glb` notice remains expected). No physical-device test
+or deployment during validation. The owner subsequently requested committing these fixes and pushing to `main`.
+
 OpenAI Codex (2026-10-15 Pacific time, independent project-wide audit; owner approved commit and push): reviewed the `3bd21c2` baseline,
 new dog-selection/model path, gameplay and FSD smoke, mobile selection/pause layouts, public asset and feedback
 boundaries, dependency advisories, and the production build. Fixed a cached-glTF resource-lifetime bug: closing the

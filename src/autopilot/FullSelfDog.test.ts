@@ -17,6 +17,7 @@ interface Fake extends FsdWorld {
   doorRinging: boolean;
   ballgameOn: boolean;
   holdingPaper: boolean;
+  paperAvailable: boolean;
   course: { phase: string } | null;
   rewardWaiting: boolean;
   play: { phase: 'idle' | 'asking' | 'playing' };
@@ -35,6 +36,7 @@ function world(): Fake & { onPress?: (press: string, current: string | null) => 
     doorRinging: false,
     ballgameOn: false,
     holdingPaper: false,
+    paperAvailable: false,
     course: null,
     rewardWaiting: false,
     play: { phase: 'idle' },
@@ -78,6 +80,75 @@ type Target = { -readonly [K in keyof FsdTarget]: FsdTarget[K] };
 const target = (id: string, x: number, z: number, enabled = true, reach = 0.8): Target => ({ id, label: id, enabled, position: { x, y: 0, z }, interactionDistance: reach });
 
 describe('FSD, Full Self Dog (the autopilot)', () => {
+  it('chooses reachable exploration floor rather than a disconnected spot across a wall', () => {
+    const grid = new NavGrid([box(0, 0, 0.1, 6, 1)], { bounds: { minX: -6, maxX: 6, minZ: -6, maxZ: 6 }, cell: 0.1, agentRadius: 0.2, minY: 0.03, maxY: 0.38 });
+    const w = world();
+    // First candidate: the disconnected east half. Second: open floor to the south on his own side.
+    const rolls = [0, 0.25, 0.25, 0.5, 0.05];
+    const fsd = new FullSelfDog(grid, () => rolls.shift() ?? 0.2);
+    w.step(DT, fsd);
+    expect(fsd.stats.failed.get('explore') ?? 0).toBe(0);
+    expect(fsd.trail.length).toBeGreaterThan(0);
+    const end = fsd.trail[fsd.trail.length - 1]!;
+    expect(grid.region(end.x, end.z)).toBe(grid.region(w.moke.position.x, w.moke.position.z));
+  });
+
+  it('takes a shorter walk when all distant exploration samples fall outside a small room', () => {
+    const grid = new NavGrid([], { bounds: { minX: -2, maxX: 2, minZ: -2, maxZ: 2 }, cell: 0.1, agentRadius: 0.2, minY: 0.03, maxY: 0.38 });
+    const w = world();
+    w.moke.position = { x: 0, y: 0, z: 0 };
+    const fsd = new FullSelfDog(grid, () => 0);
+    w.step(1, fsd);
+    expect(Math.hypot(w.moke.position.x, w.moke.position.z)).toBeGreaterThan(0.8);
+    expect(fsd.stats.failed.get('explore') ?? 0).toBe(0);
+  });
+
+  it('gives up and backs off a blocked routine even when hopping reports speed and airtime', () => {
+    const w = world();
+    w.doorRinging = true;
+    w.interactables.push(target('door:bark', -4, -4));
+    const fsd = new FullSelfDog(nav, () => 0.3);
+    let airborne = 0;
+    let doorHops = 0;
+    for (let t = 0; t < 12; t += DT) {
+      // A wall blocks horizontal movement; each hop still reports motion and temporary airtime.
+      w.moke.grounded = airborne <= 0;
+      w.moke.speed = airborne > 0 ? 0.5 : 0;
+      airborne -= DT;
+      const cmd = fsd.update(DT, w);
+      if (cmd.presses.has('jump')) {
+        airborne = 0.6;
+        if (fsd.routineId === 'door') doorHops++;
+      }
+    }
+    expect(fsd.stats.failed.get('door')).toBe(1);
+    expect(fsd.stats.started.get('door')).toBe(1);
+    expect(doorHops).toBeLessThanOrEqual(1);
+  });
+
+  it('visits the bathroom before the nearby-only pull prompt appears, then runs out with the paper', () => {
+    const w = world();
+    w.human = { position: { x: -3, y: 0, z: 2 }, available: true, effect: null, placeKind: null };
+    w.paperAvailable = true;
+    const paper = target('bathroom:paper', -4, 0, false, 1.15);
+    Object.defineProperty(paper, 'enabled', { get: () => !w.holdingPaper && Math.hypot(w.moke.position.x + 4, w.moke.position.z) < 1.15 });
+    w.interactables.push(paper);
+    w.onPress = (press, current) => {
+      if (press === 'interact' && current === paper.id) {
+        w.holdingPaper = true;
+        w.moke.carrying = 'paper';
+        w.paperAvailable = false;
+      }
+    };
+    const fsd = new FullSelfDog(nav, () => 0, { ...FSD, paperVisitTo: { x: -4, z: 0 } } as unknown as typeof FSD);
+    expect(paper.enabled).toBe(false);
+    w.step(12, fsd);
+    expect(fsd.stats.started.get('paper')).toBe(1);
+    expect(fsd.stats.started.get('paperRun')).toBe(1);
+    expect(w.holdingPaper).toBe(true);
+    expect(w.moke.position.z).toBeGreaterThan(1);
+  });
+
   it('with nothing to do, still goes exploring round the house', () => {
     const w = world();
     const fsd = new FullSelfDog(nav, () => 0.3);
@@ -96,7 +167,13 @@ describe('FSD, Full Self Dog (the autopilot)', () => {
     // Behind the wall: the route has to go round its end.
     w.interactables.push(target('door:bark', 4, 3));
     // As in the game: the bark at the door stops the ringing.
-    w.onPress = (press, current) => { if (press === 'interact' && current === 'door:bark') w.doorRinging = false; };
+    let interactedAt = Infinity;
+    w.onPress = (press, current) => {
+      if (press === 'interact' && current === 'door:bark') {
+        interactedAt = Math.hypot(w.moke.position.x - 4, w.moke.position.z - 3);
+        w.doorRinging = false;
+      }
+    };
     // On his way: the trail (the rainbow path) leads round the wall to the door.
     w.step(0.1, fsd);
     expect(fsd.trail.length).toBeGreaterThan(0);
@@ -105,7 +182,7 @@ describe('FSD, Full Self Dog (the autopilot)', () => {
     const presses = w.step(12, fsd);
     expect(fsd.stats.started.get('door')).toBe(1);
     expect(presses).toContain('interact');
-    expect(Math.hypot(w.moke.position.x - 4, w.moke.position.z - 3)).toBeLessThan(0.8);
+    expect(interactedAt).toBeLessThan(0.8);
     // Never through the wall (x 0 ± 0.1 below z 3).
   });
 
@@ -115,6 +192,13 @@ describe('FSD, Full Self Dog (the autopilot)', () => {
     w.doorRinging = true;
     w.moke.position = { x: -3, y: 0, z: -3 };
     w.interactables.push(target('door:bark', 3, -3));
+    let interactedAt = Infinity;
+    w.onPress = (press, current) => {
+      if (press === 'interact' && current === 'door:bark') {
+        interactedAt = Math.hypot(w.moke.position.x - 3, w.moke.position.z + 3);
+        w.doorRinging = false;
+      }
+    };
     let crossedThroughWall = false;
     let prevX = w.moke.position.x;
     w.step(15, fsd, () => {
@@ -122,7 +206,7 @@ describe('FSD, Full Self Dog (the autopilot)', () => {
       prevX = w.moke.position.x;
     });
     expect(crossedThroughWall).toBe(false);
-    expect(Math.hypot(w.moke.position.x - 3, w.moke.position.z + 3)).toBeLessThan(0.8);
+    expect(interactedAt).toBeLessThan(0.8);
   });
 
   it('goes and watches the ballgame when it comes on: to the TV, Watch the Game, then sits still until it ends', () => {

@@ -79,6 +79,8 @@ export interface FsdWorld {
   /** The World Series special is on, and its home run is still to come. */
   readonly ballgameOn: boolean;
   readonly holdingPaper: boolean;
+  /** The roll is ready for another pull, even before its proximity-only prompt is visible. */
+  readonly paperAvailable: boolean;
   /** Liam's Obstacle Course (Phase 5): where his run is ('idle', 'running', 'done'), or null if there's none. */
   readonly course: { readonly phase: string } | null;
   /** He's finished the course and the hamburger patty is waiting for him indoors. */
@@ -156,6 +158,7 @@ export class FullSelfDog {
   private stepTime = 0;
   private pause = 0;
   private readonly lastDone = new Map<string, number>();
+  private readonly lastFailed = new Map<string, number>();
   private readonly watchSpots = new Map<string, Point2 | null>();
   private now = 0;
   /** Seconds since FSD was last switched on. */
@@ -192,6 +195,7 @@ export class FullSelfDog {
     this.status = '';
     this.pause = 0;
     this.lastDone.clear();
+    this.lastFailed.clear();
     this.sinceOn = 0;
   }
 
@@ -206,7 +210,7 @@ export class FullSelfDog {
     this.sinceOn += dt;
 
     // An urgent routine cuts in (unless that one's already running).
-    const urgent = this.routines.find((r) => r.urgent && r.id !== this.routineId && r.available(w) && !this.cooling(r));
+    const urgent = this.routines.find((r) => r.urgent && r.id !== this.routineId && r.available(w) && !this.cooling(r) && !this.failedCooling(r));
     if (urgent && !this.routineIsUrgent()) this.start(urgent, w);
 
     if (this.plan.length === 0) {
@@ -232,6 +236,10 @@ export class FullSelfDog {
     } else if (result === 'failed') {
       this.plan = [];
       this.failedNow = true;
+      cmd.x = cmd.z = 0;
+      cmd.run = cmd.walk = false;
+      cmd.presses.clear();
+      this.trail.length = 0;
     }
     if (this.plan.length === 0) this.finish();
     return cmd;
@@ -260,6 +268,7 @@ export class FullSelfDog {
   private finish(): void {
     if (this.routineId) {
       this.lastDone.set(this.routineId, this.now);
+      if (this.failedNow) this.lastFailed.set(this.routineId, this.now);
       count(this.failedNow ? this.stats.failed : this.stats.done, this.routineId);
     }
     this.failedNow = false;
@@ -283,9 +292,15 @@ export class FullSelfDog {
     return done !== undefined && this.now - done < (r.urgent ? 3 : this.tuning.routineCooldown);
   }
 
+  private failedCooling(r: Routine): boolean {
+    // Exploration picks a fresh destination each time and remains the fallback while other routines rest.
+    const failed = this.lastFailed.get(r.id);
+    return r.id !== 'explore' && failed !== undefined && this.now - failed < this.tuning.failedCooldown;
+  }
+
   /** A weighted random pick among what he could do now (anything off cooldown; if nothing is, anything at all). */
   private pick(w: FsdWorld): Routine | null {
-    const open = this.routines.filter((r) => !r.urgent && r.available(w) && !this.resting(r));
+    const open = this.routines.filter((r) => !r.urgent && r.available(w) && !this.resting(r) && !this.failedCooling(r));
     const fresh = open.filter((r) => !this.cooling(r));
     const choices = fresh.length ? fresh : open;
     let total = choices.reduce((s, r) => s + r.weight, 0);
@@ -469,8 +484,9 @@ export class FullSelfDog {
       },
       {
         id: 'paper', status: 'Sneaking into the bathroom…', weight: 1.2,
-        available: (w) => humanFree(w) && enabled(w, 'bathroom:paper'),
-        plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.interact('bathroom:paper'), this.waitUntil((x) => x.holdingPaper, 5)],
+        available: (w) => humanFree(w) && w.paperAvailable && !!target(w, 'bathroom:paper'),
+        plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.go(this.tuning.paperVisitTo, 0.2),
+          this.waitUntil((x) => enabled(x, 'bathroom:paper'), 2), this.interact('bathroom:paper'), this.waitUntil((x) => x.holdingPaper, 5)],
       },
       {
         id: 'tv', status: 'Off to watch some TV', weight: 1,
@@ -923,16 +939,34 @@ export class FullSelfDog {
     return list.reduce((best, s) => (flat(w.moke.position, s) < flat(w.moke.position, best) ? s : best), list[0]!);
   }
 
-  /** A random walkable spot at least `minDistance` away (or wherever, if none turns up). */
+  /** Reachable, roomy floor at least `minDistance` away (or nearby if no distant spot turns up). */
   private randomSpot(w: FsdWorld, minDistance: number): Point2 {
     const p = w.moke.position;
     for (let i = 0; i < 40; i++) {
       const a = this.random() * Math.PI * 2;
       const r = minDistance + this.random() * 6;
-      const at = this.nav.nearestWalkable(p.x + Math.sin(a) * r, p.z + Math.cos(a) * r, 1);
-      if (at && flat(at, p) >= minDistance * 0.6) return at;
+      const at = this.nav.nearestReachable(p, { x: p.x + Math.sin(a) * r, z: p.z + Math.cos(a) * r }, 1);
+      if (at && flat(at, p) >= minDistance * 0.6 && this.roomToPlay(at)) return at;
     }
-    return this.nav.nearestWalkable(p.x, p.z) ?? { x: p.x, z: p.z };
+    // In a small room (or a corner of the house), distant samples can all fall outside. Take a shorter walk
+    // instead of repeatedly choosing his own feet and doing flourishes against the wall.
+    const turn = this.random() * Math.PI * 2;
+    for (let i = 0; i < 16; i++) {
+      const a = turn + i * Math.PI / 8;
+      const r = this.tuning.wanderFallbackDistance;
+      const at = this.nav.nearestReachable(p, { x: p.x + Math.sin(a) * r, z: p.z + Math.cos(a) * r }, this.tuning.wanderClearance);
+      if (at && flat(at, p) > r * 0.5 && this.roomToPlay(at)) return at;
+    }
+    return this.nav.nearestReachable(p, p) ?? { x: p.x, z: p.z };
+  }
+
+  private roomToPlay(p: Point2): boolean {
+    const r = this.tuning.wanderClearance;
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      if (!this.nav.isWalkable(p.x + Math.sin(a) * r, p.z + Math.cos(a) * r)) return false;
+    }
+    return true;
   }
 
   /** Somewhere well away from the human (the sock heist chase). */
@@ -970,6 +1004,7 @@ class Route {
   private sincePlan = Infinity;
   private stuck = 0;
   private hopped = false;
+  private progressFrom: Point2 | null = null;
   /** Getting out of a pocket of floor first (see steer). */
   private escape: Point2 | null = null;
 
@@ -986,6 +1021,7 @@ class Route {
     this.sincePlan = Infinity;
     this.stuck = 0;
     this.hopped = false;
+    this.progressFrom = null;
   }
 
   /** Steers toward `to`; false if there's no way there or he's hopelessly stuck. */
@@ -1025,6 +1061,8 @@ class Route {
     if (this.escape && flat(this.escape, p) < this.tuning.waypointReach) {
       this.escape = null;
       this.sincePlan = Infinity;
+      // This was an intermediate escape point, not a failed final approach. Plan the onward leg next frame.
+      return true;
     }
     while (this.index < this.path.length - 1 && flat(this.path[this.index]!, p) < this.tuning.waypointReach) this.index++;
     const waypoint = this.path[Math.min(this.index, this.path.length - 1)] ?? to;
@@ -1032,6 +1070,7 @@ class Route {
     // The end of the floor he can reach and still short of it: the last bit straight at it (a squeeze; stuck, he
     // gives up as usual).
     const atEnd = !this.escape && this.index >= this.path.length - 1 && flat(p, waypoint) < this.tuning.waypointReach;
+    if (atEnd && flat(waypoint, to) > this.tuning.finalApproach) return false;
     aim(p, atEnd ? to : waypoint, cmd, 1);
     if (this.trail) {
       this.trail.length = 0;
@@ -1041,16 +1080,20 @@ class Route {
     cmd.run = run || remaining > this.tuning.runBeyond;
     cmd.walk = !cmd.run && remaining < this.tuning.walkWithin;
 
-    // Barely moving while pushing: hop (a bolster, a toy underfoot), then re-plan; then give up.
-    if (w.moke.grounded && w.moke.speed < this.tuning.stuckSpeed) this.stuck += dt;
-    else this.stuck = Math.max(0, this.stuck - dt * 2);
-    if (this.stuck > this.tuning.stuckHopAfter && !this.hopped) {
+    // Measure horizontal progress, not reported speed/airtime: a hop against a wall is still stuck.
+    if (!this.progressFrom || flat(p, this.progressFrom) >= this.tuning.stuckProgressDistance) {
+      this.progressFrom ??= { x: p.x, z: p.z };
+      this.progressFrom.x = p.x;
+      this.progressFrom.z = p.z;
+      this.stuck = 0;
+      this.hopped = false;
+    } else this.stuck += dt;
+    if (this.stuck > this.tuning.stuckHopAfter && !this.hopped && w.moke.grounded) {
       this.hopped = true;
       cmd.presses.add('jump');
       this.sincePlan = Infinity;
     }
     if (this.stuck > this.tuning.stuckGiveUpAfter) return false;
-    if (this.stuck === 0) this.hopped = false;
     return true;
   }
 }

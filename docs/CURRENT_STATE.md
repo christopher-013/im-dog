@@ -30,7 +30,7 @@ to every open question (D30–D34). Milestones: 6.1 Halloween, 6.2 photo mode, 6
 and the car, 6.5 going for a ride, 6.6 polish and the phone.
 
 ## Current Milestone
-**6.1 Halloween** (Phase 6): built 2026-10-16 on the working branch, waiting for the owner. Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
+**6.1 Halloween** (Phase 6): built 2026-10-16 and published to the live site at the owner's request; waiting for the owner's verdict. Next: 6.2 photo mode. Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
 `phase-5-complete`). Halloween is due 2026-10-31.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
@@ -52,8 +52,8 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code (2026-10-16, owner request: plan Phase 6, then the owner's answers; on the working branch, **not pushed
-to `main`**): **Phase 6 approved** (`docs/PHASE_6.md`, D30–D34) and **6.1 Halloween built**.
+Claude Code (2026-10-16, owner request: plan Phase 6, then the owner's answers; pushed to `main`
+at the owner's request): **Phase 6 approved** (`docs/PHASE_6.md`, D30–D34) and **6.1 Halloween built**.
 - **The switch:** `config/seasons.ts` (17 Oct – 1 Nov, both included, local time). `PlayerSettings` gains
   `halloween` (auto/on/off) and `costumes`; the pause screen shows both; Choose Your Dog shows a COSTUME button while
   it's Halloween (the same setting).

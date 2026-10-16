@@ -37,7 +37,7 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
 ## Milestones (in build order)
 | # | Milestone | Why this order |
 |---|---|---|
-| 6.1 | Halloween | **Built 2026-10-16** (on the working branch). Halloween is 2026-10-31: it has to ship first to be worth anything this year. Small, reuses the doorbell. |
+| 6.1 | Halloween | **Built 2026-10-16**, published to the live site. Halloween is 2026-10-31: it has to ship first to be worth anything this year. Small, reuses the doorbell. |
 | 6.2 | Photo mode | Small and self-contained; makes the costumes (and everything after) shareable. |
 | 6.3 | A day in the life | The clock, daily goals, the Dog Logic album, the end-of-day card. The ride slots into the day afterwards. |
 | 6.4 | The Garage and the car | A new room behind the living room and the car in it; locked except for rides, nothing to drive yet. |

@@ -13,6 +13,11 @@ export interface DogProfile {
   readonly name: string;
   /** The name called out in two sing-song notes ("Mo-ke~"). */
   readonly called: string;
+  /**
+   * The name as the announcer's speech voice should say it, spelled for text-to-speech: "Mokey" so Moke is said
+   * "Moke-ee" (owner request, 2026-10-16), not "Moke" as written. Only ever spoken, never shown.
+   */
+  readonly spoken: string;
   /** One line under the name on the Choose Your Dog screen. */
   readonly tagline: string;
   /** He or she: the game's lines are written for Moke ("he", "his", "good boy") and follow this. */
@@ -33,6 +38,7 @@ export const DOGS: readonly DogProfile[] = [
     id: 'dougie',
     name: 'Dougie',
     called: 'Dou-gie',
+    spoken: 'Dougie',
     tagline: 'Fluffy, tri-coloured and always cheerful',
     pronoun: 'he',
     look: DOUGIE_LOOK,
@@ -43,6 +49,7 @@ export const DOGS: readonly DogProfile[] = [
     id: 'moke',
     name: 'Moke',
     called: 'Mo-ke',
+    spoken: 'Mokey',
     tagline: 'Small, white and very curious',
     pronoun: 'he',
     look: MOKE_DOG_LOOK,
@@ -53,6 +60,7 @@ export const DOGS: readonly DogProfile[] = [
     id: 'nori',
     name: 'Nori',
     called: 'No-ri',
+    spoken: 'Nori',
     tagline: 'Curly, apricot and full of bounce',
     pronoun: 'she',
     look: NORI_LOOK,

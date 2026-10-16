@@ -47,6 +47,13 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-16, owner request; on the working branch, **not pushed to `main`**): **the announcer says Moke
+"Moke-ee".** `DogProfile.spoken` is the name spelled for text-to-speech, used only by the announcer: "Mokey" for Moke
+("Mokey!" when he's picked), "Dougie" and "Nori" as written. Nothing on screen changes (he's "Moke" everywhere).
+Verified: typecheck, 637 tests (Moke's `spoken`), build; in the browser with the speech stubbed, picking Moke by
+arrow, click and chip sends "Mokey!" while the card, tag and lines say "Moke". How a given device's voice says
+"Mokey" wasn't heard (no speech voices in the test browser).
+
 Claude Code (2026-10-16, owner request; pushed to `main`): **Choose Your Dog: no BACK
 button, Moke in the middle and always first.** `DOGS` is now Dougie, Moke, Nori; the screen opens on `DEFAULT_DOG`
 (Moke) every time and every visit starts as Moke, so the saved last choice (`imdog.dog`, `core/DogChoice.ts` and its

@@ -45,6 +45,9 @@ describe('the playable dogs', () => {
     expect(MOKE_DOG_LOOK.collar).toBe(MOKE_LOOK.collar);
     expect(MOKE_DOG_LOOK.coat).toBeNull();
     expect(moke.logicKey).toBe('imdog.dogLogic');
+    // The announcer says his name "Moke-ee"; on screen he's always "Moke".
+    expect(moke.spoken).toBe('Mokey');
+    expect(moke.name).toBe('Moke');
     expect(moke.usesModel).toBe(true);
   });
 

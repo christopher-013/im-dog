@@ -919,7 +919,7 @@ export class Game {
     if (!changed && !picked) return;
     if (changed) this.ui.setSelectedDog(DOGS, this.selection.position);
     this.audio.play('dogSwitch');
-    this.announcer.say(ANNOUNCER.dogName(dogById(this.selection.current).name));
+    this.announcer.say(ANNOUNCER.dogName(dogById(this.selection.current).spoken));
   }
 
   /**

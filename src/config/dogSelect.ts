@@ -55,7 +55,7 @@ export const DOG_SELECT = {
 export const ANNOUNCER = {
   choose: 'Choose your dog!',
   begin: 'Begin!',
-  /** Called out as a dog is picked (an arrow, a swipe, a click or tap on them): "Moke!", "Dougie!". */
+  /** Called out as a dog is picked (an arrow, a swipe, a click or tap on them): "Mokey!", "Dougie!", "Nori!" (`spoken`). */
   dogName: (name: string) => `${name}!`,
   /** No line runs longer than this (s): if the browser never says one ended, the music comes back up anyway. */
   longestLine: 3,

@@ -153,7 +153,8 @@ begins… Dougie must be able to do everything Moke currently can."
   toon build and size, a curly light apricot coat (creamier face, muzzle, chest and feet, a deeper crown, back and
   tail), caramel drop ears with darker ends, dark eyes, a black nose, and a teal collar with a gold "Nori" tag. Third
   on Choose Your Dog (Moke, Dougie, Nori; the arrows wrap round), "Nori!" from the announcer, "Nori" in every line,
-  Dog Logic of Nori's own (`imdog.dogLogic.nori`). Nori is a girl: the lines say "she", "her", "herself" and
+  Dog Logic of Nori's own (`imdog.dogLogic.nori`). The announcer says Moke's name "Moke-ee" (spelled "Mokey" for the
+  speech voice, `DogProfile.spoken`; owner request), and he's still "Moke" on screen. Nori is a girl: the lines say "she", "her", "herself" and
   "good girl" for her (`pronoun: 'she'`). The stage was re-spaced for three (closer together, more room at
   the ends; on a phone upright the arrows sit below the dogs).
 - **Then (owner request, 2026-10-16):** "remove the Back button on the Choose your dog screen, put Moke in the middle

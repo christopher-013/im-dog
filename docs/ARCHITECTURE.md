@@ -247,7 +247,8 @@ unchanged; the classes keep Moke's name because he came first. What's per dog li
 - **choosing:** `core/DogSelection.ts` (pure: the highlight, wrapping, picks, swipes), `player/DogPreview.ts` (the 3D
   stage), `audio/Announcer.ts` (the browser's own speech voice, pitched down: "Choose your dog!", the name of each dog
   picked, "Begin!"; the words are always on screen too; it reports when it's talking so the music can dip), three
-  original synthesized sounds (`announce`, `dogSwitch`, `begin`) and the screen's own music (`FIGHT_THEME`, below).
+  original synthesized sounds (`announce`, `dogSwitch`, `begin`); the names it calls are each dog's `spoken` form
+  ("Mokey" for Moke, said "Moke-ee") and the screen's own music (`FIGHT_THEME`, below).
 
 The dog is only chosen before play starts, so `Moke.setVisual` never has to move something held in the mouth.
 

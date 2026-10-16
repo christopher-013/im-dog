@@ -1,3 +1,4 @@
+import { Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { DOG_ACTIVITIES } from '../config/dogActivities';
 import { HUMAN } from '../config/human';
@@ -129,15 +130,24 @@ class SearchProbe extends HumanProbe {
 }
 
 describe('Door delivery (the whole house and the household human)', () => {
-  async function deliveryWorld(seed = 41, random: () => number = () => 0) {
+  async function deliveryWorld(seed = 41, random: () => number = () => 0, halloween = false) {
     const w = await world(seed);
     let rings = 0, rewards = 0, exchanges = 0, opens = 0, cancels = 0;
     const voices: string[] = [];
+    const visitors: string[] = [];
+    const candy: boolean[] = [];
+    const biscuit = new Treat('pumpkin', 3, 'pumpkin');
+    const scene = new Object3D();
     const delivery = new DoorDelivery({
       routine: w.routine, hand: w.human.visual.hands.right,
-      view: { arrive() {}, acknowledge() {}, open(on) { if (on) opens++; }, takePackage() { exchanges++; }, finish() {}, cancel() { cancels++; } },
+      view: {
+        arrive(visit) { visitors.push(visit); }, acknowledge() {}, open(on) { if (on) opens++; }, takePackage() { exchanges++; },
+        holdCandy(hand) { candy.push(hand !== null); }, finish() {}, cancel() { cancels++; },
+      },
       onRing: () => rings++, onBark: () => { voices.push('bark'); delivery.noteBark(w.moke); },
       onGuardVoice: (kind) => voices.push(kind), onDefended: () => rewards++, random,
+      halloween: () => halloween,
+      biscuit: { treat: biscuit, scene, openFloor: () => true },
     });
     const director = new DogActivityDirector([delivery]);
     const tick = (seconds: number) => { for (let i = 0; i < seconds / DT; i++) w.step(director); };
@@ -145,7 +155,7 @@ describe('Door delivery (the whole house and the household human)', () => {
       for (let i = 0; i < maxSeconds / DT && !delivery.ringing; i++) w.step(director);
       expect(delivery.ringing).toBe(true);
     };
-    return { ...w, delivery, director, tick, waitForRing, voices, counts: () => ({ rings, rewards, exchanges, opens, cancels }) };
+    return { ...w, delivery, director, tick, waitForRing, voices, visitors, candy, biscuit, counts: () => ({ rings, rewards, exchanges, opens, cancels }) };
   }
 
   it('rings until a bark at the door, accepts one package, resumes the routine, and repeats', async () => {
@@ -205,6 +215,58 @@ describe('Door delivery (the whole house and the household human)', () => {
     expect(w.counts().exchanges).toBe(1);
     expect(w.delivery.inProgress).toBe(false);
   }, 60_000);
+
+  it('Halloween: trick-or-treaters instead of the courier; candy at the door, then the human brings him a pumpkin biscuit', async () => {
+    const w = await deliveryWorld(51, () => 0, true);
+    w.waitForRing();
+    expect(w.visitors).toEqual(['trickOrTreat']);
+    expect(w.delivery.objective).toMatch(/Trick-or-treaters/);
+    Object.assign(w.moke, { ...HOME_ACTIVITIES.delivery.stand, x: -2.2, z: 1.2 });
+    w.delivery.noteBark(w.moke);
+    let opened = false;
+    for (let i = 0; i < 30 / DT && w.delivery.inProgress && w.biscuit.state === 'stored'; i++) {
+      w.step(w.director);
+      opened ||= w.counts().opens > 0;
+    }
+    expect(opened).toBe(true);
+    expect(w.counts().exchanges).toBe(0); // no parcel
+    expect(w.candy[0]).toBe(true); // the bowl held out at the door…
+    expect(w.candy).toContain(false); // …and back on its shelf
+    expect(w.said).toContain('“Trick or treat!” Happy Halloween, kids! Love the costumes!');
+    // Biscuit in hand, they come to him (he stays put) and hand it over.
+    expect(w.biscuit.state).toBe('held');
+    let eaten = false;
+    w.biscuit.onEat = () => { eaten = true; };
+    for (let i = 0; i < 30 / DT && !eaten; i++) w.step(w.director);
+    expect(eaten).toBe(true);
+    expect(w.biscuit.state).toBe('eaten');
+    expect(w.counts().rewards).toBe(1);
+    expect(w.delivery.inProgress).toBe(false);
+  }, 60_000);
+
+  it("Halloween: if he won't come for the biscuit, it goes down on the floor for him", async () => {
+    const w = await deliveryWorld(52, () => 0, true);
+    w.waitForRing();
+    Object.assign(w.moke, { ...HOME_ACTIVITIES.delivery.stand, x: -2.2, z: 1.2 });
+    w.delivery.noteBark(w.moke);
+    for (let i = 0; i < 30 / DT && w.biscuit.state !== 'held'; i++) w.step(w.director);
+    expect(w.biscuit.state).toBe('held');
+    // He keeps away: across the room and moving on whenever they get near.
+    for (let i = 0; i < 40 / DT && w.biscuit.state === 'held'; i++) {
+      const h = w.human.controller.position;
+      if (Math.hypot(h.x - w.moke.x, h.z - w.moke.z) < 1.5) Object.assign(w.moke, w.moke.x > 0 ? { x: -2.4, z: -2 } : { x: 2.4, z: -2 });
+      w.step(w.director);
+    }
+    expect(w.biscuit.state).toBe('placed');
+    expect(w.counts().rewards).toBe(1);
+    expect(w.delivery.inProgress).toBe(false);
+  }, 60_000);
+
+  it('outside Halloween the courier comes as always', async () => {
+    const w = await deliveryWorld(53, () => 0, false);
+    w.waitForRing();
+    expect(w.visitors).toEqual(['courier']);
+  });
 
   it('queues a bark while the human is busy and cleans up an interrupted handoff without a false reward', async () => {
     const w = await deliveryWorld(42);

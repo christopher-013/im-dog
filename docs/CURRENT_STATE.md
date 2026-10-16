@@ -30,7 +30,7 @@ to every open question (D30–D34). Milestones: 6.1 Halloween, 6.2 photo mode, 6
 and the car, 6.5 going for a ride, 6.6 polish and the phone.
 
 ## Current Milestone
-**6.1 Halloween** (Phase 6). Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
+**6.1 Halloween** (Phase 6): built 2026-10-16 on the working branch, waiting for the owner. Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
 `phase-5-complete`). Halloween is due 2026-10-31.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
@@ -52,6 +52,35 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-16, owner request: plan Phase 6, then the owner's answers; on the working branch, **not pushed
+to `main`**): **Phase 6 approved** (`docs/PHASE_6.md`, D30–D34) and **6.1 Halloween built**.
+- **The switch:** `config/seasons.ts` (17 Oct – 1 Nov, both included, local time). `PlayerSettings` gains
+  `halloween` (auto/on/off) and `costumes`; the pause screen shows both; Choose Your Dog shows a COSTUME button while
+  it's Halloween (the same setting).
+- **Trick-or-treaters:** `DoorDelivery` picks the visit when the bell starts (`visit`: courier or trickOrTreat).
+  Trick-or-treaters: candy bowl at the door (`FrontDoor.holdCandy`), then a `biscuit` step (the human brings a
+  pumpkin biscuit, a new `Treat` type, and hands it over, or puts it down after 25 s). `onDefended(visit)`; Dog Logic
+  DOORBELL + COSTUMES = FRIENDS (new `pumpkin` icon). `world/TrickOrTreaters.ts` (three code-built children).
+- **Costumes:** `player/DogCostume.ts`; `DogProfile.costume`; a new optional `head` socket on both dog visuals
+  (`socket_head` in `MOKE_3D_SPEC.md`). Worn by the dog in play (`Game.dressDog`) and on Choose Your Dog
+  (`DogPreview.setCostumes`).
+- **Decorations:** `world/HalloweenDecor.ts`, positions in `config/halloween.ts`; a shelf by the front door with the
+  candy bowl and biscuit jar (`FrontDoor`).
+- **Checked in the game** (headless, Halloween forced on):
+  - Choose Your Dog in costumes; each dog up close (front, side, back); the decorations; a visit with the children
+    at the open door and the bowl held out.
+  - The biscuit handed over and DOORBELL + COSTUMES = FRIENDS learned.
+  - FSD through two visits: it barked, waited and was fed within a second of the biscuit step, with no failed
+    routines.
+  - The COSTUME button turned them off, ticked the pause-screen box off and saved.
+  - Off and Auto (today, 16 Oct, is outside the window): no decorations, the courier as usual.
+  - No console errors.
+- **Not checked:** on a phone, or by ear (no new sounds); the costumes' look hasn't been judged by the owner. Auto
+  turns Halloween on from 17 October by the player's own clock.
+- Tests: the date window and the setting, the costumes on every dog (sockets, size, taking them off), the
+  trick-or-treat visit (candy, biscuit by hand, biscuit on the floor), the courier outside Halloween. 92 files /
+  666 tests, typecheck, build and the private-photo check pass.
+
 Claude Code (2026-10-16, owner request: "Mark this phase as complete"): **Phase 5 closed** and tagged
 `phase-5-complete`, as Phase 4 was. `docs/PHASE_5.md` (status, milestones done, where the success criteria
 stand, what was added during the phase, what's carried forward), `AGENTS.md`, `README.md` and this file updated; Phase 6

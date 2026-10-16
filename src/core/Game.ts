@@ -40,6 +40,10 @@ import { TableManners } from '../activities/TableManners';
 import { ToiletPaperMischief } from '../activities/ToiletPaperMischief';
 import { CouchPillows } from '../world/CouchPillows';
 import { FrontDoor } from '../world/FrontDoor';
+import { HalloweenDecor } from '../world/HalloweenDecor';
+import { DogCostume } from '../player/DogCostume';
+import { halloweenOn } from '../config/seasons';
+import { HALLOWEEN_VISIT } from '../config/halloween';
 import { BathroomView } from '../world/Bathroom';
 import { CONURE } from '../config/conure';
 import { ConureView } from '../world/Conure';
@@ -98,7 +102,7 @@ import { InputManager } from './InputManager';
 import { menuCommand } from './MenuInput';
 import { AdaptiveResolution, pickQuality } from './Quality';
 import type { Vec2Like } from './InputState';
-import { applySettings, loadSettings, saveSettings } from './PlayerSettings';
+import { applySettings, loadSettings, saveSettings, type PlayerSettings } from './PlayerSettings';
 
 export type GameState = 'loading' | 'menu' | 'select' | 'playing' | 'paused';
 
@@ -207,6 +211,13 @@ export class Game {
   private readonly pattyTreat = new Treat('patty', 4, 'patty');
   private courseReward: CourseReward | null = null;
   private readonly frontDoor = new FrontDoor();
+  /** Halloween (Phase 6, D30): on by the calendar or the pause screen's choice; the decorations and the dog's costume. */
+  private halloween = false;
+  private settings: PlayerSettings = loadSettings();
+  private readonly halloweenDecor = new HalloweenDecor();
+  private costume: DogCostume | null = null;
+  /** Halloween: the pumpkin biscuit the human brings him after the trick-or-treaters. */
+  private readonly biscuitTreat = new Treat('pumpkin', 3, 'pumpkin');
   private readonly bathroom = new BathroomView();
   /** Malibu, the conure in its cage in the gym: scenery with a life of its own, and Moke's friend to play with. */
   private readonly conure = new ConureView(GYM.cage, -Math.PI / 2);
@@ -311,6 +322,7 @@ export class Game {
         if (index >= 0) this.highlightDog(() => this.selection?.select(index) ?? false, true);
       },
       onBegin: () => this.beginWithDog(true),
+      onCostume: () => this.ui.setCostumes(!this.settings.costumes),
     });
     ui.bind({
       onPlay: () => this.openDogSelect(),
@@ -318,14 +330,17 @@ export class Game {
       onFsd: () => this.setFsd(!this.fsdOn),
       onTvExit: () => this.watchTv?.stop(),
     });
-    const settings = loadSettings();
+    const settings = this.settings;
     applySettings(settings);
     this.audio.setMusic(settings.music, settings.musicVolume);
     ui.bindSettings(settings, (changed) => {
       applySettings(changed);
       this.audio.setMusic(changed.music, changed.musicVolume);
       saveSettings(changed);
+      this.settings = changed;
+      this.applySeason();
     });
+    this.applySeason();
     ui.setInputMode(this.input.mode);
     this.input.onModeChange = (mode) => {
       ui.setInputMode(mode);
@@ -418,6 +433,9 @@ export class Game {
     this.tableManners?.resetAll();
     this.pillows?.reset();
     this.frontDoor.dispose();
+    this.halloweenDecor.dispose();
+    this.costume?.dispose();
+    this.biscuitTreat.dispose();
     this.bathroom.dispose();
     this.conure.dispose();
     this.kitchenTreat.dispose();
@@ -437,6 +455,8 @@ export class Game {
     this.visualChoice = createDogVisual(this.dog, this.assets.getGLTF('moke'), MOKE_MODEL_AVAILABLE);
     const moke = new Moke(new MokeController(body, heading), this.visualChoice.visual);
     this.scene.add(moke.visual.object);
+    this.moke = moke;
+    this.dressDog();
     return moke;
   }
 
@@ -565,8 +585,16 @@ export class Game {
         this.showVoiceBubble('I win! Strongest in the house!');
       },
     });
-    this.scene.add(this.frontDoor.object);
+    this.scene.add(this.frontDoor.object, this.halloweenDecor.object);
     this.scene.add(this.bathroom.object, this.conure.object);
+    this.scent.register(this.biscuitTreat.scent);
+    this.attention.register(this.biscuitTreat.attention);
+    this.interactions.register(this.biscuitTreat.interactable);
+    this.biscuitTreat.onEat = () => {
+      moke.animation.cancelTrick(); moke.animation.eat(); this.audio.play('crunch');
+      this.dogLogic.discover('doorbell+costumes=friends');
+      this.showVoiceBubble(HALLOWEEN_VISIT.lines.fed);
+    };
     this.delivery = new DoorDelivery({
       routine: this.routine, hand: human.visual.hands.right, view: this.frontDoor,
       onRing: () => this.audio.play('doorbell'), onBark: () => this.bark(),
@@ -582,10 +610,13 @@ export class Game {
         this.audio.play(kind);
         this.barkForActivities = true;
       },
-      onDefended: () => {
+      onDefended: (visit) => {
+        if (visit === 'trickOrTreat') return; // his moment is the pumpkin biscuit (biscuitTreat.onEat)
         this.dogLogic.discover('bark=protector');
         this.showVoiceBubble('House defended! I am the protector!');
       },
+      halloween: () => this.halloween,
+      biscuit: { treat: this.biscuitTreat, scene: this.scene, openFloor: (x, z) => nav.isWalkable(x, z) },
     });
     this.interactions.register(this.delivery.interactable);
     this.scent.register(this.kitchenTreat.scent);
@@ -908,6 +939,7 @@ export class Game {
     this.audio.selectMusic(true);
     this.selection = new DogSelection(DOGS.map((dog) => dog.id), DEFAULT_DOG);
     const preview = (this.preview = new DogPreview(DOGS, this.assets.getGLTF('moke')));
+    preview.setCostumes(this.halloween && this.settings.costumes);
     this.gfx.syncSize(this.camera);
     void preview.compile(this.gfx.renderer);
     this.setState('select');
@@ -977,7 +1009,9 @@ export class Game {
     this.ui.setDog(dog);
     if (this.moke) {
       this.visualChoice = createDogVisual(dog, this.assets.getGLTF('moke'), MOKE_MODEL_AVAILABLE);
+      this.costume?.takeOff(); // off the old visual before it's disposed (a glTF one disposes everything under it)
       this.moke.setVisual(this.visualChoice.visual);
+      this.dressDog();
     }
   }
 
@@ -1080,7 +1114,9 @@ export class Game {
     this.kitchenTreat.update();
     this.dinnerTreat.update();
     this.pattyTreat.update();
+    this.biscuitTreat.update();
     this.frontDoor.update(playing ? dt : 0);
+    this.halloweenDecor.update(dt);
     this.household.update(dt, { effect: this.routine.effect, place: this.routine.place });
     this.updateBowls(playing ? dt : 0);
     this.updateNapping(playing ? dt : 0, playing);
@@ -1435,6 +1471,34 @@ export class Game {
     this.growledThisFrame = false;
     const words = ['grrr…', 'grr!', 'tiny grrr…'];
     this.showVoiceBubble(words[Math.floor(Math.random() * words.length)]!);
+  }
+
+  /**
+   * Halloween on or off (D30), from the settings and the calendar: the decorations, the shelf by the door, the
+   * costume button and every dog's costume. Called at start and whenever the settings change.
+   */
+  private applySeason(): void {
+    this.halloween = halloweenOn(this.settings.halloween);
+    this.halloweenDecor.visible = this.halloween;
+    this.frontDoor.setHalloween(this.halloween);
+    this.ui.setHalloween(this.halloween, this.settings.costumes);
+    this.preview?.setCostumes(this.halloween && this.settings.costumes);
+    this.dressDog();
+  }
+
+  /** The dog being played in their Halloween costume, or out of it. Presentation only (D14). */
+  private dressDog(): void {
+    const visual = this.moke?.visual;
+    if (!visual) return;
+    if (!(this.halloween && this.settings.costumes)) {
+      this.costume?.takeOff();
+      return;
+    }
+    if (this.costume?.kind !== this.dog.costume) {
+      this.costume?.dispose();
+      this.costume = new DogCostume(this.dog.costume);
+    }
+    this.costume.wear(visual);
   }
 
   private showVoiceBubble(text: string): void {

@@ -5,7 +5,7 @@ import type { AttentionTarget } from '../player/AttentionSystem';
 import type { ScentSource } from '../senses/ScentSystem';
 
 /** What each kind of treat is called (its smell, and "Eat …"). */
-const TREAT_NAMES = { biscuit: 'Treat', carrot: 'Carrot', meatball: 'Meatball', patty: 'Hamburger Patty' } as const;
+const TREAT_NAMES = { biscuit: 'Treat', carrot: 'Carrot', meatball: 'Meatball', patty: 'Hamburger Patty', pumpkin: 'Pumpkin Biscuit' } as const;
 
 /** Where a treat is: still in the jar, in someone's hand, down on the floor for Moke, or eaten. */
 export type TreatState = 'stored' | 'held' | 'placed' | 'eaten';
@@ -33,7 +33,7 @@ export class Treat {
     scentRadius = 6,
     readonly type: keyof typeof TREAT_NAMES = 'biscuit',
   ) {
-    this.view = type === 'carrot' ? createCarrotView() : type === 'meatball' ? createMeatballView() : type === 'patty' ? createPattyView() : createTreatView();
+    this.view = type === 'carrot' ? createCarrotView() : type === 'meatball' ? createMeatballView() : type === 'patty' ? createPattyView() : createTreatView(type === 'pumpkin' ? '#e8862a' : '#d49a55');
     const name = TREAT_NAMES[type];
     this.view.visible = false;
     const treat = this;
@@ -135,11 +135,11 @@ export class Treat {
   }
 }
 
-/** A little bone biscuit, about 7 cm long (original, built in code). */
-function createTreatView(): Group {
+/** A little bone biscuit, about 7 cm long (original, built in code); orange for the Halloween pumpkin biscuit. */
+function createTreatView(color: string): Group {
   const root = new Group();
   root.name = 'Treat';
-  const material = new MeshStandardMaterial({ color: '#d49a55', roughness: 0.85 });
+  const material = new MeshStandardMaterial({ color, roughness: 0.85 });
   const shaft = new Mesh(new CapsuleGeometry(0.011, 0.045, 4, 10), material);
   shaft.rotation.z = Math.PI / 2;
   shaft.castShadow = true;

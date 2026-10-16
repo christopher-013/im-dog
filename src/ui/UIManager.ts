@@ -6,6 +6,7 @@ import { DOG_SELECT } from '../config/dogSelect';
 import type { InputMode } from '../core/InputMode';
 import { keyLabel } from '../core/InputState';
 import { MUSIC_CHOICES, MUSIC_VOLUME_RANGE, SENSITIVITY_RANGE, type MusicChoice, type PlayerSettings } from '../core/PlayerSettings';
+import { HALLOWEEN_CHOICES, type HalloweenChoice } from '../config/seasons';
 import { actionGlyph, onboardingRows } from './ControlGlyphs';
 import { FEEDBACK, SITE } from '../config/site';
 import { FeedbackDialog } from './FeedbackDialog';
@@ -30,6 +31,8 @@ export interface DogSelectHandlers {
   onPick(index: number): void;
   onTap(ndcX: number): void;
   onBegin(): void;
+  /** Halloween only: the costume button (costumes on or off). */
+  onCostume(): void;
 }
 
 /**
@@ -77,6 +80,8 @@ export class UIManager {
   private resting = false;
   private handlers: UIHandlers | null = null;
   private selectHandlers: DogSelectHandlers | null = null;
+  private settingsCurrent: PlayerSettings | null = null;
+  private settingsChanged: ((settings: PlayerSettings) => void) | null = null;
   private toastTimer: number | undefined;
   private announceTimer: number | undefined;
   /** The dog being played: every line the game shows goes through `t`, so it says their name (see dogText). */
@@ -230,6 +235,7 @@ export class UIManager {
     this.el('btn-dog-prev').addEventListener('click', () => this.selectHandlers?.onStep(-1));
     this.el('btn-dog-next').addEventListener('click', () => this.selectHandlers?.onStep(1));
     this.el('btn-dog-begin').addEventListener('click', () => this.selectHandlers?.onBegin());
+    this.el('btn-costume').addEventListener('click', () => this.selectHandlers?.onCostume());
     const stage = this.el('select-stage');
     let start: { id: number; x: number; y: number } | null = null;
     stage.addEventListener('pointerdown', (e) => {
@@ -289,7 +295,10 @@ export class UIManager {
     const volume = this.el<HTMLInputElement>('setting-music-volume');
     const volumeReadout = this.el<HTMLOutputElement>('setting-music-volume-value');
     const buttons = this.el<HTMLSelectElement>('setting-controller-buttons');
+    const halloween = this.el<HTMLSelectElement>('setting-halloween');
+    const costumes = this.el<HTMLInputElement>('setting-costumes');
     const current = { ...initial };
+    this.settingsCurrent = current;
 
     slider.min = String(SENSITIVITY_RANGE.min);
     slider.max = String(SENSITIVITY_RANGE.max);
@@ -298,6 +307,8 @@ export class UIManager {
     invert.checked = current.invertY;
     music.value = current.music;
     buttons.value = current.controllerButtons;
+    halloween.value = current.halloween;
+    costumes.checked = current.costumes;
     volume.min = String(MUSIC_VOLUME_RANGE.min);
     volume.max = String(MUSIC_VOLUME_RANGE.max);
     volume.step = String(MUSIC_VOLUME_RANGE.step);
@@ -329,6 +340,31 @@ export class UIManager {
       if ((FACE_BUTTON_LAYOUTS as readonly string[]).includes(buttons.value)) current.controllerButtons = buttons.value as FaceButtonLayout;
       onChange({ ...current });
     });
+    halloween.addEventListener('change', () => {
+      if ((HALLOWEEN_CHOICES as readonly string[]).includes(halloween.value)) current.halloween = halloween.value as HalloweenChoice;
+      onChange({ ...current });
+    });
+    costumes.addEventListener('change', () => {
+      current.costumes = costumes.checked;
+      onChange({ ...current });
+    });
+    this.settingsChanged = onChange;
+  }
+
+  /** The costume setting changed elsewhere (the Choose Your Dog button): keep the pause screen in step and save it. */
+  setCostumes(on: boolean): void {
+    if (!this.settingsCurrent) return;
+    this.settingsCurrent.costumes = on;
+    this.el<HTMLInputElement>('setting-costumes').checked = on;
+    this.settingsChanged?.({ ...this.settingsCurrent });
+  }
+
+  /** Halloween on or off (D30): the costume button on Choose Your Dog shows only while it's on. */
+  setHalloween(on: boolean, costumes: boolean): void {
+    const button = this.el<HTMLButtonElement>('btn-costume');
+    button.hidden = !on;
+    button.textContent = costumes ? 'COSTUME: ON' : 'COSTUME: OFF';
+    button.setAttribute('aria-pressed', String(costumes));
   }
 
   /** Shows one full-screen overlay, or none (null) during play. */

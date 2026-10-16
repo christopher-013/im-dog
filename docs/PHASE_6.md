@@ -37,14 +37,20 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
 ## Milestones (in build order)
 | # | Milestone | Why this order |
 |---|---|---|
-| 6.1 | Halloween | Halloween is 2026-10-31: it has to ship first to be worth anything this year. Small, reuses the doorbell. |
+| 6.1 | Halloween | **Built 2026-10-16** (on the working branch). Halloween is 2026-10-31: it has to ship first to be worth anything this year. Small, reuses the doorbell. |
 | 6.2 | Photo mode | Small and self-contained; makes the costumes (and everything after) shareable. |
 | 6.3 | A day in the life | The clock, daily goals, the Dog Logic album, the end-of-day card. The ride slots into the day afterwards. |
-| 6.4 | The Garage and the car | A new room behind the living room and the car in it; explorable, nothing to drive yet. |
+| 6.4 | The Garage and the car | A new room behind the living room and the car in it; locked except for rides, nothing to drive yet. |
 | 6.5 | Going for a ride | The invitation, the harness and leash, getting in, the coastal drive, home again. The biggest piece. |
 | 6.6 | Polish and the phone | Owner playtests, tuning, a recorded phone/browser check with measured frame rate (carried since Phase 3). |
 
 ## 6.1 Halloween
+> **Built 2026-10-16**, as planned below, except the optional song (not made). How it works in the game:
+> `ACTIVITIES.md` → "Halloween". Settings: pause → **Halloween** (Auto (17 Oct – 1 Nov) / On / Off) and **Halloween
+> costumes**; Choose Your Dog shows a **COSTUME: ON/OFF** button while it's Halloween. Code: `config/seasons.ts`,
+> `config/halloween.ts`, `player/DogCostume.ts`, `world/TrickOrTreaters.ts`, `world/HalloweenDecor.ts`, the
+> trick-or-treat visit in `activities/DoorDelivery.ts`.
+
 - **When:** automatically by the device's date, **17 October – 1 November**, with a setting (pause → Settings →
   Halloween: Auto / On / Off) so it can be seen, or switched off, any time. Nothing is downloaded or changed outside
   that window.

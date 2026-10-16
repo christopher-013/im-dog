@@ -16,6 +16,7 @@ import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { DOG_SELECT } from '../config/dogSelect';
 import type { DogProfile } from '../config/dogs';
 import { damp } from '../utils/math';
+import { DogCostume } from './DogCostume';
 import { MokeAnimationController } from './MokeAnimationController';
 import { createPreviewVisual, type MokeVisual } from './MokeVisual';
 
@@ -30,6 +31,8 @@ interface PreviewDog {
   hopIn: number;
   hopT: number;
   barkIn: number;
+  /** Their Halloween costume, made the first time it's shown. */
+  costume: DogCostume | null;
 }
 
 /**
@@ -99,6 +102,7 @@ export class DogPreview {
         hopIn: this.between(DOG_SELECT.hopEvery),
         hopT: -1,
         barkIn: this.between(DOG_SELECT.barkEvery),
+        costume: null,
       };
       this.dogs.push(dog);
     });
@@ -203,8 +207,19 @@ export class DogPreview {
     return bestDistance < DOG_SELECT.tapReach ? best : -1;
   }
 
+  /** Halloween (D30): every dog in their costume, or none. */
+  setCostumes(on: boolean): void {
+    for (const dog of this.dogs) {
+      if (on) (dog.costume ??= new DogCostume(dog.profile.costume)).wear(dog.visual);
+      else dog.costume?.takeOff();
+    }
+  }
+
   dispose(): void {
-    for (const dog of this.dogs) dog.visual.dispose();
+    for (const dog of this.dogs) {
+      dog.costume?.dispose(); // first, off the visual (whose dispose may traverse everything under it)
+      dog.visual.dispose();
+    }
     this.dogs.length = 0;
     this.shadowGeometry.dispose();
     this.shadowMaterial.dispose();

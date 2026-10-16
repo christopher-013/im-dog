@@ -1,4 +1,5 @@
 import { FACE_BUTTON_LAYOUTS, GAMEPAD, MOUSE, type FaceButtonLayout } from '../config/input';
+import { HALLOWEEN_CHOICES, type HalloweenChoice } from '../config/seasons';
 import { clamp } from '../utils/math';
 
 /** Player-adjustable settings, remembered in this browser only. */
@@ -12,13 +13,19 @@ export interface PlayerSettings {
   musicVolume: number;
   /** The controller's face-button order (GAMEPAD.faceButtons): auto, standard or DirectInput. */
   controllerButtons: FaceButtonLayout;
+  /** Halloween (D30): by the calendar ('auto', 17 Oct – 1 Nov), always or never. */
+  halloween: HalloweenChoice;
+  /** The dogs wear their costumes while it's Halloween. */
+  costumes: boolean;
 }
 
 /** The pause screen's Music choices (the songs are in audio/music.ts). */
 export const MUSIC_CHOICES = ['hawaiian', 'japan', 'off'] as const;
 export type MusicChoice = (typeof MUSIC_CHOICES)[number];
 
-export const DEFAULT_SETTINGS: Readonly<PlayerSettings> = { mouseSensitivity: 1, invertY: false, music: 'hawaiian', musicVolume: 1, controllerButtons: 'auto' };
+export const DEFAULT_SETTINGS: Readonly<PlayerSettings> = {
+  mouseSensitivity: 1, invertY: false, music: 'hawaiian', musicVolume: 1, controllerButtons: 'auto', halloween: 'auto', costumes: true,
+};
 export const SENSITIVITY_RANGE = { min: 0.25, max: 3, step: 0.05 } as const;
 export const MUSIC_VOLUME_RANGE = { min: 0, max: 1.5, step: 0.05 } as const;
 
@@ -43,6 +50,8 @@ export function parseSettings(raw: string | null): PlayerSettings {
       settings.musicVolume = clamp(value.musicVolume, MUSIC_VOLUME_RANGE.min, MUSIC_VOLUME_RANGE.max);
     }
     if ((FACE_BUTTON_LAYOUTS as readonly unknown[]).includes(value.controllerButtons)) settings.controllerButtons = value.controllerButtons as FaceButtonLayout;
+    if ((HALLOWEEN_CHOICES as readonly unknown[]).includes(value.halloween)) settings.halloween = value.halloween as HalloweenChoice;
+    if (typeof value.costumes === 'boolean') settings.costumes = value.costumes;
   } catch {
     // Corrupt JSON: keep defaults.
   }

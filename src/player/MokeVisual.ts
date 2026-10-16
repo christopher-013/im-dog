@@ -15,6 +15,8 @@ export interface MokeAttachments {
   readonly collar: Object3D | null;
   /** The middle of his back. */
   readonly back: Object3D | null;
+  /** The top of his head, between the ears (hats). */
+  readonly head: Object3D | null;
 }
 
 /**

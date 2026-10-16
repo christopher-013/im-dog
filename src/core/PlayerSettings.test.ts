@@ -15,8 +15,8 @@ afterEach(() => applySettings(DEFAULT_SETTINGS));
 describe('PlayerSettings', () => {
   it('round-trips through storage', () => {
     const store = memoryStore();
-    saveSettings({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6, controllerButtons: 'directinput' }, store);
-    expect(loadSettings(store)).toEqual({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6, controllerButtons: 'directinput' });
+    saveSettings({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6, controllerButtons: 'directinput', halloween: 'auto', costumes: true }, store);
+    expect(loadSettings(store)).toEqual({ mouseSensitivity: 1.5, invertY: true, music: 'japan', musicVolume: 0.6, controllerButtons: 'directinput', halloween: 'auto', costumes: true });
     // Saved before the controller-buttons option: automatic; nonsense: automatic too.
     expect(parseSettings('{"mouseSensitivity":1.5}').controllerButtons).toBe('auto');
     expect(parseSettings('{"controllerButtons":"nintendo"}').controllerButtons).toBe('auto');
@@ -55,7 +55,7 @@ describe('PlayerSettings', () => {
   });
 
   it('applies to the live mouse config', () => {
-    applySettings({ mouseSensitivity: 2, invertY: true, music: 'hawaiian', musicVolume: 1, controllerButtons: 'standard' });
+    applySettings({ mouseSensitivity: 2, invertY: true, music: 'hawaiian', musicVolume: 1, controllerButtons: 'standard', halloween: 'off', costumes: false });
     expect(MOUSE.sensitivityScale).toBe(2);
     expect(MOUSE.invertY).toBe(true);
     expect(GAMEPAD.faceButtons).toBe('standard');

@@ -42,6 +42,8 @@ src/
     dogLogic.ts           the Dog Logic registry: every equation, its terms and icons (Phase 4)
     obstacleCourse.ts     Liam's Obstacle Course (Phase 5): the loop, its stations, the HUD lines, the patty reward
     autopilot.ts          FSD, Full Self Dog (Phase 5): route following, getting unstuck, hopping up, how long he does things
+    seasons.ts            Halloween's date window and the Auto/On/Off choice (Phase 6, D30; tested)
+    halloween.ts          Halloween: the trick-or-treat visit's timings and lines, the shelf, the decorations' places
   core/
     Game.ts               state machine + frame orchestration
     GameLoop.ts           FixedStep accumulator + rAF loop
@@ -63,6 +65,7 @@ src/
     MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking, sit/stretch, look-at, tricks (tested)
     MokeVisual.ts         the visual interface (object, attachments, update, dispose) + createMokeVisual(): model or stand-in (tested)
     ToonMokeVisual.ts     the procedural stand-in: Moke built in code after the real dog (curly fur, soft shading, silhouette line, face, collar), animated procedurally (tested)
+    DogCostume.ts         the Halloween costumes (pumpkin, cape, witch hat) on the visual's back and head sockets; presentation only (tested)
     toon/                 furGeometry.ts (fur clumps with curls and creases, tested), toonMaterials.ts (soft toon + outline), faceTextures.ts (eye), tagTexture.ts (name tag)
     gltf/                 the final-model path: GltfMokeVisual.ts (moke.glb: mixer, crossfades, sockets, procedural layer; tested),
                           clips.ts (MOKE_CLIPS names + selectClips: state → clip weights; tested), testing/syntheticMoke.ts (test-only model)

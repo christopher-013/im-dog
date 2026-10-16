@@ -1,5 +1,8 @@
-import { AdditiveBlending, BoxGeometry, CanvasTexture, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, type Object3D } from 'three';
+import { AdditiveBlending, BoxGeometry, CanvasTexture, CylinderGeometry, DoubleSide, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SphereGeometry, type Object3D } from 'three';
+import type { Visit } from '../activities/DoorDelivery';
+import { HALLOWEEN_VISIT } from '../config/halloween';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
+import { TrickOrTreaters } from './TrickOrTreaters';
 import { createVisualState, HumanAnimationController } from '../human/HumanAnimationController';
 import { COURIER_LOOK, StylizedHumanVisual } from '../human/StylizedHumanVisual';
 
@@ -20,6 +23,11 @@ export class FrontDoor {
   private ringing = false;
   private time = 0;
   private label: CanvasTexture | null = null;
+  /** Halloween (D30): the children on the doorstep, and the shelf by the door with the candy bowl and biscuit jar. */
+  private readonly trickOrTreaters = new TrickOrTreaters();
+  private readonly shelf = new Group();
+  private readonly candyBowl = new Group();
+  private readonly bowlOnShelf = { x: 0, y: 0, z: 0 };
 
   constructor() {
     const d = HOME_ACTIVITIES.delivery.door;
@@ -83,17 +91,44 @@ export class FrontDoor {
     }
     this.package.visible = false;
     this.pose.pose = 'take';
+
+    // Halloween: the children stand where the courier would, facing the door.
+    this.trickOrTreaters.object.position.set(0.78, 0, 0);
+    this.trickOrTreaters.object.rotation.y = -Math.PI / 2;
+    this.object.add(this.trickOrTreaters.object);
+    this.buildShelf(add);
   }
 
-  arrive(): void {
+  arrive(visit: Visit = 'courier'): void {
     this.ringing = true;
     this.time = 0;
     this.setGlow(0.5);
+    if (visit === 'trickOrTreat') {
+      this.trickOrTreaters.show(true);
+      return;
+    }
     this.visitor.object.visible = true;
     this.visitor.hands.right.add(this.package);
     this.package.position.set(0, -0.02, 0.08);
     this.package.rotation.set(0, 0, 0);
     this.package.visible = true;
+  }
+
+  /** Halloween on or off: the shelf by the door (its candy bowl and biscuit jar) is only up for it. */
+  setHalloween(on: boolean): void {
+    this.shelf.visible = on;
+  }
+
+  /** The candy bowl into the human's hand, held out to the children, or back on its shelf (null). */
+  holdCandy(hand: Object3D | null): void {
+    if (hand) {
+      hand.add(this.candyBowl);
+      this.candyBowl.position.set(0, -0.03, 0.12);
+    } else {
+      this.shelf.add(this.candyBowl);
+      this.candyBowl.position.set(this.bowlOnShelf.x, this.bowlOnShelf.y, this.bowlOnShelf.z);
+    }
+    this.candyBowl.rotation.set(0, 0, 0);
   }
 
   acknowledge(): void { this.ringing = false; this.setGlow(0); }
@@ -108,6 +143,8 @@ export class FrontDoor {
   finish(): void {
     this.ringing = this.opened = false;
     this.setGlow(0);
+    this.trickOrTreaters.show(false);
+    if (!this.visitor.object.visible) return; // the trick-or-treaters left no parcel
     this.visitor.object.visible = false;
     this.object.add(this.package);
     this.package.position.set(-0.48, 0.12, -0.62);
@@ -117,6 +154,7 @@ export class FrontDoor {
   cancel(): void {
     this.ringing = this.opened = false;
     this.setGlow(0);
+    this.trickOrTreaters.show(false);
     this.visitor.object.visible = false;
     this.package.visible = false;
     this.hinge.rotation.y = 0;
@@ -128,6 +166,44 @@ export class FrontDoor {
     this.hinge.rotation.y += (target - this.hinge.rotation.y) * Math.min(1, dt * 5);
     if (this.ringing) this.setGlow(0.5 + 0.5 * Math.sin(this.time * HOME_ACTIVITIES.delivery.glowCyclesPerSecond * 2 * Math.PI));
     if (this.visitor.object.visible) this.visitor.apply(dt, this.animation.update(dt, this.pose));
+    this.trickOrTreaters.setExcited(this.opened);
+    this.trickOrTreaters.update(dt);
+  }
+
+  /**
+   * A little wall shelf between the window and the door (above the dog), with the candy bowl and a pumpkin-shaped
+   * biscuit jar. In the door's own space: the door is turned round, so the room is toward -x.
+   */
+  private buildShelf(add: (parent: Object3D, size: [number, number, number], at: [number, number, number], material: MeshStandardMaterial) => void): void {
+    const d = HOME_ACTIVITIES.delivery.door;
+    const at = HALLOWEEN_VISIT.shelf;
+    this.shelf.name = 'Halloween shelf';
+    this.shelf.position.set(d.x - at.x, at.y, d.z - at.z);
+    this.shelf.visible = false;
+    this.object.add(this.shelf);
+    add(this.shelf, [0.15, 0.025, 0.28], [0, 0, 0], new MeshStandardMaterial({ color: '#f2efe8', roughness: 0.7 }));
+    // The candy bowl: a wide orange bowl heaped with wrapped sweets.
+    const bowl = new Mesh(new CylinderGeometry(0.1, 0.06, 0.06, 20, 1, true), new MeshStandardMaterial({ color: '#ef7d18', roughness: 0.5, side: DoubleSide }));
+    bowl.position.y = 0.03;
+    this.candyBowl.add(bowl);
+    const colours = ['#e8423f', '#f5c518', '#4aa0e6', '#8f4ad6', '#4fbf63', '#f2f2f2'];
+    for (let i = 0; i < 12; i++) {
+      const sweet = new Mesh(new SphereGeometry(0.018, 8, 6), new MeshStandardMaterial({ color: colours[i % colours.length], roughness: 0.4 }));
+      const a = i * 2.4, r = 0.025 + (i % 3) * 0.022;
+      sweet.position.set(Math.cos(a) * r, 0.055 + (i % 2) * 0.012, Math.sin(a) * r);
+      sweet.scale.set(1.4, 0.8, 0.9);
+      this.candyBowl.add(sweet);
+    }
+    // In the door's space +z points away from the door (toward the corner): the bowl nearest the door.
+    this.bowlOnShelf.x = -0.005; this.bowlOnShelf.y = 0.012; this.bowlOnShelf.z = -0.05;
+    this.holdCandy(null);
+    // The biscuit jar: a small glass-lidded pumpkin.
+    const jar = new Mesh(new SphereGeometry(0.055, 16, 12), new MeshStandardMaterial({ color: '#f08a24', roughness: 0.55 }));
+    jar.scale.set(1, 0.8, 1);
+    jar.position.set(0, 0.055, 0.085);
+    const lid = new Mesh(new CylinderGeometry(0.012, 0.016, 0.03, 8), new MeshStandardMaterial({ color: '#3f6b2a', roughness: 0.8 }));
+    lid.position.set(0, 0.11, 0.085);
+    this.shelf.add(jar, lid);
   }
 
   private setGlow(pulse: number): void {
@@ -141,6 +217,8 @@ export class FrontDoor {
   dispose(): void {
     this.visitor.object.removeFromParent();
     this.visitor.dispose();
+    this.trickOrTreaters.dispose();
+    this.holdCandy(null);
     this.object.add(this.package);
     this.object.traverse((node) => {
       if (node instanceof Mesh) {

@@ -116,7 +116,8 @@ root                      on the floor at the origin; not animated in locomotion
    ├─ spine_01 ─ spine_02 (chest)
    │               ├─ neck ─┬─ head ─┬─ jaw ─ [socket_mouth]
    │               │        │        ├─ ear_L, ear_R
-   │               │        │        └─ eye_L, eye_R (optional)
+   │               │        │        ├─ eye_L, eye_R (optional)
+   │               │        │        └─ [socket_head] (optional)
    │               │        └─ [socket_collar]
    │               ├─ front_upper_L ─ front_lower_L ─ front_paw_L   (and _R)
    │               └─ [socket_back]
@@ -163,6 +164,7 @@ attached things don't come out rotated.
 | **`socket_mouth`** | `jaw` (or `head`) | On the centre line between the front teeth, where he grips a toy | Carried items: the sock, tennis ball and rope toy are held crosswise along X (offsets in `config/props.ts`) |
 | `socket_collar` | `neck` | Front of the collar at the throat, where the tag ring hangs | Future cosmetics: tag, bandana knot |
 | `socket_back` | `spine_02` | On top of the back, between the shoulders | Future cosmetics: harness, bandana |
+| `socket_head` | `head` | The crown of the head fur, between the ears, +Y up | Hats (the Halloween costumes, D30); optional: without it hats are skipped |
 
 Without `socket_mouth`, the game estimates a mouth position in front of the head and warns. Carrying still works.
 

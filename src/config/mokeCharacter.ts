@@ -46,6 +46,8 @@ export const MOKE_CHARACTER = {
     collar: 'socket_collar',
     /** Middle of his back, for anything that rides on him later. */
     back: 'socket_back',
+    /** The top of his head, between the ears (hats: the Halloween costumes). */
+    head: 'socket_head',
   },
 
   /** Bones the game drives directly, on top of the animation clips. Missing optional bones just skip that layer. */

@@ -418,6 +418,7 @@ export class ToonMokeVisual implements MokeVisual {
   private readonly mouthSocket = new Object3D();
   private readonly collarSocket = new Object3D();
   private readonly backSocket = new Object3D();
+  private readonly headSocket = new Object3D();
   private readonly pose = emptyPose();
 
   private readonly rig = new Group();
@@ -748,7 +749,11 @@ export class ToonMokeVisual implements MokeVisual {
     this.backSocket.position.set(0, 0.305, -0.02);
     this.torso.add(this.backSocket);
     this.mouthSocket.name = 'socket_mouth';
-    this.attachments = { mouth: this.mouthSocket, collar: this.collarSocket, back: this.backSocket };
+    // The crown of the head fur, between the ears: hats sit here and tilt and turn with his head.
+    this.headSocket.name = 'socket_head';
+    this.headSocket.position.set(0, 0.148, 0.0);
+    this.head.add(this.headSocket);
+    this.attachments = { mouth: this.mouthSocket, collar: this.collarSocket, back: this.backSocket, head: this.headSocket };
 
     this.tail.position.set(...TAIL.root);
     this.torso.add(this.tail);

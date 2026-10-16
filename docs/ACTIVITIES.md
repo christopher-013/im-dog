@@ -141,6 +141,28 @@ Only one parcel remains by the door (replaced next
 delivery), never an accumulating pile. The threshold stays collision-blocked: this is not an outdoor expansion.
 Sock Heist cancels an in-progress handoff safely; unreachable approach times out without false success.
 
+### Halloween: trick-or-treaters (`DoorDelivery.ts`, Phase 6, D30)
+While it's Halloween (by the date, 17 October – 1 November, or forced on or off in the pause screen's **Halloween**
+setting; `config/seasons.ts`), the next visitors at the front door are **three trick-or-treaters** (a sheet ghost, a
+pumpkin and a witch, each with a pumpkin pail; `world/TrickOrTreaters.ts`) instead of the courier. Everything up to
+the door is the same: the bell, the glow, "Bark at the Door", the human setting off at once. Then:
+- The human takes the **candy bowl** from the little shelf beside the door and holds it out ("“Trick or treat!”
+  Happy Halloween, kids! Love the costumes!"); the children bounce and hold up their pails. Door shut, bowl back.
+- A **pumpkin biscuit** from the jar on the same shelf: the human walks over to the dog with it and hands it over
+  (kneeling) once he's within 0.75 m for 0.7 s. The dog is **never given candy**. If he won't come for 25 s, it goes
+  down on the floor beside them for him ("Eat Pumpkin Biscuit").
+- Eating it teaches **DOORBELL + COSTUMES = FRIENDS** (not BARK = PROTECTOR, which stays the courier's).
+- FSD waits in the corner by the door as usual; the human brings the biscuit to it there.
+- Timing: the same as the courier (the first visit 25–45 s in, then 10–15 minutes after an answered one).
+
+**Costumes** (`player/DogCostume.ts`, on the visual's `back` and new `head` sockets, presentation only): Moke a
+ribbed pumpkin suit with a stem and leaf on his head, Dougie a black vampire cape with a red lining and a stand-up
+collar, Nori a black witch's hat with a purple band. On by default during Halloween; **Halloween costumes** in the
+pause screen, or the **COSTUME** button on Choose Your Dog, turns them off. **Decorations** (`world/HalloweenDecor.ts`,
+no colliders, no lights): jack-o'-lanterns with flickering carved faces by the front door, on the living-room TV
+console, on the family-room mantel and on the patio; paper bats strung over the living-room window. Positions and
+timings: `config/halloween.ts`.
+
 ### Dinner Helper (`KitchenBeg.ts`, owner-requested addition, 2026-09-27)
 While the human chops carrots at the island (meal prep or the prep stage of dinner), stand within 1.15 m with an
 empty mouth for 4 seconds. Leaving, running or carrying something clears that wait. The objective explains it,

@@ -132,6 +132,7 @@ export class GltfMokeVisual implements MokeVisual {
       mouth: find(config.sockets.mouth) ?? this.fallbackMouth(config),
       collar: find(config.sockets.collar),
       back: find(config.sockets.back),
+      head: find(config.sockets.head),
     };
 
     this.mixer = new AnimationMixer(this.model);

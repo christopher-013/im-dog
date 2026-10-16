@@ -1,3 +1,4 @@
+import type { CostumeKind } from '../player/DogCostume';
 import { DOUGIE_LOOK, MOKE_DOG_LOOK, NORI_LOOK, type DogLook } from './dogLooks';
 
 /**
@@ -30,6 +31,8 @@ export interface DogProfile {
   readonly logicKey: string;
   /** Uses the optional final model (`moke.glb`) when it's installed; otherwise the procedural toon visual. */
   readonly usesModel: boolean;
+  /** What they wear for Halloween (D30; owner-approved 2026-10-16). */
+  readonly costume: CostumeKind;
 }
 
 /** In the order they stand on Choose Your Dog: Moke in the middle (and highlighted first: DEFAULT_DOG). */
@@ -45,6 +48,7 @@ export const DOGS: readonly DogProfile[] = [
     look: DOUGIE_LOOK,
     logicKey: 'imdog.dogLogic.dougie',
     usesModel: false,
+    costume: 'cape',
   },
   {
     id: 'moke',
@@ -56,6 +60,7 @@ export const DOGS: readonly DogProfile[] = [
     look: MOKE_DOG_LOOK,
     logicKey: 'imdog.dogLogic',
     usesModel: true,
+    costume: 'pumpkin',
   },
   {
     id: 'nori',
@@ -67,6 +72,7 @@ export const DOGS: readonly DogProfile[] = [
     look: NORI_LOOK,
     logicKey: 'imdog.dogLogic.nori',
     usesModel: false,
+    costume: 'witchHat',
   },
 ];
 

@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-10-16. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 is drafted (`docs/PHASE_6.md`) and waiting for the owner's approval. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
+_Last updated: 2026-10-16. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 ("A Day with Moke", `docs/PHASE_6.md`) is approved and in progress, starting with 6.1 Halloween. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -25,11 +25,13 @@ and browser weren't recorded. **Carried forward:** a recorded device/browser lis
 listening checks, a long FSD soak in a real browser, and the final dog models. Scope, history and what's carried
 forward: `docs/PHASE_5.md`.
 
-**Phase 6: drafted, waiting for the owner's approval** ("A Day with Moke", `docs/PHASE_6.md`, 2026-10-16).
+**Phase 6: in progress** ("A Day with Moke", `docs/PHASE_6.md`), approved by the owner on 2026-10-16 with answers
+to every open question (D30–D34). Milestones: 6.1 Halloween, 6.2 photo mode, 6.3 a day in the life, 6.4 the Garage
+and the car, 6.5 going for a ride, 6.6 polish and the phone.
 
 ## Current Milestone
-**None in progress.** Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
-`phase-5-complete`). The next step is the owner's approval of the Phase 6 plan.
+**6.1 Halloween** (Phase 6). Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
+`phase-5-complete`). Halloween is due 2026-10-31.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.

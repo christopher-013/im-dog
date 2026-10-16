@@ -1,8 +1,8 @@
 # Phase 6 — A Day with Moke
 
-> **Status: proposed, waiting for the owner's approval.** Drafted 2026-10-16 from the owner's choice of next steps:
-> a day in the life, Halloween, photo mode, and a car ride to the coast. No Phase 6 code until the owner approves
-> this plan (and answers the open questions at the end). The milestones and numbers below are proposals.
+> **Status: approved, in progress.** Drafted 2026-10-16 from the owner's choice of next steps (a day in the life,
+> Halloween, photo mode, and a car ride to the coast); the owner answered every open question the same day (see
+> "The owner's answers"), which settles the plan. Work starts with 6.1 Halloween.
 
 **Goal:** give the game a shape (a day that goes from breakfast to bedtime, with a few gentle goals), a reason to
 come back now (Halloween), a way to keep the moments (photo mode), and one big new treat: **going for a ride**, out
@@ -25,7 +25,16 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
   famous drive that has the beach and coast by the side, 80s style pop music will be playing and the drive will last
   no more than 5 mins with the human driving back home, parking in the garage and bringing Moke back home."
 
-## Milestones (proposed, in build order)
+## The owner's answers (2026-10-16)
+- **Halloween:** the dates (17 Oct – 1 Nov, automatic, with a switch), the costumes (Moke a pumpkin, Dougie a vampire
+  cape, Nori a witch hat) and children in costumes at the door are all fine.
+- **The day:** about 20 minutes a game day. **FSD's days count** toward the goals and the end-of-day card.
+- **The Garage:** its door stays **locked except when the human asks the dog to go for a ride**.
+- **The car:** no badge is fine. **It's black.**
+- **The ride:** **only when the human offers**, randomly **every 5–10 minutes** of play. The dog can't ask.
+- **References:** none: **a standard two-car garage**.
+
+## Milestones (in build order)
 | # | Milestone | Why this order |
 |---|---|---|
 | 6.1 | Halloween | Halloween is 2026-10-31: it has to ship first to be worth anything this year. Small, reuses the doorbell. |
@@ -98,8 +107,7 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
 - **The end-of-day card:** at bedtime, "Moke's day", day N: the goals stamped, Dog Logic learned today, a few
   counts (naps, socks stolen, treats found), and the day's photo if one was taken. Then **Sleep** → a new morning.
   The day number and today's goals are remembered in the browser, per dog.
-- **FSD** plays through the days like a player and its goals count (it's the same dog). This is an open question
-  below.
+- **FSD** plays through the days like a player, and its goals and days count (owner: it's the same dog).
 
 ## 6.4 The Garage and the car
 - **The door:** in the living room's south wall, **to the left of the TV** as you face it from the couch (around
@@ -109,9 +117,9 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
   - storage shelves, bikes, a recycling bin and a wall charger;
   - **the car**.
   
-  Built in code like the rest of the house. Before the first ride the door is closed and can't be opened; after
-  that the garage is part of the house, with its own name in "where am I" and Treat Hunt hiding spots. Whether it
-  stays closed between rides is an open question.
+  A standard two-car garage, built in code like the rest of the house. **Its door stays locked except for a ride**
+  (owner): it opens when the human takes the dog out to the car and again when they come home, and the garage is
+  never somewhere to wander or hide treats.
 - **The car:** an **original, code-built electric SUV that clearly reads as the family's Model X**:
   - the long, rounded body and the huge windshield running back over the front seats;
   - the **falcon-wing rear doors that open upward**;
@@ -119,16 +127,17 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
   
   **No Tesla name, "T" logo or badges in the game or the code's player-facing text:** the repository and the site
   are public, and the brand is someone else's trademark. This follows the STAR VOYAGERS and store-music approach:
-  an affectionate homage, not a copy. The colour is the owner's choice (open question).
+  an affectionate homage, not a copy. **Black** (owner), with dark glass and silver-grey wheels.
 
 ## 6.5 Going for a ride
-- **The invitation:** now and then (at most once a game day; not during the Sock Heist, the ballgame or another
-  activity), the human picks up the keys by the garage door: "**Moke, want to go for a ride?**" The prompt reads
+- **The invitation:** randomly **every 5–10 minutes** of play (owner; not during the Sock Heist, the ballgame or
+  another activity, and the next one is timed from when the last ride ended or was declined), the human picks up the
+  keys by the garage door: "**Moke, want to go for a ride?**" The prompt reads
   **Go for a Ride!** near them.
   - **Yes:** interact, or bark. "Let's go!"
   - **No:** wander off or ignore it for 15 seconds. "Okay, maybe later."
   
-  FSD says yes most of the time.
+  FSD says yes most of the time. The dog can't ask for a ride; only the human offers (owner).
 - **Harness and leash:** the human crouches and puts on a **harness** (each dog's own colour, worn over the collar,
   attached to the visual like the costumes) and clips on the **leash** (a line from the harness to their hand). Then
   they walk him to the garage door: on the leash he follows them, and the player can still look around, bark and wag.
@@ -164,7 +173,7 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
 - **While they're out:** the house waits. The human's routine, the doorbell and every other activity are frozen (the
   doorbell can't ring for an empty house), and the day clock moves on by the drive's length.
 
-## Proposed decisions (recorded in `DECISIONS.md` once approved)
+## Decisions (recorded in `DECISIONS.md` as D30–D34)
 - **D30, seasonal content:** Halloween turns on by the device's date (17 Oct – 1 Nov), with a setting to force it on
   or off. It's all built in; nothing is fetched. Winter can follow the same pattern.
 - **D31, the day clock:** a game day of about 20 minutes that drives the lighting and steers the human's routine. Goals
@@ -203,7 +212,7 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
   - the album shows every discovery and the "???" ones;
   - the end-of-day card leads into a new morning;
   - each dog's day number and goals are kept separately, and nothing breaks if storage is unavailable.
-- **6.4:** the garage door sits left of the TV. The garage is navigable for the dog, the human and FSD. The car
+- **6.4:** the garage door sits left of the TV. The door stays locked except for a ride; the garage is navigable for the dog, the human and FSD during one. The car
   looks like the family's car to the owner, with no brand marks anywhere.
 - **6.5:**
   - the invitation can be accepted or declined, by a player and by FSD;
@@ -225,12 +234,5 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
 - **Likeness:** the car and Torrey Pines come from general knowledge. The owner's own (private) photos would help,
   and stay out of the build (D18).
 
-## Open questions for the owner
-1. **Halloween:** automatically by the date (17 Oct – 1 Nov) with an on/off switch? Are the proposed costumes right
-   (Moke a pumpkin, Dougie a vampire cape, Nori a witch hat)? Children in costumes at the door are OK as visitors?
-2. **The day:** about 20 minutes per game day? Should FSD's days count toward goals and the end-of-day card?
-3. **The Garage:** once unlocked, can the dog wander in any time, or does its door stay shut except for rides?
-4. **The car:** OK to keep it unbadged (no Tesla name or logo) and recognisable by its shape? Which colour?
-5. **The ride:** only when the human offers, or can the dog ask too (e.g. bark at the garage door or bring the leash)?
-6. **References:** would you like to share private photos of the garage and the car for likeness (kept out of the
-   build, like the home photos)?
+## Open questions
+All answered on 2026-10-16: see "The owner's answers" above.

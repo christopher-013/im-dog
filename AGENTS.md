@@ -35,9 +35,9 @@ Shared, tool-independent instructions for every coding agent working in this rep
   hamburger patty reward indoors; D28); Watch TV full screen with a fourth show; and **three playable dogs, Moke,
   Dougie and Nori** (D29), chosen on a "Choose Your Dog" screen after PLAY. The owner played the published game and
   asked for the fixes listed there; the device and browser weren't recorded, so don't claim phone testing.
-- **Next: Phase 6, "A Day with Moke", is drafted in `docs/PHASE_6.md` and waiting for the owner's approval** (and
-  answers to its open questions): Halloween, photo mode, a day in the life, the Garage and a car ride to Torrey
-  Pines. No Phase 6 code until the owner approves it. Don't add
+- **Phase 6 is in progress:** "A Day with Moke", approved by the owner on 2026-10-16. Scope, milestones and the
+  owner's answers: `docs/PHASE_6.md` (D30–D34): Halloween, photo mode, a day in the life, the Garage and a car ride to
+  Torrey Pines, in that order. Add or change milestones only as the owner approves them. Don't add
   more humans, more rooms, outdoors beyond the backyard, more dogs or another mini-game without the owner's approval.
   Also carried over: `docs/PHASE_5.md` → "Carried forward", and the Known Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.

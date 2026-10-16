@@ -238,7 +238,9 @@ unchanged; the classes keep Moke's name because he came first. What's per dog li
   brown eyes, a sage collar with his name, and coat markings painted as vertex colours (`player/toon/coat.ts`) that
   the toon material multiplies in. With no coat (Moke) nothing is painted and the build is byte-for-byte as before.
 - **the name:** every line the HUD shows goes through `UIManager.t()` → `dogText()`, which swaps "Moke", "MOKE" and
-  the called-out "Mo-ke" for the chosen dog's name. A few fixed texts in `index.html` are marked `data-dog-text` /
+  the called-out "Mo-ke" for the chosen dog's name, and for a girl (`pronoun: 'she'`, Nori) "he", "him", "his",
+  "himself" and "boy" for "she", "her", "her", "herself" and "girl" (every such word in the lines is about the dog;
+  keep it so: a test checks every config line for Nori). A few fixed texts in `index.html` are marked `data-dog-text` /
   `data-dog-title`. The title screen, the About page and the page's metadata stay about the real Moke.
 - **progress:** `DogLogicMemory` reads and writes the chosen dog's key. Moke keeps `imdog.dogLogic` (so no existing
   save moves); Dougie's is `imdog.dogLogic.dougie`, Nori's `imdog.dogLogic.nori`. Every visit starts as Moke (`DEFAULT_DOG`), and Choose Your Dog opens on him; the choice isn't remembered.

@@ -209,5 +209,5 @@ the game's toon build translates it (`NORI_LOOK` in `src/config/dogLooks.ts`):
   fringes → a deeper crown and back, caramel ears with darker ends, ears a little longer than Moke's.
 - **Eyes and nose:** dark eyes and a black nose → the same dark irises and glossy black nose as Moke's.
 - **Not shown or not known:** the real size (a puppy in the photos, but no scale: built at Moke's gameplay size like
-  every dog), the tail (given the deeper apricot), whether Nori is a boy or a girl (the game's lines keep saying
-  "he"). No collar in the photos; the game gives a teal one with a gold "Nori" tag.
+  every dog), the tail (given the deeper apricot), and nothing about whether Nori is a boy or a girl: the
+  owner says **Nori is a girl**, so the game's lines say "she", "her" and "good girl" for her. No collar in the photos; the game gives a teal one with a gold "Nori" tag.

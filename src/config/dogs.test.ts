@@ -82,10 +82,23 @@ describe('dogText: the game talks about the dog being played', () => {
     expect(dogText('Smoke on the water', dougie)).toBe('Smoke on the water');
   });
 
-  it("and Nori's", () => {
+  it("and Nori's, who is a girl: she, her, herself, good girl", () => {
+    expect(nori.pronoun).toBe('she');
+    expect(dougie.pronoun).toBe('he');
+    expect(moke.pronoun).toBe('he');
     expect(dogText('Moke! Is that my sock?!', nori)).toBe('Nori! Is that my sock?!');
     expect(dogText('MOKE.', nori)).toBe('NORI.');
     expect(dogText('Mo-ke~', nori)).toBe('No-ri~');
+    expect(dogText('Good boy, Moke.', nori)).toBe('Good girl, Nori.');
+    expect(dogText("Who's a good boy?", nori)).toBe("Who's a good girl?");
+    expect(dogText('How is he so fast?', nori)).toBe('How is she so fast?');
+    expect(dogText('Going in for his hamburger patty!', nori)).toBe('Going in for her hamburger patty!');
+    expect(dogText('FSD on: Moke is driving himself. Move to take over.', nori)).toBe('FSD on: Nori is driving herself. Move to take over.');
+    expect(dogText('his pink bed by the fire', nori)).toBe('her pink bed by the fire');
+    // Only whole words: "the", "where", "this", "shelf" and "Bishop" stay as they are.
+    expect(dogText('Where is the shelf? This, Bishop.', nori)).toBe('Where is the shelf? This, Bishop.');
+    // Dougie is a boy, as the lines were written.
+    expect(dogText('Good boy, Moke.', dougie)).toBe('Good boy, Dougie.');
   });
 
   it("leaves no 'Moke' in any of the human's lines, the course's lines or the controls when another dog is playing", () => {
@@ -97,6 +110,7 @@ describe('dogText: the game talks about the dog being played', () => {
         const said = dogText(line, dog);
         expect(said, line).not.toMatch(/moke|mo-ke/i);
         expect(said, line).toMatch(new RegExp(dog.name, 'i'));
+        if (dog.pronoun === 'she') expect(said, line).not.toMatch(/\b(he|him|his|himself|boy)\b/i);
       }
     }
   });

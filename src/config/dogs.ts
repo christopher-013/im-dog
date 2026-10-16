@@ -15,6 +15,8 @@ export interface DogProfile {
   readonly called: string;
   /** One line under the name on the Choose Your Dog screen. */
   readonly tagline: string;
+  /** He or she: the game's lines are written for Moke ("he", "his", "good boy") and follow this. */
+  readonly pronoun: 'he' | 'she';
   readonly look: DogLook;
   /**
    * Where this dog's Dog Logic discoveries are remembered (localStorage). Moke keeps the key the game has always
@@ -32,6 +34,7 @@ export const DOGS: readonly DogProfile[] = [
     name: 'Dougie',
     called: 'Dou-gie',
     tagline: 'Fluffy, tri-coloured and always cheerful',
+    pronoun: 'he',
     look: DOUGIE_LOOK,
     logicKey: 'imdog.dogLogic.dougie',
     usesModel: false,
@@ -41,6 +44,7 @@ export const DOGS: readonly DogProfile[] = [
     name: 'Moke',
     called: 'Mo-ke',
     tagline: 'Small, white and very curious',
+    pronoun: 'he',
     look: MOKE_DOG_LOOK,
     logicKey: 'imdog.dogLogic',
     usesModel: true,
@@ -50,6 +54,7 @@ export const DOGS: readonly DogProfile[] = [
     name: 'Nori',
     called: 'No-ri',
     tagline: 'Curly, apricot and full of bounce',
+    pronoun: 'she',
     look: NORI_LOOK,
     logicKey: 'imdog.dogLogic.nori',
     usesModel: false,
@@ -67,15 +72,27 @@ export function dogById(id: DogId): DogProfile {
   return DOGS.find((dog) => dog.id === id) ?? DOGS.find((dog) => dog.id === DEFAULT_DOG)!;
 }
 
+/** A girl's words for the words the game's lines use about Moke (every he/him/his/boy in them is about the dog). */
+const SHE: Readonly<Record<string, string>> = {
+  he: 'she', He: 'She', HE: 'SHE',
+  him: 'her', Him: 'Her', HIM: 'HER',
+  his: 'her', His: 'Her', HIS: 'HER',
+  himself: 'herself', Himself: 'Herself', HIMSELF: 'HERSELF',
+  boy: 'girl', Boy: 'Girl', BOY: 'GIRL',
+  boys: 'girls',
+};
+
 /**
  * A player-facing line for the dog being played: the game's lines are written for Moke, so "Moke", "MOKE" and the
- * called-out "Mo-ke" become the chosen dog's name. Lines about the real Moke (the About page, the title) don't go
- * through here. Unchanged when Moke is playing.
+ * called-out "Mo-ke" become the chosen dog's name, and for a girl "he", "his", "himself" and "good boy" become "she",
+ * "her", "herself" and "good girl". Every such word in the game's lines is about the dog (none is about the human: keep
+ * it that way). Lines about the real Moke (the About page, the title) don't go through here. Unchanged for Moke.
  */
 export function dogText(text: string, dog: DogProfile): string {
   if (dog.id === 'moke') return text;
-  return text
+  const named = text
     .replace(/Mo-ke/g, dog.called)
     .replace(/\bMOKE\b/g, dog.name.toUpperCase())
     .replace(/\bMoke\b/g, dog.name);
+  return dog.pronoun === 'she' ? named.replace(/\b(he|him|his|himself|boys?)\b/gi, (word) => SHE[word] ?? word) : named;
 }

@@ -75,7 +75,9 @@ Shared, tool-independent instructions for every coding agent working in this rep
 - Every playable dog shares all gameplay (D29): the controller, body, animation state, activities and FSD are one.
   What differs per dog (name, look, saved Dog Logic key) lives only in `src/config/dogs.ts` and
   `src/config/dogLooks.ts`. Player-facing lines are written for Moke and go through `dogText()` (via `UIManager`), so
-  they name the dog being played; don't hard-code a dog's name in a new HUD path that bypasses it. Moke's
+  they name the dog being played and use their pronouns (Nori is a girl: "he/his/himself/good boy" become
+  "she/her/herself/good girl"); don't hard-code a dog's name in a new HUD path that bypasses it, and in those lines keep
+  he/him/his/boy for the dog only, never the human. Moke's
   appearance and his save key (`imdog.dogLogic`) must not change.
 - Every input device (keyboard/mouse, controller, touch) feeds the same `InputState` actions; gameplay never
   branches on the device (D15). Don't detect phones by user-agent.

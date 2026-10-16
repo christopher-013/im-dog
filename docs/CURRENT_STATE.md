@@ -48,7 +48,7 @@ carries into Phase 2.
 
 ## Last Developer
 Claude Code (2026-10-16, owner request: during FSD the dog waits out its moments with the human, and the human
-answers the door faster; on the working branch, **not pushed to `main`**).
+answers the door faster; pushed to `main` at the owner's request).
 - **The door:** the human used to wait out the dog's guard barks (7.5 s), then walk at 1.05 m/s, while FSD left
   8 s after its bark. Now they set off at once ("Coming, Moke! I'll get the door.") at
   `HOME_ACTIVITIES.delivery.answerSpeed` 1.8 m/s (his guard barks carry on meanwhile). FSD barks, steps into the
@@ -78,7 +78,7 @@ answers the door faster; on the working branch, **not pushed to `main`**).
   `claim(role, true)`.
 - Verification: typecheck, 90 files / 656 tests.
 
-Claude Code (2026-10-16, owner request after playing the live site; on the working branch, **not pushed to `main`**):
+Claude Code (2026-10-16, owner request after playing the live site; pushed to `main` at the owner's request):
 five fixes.
 - **Bowls:** eating or drinking, the dog steps in to its bowl (`Game.bowlSpot`, glided like settling into bed):
   `BOWL_REFILL.standoff` 0.2 m out on the open side, facing it, so the muzzle is in the bowl (measured in the game:

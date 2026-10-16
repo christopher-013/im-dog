@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-10-16. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 isn't defined yet. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
+_Last updated: 2026-10-16. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 is drafted (`docs/PHASE_6.md`) and waiting for the owner's approval. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -1901,9 +1901,11 @@ Earlier, at the end of Milestone 4:
   - `vite.config.ts` (the `__MOKE_MODEL_AVAILABLE__` flag).
 
 ## Next Recommended Task
-1. **Define Phase 6 with the owner:** write `docs/PHASE_6.md` (scope, milestones, success criteria) for approval
-   before any Phase 6 code. Commit or push only when the owner asks: a push to `main` publishes the game.
-   Suggestions, for the owner to choose from (none approved):
+1. **Phase 6 is drafted:** `docs/PHASE_6.md`, "A Day with Moke" (2026-10-16). The owner chose: a day in the life,
+   Halloween and photo mode from the suggestions below, plus a car ride: the Garage off the living room, the family
+   car, and a drive along the coast to Torrey Pines. Milestones: 6.1 Halloween first (it's due 2026-10-31), then
+   photo mode, the day, the Garage and car, the ride, and polish. **Waiting for the owner's approval and answers to
+   its open questions; no Phase 6 code before that.** The original suggestions, for reference:
    - **Recommended: "The Pack".** The dogs you aren't playing live in the house too, each driven by FSD's virtual
      player (D27, D29: every dog already shares the body, the activities and FSD). Dog-to-dog moments: play bows and
      chases, tug-of-war between two dogs, stealing each other's toys, begging side by side, barking at the door

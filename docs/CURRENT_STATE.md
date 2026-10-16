@@ -53,8 +53,12 @@ carries into Phase 2.
 Claude Code (2026-10-16, owner request: "Mark this phase as complete"): **Phase 5 closed** and tagged
 `phase-5-complete`, as Phase 4 was. `docs/PHASE_5.md` (status, milestones done, where the success criteria
 stand, what was added during the phase, what's carried forward), `AGENTS.md`, `README.md` and this file updated; Phase 6
-suggestions below. Docs only; the closing commit is the one tagged. The published game is `840a210` (deployed to
-GitHub Pages and www.im-dog.com, both green).
+suggestions below. Docs only; the closing commit (`16c5024`) is the one tagged. The published game is `840a210`
+(deployed to GitHub Pages and www.im-dog.com, both green). **The tags aren't on GitHub yet:** the cloud session's
+GitHub access refuses tag writes, so `phase-5-complete` (on `16c5024`) and `phase-4-complete` (on `1995ef7`, also
+never reached GitHub) need pushing from the owner's own clone:
+`git tag -a phase-5-complete 16c5024 -m "Phase 5 complete: FSD, Full Self Dog"` (and likewise for Phase 4), then
+`git push origin phase-4-complete phase-5-complete`.
 
 Claude Code (2026-10-16, owner request: during FSD the dog waits out its moments with the human, and the human
 answers the door faster; pushed to `main` at the owner's request).

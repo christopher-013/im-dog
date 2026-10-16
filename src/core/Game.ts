@@ -74,7 +74,13 @@ import { Moke } from '../player/Moke';
 import { pickTrick, type Trick } from '../player/Tricks';
 import { MokeController } from '../player/MokeController';
 import { AttentionSystem, type AttentionKind, type AttentionObserver } from '../player/AttentionSystem';
-import { createMokeVisual, type MokeVisualChoice } from '../player/MokeVisual';
+import { createDogVisual, type MokeVisualChoice } from '../player/MokeVisual';
+import { DogPreview } from '../player/DogPreview';
+import { Announcer } from '../audio/Announcer';
+import { ANNOUNCER, DOG_SELECT } from '../config/dogSelect';
+import { DOGS, dogById, type DogProfile } from '../config/dogs';
+import { loadDogChoice, saveDogChoice } from './DogChoice';
+import { DogSelection } from './DogSelection';
 import type { Prop } from '../props/Prop';
 import { createRoomProps } from '../props/roomProps';
 import { createRoomScents } from '../senses/roomScents';
@@ -95,14 +101,19 @@ import { AdaptiveResolution, pickQuality } from './Quality';
 import type { Vec2Like } from './InputState';
 import { applySettings, loadSettings, saveSettings } from './PlayerSettings';
 
-export type GameState = 'loading' | 'menu' | 'playing' | 'paused';
+export type GameState = 'loading' | 'menu' | 'select' | 'playing' | 'paused';
+
+/** The player has asked for less motion (the Choose Your Dog stage keeps still; CSS calms the rest). */
+function reducedMotion(): boolean {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 
 /** What Moke says when he plays with Malibu again. */
 const MALIBU_LINES = ['Hi Malibu!', 'Play, Malibu, play!', 'My bird friend!', 'Malibu! Malibu!'] as const;
 
 /**
  * Top-level orchestrator: owns the renderer, scene, input, physics, UI and the game state
- * machine (loading → menu → playing ⇄ paused), and runs the frame:
+ * machine (loading → menu ⇄ select (Choose Your Dog) → playing ⇄ paused), and runs the frame:
  *
  *   input.beginFrame → global keys → fixed steps (Moke + physics) → Moke visuals → camera → render → debug
  */
@@ -136,6 +147,15 @@ export class Game {
     speed: 0,
   };
   private visualChoice: MokeVisualChoice | null = null;
+  /**
+   * The dog being played (D29): their look on the one dog body, their name in every line, their own Dog Logic.
+   * The last one chosen on this browser until Choose Your Dog says otherwise.
+   */
+  private dog: DogProfile = dogById(loadDogChoice());
+  /** Choose Your Dog, while it's up: who's highlighted, and the 3D stage. Null otherwise (nothing left behind). */
+  private selection: DogSelection | null = null;
+  private preview: DogPreview | null = null;
+  private readonly announcer = new Announcer();
   private readonly wisps = new ScentWisps();
   private readonly barkTimer = new BarkTimer();
   private readonly audio = new AudioManager();
@@ -255,6 +275,7 @@ export class Game {
     this.routine.reactions = this.reactions;
     this.reactions.say = (text, mood) => this.routine.say(text, mood);
     this.reactions.onPet = () => this.petted();
+    this.logicMemory.switchTo(this.dog.logicKey);
     this.dogLogic = new DogLogicBook(this.logicMemory, this.events);
     // Somewhere to lie down all over the house: his bed, his blanket, the sofas, the hearth (Perfect Nap).
     const { dogBed, dogBedFront } = this.room.landmarks;
@@ -277,8 +298,19 @@ export class Game {
     applySoftEnvironment(this.gfx.renderer, this.scene);
     this.followCamera = new ThirdPersonCamera(this.camera, this.updateCameraTarget());
 
+    ui.setDog(this.dog);
+    ui.bindDogSelect({
+      onStep: (step) => this.stepDog(step),
+      onPick: (index) => this.highlightDog(() => this.selection?.select(index) ?? false),
+      onTap: (ndcX) => {
+        const index = this.preview?.dogAt(ndcX) ?? -1;
+        if (index >= 0) this.highlightDog(() => this.selection?.select(index) ?? false);
+      },
+      onBegin: () => this.beginWithDog(true),
+      onBack: () => this.backToTitle(),
+    });
     ui.bind({
-      onPlay: () => this.play(),
+      onPlay: () => this.openDogSelect(),
       onResume: () => this.resume(),
       onFsd: () => this.setFsd(!this.fsdOn),
       onTvExit: () => this.watchTv?.stop(),
@@ -391,13 +423,15 @@ export class Game {
     this.pattyTreat.dispose();
     this.fsdPath.dispose();
     this.room.tv.dispose();
+    this.closeDogSelect();
+    this.announcer.stop();
     this.gfx.dispose();
   }
 
   private spawnMoke(physics: PhysicsWorld): Moke {
     const { position, heading } = this.room.spawn;
     const body = new CharacterBody(physics, position, MOKE_BODY);
-    this.visualChoice = createMokeVisual(this.assets.getGLTF('moke'), MOKE_MODEL_AVAILABLE);
+    this.visualChoice = createDogVisual(this.dog, this.assets.getGLTF('moke'), MOKE_MODEL_AVAILABLE);
     const moke = new Moke(new MokeController(body, heading), this.visualChoice.visual);
     this.scene.add(moke.visual.object);
     return moke;
@@ -607,7 +641,7 @@ export class Game {
     });
     this.tableManners = new TableManners({ routine: this.routine, nav, grounded: () => moke.controller.grounded });
     this.toiletPaper = new ToiletPaperMischief({ routine: this.routine, nav, view: this.bathroom,
-      mouth: moke.visual.attachments.mouth,
+      mouth: () => moke.visual.attachments.mouth,
       onHoldChange: (holding) => { moke.carrying = holding || !!this.pickup?.carried; },
       onLearn: () => { this.showVoiceBubble('Toilet paper is fun—and my human notices!'); this.dogLogic.discover('paper=fun+attention', true); },
     });
@@ -846,15 +880,91 @@ export class Game {
   private setState(next: GameState): void {
     this.state = next;
     this.input.gameplayFocus = next === 'playing';
-    this.followCamera.mode = next === 'loading' || next === 'menu' ? 'attract' : 'follow';
+    this.followCamera.mode = next === 'loading' || next === 'menu' || next === 'select' ? 'attract' : 'follow';
     this.ui.showScreen(next === 'playing' ? null : next);
     this.ui.setPlaying(next === 'playing');
     this.audio.duckMusic(next === 'paused');
   }
 
-  private play(captureMouse = true): void {
+  /**
+   * PLAY: Choose Your Dog. The PLAY click (or A) is the gesture that lets sound and speech start, so the announcer
+   * says "Choose your dog!" now (the words are on screen either way). The 3D stage is built here and compiled in the
+   * background; the house keeps showing until it's ready.
+   */
+  private openDogSelect(): void {
     if (this.state !== 'menu') return;
-    this.audio.unlock(); // inside the PLAY click: browsers only allow sound after a gesture
+    this.audio.unlock();
+    this.selection = new DogSelection(DOGS.map((dog) => dog.id), this.dog.id);
+    const preview = (this.preview = new DogPreview(DOGS, this.assets.getGLTF('moke')));
+    this.gfx.syncSize(this.camera);
+    void preview.compile(this.gfx.renderer);
+    this.setState('select');
+    this.ui.showDogSelect(DOGS, this.selection.position);
+    this.audio.play('announce');
+    this.announcer.say(ANNOUNCER.choose);
+  }
+
+  /** Left/right on Choose Your Dog (wrapping round). */
+  private stepDog(step: -1 | 1): void {
+    this.highlightDog(() => (step < 0 ? this.selection?.prev() : this.selection?.next()) ?? false);
+  }
+
+  private highlightDog(change: () => boolean): void {
+    if (this.state !== 'select' || !this.selection || !change()) return;
+    this.ui.setSelectedDog(DOGS, this.selection.position);
+    this.audio.play('dogSwitch');
+  }
+
+  /**
+   * BEGIN: the highlighted dog it is. Their look goes on the dog body, their name into every line, their own Dog Logic
+   * is loaded; the stage is disposed; "Begin!" (said and shown) and play starts. `captureMouse`: from a click, so the
+   * mouse can be captured; not from a controller.
+   */
+  private beginWithDog(captureMouse: boolean): void {
+    if (this.state !== 'select' || !this.selection) return;
+    const dog = dogById(this.selection.current);
+    this.closeDogSelect();
+    this.useDog(dog);
+    this.audio.play('begin');
+    this.announcer.say(ANNOUNCER.begin);
+    this.ui.showAnnouncement(DOG_SELECT.begin, DOG_SELECT.beginCaption * 1000);
+    this.play(captureMouse);
+  }
+
+  /** BACK: to the title screen, nothing chosen or changed. */
+  private backToTitle(): void {
+    if (this.state !== 'select') return;
+    this.closeDogSelect();
+    this.announcer.stop();
+    this.setState('menu');
+  }
+
+  private closeDogSelect(): void {
+    this.preview?.dispose();
+    this.preview = null;
+    this.selection = null;
+  }
+
+  /**
+   * Plays as `dog` from now on (only ever before play starts, so nothing's carried and no activity is under way).
+   * Gameplay is untouched: the same controller, body, systems and activities; only the look, the name and where
+   * Dog Logic is remembered change. Remembered as the dog to start on next time.
+   */
+  private useDog(dog: DogProfile): void {
+    saveDogChoice(dog.id);
+    if (dog.id === this.dog.id) return;
+    this.dog = dog;
+    this.logicMemory.switchTo(dog.logicKey);
+    this.ui.setDog(dog);
+    if (this.moke) {
+      this.visualChoice = createDogVisual(dog, this.assets.getGLTF('moke'), MOKE_MODEL_AVAILABLE);
+      this.moke.setVisual(this.visualChoice.visual);
+    }
+  }
+
+  private play(captureMouse = true): void {
+    if (this.state !== 'select') return;
+    this.audio.unlock(); // inside the BEGIN click: browsers only allow sound after a gesture
     this.audio.startMusic();
     this.setState('playing');
     this.followCamera.recenterBehind(this.updateCameraTarget());
@@ -900,10 +1010,14 @@ export class Game {
     const command = menuCommand(this.state, (action) => input.wasPressed(action), this.ui.controlsOpen);
     if (command === 'pause') this.pause();
     else if (command === 'resume') this.resume(false);
-    else if (command === 'play') this.play(false);
+    else if (command === 'play') this.openDogSelect();
+    else if (command === 'begin') this.beginWithDog(false);
+    else if (command === 'back') this.backToTitle();
+    else if (command === 'prevDog') this.stepDog(-1);
+    else if (command === 'nextDog') this.stepDog(1);
     else if (command === 'closeControls') this.ui.closeControls();
     // The press that started or resumed play mustn't also count as an in-game action (A is also "interact").
-    const enteredPlay = command === 'resume' || command === 'play';
+    const enteredPlay = command === 'resume' || command === 'begin';
 
     const playing = this.state === 'playing';
     this.usage?.update(dt, playing, this.moveIntent.x !== 0 || this.moveIntent.z !== 0);
@@ -970,7 +1084,15 @@ export class Game {
 
     // Dynamic resolution on phones: a slightly softer picture beats a stuttering one.
     if (playing && this.resolution.update(dt, elapsed * 1000)) this.gfx.pixelRatioCap = this.resolution.pixelRatio;
-    this.gfx.render(this.scene, this.camera);
+    // Choose Your Dog: the dogs' stage instead of the house (once its shaders are ready).
+    const preview = this.state === 'select' ? this.preview : null;
+    if (preview && this.selection) preview.update(dt, this.selection.position, reducedMotion());
+    if (preview?.ready) {
+      this.gfx.syncSize(this.camera);
+      preview.render(this.gfx.renderer);
+    } else {
+      this.gfx.render(this.scene, this.camera);
+    }
     this.frameStats.record(elapsed);
     this.debug.update(dt);
   };
@@ -1395,6 +1517,7 @@ export class Game {
       const c = this.moke.controller;
       const p = c.position;
       return {
+        dog: `${this.dog.name} (Dog Logic: ${this.logicMemory.key})`,
         position: `${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)}`,
         speed: `${c.actualSpeed.toFixed(2)} m/s (aim ${c.locomotion.targetSpeed.toFixed(2)})`,
         gait: c.gait,

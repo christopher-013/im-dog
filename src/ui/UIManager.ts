@@ -1,5 +1,8 @@
 import { CONTROL_HINTS, FACE_BUTTON_LAYOUTS, GAMEPAD_CONTROL_HINTS, KEY_BINDINGS, TOUCH_CONTROL_HINTS, type Action, type FaceButtonLayout, type GamepadControlHint } from '../config/input';
 import type { DogLogicEntry } from '../config/dogLogic';
+import { DOGS, dogText, type DogProfile } from '../config/dogs';
+import { swipeStep } from '../core/DogSelection';
+import { DOG_SELECT } from '../config/dogSelect';
 import type { InputMode } from '../core/InputMode';
 import { keyLabel } from '../core/InputState';
 import { MUSIC_CHOICES, MUSIC_VOLUME_RANGE, SENSITIVITY_RANGE, type MusicChoice, type PlayerSettings } from '../core/PlayerSettings';
@@ -8,7 +11,7 @@ import { FEEDBACK, SITE } from '../config/site';
 import { FeedbackDialog } from './FeedbackDialog';
 import { Fireworks } from './Fireworks';
 
-export type Screen = 'loading' | 'menu' | 'paused' | 'error';
+export type Screen = 'loading' | 'menu' | 'select' | 'paused' | 'error';
 
 export interface UIHandlers {
   onPlay(): void;
@@ -17,6 +20,17 @@ export interface UIHandlers {
   onFsd?(): void;
   /** A tap or click on the full-screen TV: stop watching. */
   onTvExit?(): void;
+}
+
+/** Choose Your Dog: what the screen's buttons, taps and swipes ask for. */
+export interface DogSelectHandlers {
+  /** The arrows, or a swipe: −1 the previous dog, 1 the next. */
+  onStep(step: -1 | 1): void;
+  /** A dog's name chip (by index), or a tap or click on the stage at `ndcX` (−1..1 across the screen). */
+  onPick(index: number): void;
+  onTap(ndcX: number): void;
+  onBegin(): void;
+  onBack(): void;
 }
 
 /**
@@ -63,12 +77,17 @@ export class UIManager {
   private readonly hud: HTMLElement;
   private resting = false;
   private handlers: UIHandlers | null = null;
+  private selectHandlers: DogSelectHandlers | null = null;
   private toastTimer: number | undefined;
+  private announceTimer: number | undefined;
+  /** The dog being played: every line the game shows goes through `t`, so it says their name (see dogText). */
+  private dog: DogProfile = DOGS[0]!;
 
   constructor(private readonly doc: Document = document) {
     this.screens = {
       loading: this.el('screen-loading'),
       menu: this.el('screen-menu'),
+      select: this.el('screen-select'),
       paused: this.el('screen-pause'),
       error: this.el('screen-error'),
     };
@@ -125,6 +144,108 @@ export class UIManager {
     this.renderControls(this.el('controls-list'));
     this.setUpControlsTabs();
     this.setUpFullscreen();
+    this.setUpDogSelect();
+  }
+
+  // ---- The dog being played
+
+  /** A line for the player, with the chosen dog's name in it. */
+  private t(text: string): string {
+    return dogText(text, this.dog);
+  }
+
+  /**
+   * The dog being played (Choose Your Dog): the HUD's lines say their name from now on, and so do the few fixed
+   * texts that talk about the dog in play (marked `data-dog-text` / `data-dog-title` in index.html). The title
+   * screen and the About page keep talking about the real Moke.
+   */
+  setDog(dog: DogProfile): void {
+    this.dog = dog;
+    for (const el of this.doc.querySelectorAll<HTMLElement>('[data-dog-text]')) {
+      el.dataset.dogTextSource ??= el.textContent ?? '';
+      el.textContent = dogText(el.dataset.dogTextSource, dog);
+    }
+    for (const el of this.doc.querySelectorAll<HTMLElement>('[data-dog-title]')) {
+      el.dataset.dogTitleSource ??= el.title;
+      el.title = dogText(el.dataset.dogTitleSource, dog);
+    }
+  }
+
+  // ---- Choose Your Dog
+
+  bindDogSelect(handlers: DogSelectHandlers): void {
+    this.selectHandlers = handlers;
+  }
+
+  /** Fills the name chips (once per opening) and highlights `index`. */
+  showDogSelect(dogs: readonly DogProfile[], index: number): void {
+    const group = this.el('select-dogs');
+    group.replaceChildren(
+      ...dogs.map((dog, i) => {
+        const chip = this.doc.createElement('button');
+        chip.type = 'button';
+        chip.className = 'select-chip';
+        chip.setAttribute('role', 'radio');
+        chip.textContent = dog.name;
+        chip.dataset.dog = dog.id;
+        chip.addEventListener('click', () => this.selectHandlers?.onPick(i));
+        return chip;
+      }),
+    );
+    this.setSelectedDog(dogs, index);
+    this.el('select-title').textContent = DOG_SELECT.title;
+    // Start on BEGIN, so Enter (or Space) begins straight away.
+    this.el('btn-dog-begin').focus({ preventScroll: true });
+  }
+
+  /** The highlighted dog: its chip checked, its name and line on the card. */
+  setSelectedDog(dogs: readonly DogProfile[], index: number): void {
+    const dog = dogs[index];
+    if (!dog) return;
+    for (const [i, chip] of [...this.el('select-dogs').children].entries()) {
+      const on = i === index;
+      chip.setAttribute('aria-checked', String(on));
+      (chip as HTMLElement).tabIndex = on ? 0 : -1;
+    }
+    this.el('select-name').textContent = dog.name;
+    this.el('select-tagline').textContent = dog.tagline;
+    this.screens.select.dataset.dog = dog.id;
+  }
+
+  /** The announcer's word over the start of play ("BEGIN!"), always on screen whether or not it was spoken. */
+  showAnnouncement(text: string, durationMs: number): void {
+    const el = this.el('announce');
+    el.textContent = text;
+    el.classList.remove('is-visible');
+    void el.offsetWidth; // restart the animation
+    el.classList.add('is-visible');
+    window.clearTimeout(this.announceTimer);
+    this.announceTimer = window.setTimeout(() => {
+      el.classList.remove('is-visible');
+      el.textContent = '';
+    }, durationMs);
+  }
+
+  /** The arrows, BEGIN and BACK, and taps and swipes on the dogs themselves (mouse, pen or finger alike). */
+  private setUpDogSelect(): void {
+    this.el('btn-dog-prev').addEventListener('click', () => this.selectHandlers?.onStep(-1));
+    this.el('btn-dog-next').addEventListener('click', () => this.selectHandlers?.onStep(1));
+    this.el('btn-dog-begin').addEventListener('click', () => this.selectHandlers?.onBegin());
+    this.el('btn-dog-back').addEventListener('click', () => this.selectHandlers?.onBack());
+    const stage = this.el('select-stage');
+    let start: { id: number; x: number; y: number } | null = null;
+    stage.addEventListener('pointerdown', (e) => {
+      start = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    });
+    stage.addEventListener('pointerup', (e) => {
+      if (!start || start.id !== e.pointerId) return;
+      const step = swipeStep(e.clientX - start.x, e.clientY - start.y, DOG_SELECT.swipeMin);
+      const moved = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+      start = null;
+      if (step !== 0) this.selectHandlers?.onStep(step);
+      else if (moved < 12) this.selectHandlers?.onTap((e.clientX / Math.max(1, this.doc.documentElement.clientWidth)) * 2 - 1);
+    });
+    stage.addEventListener('pointercancel', () => (start = null));
   }
 
   /**
@@ -245,7 +366,7 @@ export class UIManager {
   }
 
   showToast(text: string, durationMs = 4000): void {
-    this.toast.textContent = text;
+    this.toast.textContent = this.t(text);
     this.toast.classList.add('is-visible');
     this.toast.setAttribute('aria-hidden', 'false');
     window.clearTimeout(this.toastTimer);
@@ -301,7 +422,8 @@ export class UIManager {
   /** What Moke's up to while FSD drives ("Answering the door!"). Cheap to call every frame. */
   setFsdStatus(text: string): void {
     const status = this.el('fsd-status');
-    if (status.textContent !== text) status.textContent = text;
+    const line = this.t(text);
+    if (status.textContent !== line) status.textContent = line;
   }
 
   /** Whether play is running (the touch controls only show then). */
@@ -324,8 +446,8 @@ export class UIManager {
     const glyph = action ? actionGlyph(action, this.inputMode) : null;
     if (action && label) {
       this.promptKey.textContent = glyph ?? keyLabel(KEY_BINDINGS[action][0] ?? '?');
-      this.promptLabel.textContent = label;
-      this.touchInteractLabel.textContent = label;
+      this.promptLabel.textContent = this.t(label);
+      this.touchInteractLabel.textContent = this.t(label);
     }
     this.prompt.classList.toggle('is-visible', text !== null);
     this.prompt.setAttribute('aria-hidden', String(text === null || this.inputMode === 'touch'));
@@ -382,7 +504,7 @@ export class UIManager {
   /** Pops a comic bark ("Arf!") at a screen position (CSS pixels), e.g. above Moke's head. */
   showBark(x: number, y: number, text: string): void {
     const bubble = this.barkBubble;
-    bubble.textContent = text;
+    bubble.textContent = this.t(text);
     bubble.style.left = `${x}px`;
     bubble.style.top = `${y}px`;
     bubble.classList.remove('is-popping');
@@ -399,7 +521,7 @@ export class UIManager {
     this.toast.classList.remove('is-visible');
     this.toast.setAttribute('aria-hidden', 'true');
     const bubble = this.el('speech-bubble');
-    bubble.textContent = text;
+    bubble.textContent = this.t(text);
     bubble.dataset.mood = mood;
     bubble.classList.add('is-visible');
     bubble.setAttribute('aria-hidden', 'false');
@@ -436,7 +558,7 @@ export class UIManager {
     if (text === this.objective) return;
     this.objective = text;
     const chip = this.el('heist-chip');
-    if (text) chip.textContent = text;
+    if (text) chip.textContent = this.t(text);
     chip.classList.toggle('is-visible', text !== null);
     chip.setAttribute('aria-hidden', String(text === null));
   }
@@ -455,7 +577,7 @@ export class UIManager {
       this.discoveryShowing = entry.id;
       this.renderEquation(entry);
     }
-    this.el('discovery-note').textContent = first ? 'Moke has learned something very important.' : 'Still true. Moke checked.';
+    this.el('discovery-note').textContent = this.t(first ? 'Moke has learned something very important.' : 'Still true. Moke checked.');
     card.classList.remove('is-leaving');
     card.classList.add('is-visible');
     card.setAttribute('aria-hidden', 'false');
@@ -504,7 +626,7 @@ export class UIManager {
   /** How a nap felt: a row of five little signs (lit when true) and a few words. */
   showNap(kicker: string, signs: readonly { icon: string; lit: boolean; label: string }[], caption: string, durationMs = 5200): void {
     const card = this.el('nap-card');
-    this.el('nap-kicker').textContent = kicker;
+    this.el('nap-kicker').textContent = this.t(kicker);
     card.classList.toggle('is-perfect', kicker !== 'Nap');
     const row = this.el('nap-icons');
     row.replaceChildren();
@@ -512,13 +634,13 @@ export class UIManager {
       const svg = this.doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('class', `nap-icon${sign.lit ? ' is-lit' : ''}`);
       svg.setAttribute('role', 'img');
-      svg.setAttribute('aria-label', `${sign.label}: ${sign.lit ? 'yes' : 'no'}`);
+      svg.setAttribute('aria-label', this.t(`${sign.label}: ${sign.lit ? 'yes' : 'no'}`));
       const use = this.doc.createElementNS('http://www.w3.org/2000/svg', 'use');
       use.setAttribute('href', `#icon-${sign.icon}`);
       svg.append(use);
       row.append(svg);
     }
-    this.el('nap-caption').textContent = caption;
+    this.el('nap-caption').textContent = this.t(caption);
     card.classList.add('is-visible');
     card.setAttribute('aria-hidden', 'false');
     window.clearTimeout(this.napTimer);
@@ -547,7 +669,7 @@ export class UIManager {
 
   /** Liam's Obstacle Course done: fireworks and "Moke is tired!" over the game for `durationMs`, then it fades. */
   showCourseComplete(detail: string, durationMs: number): void {
-    this.el('course-detail').textContent = detail;
+    this.el('course-detail').textContent = this.t(detail);
     const card = this.el('course-card');
     card.classList.add('is-visible');
     card.setAttribute('aria-hidden', 'false');
@@ -625,6 +747,8 @@ export class UIManager {
       const label = this.doc.createElement('span');
       label.className = 'control-label';
       label.textContent = hint.label;
+      // Lines about the dog follow the one being played (setDog).
+      if (hint.label.includes('Moke')) label.dataset.dogText = '';
       row.append(keys, label);
 
       if (!hint.ready) {
@@ -653,6 +777,7 @@ export class UIManager {
       const label = this.doc.createElement('span');
       label.className = 'control-label';
       label.textContent = hint.label;
+      if (hint.label.includes('Moke')) label.dataset.dogText = '';
       row.append(keys, label);
       list.appendChild(row);
     }

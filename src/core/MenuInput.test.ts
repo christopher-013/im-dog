@@ -41,3 +41,29 @@ describe('menu input', () => {
     expect(commandFor('loading', ['Gamepad:Button0', 'Gamepad:Button9', 'Escape'])).toBeNull();
   });
 });
+
+describe('menu input on Choose Your Dog', () => {
+  it('moves between the dogs with the arrow keys or A/D, the D-pad, and the shoulder buttons', () => {
+    for (const key of ['ArrowLeft', 'KeyA', 'Gamepad:Button14', 'Gamepad:Button4']) expect(commandFor('select', [key]), key).toBe('prevDog');
+    for (const key of ['ArrowRight', 'KeyD', 'Gamepad:Button15', 'Gamepad:Button5']) expect(commandFor('select', [key]), key).toBe('nextDog');
+  });
+
+  it('begins with A or Start on a controller; on a keyboard the focused BEGIN button answers Enter and Space', () => {
+    expect(commandFor('select', ['Gamepad:Button0'])).toBe('begin');
+    expect(commandFor('select', ['Gamepad:Button9'])).toBe('begin');
+    for (const key of ['Enter', 'Space']) expect(commandFor('select', [key])).toBeNull();
+  });
+
+  it('goes back to the title with Esc or B, and back wins over anything pressed with it', () => {
+    expect(commandFor('select', ['Escape'])).toBe('back');
+    expect(commandFor('select', ['Gamepad:Button1'])).toBe('back');
+    expect(commandFor('select', ['Gamepad:Button1', 'Gamepad:Button0'])).toBe('back');
+  });
+
+  it('only on that screen: the title still opens it with A, and the arrows mean nothing elsewhere', () => {
+    expect(commandFor('menu', ['Gamepad:Button0'])).toBe('play');
+    expect(commandFor('menu', ['ArrowRight'])).toBeNull();
+    expect(commandFor('paused', ['Gamepad:Button5'])).toBeNull();
+    expect(commandFor('playing', ['Gamepad:Button1'])).toBeNull();
+  });
+});

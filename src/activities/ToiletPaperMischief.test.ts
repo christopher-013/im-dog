@@ -43,7 +43,7 @@ async function setup() {
   Object.assign(moke, BATHROOM.paperApproach);
   let learned = 0;
   const held: boolean[] = [];
-  const paper = new ToiletPaperMischief({ routine, nav, view, mouth,
+  const paper = new ToiletPaperMischief({ routine, nav, view, mouth: () => mouth,
     onHoldChange: (holding) => held.push(holding), onLearn: () => learned++ });
   const director = new DogActivityDirector([paper]);
   const ctx: DogActivityContext = {

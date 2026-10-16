@@ -6,6 +6,10 @@ how to test it. **What the file must contain** is in [`MOKE_3D_SPEC.md`](MOKE_3D
 **Status (2026-09-24):** the integration path is built and covered by tests, but **there's no `moke.glb` yet.** The
 game uses the procedural stand-in, `ToonMokeVisual`.
 
+**Two dogs (2026-10-16, D29):** `moke.glb` is Moke's only. When it's installed, Moke (in the game and on the Choose
+Your Dog screen, where a skeleton clone is shown) uses it; Dougie is always the procedural toon build with his own
+look. Both share every animation state, so a model built to this spec needs nothing extra for the second dog.
+
 ## 1. Where the file goes
 ```
 public/assets/models/moke/moke.glb      (MOKE_CHARACTER.model.path = 'assets/models/moke/moke.glb')

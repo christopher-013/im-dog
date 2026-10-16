@@ -1,5 +1,7 @@
 import type { Object3D } from 'three';
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
+import type { DogProfile } from '../config/dogs';
 import { MOKE_CHARACTER } from '../config/mokeCharacter';
 import { GltfMokeVisual } from './gltf/GltfMokeVisual';
 import type { MokeAnimationState } from './MokeAnimationController';
@@ -60,4 +62,34 @@ export function createMokeVisual(gltf: Pick<GLTF, 'scene' | 'animations'> | unde
   const log = modelExpected || import.meta.env.DEV ? console.warn : console.info;
   log(`[moke] ${reason}; using the procedural stand-in (ToonMokeVisual). ${help}`);
   return { visual: new ToonMokeVisual(), kind: 'stand-in', notes: [reason] };
+}
+
+/**
+ * The visual for whichever dog is being played (D29). Moke goes through `createMokeVisual` exactly as before (the
+ * final `moke.glb` when it's installed, else the procedural stand-in); Dougie is always the procedural toon build
+ * with his own look. Gameplay never sees the difference.
+ */
+export function createDogVisual(
+  dog: DogProfile,
+  gltf: Pick<GLTF, 'scene' | 'animations'> | undefined,
+  modelExpected: boolean,
+): MokeVisualChoice {
+  if (dog.usesModel) return createMokeVisual(gltf, modelExpected);
+  return { visual: new ToonMokeVisual(dog.look), kind: 'stand-in', notes: [] };
+}
+
+/**
+ * A second, independent visual of a dog for the Choose Your Dog preview: never the in-game one, so the two can
+ * pose differently and the preview can be disposed on its own. A loaded `moke.glb` is cloned (skeleton and all);
+ * anything that goes wrong falls back to the toon build, quietly (the game itself already reported it).
+ */
+export function createPreviewVisual(dog: DogProfile, gltf: Pick<GLTF, 'scene' | 'animations'> | undefined): MokeVisual {
+  if (dog.usesModel && gltf) {
+    try {
+      return new GltfMokeVisual({ scene: cloneSkinned(gltf.scene), animations: gltf.animations });
+    } catch {
+      // Fall through to the toon build.
+    }
+  }
+  return new ToonMokeVisual(dog.look);
 }

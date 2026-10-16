@@ -180,3 +180,21 @@ handed to an artist. In priority order:
   softer on the head, looser on the ears and tail.
 - **White with warm cream accents** (ears, muzzle shadow). Avoid a flat pure white; it will clip under warm lighting.
 - **Signature animation beats:** head tilt, happy squint with tongue out, the earnest look-up, the pom tail wag.
+
+## Dougie, the second playable dog (2026-10-16, D29)
+From one photo the owner shared in chat (private: **not saved in the repository**; if it's wanted as a reference
+later, the owner can place it in `reference/` themselves, which stays git-ignored). What it shows, and how the game's
+toon build translates it (`DOUGIE_LOOK` in `src/config/dogLooks.ts`):
+- **Coat:** fluffy, dark charcoal/black over the head, ears, back and sides → a dark charcoal base.
+- **Top of the head:** a lighter white patch, with grey running into the forehead → a white patch on top, a grey
+  streak down the middle.
+- **Eyebrows, cheeks and muzzle:** warm cream/tan, with a lighter grey-white bridge above the nose → tan eyebrow
+  spots, tan cheeks and chin, a tan muzzle with a pale bridge.
+- **Eyes and nose:** brown eyes, a dark nose → warm brown irises; the same glossy black nose as Moke's.
+- **Chest and legs:** a white chest, white lower legs, a tan flash on the front of a foreleg → a white bib, white
+  socks, tan flashes above the front socks.
+- **Ears:** long, hanging drop ears → longer ear clumps than Moke's.
+- **Expression:** cheerful, mouth open (the game's panting and happy states cover this).
+- **Not shown or not known:** his real size (the photo gives no scale, so he's built at Moke's gameplay size), his
+  tail (given a white tip, a common tri-colour marking: a stylistic guess), his back and belly. He wears a light
+  collar in the photo; the game gives him a sage one with his name on the tag.

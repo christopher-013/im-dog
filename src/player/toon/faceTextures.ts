@@ -1,4 +1,5 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
+import type { DogPalette } from '../../config/dogLooks';
 import { MOKE_LOOK } from '../../config/mokeLook';
 
 function canvas(size: number, draw: (ctx: CanvasRenderingContext2D, s: number) => void): CanvasTexture | null {
@@ -18,8 +19,7 @@ function canvas(size: number, draw: (ctx: CanvasRenderingContext2D, s: number) =
  * Moke's real eyes: round, very dark brown (near-black), with a dark rim, a barely-there pupil, a
  * faint warm glow low in the iris, and a crisp catch-light up and to the left. Drawn to fill a round disc.
  */
-export function eyeTexture(): CanvasTexture | null {
-  const p = MOKE_LOOK.palette;
+export function eyeTexture(p: DogPalette = MOKE_LOOK.palette): CanvasTexture | null {
   return canvas(256, (ctx, s) => {
     const c = s / 2;
     ctx.fillStyle = p.eyeRim;

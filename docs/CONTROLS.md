@@ -66,7 +66,7 @@ may hide a newly connected controller until one of its buttons is pressed.
 |---|---|
 | Left stick or D-pad | Move (analog stick preserves speed and direction) |
 | Right stick | Look around / orbit camera |
-| A / bottom face button | Interact (pick up, drop, give, eat, lie down); start from the menu; resume from pause |
+| A / bottom face button | Interact (pick up, drop, give, eat, lie down); start from the menu (Choose Your Dog, then A again to begin); resume from pause |
 | B / right face button | Jump |
 | X / left face button | Do a trick |
 | Y / top face button | Bark or growl, at random |
@@ -105,6 +105,17 @@ screen. Using a mouse or keyboard again switches back. Portrait and landscape bo
 
 Only the stick, the paw and pause stay on screen, to keep it clear. There's no walk button (a partly pushed stick
 walks slowly anyway) and no sniff button (rarely used on a phone). Details and tested sizes: `docs/MOBILE.md`.
+
+## Choose Your Dog (after PLAY, 2026-10-16)
+| | Keyboard and mouse | Controller | Touch |
+|---|---|---|---|
+| Switch dog | ← → (or A / D), the arrow buttons, or click a dog or its name | D-pad left/right, or LB / RB | Swipe across the dogs, tap a dog, its name or the arrows |
+| Begin | Enter or Space on the focused BEGIN (it starts focused), or click BEGIN | A or Start (Menu) | Tap BEGIN |
+| Back to the title | Esc, or BACK | B | Tap BACK |
+
+Tab moves through the arrows, the dogs' names, BACK and BEGIN. The hint under the buttons follows the input in use.
+The dog last chosen is highlighted next time (remembered in this browser). There's no switching dog mid-game: reload
+the page and choose again from the title.
 
 ## First play
 The first time on each kind of controls, a few seconds of how-to:

@@ -8,7 +8,9 @@ import type { MokeController } from './MokeController';
 import type { MokeVisual } from './MokeVisual';
 
 /**
- * Ties Moke's gameplay controller to whatever visual he currently has.
+ * Ties the player dog's gameplay controller to whatever visual they currently have. Named after the first dog, it
+ * is every playable dog (D29): Moke and Dougie share the controller, the animation state and all gameplay; only the
+ * visual differs, and `setVisual` changes it (Choose Your Dog).
  * The rest of the game talks to `controller` (and to `visual.attachments` for carried things), never to meshes.
  */
 export class Moke {
@@ -26,11 +28,33 @@ export class Moke {
   private readonly look = { yaw: 0, pitch: 0 };
   private readonly shift = { x: 0, z: 0 };
 
+  private current: MokeVisual;
+
   constructor(
     readonly controller: MokeController,
-    readonly visual: MokeVisual,
+    visual: MokeVisual,
   ) {
+    this.current = visual;
     this.animation = new MokeAnimationController(controller.tuning);
+    this.update(0, 1);
+  }
+
+  get visual(): MokeVisual {
+    return this.current;
+  }
+
+  /**
+   * A different look for the same dog body (another dog chosen): the new visual takes the old one's place in the
+   * scene, posed where the body is, and the old one is disposed. Everything else reads `visual` when it needs it,
+   * so nothing else has to change. Only done before play starts (Choose Your Dog), when nothing is in his mouth.
+   */
+  setVisual(visual: MokeVisual): void {
+    const old = this.current;
+    if (visual === old) return;
+    const parent = old.object.parent;
+    this.current = visual;
+    if (parent) parent.add(visual.object);
+    old.dispose();
     this.update(0, 1);
   }
 

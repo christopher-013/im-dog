@@ -103,14 +103,17 @@ const TOON_SHADE = /* glsl */ `
  * Built on MeshToonMaterial so shadow maps and all room lights keep working.
  * With `smoothNormals`, geometry must carry the `smoothNormal` and `furCavity` attributes (see `furClump`).
  * With `depthPull` (m), it wins depth tests against anything less than that far in front of it.
+ * With `vertexColors`, the geometry's `color` attribute tints it (a coat's markings; see toon/coat.ts).
  */
 export function createToonMaterial(
   lit: ColorRepresentation,
   shade: ColorRepresentation,
-  { smoothNormals = false, depthPull = 0 } = {},
+  { smoothNormals = false, depthPull = 0, vertexColors = false } = {},
 ): MeshToonMaterial {
   const { keyLight, roomLight, rim } = MOKE_LOOK;
   const material = new MeshToonMaterial({ color: '#ffffff' });
+  // A coat with markings (Dougie): the fur's colour per vertex, multiplying the lit/shade palette.
+  if (vertexColors) material.vertexColors = true;
   // Display colours: skip tone mapping so white fur lands on screen as white.
   material.toneMapped = false;
   material.defines = {

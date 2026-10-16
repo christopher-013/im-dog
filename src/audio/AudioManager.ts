@@ -1,13 +1,13 @@
 import { AUDIO, MUSIC } from '../config/audio';
 import { MusicPlayer, SONGS, type SongId } from './music';
-import { bark, chirp, crunch, squeak, discovery, doorbell, drop, fireworks, growl, lap, pickup, pour, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
+import { announce, bark, begin, chirp, crunch, dogSwitch, squeak, discovery, doorbell, drop, fireworks, growl, lap, pickup, pour, sniff, surprise, treatBag, whoosh, type Synth } from './synth';
 
-export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'lap' | 'pour' | 'discovery' | 'doorbell' | 'chirp' | 'squeak' | 'fireworks';
+export type SoundName = 'bark' | 'growl' | 'sniff' | 'pickup' | 'drop' | 'surprise' | 'whoosh' | 'treatBag' | 'crunch' | 'lap' | 'pour' | 'discovery' | 'doorbell' | 'chirp' | 'squeak' | 'fireworks' | 'announce' | 'dogSwitch' | 'begin';
 
 /** Sounds longer than a second, and how long to keep them connected (ms). */
-const LASTS: Partial<Record<SoundName, number>> = { fireworks: 3600 };
+const LASTS: Partial<Record<SoundName, number>> = { fireworks: 3600, announce: 1800 };
 
-const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop, surprise, whoosh, treatBag, crunch, lap, pour, discovery, doorbell, chirp, squeak, fireworks };
+const SOUNDS: Record<SoundName, Synth> = { bark, growl, sniff, pickup, drop, surprise, whoosh, treatBag, crunch, lap, pour, discovery, doorbell, chirp, squeak, fireworks, announce, dogSwitch, begin };
 
 /** Safari's Audio Session API (feature-detected; not in the TypeScript DOM types yet). */
 type AudioSessionNavigator = Navigator & { audioSession?: { type: string } };

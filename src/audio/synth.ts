@@ -389,3 +389,87 @@ export const fireworks: Synth = (ctx, out, t0, pitch, noise) => {
     fizz.connect(high).connect(envelope(ctx, t + 0.05, 0.03, 0.22, 0.4)).connect(out);
   }
 };
+
+/**
+ * Choose Your Dog (original, not modelled on any game's sounds): a deep drum hit with a cracking attack, a low
+ * brassy swell a fifth apart, and a shimmering tail. About 1.6 s; it sits under the announcer's "Choose your dog!".
+ */
+export const announce: Synth = (ctx, out, t0, pitch, noise) => {
+  const drum = ctx.createOscillator();
+  drum.type = 'sine';
+  drum.frequency.setValueAtTime(120 * pitch, t0);
+  drum.frequency.exponentialRampToValueAtTime(44 * pitch, t0 + 0.45);
+  drum.connect(envelope(ctx, t0, 0.004, 1, 0.85)).connect(out);
+  drum.start(t0);
+  drum.stop(t0 + 0.95);
+  const crack = noiseSource(ctx, noise, t0, 0.18);
+  const crackTone = ctx.createBiquadFilter();
+  crackTone.type = 'bandpass';
+  crackTone.frequency.value = 1400 * pitch;
+  crackTone.Q.value = 0.7;
+  crack.connect(crackTone).connect(envelope(ctx, t0, 0.003, 0.6, 0.16)).connect(out);
+  // The swell, with a little mid-range edge so a phone speaker still carries it.
+  for (const f of [98, 146.83, 196]) {
+    const voice = ctx.createOscillator();
+    voice.type = 'sawtooth';
+    voice.frequency.value = f * pitch;
+    const tone = ctx.createBiquadFilter();
+    tone.type = 'lowpass';
+    tone.frequency.setValueAtTime(500, t0);
+    tone.frequency.linearRampToValueAtTime(1600, t0 + 0.5);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.12, t0 + 0.35);
+    g.gain.setValueAtTime(0.12, t0 + 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.5);
+    voice.connect(tone).connect(g).connect(out);
+    voice.start(t0);
+    voice.stop(t0 + 1.55);
+  }
+  // (The noise buffer is a second long: the shimmer stays inside it.)
+  const shimmer = noiseSource(ctx, noise, t0 + 0.05, 0.85);
+  const air = ctx.createBiquadFilter();
+  air.type = 'highpass';
+  air.frequency.value = 5200 * pitch;
+  shimmer.connect(air).connect(envelope(ctx, t0 + 0.05, 0.15, 0.12, 0.7)).connect(out);
+};
+
+/** The highlight moving to another dog: a quick two-note blip, up. */
+export const dogSwitch: Synth = (ctx, out, t0, pitch) => {
+  for (const [i, f] of [587.33, 880].entries()) {
+    const t = t0 + i * 0.055;
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = f * pitch;
+    osc.connect(envelope(ctx, t, 0.006, 0.5, 0.12)).connect(out);
+    osc.start(t);
+    osc.stop(t + 0.2);
+  }
+};
+
+/** "Begin!": a punchy drum hit with a bright major chord stab over it. */
+export const begin: Synth = (ctx, out, t0, pitch, noise) => {
+  const drum = ctx.createOscillator();
+  drum.type = 'sine';
+  drum.frequency.setValueAtTime(150 * pitch, t0);
+  drum.frequency.exponentialRampToValueAtTime(55 * pitch, t0 + 0.3);
+  drum.connect(envelope(ctx, t0, 0.004, 1, 0.5)).connect(out);
+  drum.start(t0);
+  drum.stop(t0 + 0.6);
+  const crack = noiseSource(ctx, noise, t0, 0.12);
+  const crackTone = ctx.createBiquadFilter();
+  crackTone.type = 'highpass';
+  crackTone.frequency.value = 2000;
+  crack.connect(crackTone).connect(envelope(ctx, t0, 0.002, 0.4, 0.1)).connect(out);
+  for (const f of [523.25, 659.25, 783.99]) {
+    const voice = ctx.createOscillator();
+    voice.type = 'square';
+    voice.frequency.value = f * pitch;
+    const tone = ctx.createBiquadFilter();
+    tone.type = 'lowpass';
+    tone.frequency.value = 2400;
+    voice.connect(tone).connect(envelope(ctx, t0 + 0.02, 0.01, 0.12, 0.45)).connect(out);
+    voice.start(t0 + 0.02);
+    voice.stop(t0 + 0.55);
+  }
+};

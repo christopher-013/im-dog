@@ -30,6 +30,9 @@ src/
     senses.ts             sniff timing, wisp look, scent colours per category
     audio.ts              sound levels
     mokeLook.ts           Moke's look: palette, key light, crease shading, silhouette line, collar, blink timing
+    dogs.ts               the playable dogs (D29): Moke and Dougie, their names, taglines, looks and Dog Logic keys; dogText()
+    dogLooks.ts           each dog's toon look: palette, collar, ears, and Dougie's coat markings (vertex-colour patches)
+    dogSelect.ts          Choose Your Dog: the stage's layout and motion, the announcer's lines and delivery
     assets.ts             asset manifest (preloaded behind the loading screen)
     quality.ts            graphics presets (HIGH desktop, MEDIUM/LOW phones) + dynamic-resolution tuning
     human.ts              the human: body, speeds, sitting, avoiding Moke, sight, chase, treat timings
@@ -168,7 +171,11 @@ scripts/sw-template.js    the service worker; vite.config.ts fills in the precac
 
 
 ## Game states and the frame
-`loading → menu → playing ⇄ paused`. A finished Sock Heist no longer stops play: its "Sock Heist Complete" card shows
+`loading → menu ⇄ select → playing ⇄ paused`. **`select` is Choose Your Dog (D29):** PLAY (or A) opens it; the
+house isn't drawn while it's up, the game's renderer draws `DogPreview`'s little stage instead (one extra scene, no
+second WebGL context, disposed on leaving); BACK (Esc, B) returns to `menu`; BEGIN (Enter on the focused button, A or
+Start) applies the chosen dog (`Game.useDog`: their visual on the one dog body via `Moke.setVisual`, their name via
+`UIManager.setDog`, their Dog Logic via `DogLogicMemory.switchTo`) and starts play. A finished Sock Heist no longer stops play: its "Sock Heist Complete" card shows
 over the game for a few seconds (there used to be a `complete` state with PLAY AGAIN / KEEP EXPLORING). Hiding the page (phone locked, app or tab switched) pauses. Each rendered frame:
 
 1. `input.beginFrame(dt)` polls gamepads, then latches button/key presses, analog movement and look delta for the frame.
@@ -221,6 +228,25 @@ so stalls are visible instead of being hidden by the simulation clamp.
   the player switches it off. It reads a small `FsdWorld` view built in `Game.spawnFsd` (Moke, the human, the heist's
   phase, the doorbell, the ballgame, `InteractionSystem.all` and `current`) and plans on its own `NavGrid` at Moke's
   size; nothing else in the game knows it exists.
+
+## Playable dogs (D29)
+Moke and Dougie are **one gameplay dog with two presentations**. Everything that plays (`MokeController`, the
+capsule, `MokeAnimationController`, the interactions, activities, Sock Heist, FSD, the course) is shared and
+unchanged; the classes keep Moke's name because he came first. What's per dog lives in `config/dogs.ts`:
+- **the look:** `createDogVisual(dog)` gives Moke the usual `createMokeVisual` (moke.glb or the toon stand-in, as
+  before) and Dougie a `ToonMokeVisual` built with his `DogLook` (`config/dogLooks.ts`): his own colours, longer ears,
+  brown eyes, a sage collar with his name, and coat markings painted as vertex colours (`player/toon/coat.ts`) that
+  the toon material multiplies in. With no coat (Moke) nothing is painted and the build is byte-for-byte as before.
+- **the name:** every line the HUD shows goes through `UIManager.t()` → `dogText()`, which swaps "Moke", "MOKE" and
+  the called-out "Mo-ke" for the chosen dog's name. A few fixed texts in `index.html` are marked `data-dog-text` /
+  `data-dog-title`. The title screen, the About page and the page's metadata stay about the real Moke.
+- **progress:** `DogLogicMemory` reads and writes the chosen dog's key. Moke keeps `imdog.dogLogic` (so no existing
+  save moves); Dougie's is `imdog.dogLogic.dougie`. The last dog chosen is `imdog.dog` (`core/DogChoice.ts`).
+- **choosing:** `core/DogSelection.ts` (pure: the highlight, wrapping, picks, swipes), `player/DogPreview.ts` (the 3D
+  stage), `audio/Announcer.ts` (the browser's own speech voice, pitched down; the words are always on screen too) and
+  three original synthesized sounds (`announce`, `dogSwitch`, `begin`).
+
+The dog is only chosen before play starts, so `Moke.setVisual` never has to move something held in the mouth.
 
 ## Moke: gameplay vs. visuals (decision D7)
 The key rule: **gameplay never touches the mesh.** The data flows one way:

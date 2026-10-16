@@ -22,6 +22,13 @@ export const AUDIO = {
   squeak: 0.32,
   /** Fireworks after Liam's Obstacle Course: the fanfare and the pops. */
   fireworks: 0.4,
+  /**
+   * Choose Your Dog (2026-10-16): the announcer's stinger under "Choose your dog!", a blip as the highlight moves
+   * from dog to dog, and the hit under "Begin!". Original, synthesized; no samples.
+   */
+  announce: 0.5,
+  dogSwitch: 0.25,
+  begin: 0.45,
   /** Classic descending DING-DONG; the whole chime ends before the one-second audio cleanup. */
   doorbellChime: {
     notes: [659.25, 523.25],

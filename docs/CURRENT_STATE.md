@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-10-05. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–4 are complete; Phase 5 has started (FSD and Liam's Obstacle Course). The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
+_Last updated: 2026-10-16. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–4 are complete; Phase 5 has started (FSD and Liam's Obstacle Course). The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -23,7 +23,8 @@ Liam's Obstacle Course. Scope and status: `docs/PHASE_5.md`.
 ## Current Milestone
 **5.1 FSD, Full Self Dog**, **5.2 the backyard and Liam's Obstacle Course** and **5.3 Watch TV full screen (with
 STAR VOYAGERS)**: built and published to the live site, waiting for the owner's verdict (`docs/PHASE_5.md`). Phase 4
-is closed.
+is closed. **5.4 Dougie and Choose Your Dog** (2026-10-16, D29): built, committed and pushed to `main` at the owner's
+request (published to the live site), waiting for the owner's verdict.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
 (`docs/MOBILE.md`, `docs/SOCK_HEIST.md`), listening to "Irasshaimase!", and detailed Sock Heist tuning.
@@ -44,6 +45,34 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-16, owner request, committed and pushed to `main`): **Dougie, a second playable dog, and a Choose Your Dog
+screen** (milestone 5.4, D29). Details: `docs/PHASE_5.md` → 5.4, `docs/ARCHITECTURE.md` → Playable dogs.
+- **Flow:** PLAY → Choose Your Dog (`select` state) → BEGIN → play; BACK → the title. The house and physics load
+  behind the title as before; the chosen dog's look, name and saved progress are applied at BEGIN, before play
+  starts. No switching mid-game (reload to choose again).
+- **The screen:** both dogs in 3D (`player/DogPreview.ts`, drawn by the game's renderer instead of the house, all of it
+  disposed on leaving), the highlighted one forward and lively (looks at you, tilts, blinks, wags, hops, silent
+  bark; no hops or title slam with reduced motion). Arrow buttons, click/tap a dog or its name chip (radio group),
+  swipes, ← → / A / D, D-pad, LB/RB, Enter on the focused BEGIN, A/Start, Esc/B. Layouts for desktop, phone
+  portrait and landscape.
+- **Announcer:** "CHOOSE YOUR DOG" and "BEGIN!" always on screen; spoken with the browser's speech voice (pitched
+  down, slowed; `audio/Announcer.ts`) from the PLAY/BEGIN gestures, with original synthesized stingers. The owner
+  asked to copy/imitate a famous fighting game's audio, branding and announcer "as much as allowed": none of that was
+  done (no recordings, music, logos or real performer's voice), per the original-assets rule (D29, `ASSETS.md`).
+- **Dougie:** `ToonMokeVisual` built with `DOUGIE_LOOK` (vertex-colour coat markings from `player/toon/coat.ts`,
+  longer ears, brown eyes, sage collar, "Dougie" tag), Moke's gameplay size. The owner's photo was used only to look
+  at; it isn't in the repo, the build or any texture.
+- **Moke unchanged:** his look is `MOKE_LOOK` through the same code path; checked pixel-identical (three rendered
+  frames and the geometry hash, before vs after). His `moke.glb` path is unchanged (Moke only).
+- **Shared gameplay:** one controller, body, animation state, systems, activities and FSD. The HUD and the human say
+  the chosen dog's name (`dogText` via `UIManager`; fixed texts marked `data-dog-text`). Title screen, About and page
+  metadata still about the real Moke. Pronouns in lines ("he", "good boy") are unchanged for Dougie.
+- **Progress:** Dog Logic per dog: Moke keeps `imdog.dogLogic` (no migration; existing saves load as they were),
+  Dougie `imdog.dogLogic.dougie`. Last chosen dog: `imdog.dog`. Settings and onboarding stay shared.
+- **Small fixes on the way:** the toilet-paper mischief reads the dog's mouth socket when it needs it (not at spawn),
+  so a new look can't leave it pointing at a disposed one.
+Verification is under "Dougie and Choose Your Dog (2026-10-16)" in Verification Status.
+
 Claude Code (2026-10-07, owner request): **controller A/B/X fixed for DirectInput pads.** The owner's Xbox-lettered
 pad barked on Y but A, B and X did the wrong things: the signature of a pad the browser can't map, which reports
 its face buttons as X A B Y (0 1 2 3) instead of the standard A B X Y. `GamepadInput` now reads face buttons through
@@ -1247,6 +1276,35 @@ New in Milestones 5–9:
   position and hasn't been judged on a real display.
 
 ## Verification Status
+### Dougie and Choose Your Dog (2026-10-16, Claude Code; pushed to `main`)
+Headless Chromium with SwiftShader in a cloud container; **no physical device, no real GPU, and no speech voices
+installed** (so the announcer's actual sound wasn't heard: the requests to speak were checked, the audio wasn't).
+- **Typecheck, 88 test files / 620 tests (33 new), production build, `verify-dist`: pass.** New tests: the roster and
+  `dogText` (every human, course and controls line has no "Moke" left when Dougie plays); `DogSelection` (wrap, picks,
+  swipes); the saved choice; `MenuInput` on the select screen (arrows/A/D, D-pad, LB/RB, A/Start, Esc/B); Dog Logic per
+  dog (an existing Moke save loads unchanged under `imdog.dogLogic`, Dougie starts empty, neither touches the other,
+  corrupt/blocked storage); Dougie's visual (sockets, coat colours, Moke's has none, same size, every animation state
+  finite, a held toy rides in his mouth); `Moke.setVisual`; the 3D stage (layout, hops but none with reduced motion,
+  picking, disposal); the announcer (low/slow delivery, voice choice, no speech); and **Dougie in the real living room
+  with Rapier**: walk to the sock, pick it up into his mouth, jump onto the couch carrying it, a trick and a bark, drop
+  it on the seat.
+- **Moke unchanged:** an isolated render of the toon Moke, three frames and the geometry hash, identical before the
+  change and after it (`1a5806a2 a5e5907d d53bfcd7`, geometry `1fff50a7`).
+- **Browser (dev):** desktop 1280×720 (arrow key, Enter, the fixed texts become "Dougie", the choice saved); emulated
+  phone 390×844 and 844×390 with touch (swipe left/right, tap a dog, BEGIN; "BEGIN!" caption shown; "Choose your
+  dog!" and "Begin!" requested from the speech API at pitch 0.3, rate 0.78); a simulated standard controller (A
+  opens, RB/LB and D-pad switch, B back, Start begins); reduced motion (no title animation, no hops); Esc back to the
+  title, Tab order, walk, jump, bark, pause ("Dougie is waiting patiently.") and resume as Dougie. Leaving the
+  screen returns GPU geometry/texture counts to the title's (122/16). Console clean throughout.
+- **Same activities:** 8 minutes of FSD as Dougie (chosen through the screen): Sock Heist twice end to end (steal,
+  chase, the treat trade, eating, the discovery), fetch, the obstacle course and the patty, the ballgame, Watch TV,
+  the doorbell, pillows, naps, food, water, toys, a treat hunt; **0 failed routines** (a few were cut short by
+  something urgent, as with Moke). 89 distinct on-screen lines, **none saying "Moke"** ("Get it, Dougie!", "DOUGIE.",
+  "Dougie has learned something very important."). His seven discoveries went to `imdog.dogLogic.dougie` only.
+- **Production preview:** PLAY → next → BEGIN as Dougie; console only the usual `moke.glb` note and SwiftShader's
+  warning.
+- **Privacy:** the photo was only viewed; no image file was added to the repo or `dist/`.
+
 ### Engineering audit (2026-10-05, Claude Code)
 Independent review of the whole codebase at `ada4b9b` (branch `claude/milestones-5-9-qagq4b` = `main`). Node 22.22.2,
 npm 10.9.7; three 0.186.0, Rapier compat 0.20.0, Vite 8.3.0, Vitest 5.0.1, TypeScript 7.0.2. Run in a cloud container:

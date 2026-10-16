@@ -33,7 +33,8 @@ Shared, tool-independent instructions for every coding agent working in this rep
   zoomed in on the TV (D27); and **the backyard with Liam's Obstacle Course** (one slider open, the contained yard, a
   fireworks "Moke is tired!" finish, a hamburger patty reward indoors; D28). Scope and status: `docs/PHASE_5.md`. Add
   milestones there only as the owner approves them. Don't add more humans, more rooms, outdoors beyond this backyard
-  or another mini-game without the owner's approval. Also carried over: `docs/PHASE_4.md` → "Carried forward", and the Known
+  or another mini-game without the owner's approval. **Since 2026-10-16 there are two playable dogs, Moke and
+  Dougie** (D29), chosen on a "Choose Your Dog" screen after PLAY (milestone 5.4). Also carried over: `docs/PHASE_4.md` → "Carried forward", and the Known
   Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"
@@ -71,6 +72,11 @@ Shared, tool-independent instructions for every coding agent working in this rep
   physics must never depend on the mesh, so `moke.glb` can replace the toon visual without rewrites. Carrying
   uses only `visual.attachments.mouth`. Moke's size lives only in `MOKE_CHARACTER.size` (D14). The same goes for the
   Sock Heist human: `HumanBrain` and `HumanController` never touch `ToonHumanVisual` (D16).
+- Every playable dog shares all gameplay (D29): the controller, body, animation state, activities and FSD are one.
+  What differs per dog (name, look, saved Dog Logic key) lives only in `src/config/dogs.ts` and
+  `src/config/dogLooks.ts`. Player-facing lines are written for Moke and go through `dogText()` (via `UIManager`), so
+  they name the dog being played; don't hard-code a dog's name in a new HUD path that bypasses it. Moke's
+  appearance and his save key (`imdog.dogLogic`) must not change.
 - Every input device (keyboard/mouse, controller, touch) feeds the same `InputState` actions; gameplay never
   branches on the device (D15). Don't detect phones by user-agent.
 - Gameplay reads input *actions* from `src/config/input.ts`, never raw keys. Tunable numbers belong in `src/config/`.

@@ -14,7 +14,8 @@ interface Deps {
   readonly routine: HumanActivityController;
   readonly nav: NavGrid;
   readonly view: BathroomView;
-  readonly mouth: Object3D;
+  /** The dog's mouth socket, read when it's needed (the dog's visual can change before play: Choose Your Dog). */
+  readonly mouth: () => Object3D;
   readonly onHoldChange: (holding: boolean) => void;
   readonly onLearn: () => void;
 }
@@ -103,7 +104,7 @@ export class ToiletPaperMischief extends DogActivity {
       case 'bite':
         this.elapsed += dt;
         if (this.elapsed >= BATHROOM_ACTIVITY.biteTime) {
-          this.deps.view.startPull(this.deps.mouth, ctx.moke.position);
+          this.deps.view.startPull(this.deps.mouth(), ctx.moke.position);
           this.deps.onHoldChange(true);
           this.activate();
           this.go('trail');

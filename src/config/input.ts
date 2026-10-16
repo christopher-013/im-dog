@@ -16,6 +16,9 @@ export const ACTIONS = [
   'toggleDebug',
   'menuConfirm',
   'autopilot',
+  'menuPrev',
+  'menuNext',
+  'menuBack',
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];
@@ -52,6 +55,14 @@ export const KEY_BINDINGS: Readonly<Record<Action, readonly string[]>> = {
   /** FSD, Full Self Dog (Phase 5): the autopilot on or off. The FSD button does the same. */
   autopilot: ['KeyG', 'Gamepad:Button10'],
   menuConfirm: ['Gamepad:Button0'],
+  /**
+   * Choose Your Dog (2026-10-16): the previous / next dog (arrow keys or A/D, the D-pad, or the shoulder buttons),
+   * and back to the title (Esc, or B). Begin is the focused BEGIN button on a keyboard (Enter/Space), A or Start on
+   * a controller (menuConfirm / resume). Only read on that screen.
+   */
+  menuPrev: ['ArrowLeft', 'KeyA', 'Gamepad:Button14', 'Gamepad:Button4'],
+  menuNext: ['ArrowRight', 'KeyD', 'Gamepad:Button15', 'Gamepad:Button5'],
+  menuBack: ['Escape', 'Gamepad:Button1'],
 };
 
 export interface GamepadSettings {

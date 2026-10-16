@@ -33,6 +33,7 @@ sessions.
 | 5.1 | FSD, Full Self Dog | **Built** (2026-10-04): see below. |
 | 5.2 | The backyard and Liam's Obstacle Course | **Built** (2026-10-05): see below. |
 | 5.3 | Watch TV full screen, and a fourth show (STAR VOYAGERS) | **Built** (2026-10-05): see below. |
+| 5.4 | Dougie, a second playable dog, and Choose Your Dog | **Built** (2026-10-16), pushed to `main` at the owner's request; waiting for the owner's verdict: see below. |
 
 ## 5.1 FSD: how it works
 - **On and off:** the **Engage FSD** button (bottom right; on touch above the paw, lifting clear of its pop-out buttons) or **G** on a keyboard (with the mouse
@@ -117,6 +118,26 @@ speed with the words 'Engage'."
   the title among the stars, the bridge crew at their posts, the captain points at the viewscreen, **"ENGAGE!"**, the
   stars stretch into warp, the ship flashes away, "next time: a new world!" (23 s). With four shows on three TVs, a
   channel change now sometimes switches a TV to the one that isn't on (`TvChannels.switchChannels`).
+
+## 5.4 Dougie and Choose Your Dog (owner request, 2026-10-16; D29)
+"Add a second playable dog, Dougie… When the player clicks PLAY, show a 'Choose Your Dog' screen before gameplay
+begins… Dougie must be able to do everything Moke currently can."
+- **Choose Your Dog** (between PLAY and the game): Moke and Dougie side by side in 3D, facing you; the highlighted one
+  steps forward in a spotlight, looks at you, tilts its head, blinks, wags and does a little hop and a silent bark now
+  and then (still with reduced motion). Switch with the arrow buttons, a click or tap on a dog, a swipe, ← → or A/D,
+  the D-pad or LB/RB; BEGIN (focused, so Enter works; A or Start on a controller); BACK (Esc, B) to the title. The
+  name chips are a radio group; the name and a line about the dog are on the card. Desktop, phone portrait and
+  landscape layouts.
+- **The announcer:** "CHOOSE YOUR DOG" slams onto the screen with an original drum-and-brass stinger, and the
+  browser's speech voice says "Choose your dog!" low and slow; BEGIN brings "BEGIN!" over the game with a hit and the
+  spoken "Begin!". Started from the PLAY / BEGIN clicks (browsers' autoplay rules). Where there's no speech voice,
+  or the device is muted, the words are still on screen. Not a copy or imitation of any game's announcer.
+- **Dougie:** the same toon build and size as Moke, with his own markings (dark charcoal coat and long ears, a white
+  patch on top of his head, cream-tan eyebrows, cheeks and muzzle, white chest and socks, tan flashes on his
+  forelegs, a white tail tip), brown eyes and a sage collar with "Dougie" on the tag. Same mouth socket, so he carries
+  everything Moke does.
+- **Same game:** every activity, Sock Heist, the course, FSD and the controls are shared; the human and the HUD say
+  "Dougie" when he's playing. His Dog Logic is his own; Moke's saved progress is untouched.
 
 ## Success criteria
 - Switching FSD on makes Moke go round the house doing things, by himself, for as long as you leave it; moving takes

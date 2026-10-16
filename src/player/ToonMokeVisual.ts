@@ -25,12 +25,14 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MOKE_ANIMATION } from '../config/animation';
+import { MOKE_DOG_LOOK, type CoatRegion, type DogLook } from '../config/dogLooks';
 import { MOKE_LOOK } from '../config/mokeLook';
 import { clamp, lerp, smoothstep, TAU } from '../utils/math';
 import { mulberry32 } from '../utils/random';
 import type { MokeAnimationState } from './MokeAnimationController';
 import { MISCHIEF } from '../config/mischief';
 import type { MokeAttachments, MokeVisual } from './MokeVisual';
+import { paintCoat } from './toon/coat';
 import { eyeTexture } from './toon/faceTextures';
 import { tagNameTexture } from './toon/tagTexture';
 import { bendAlongCurve, ellipsoidSurface, FUR_CAVITY, furClump, SMOOTH_NORMAL, type Vec3Tuple } from './toon/furGeometry';
@@ -406,6 +408,9 @@ function faceAmount(x: number, y: number, z: number): number {
  * covered in small curls, shaded softly with a thin silhouette line. Dark, glossy eyes that blink.
  * Animated procedurally from MokeAnimationState. Gameplay never touches any of it (the swap point is
  * `createMokeVisual`).
+ *
+ * Every playable dog is built this way (D29): `look` gives the colours, the collar, the ears and any coat markings
+ * (Dougie's are vertex colours over the same fur). The default is Moke, unchanged.
  */
 export class ToonMokeVisual implements MokeVisual {
   readonly object = new Group();
@@ -442,18 +447,22 @@ export class ToonMokeVisual implements MokeVisual {
   private untilBlink: number = MOKE_LOOK.blink.every[0];
   private blinkLeft = 0;
 
-  constructor() {
+  constructor(readonly look: DogLook = MOKE_DOG_LOOK) {
     this.object.name = 'ToonMoke';
-    const p = MOKE_LOOK.palette;
-    const fur = this.material(createToonMaterial(p.furLit, p.furShade, { smoothNormals: true }));
-    const earFur = this.material(createToonMaterial(p.earLit, p.earShade, { smoothNormals: true }));
+    const p = look.palette;
+    const coat = look.coat;
+    // With markings, each fur geometry carries its colours (and the fur material reads them); without, one colour.
+    const paint = (geometry: BufferGeometry, region: (c: NonNullable<DogLook['coat']>) => CoatRegion) =>
+      coat ? paintCoat(geometry, region(coat)) : geometry;
+    const fur = this.material(createToonMaterial(p.furLit, p.furShade, { smoothNormals: true, vertexColors: !!coat }));
+    const earFur = this.material(createToonMaterial(p.earLit, p.earShade, { smoothNormals: true, vertexColors: !!coat }));
     const nose = this.material(createToonMaterial(p.noseLit, p.noseShade));
     const tongue = this.material(createToonMaterial(p.tongueLit, p.tongueShade));
     const lash = this.material(new MeshBasicMaterial({ color: p.eyeRim, toneMapped: false }));
     const mouth = this.material(new MeshBasicMaterial({ color: p.mouth, toneMapped: false }));
     const teeth = this.material(new MeshBasicMaterial({ color: p.teeth, toneMapped: false }));
     const sparkle = this.material(new MeshBasicMaterial({ color: '#ffffff', toneMapped: false }));
-    this.outline = MOKE_LOOK.outline.enabled ? this.material(createOutlineMaterial()) : null;
+    this.outline = MOKE_LOOK.outline.enabled ? this.material(createOutlineMaterial(p.line)) : null;
 
     // Shift the body back a little so the nose pokes less past the round collision capsule.
     this.rig.name = 'mokeRig';
@@ -466,33 +475,39 @@ export class ToonMokeVisual implements MokeVisual {
       this.torso,
       merged([
         placed(
-          furClump({
-            radii: [0.092, 0.086, 0.132],
-            detail: 18,
-            seed: 1,
-            tufts: 30,
-            length: 0.08,
-            width: 0.6,
-            sharpness: 0,
-            flow: [0, -0.5, -1],
-            flowAmount: 0.15,
-            curls: { count: 200, length: 0.07, width: 0.22 },
-          }),
+          paint(
+            furClump({
+              radii: [0.092, 0.086, 0.132],
+              detail: 18,
+              seed: 1,
+              tufts: 30,
+              length: 0.08,
+              width: 0.6,
+              sharpness: 0,
+              flow: [0, -0.5, -1],
+              flowAmount: 0.15,
+              curls: { count: 200, length: 0.07, width: 0.22 },
+            }),
+            (c) => c.body,
+          ),
           [0, 0.21, -0.01],
         ),
         placed(
-          furClump({
-            radii: [0.074, 0.072, 0.058],
-            detail: 12,
-            seed: 2,
-            tufts: 16,
-            length: 0.18,
-            width: 0.6,
-            sharpness: 0.1,
-            flow: [0, -1, 0.25],
-            flowAmount: 0.4,
-            curls: { count: 60, length: 0.1, width: 0.3 },
-          }),
+          paint(
+            furClump({
+              radii: [0.074, 0.072, 0.058],
+              detail: 12,
+              seed: 2,
+              tufts: 16,
+              length: 0.18,
+              width: 0.6,
+              sharpness: 0.1,
+              flow: [0, -1, 0.25],
+              flowAmount: 0.4,
+              curls: { count: 60, length: 0.1, width: 0.3 },
+            }),
+            (c) => c.chest,
+          ),
           [0, 0.198, 0.112],
         ),
       ]),
@@ -501,7 +516,7 @@ export class ToonMokeVisual implements MokeVisual {
     this.body.name = 'body';
 
     // Legs pivot at the hip so they can swing: curly columns ending in round, fur-covered paws.
-    const legGeometry = merged([
+    const legGeometry = (): BufferGeometry => merged([
       placed(
         furClump({
           radii: [0.032, 0.07, 0.034],
@@ -522,11 +537,15 @@ export class ToonMokeVisual implements MokeVisual {
         [0, -0.15, 0.01],
       ),
     ]);
+    // One leg shape for all four; with markings, front and hind legs are coloured differently.
+    const plainLeg = coat ? null : legGeometry();
+    const frontLeg = coat ? paint(legGeometry(), (c) => c.frontLeg) : plainLeg!;
+    const hindLeg = coat ? paint(legGeometry(), (c) => c.hindLeg) : plainLeg!;
     for (const def of LEGS) {
       const pivot = new Group();
       pivot.name = `hip_${def.z > 0 ? 'front' : 'hind'}_${def.x > 0 ? 'L' : 'R'}`;
       pivot.position.set(def.x, HIP_HEIGHT, def.z);
-      this.fur(pivot, legGeometry, fur);
+      this.fur(pivot, def.z > 0 ? frontLeg : hindLeg, fur);
       this.rig.add(pivot);
       this.legs.push({ pivot, trot: def.trot, run: def.run, side: Math.sign(def.x), front: def.z > 0 });
     }
@@ -539,7 +558,7 @@ export class ToonMokeVisual implements MokeVisual {
       this.head,
       merged([
         placed(
-          furClump({
+          paint(furClump({
             radii: HEAD.radii,
             detail: 22,
             seed: 4,
@@ -551,11 +570,11 @@ export class ToonMokeVisual implements MokeVisual {
             flowAmount: 0.25,
             shape: (x, y, z) => (1 - 0.85 * faceAmount(x, y, z)) * (1 + 0.6 * Math.max(0, y) ** 2),
             curls: { count: 260, length: 0.075, width: 0.24, shape: (x, y, z) => 1 - 0.6 * faceAmount(x, y, z) },
-          }),
+          }), (c) => c.head),
           HEAD.center,
         ),
         placed(
-          furClump({
+          paint(furClump({
             radii: MUZZLE.radii,
             detail: 12,
             seed: 5,
@@ -569,7 +588,7 @@ export class ToonMokeVisual implements MokeVisual {
             shape: (x, y, z) =>
               (0.6 + 0.8 * clamp(-y, 0, 1)) * (1 - 0.85 * smoothstep(0.8, 0.95, x * NOSE_DIR.x + y * NOSE_DIR.y + z * NOSE_DIR.z)),
             curls: { count: 70, length: 0.12, width: 0.3 },
-          }),
+          }), (c) => c.muzzle),
           MUZZLE.center,
         ),
       ]),
@@ -577,7 +596,7 @@ export class ToonMokeVisual implements MokeVisual {
     );
 
     // Eyes: round, dark and glossy, peeking out of the fluff. A closed eye is a short dark lash line.
-    const eyeMap = this.texture(eyeTexture());
+    const eyeMap = this.texture(eyeTexture(p));
     const eyeMaterial = this.material(
       eyeMap
         ? new MeshBasicMaterial({ map: eyeMap, toneMapped: false })
@@ -649,11 +668,12 @@ export class ToonMokeVisual implements MokeVisual {
     for (const side of [1, -1]) {
       const pivot = new Group();
       pivot.position.set(side * 0.082, 0.085, -0.005);
+      const earRadii = look.earRadii;
       this.fur(
         pivot,
         placed(
-          furClump({
-            radii: [0.046, 0.068, 0.054],
+          paint(furClump({
+            radii: [earRadii[0], earRadii[1], earRadii[2]],
             detail: 14,
             seed: 7 + side,
             tufts: 18,
@@ -665,8 +685,9 @@ export class ToonMokeVisual implements MokeVisual {
             // Wavy curls, fuller toward the bottom where the ear flares out.
             shape: (_x, y) => 0.6 + 0.6 * clamp(-y, 0, 1),
             curls: { count: 130, length: 0.15, width: 0.27 },
-          }),
-          [side * 0.018, -0.048, 0],
+          }), (c) => c.ear),
+          // Hanging from the pivot: a longer ear hangs lower (Moke's 0.068 m ear sits 0.048 m down).
+          [side * 0.018, -(earRadii[1] - 0.02), 0],
         ),
         earFur,
       ).name = 'ear';
@@ -675,10 +696,10 @@ export class ToonMokeVisual implements MokeVisual {
     }
 
     // Collar: a blue strap snug in the fluff around his neck, with a navy bone-shaped tag on a silver ring.
-    const look = MOKE_LOOK.collar;
-    const strap = this.material(createToonMaterial(look.lit, look.shade, { depthPull: COLLAR.depthPull }));
-    const tagMetal = this.material(createToonMaterial(look.tagLit, look.tagShade));
-    const ringMetal = this.material(createToonMaterial(look.ringLit, look.ringShade));
+    const collarLook = look.collar;
+    const strap = this.material(createToonMaterial(collarLook.lit, collarLook.shade, { depthPull: COLLAR.depthPull }));
+    const tagMetal = this.material(createToonMaterial(collarLook.tagLit, collarLook.tagShade));
+    const ringMetal = this.material(createToonMaterial(collarLook.ringLit, collarLook.ringShade));
     strap.side = DoubleSide;
     this.collar.position.set(...COLLAR.center);
     this.collar.rotation.x = COLLAR.tilt;
@@ -702,7 +723,7 @@ export class ToonMokeVisual implements MokeVisual {
     const tagBody = new ExtrudeGeometry(boneShapes(tagW, tagH), { depth: tagD, bevelEnabled: false, curveSegments: 12 });
     tagBody.translate(0, tagTop - tagH / 2, -tagD / 2);
     this.part(this.tagPivot, this.geometry(tagBody), tagMetal, [0, 0, 0]).name = 'tag';
-    const nameMap = this.texture(tagNameTexture());
+    const nameMap = this.texture(tagNameTexture(collarLook));
     if (nameMap) {
       const nameMaterial = this.material(
         new MeshBasicMaterial({
@@ -731,7 +752,7 @@ export class ToonMokeVisual implements MokeVisual {
 
     this.tail.position.set(...TAIL.root);
     this.torso.add(this.tail);
-    const tailFur = furClump({
+    const tailFur = paint(furClump({
       radii: [TAIL.radius, TAIL.halfLength, TAIL.radius],
       detail: 12,
       seed: 11,
@@ -745,7 +766,7 @@ export class ToonMokeVisual implements MokeVisual {
       // Neater at the root, fullest along the arch.
       shape: (_x, y) => 0.45 + 0.55 * smoothstep(-0.9, 0.1, y),
       curls: { count: 110, length: 0.14, width: 0.28 },
-    });
+    }), (c) => c.tail);
     this.fur(this.tail, bendAlongCurve(tailFur, TAIL.halfLength, TAIL.curve, TAIL.thickness), fur).name = 'tail';
   }
 

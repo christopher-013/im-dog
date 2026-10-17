@@ -1,4 +1,4 @@
-import { PerspectiveCamera, Quaternion, Vector3, type Object3D, type Scene, type WebGLRenderer } from 'three';
+import { PerspectiveCamera, Vector3, type Object3D, type Scene, type WebGLRenderer } from 'three';
 import { RIDE } from '../config/ride';
 import { createVisualState, HumanAnimationController } from '../human/HumanAnimationController';
 import type { HumanVisual } from '../human/StylizedHumanVisual';
@@ -84,9 +84,6 @@ export class RideDirector {
   private readonly lookNow = { yaw: 0, pitch: 0 };
   private sinceLook = 99;
   private autoLookIn = 3;
-  private readonly eye = new Vector3();
-  private readonly eyeLook = new Vector3();
-  private readonly eyeTurn = new Quaternion();
 
   constructor(private readonly cast: RideCast, private readonly hooks: RideHooks) {}
 
@@ -138,7 +135,7 @@ export class RideDirector {
 
   /**
    * Look around (on the road): turns his head, by these angles (radians: `yaw` + to his left, `pitch` + up), within
-   * what a dog can turn. His own view (the "his view" shot) follows his head.
+   * what a dog can turn, to take in the beach ahead, beside or behind (the camera stays on him).
    */
   look(yaw: number, pitch: number): void {
     if (this.phase !== 'drive' || (yaw === 0 && pitch === 0)) return;
@@ -294,24 +291,8 @@ export class RideDirector {
     s.headPitch = (this.headOut ? 0.12 : 0) + this.lookNow.pitch;
     s.attention = 1;
     this.cast.dog.update(dt, s);
-    this.seeThroughHisEyes(drive);
     this.sitAtWheel(dt, drive.driverSeat, true);
     if (drive.done && dt >= 0) this.endDrive();
-  }
-
-  /** His view: from just in front of his eyes, the way his head points (the drive's "his view" shot). */
-  private seeThroughHisEyes(drive: CoastDrive): void {
-    const head = this.cast.dog.attachments.head;
-    if (!head) return;
-    this.cast.dog.object.updateMatrixWorld(true);
-    head.getWorldPosition(this.eye);
-    head.getWorldQuaternion(this.eyeTurn);
-    const ahead = this.tmp.set(0, 0, 1).applyQuaternion(this.eyeTurn);
-    const [down, forward] = RIDE.look.eyes;
-    this.eye.addScaledVector(ahead, forward).add(new Vector3(0, -down, 0).applyQuaternion(this.eyeTurn));
-    this.eyeLook.copy(this.eye).addScaledVector(ahead, 10);
-    const car = drive.car.object;
-    drive.setEyes(car.worldToLocal(this.eye), car.worldToLocal(this.eyeLook));
   }
 
   private endDrive(): void {

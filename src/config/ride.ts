@@ -38,8 +38,7 @@ export const RIDE = {
   /**
    * Looking around on the road (look input turns his head; owner, 2026-10-17): how far (radians: yaw + to his left,
    * toward the front of the car; pitch + up), how quickly his head follows, and after how long left alone he looks
-   * about by himself (at the beach and the sea, a new look every few seconds). `eyes`: his view's camera, this far
-   * below and ahead of the top of his head (m).
+   * about by himself (at the beach and the sea, a new look every few seconds).
    */
   look: {
     yaw: [-1.0, 1.1] as const,
@@ -47,7 +46,6 @@ export const RIDE = {
     ease: 7,
     idle: 4,
     wander: { yaw: [-0.55, 0.85] as const, pitch: [-0.15, 0.2] as const, every: [2.5, 5.5] as const },
-    eyes: [0.08, 0.2] as const,
   },
   lines: {
     ask: 'Moke, want to go for a ride?',

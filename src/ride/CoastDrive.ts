@@ -37,18 +37,14 @@ import { Traffic } from './traffic';
 
 /**
  * The camera shots, in the order "change the view" goes through them: alongside (just behind his window on the sea
- * side, looking ahead with him, the beach and the sea on the right), his view (through his eyes: look around to turn
- * his head), his face (from low down just ahead of his door,
+ * side, looking ahead with him, the beach and the sea on the right), his face (from low down just ahead of his door,
  * looking up and back at him against the sky, the beach behind him), behind the car, and a drone high over the beach behind it.
  */
-export const DRIVE_VIEWS = ['alongside', 'eyes', 'face', 'chase', 'drone'] as const;
+export const DRIVE_VIEWS = ['alongside', 'face', 'chase', 'drone'] as const;
 export type DriveView = (typeof DRIVE_VIEWS)[number];
 
-/**
- * Each shot in the car's space (+z ahead, −x the passenger side, the sea's): where the camera is, what it looks at.
- * "His view" (`eyes`) is wherever his head is and points, set each frame by whoever poses him (`setEyes`).
- */
-const SHOTS: Record<Exclude<DriveView, 'eyes'>, { pos: readonly [number, number, number]; look: readonly [number, number, number]; fov: number }> = {
+/** Each shot in the car's space (+z ahead, −x the passenger side, the sea's): where the camera is, what it looks at. */
+const SHOTS: Record<DriveView, { pos: readonly [number, number, number]; look: readonly [number, number, number]; fov: number }> = {
   alongside: { pos: [-2.55, 1.6, -2.6], look: [-0.9, 1.15, 6], fov: 55 },
   face: { pos: [-1.75, 1.2, 2.0], look: [-1.12, 1.4, 0.45], fov: 46 },
   chase: { pos: [-1.0, 3.1, -9.5], look: [-0.7, 1.3, 9], fov: 55 },
@@ -57,8 +53,6 @@ const SHOTS: Record<Exclude<DriveView, 'eyes'>, { pos: readonly [number, number,
 
 /** How fast the car goes (m/s), and how long it takes to get up to speed (s). */
 const SPEED = { cruise: 15, ease: 5 } as const;
-/** His view's field of view (a dog's wide eyes). */
-const EYES_FOV = 70;
 /** Changing the view glides over this long (s). */
 const VIEW_BLEND = 0.9;
 
@@ -104,8 +98,6 @@ export class CoastDrive {
   /** The view it's gliding from (car space), and how far into the glide (0..1; 1 = there). */
   private readonly from = { pos: new Vector3(), look: new Vector3(), fov: 55 };
   private blend = 1;
-  /** His view (car space): from just in front of his eyes, toward where he's looking. */
-  private readonly eyes = { pos: new Vector3(-1.3, 1.35, 0.6), look: new Vector3(-11, 1.2, 4) };
 
   constructor() {
     this.scene.name = 'Coast drive';
@@ -175,12 +167,6 @@ export class CoastDrive {
     this.from.fov = this.camera.fov;
     this.view = view;
     this.blend = 0;
-  }
-
-  /** His view, in the car's space: where his eyes are, and a point he's looking at. */
-  setEyes(pos: Vector3, look: Vector3): void {
-    this.eyes.pos.copy(pos);
-    this.eyes.look.copy(look);
   }
 
   /** Head home now: straight on to the last stretch. */
@@ -260,9 +246,9 @@ export class CoastDrive {
 
   /** The shot as it is now (car space), mid-glide or not. */
   private currentShot(pos: Vector3, look: Vector3): number {
-    const shot = this.view === 'eyes' ? { pos: this.eyes.pos.toArray(), look: this.eyes.look.toArray(), fov: EYES_FOV } : SHOTS[this.view];
-    pos.set(shot.pos[0]!, shot.pos[1]!, shot.pos[2]!);
-    look.set(shot.look[0]!, shot.look[1]!, shot.look[2]!);
+    const shot = SHOTS[this.view];
+    pos.set(shot.pos[0], shot.pos[1], shot.pos[2]);
+    look.set(shot.look[0], shot.look[1], shot.look[2]);
     if (this.blend >= 1) return shot.fov;
     const k = this.blend * this.blend * (3 - 2 * this.blend);
     pos.lerpVectors(this.from.pos, pos, k);

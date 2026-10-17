@@ -1,4 +1,4 @@
-import { Scene, SkinnedMesh, type Vector3 } from 'three';
+import { Quaternion, Scene, SkinnedMesh, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { StylizedHumanVisual } from '../human/StylizedHumanVisual';
 import { ToonMokeVisual } from '../player/ToonMokeVisual';
@@ -61,16 +61,17 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     expect(ride.driving).toBe(true);
     // In the car: the dog in the passenger seat, the human at the wheel, window down; FSD-style auto views and barks.
     expect(dog.object.parent).not.toBe(scene);
-    // Looking around turns his head, and his view with it: toward the front of the car, then back over his shoulder.
-    const drive = (ride as unknown as { drive: CoastDrive }).drive;
-    const eyes = (drive as unknown as { eyes: { pos: Vector3; look: Vector3 } }).eyes;
-    const gaze = () => eyes.look.clone().sub(eyes.pos).normalize();
+    // Looking around turns his head: toward the front of the car, then back over his shoulder, out of his window.
+    const car = (ride as unknown as { drive: CoastDrive }).drive.car.object;
+    const gaze = () => {
+      const q = dog.attachments.head!.getWorldQuaternion(new Quaternion());
+      return new Vector3(0, 0, 1).applyQuaternion(q).applyQuaternion(car.getWorldQuaternion(new Quaternion()).invert());
+    };
     for (let i = 0; i < 30; i++) { ride.look(0.1, 0); ride.update(dt, 16 / 9, false); }
     const ahead = gaze();
     for (let i = 0; i < 60; i++) { ride.look(-0.1, 0); ride.update(dt, 16 / 9, false); }
     const behind = gaze();
     expect(ahead.z).toBeGreaterThan(behind.z + 0.8);
-    // Out of his window either way: the sea's side (−x in the car).
     expect(ahead.x).toBeLessThan(0);
     expect(behind.x).toBeLessThan(0);
     for (let i = 0; i < 40 / dt; i++) ride.update(dt, 16 / 9, true);

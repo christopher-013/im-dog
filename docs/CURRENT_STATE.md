@@ -63,11 +63,12 @@ move his head around and see the view of the passenger side beach when driving")
 - **The drive** ~a minute shorter: the road starts lower down the hill and ends a little lower up the grade (1.55 km),
   and the car cruises at 15 m/s (`SPEED`): `expectedDuration` 114 s (was 172); a full ride in the game drove for about 106 s (was about 163).
 - **Looking around** (`RideDirector.look`, `RIDE.look`): look input (mouse, right stick, drag) turns his head on the
-  road; left alone for 4 s (or with FSD) he looks about at the beach himself. A new view, **his view** (`eyes`), sees
-  through his eyes, following his head (`CoastDrive.setEyes`). Tested (his view turns ahead and back, always out of his
-  window).
-- **Checked** headless: the car from the front, side, back, above, doors shut and open; his view looking out, ahead,
-  back. **Not checked:** on a phone (look-around by touch drag, the frame rate).
+  road; left alone for 4 s (or with FSD) he looks about at the beach himself. Tested (ahead and back, always out of
+  his window). The cameras stay third person: a first-person "his view" was tried and dropped (owner: "I prefer
+  having 3rd person view of Moke when driving").
+- **The ride's buttons** (owner): the paw (interact) changes the view, like Trick; Jump puts his head in or out.
+- **Checked** headless: the car from the front, side, back, above, doors shut and open; his head turned ahead and
+  back in the alongside view. **Not checked:** on a phone (look-around by touch drag, the frame rate).
 
 Claude Code (2026-10-17, owner request with a photo of their car: "Make the car look more like my Tesla Model X
 including the falcon doors"; pushed to `main` at the owner's request): **the family car rebuilt** (`world/FamilyCar.ts`).

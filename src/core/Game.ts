@@ -1575,10 +1575,10 @@ export class Game {
   /** The ride's buttons, in the player's own controls. */
   private rideControls(): string {
     const mode = this.input.mode;
-    if (mode === 'touch') return 'On the ride: drag to look around, Bark, the paw puts his head in or out, Trick changes the view.';
+    if (mode === 'touch') return 'On the ride: drag to look around, the paw (or Trick) changes the view, Bark, Jump puts his head in or out.';
     const g = (a: Action) => actionGlyph(a, mode) ?? '';
     const look = mode === 'gamepad' ? 'right stick' : 'mouse';
-    return `On the ride: ${look} look around · ${g('bark')} bark · ${g('interact')} head in or out · ${g('trick')} change the view`;
+    return `On the ride: ${look} look around · ${g('interact')} or ${g('trick')} change the view · ${g('bark')} bark · ${g('jump')} head in or out`;
   }
 
   /** While the ride has the screen: its own buttons, the ride, the leash and the human's words, then its picture. */
@@ -1592,8 +1592,9 @@ export class Game {
         this.audio.play('bark');
         ride.bark();
       }
-      if (input.wasPressed('interact')) ride.toggleHead();
-      if (input.wasPressed('trick')) ride.nextView();
+      // The paw and Trick both change the view (owner); Jump puts his head in or out.
+      if (input.wasPressed('interact') || input.wasPressed('trick')) ride.nextView();
+      if (input.wasPressed('jump')) ride.toggleHead();
     }
     // Looking around turns his head (mouse right / stick right: he looks right; down: he looks down).
     input.getLookDelta(this.lookDelta);

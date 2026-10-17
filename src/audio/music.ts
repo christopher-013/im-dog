@@ -1,5 +1,5 @@
 // Background music: original tunes written for this game, played by an 8-bit "band" synthesized at play time
-// (no audio files).
+// (no audio files). The ride's song swaps the console for an 80s polysynth and drum machine, synthesized the same way.
 //
 // - "Aloha, Moke" (Hawaiian): elevator music on a Hawaiian beach, played by an old games console. A triangle-wave bass
 //   walking between chords, a pulse-wave "ukulele" strumming the island rhythm, a mellow square-wave "steel guitar"
@@ -12,11 +12,13 @@
 // - "Paws Up!" (Choose Your Dog only, not a Music setting): an arcade fighting game's character-select theme, in
 //   8-bit. Fast and in a minor key: a pumping octave bass, power-chord stabs on a 3-3-2 rhythm, four-on-the-floor
 //   kicks and a heroic pulse lead. Written for this game in that genre's style; no real game's music is copied.
-// - "Last Light" (going for a ride only, Phase 6): a dark, brooding 80s synth drive into the sunset (owner,
-//   2026-10-17: "more edgy and dark for a brooding drive with purpose... lower deep baselines but 80s synth sounds"). D
-//   minor at 104 BPM: a low, gritty sawtooth bass pulsing in eighths, long dark synth pads, a big gated snare, and a
-//   lonely square lead sliding into its long notes over a long echo. It replaced "Neon Coastline" and, before it,
-//   "Coastline Cruise" (both original too). Written for this game in that style; no real song is copied.
+// - "Last Light" (going for a ride only, Phase 6): a dark, brooding 80s synth-pop drive into the sunset (owner,
+//   2026-10-17: "more edgy and dark for a brooding drive with purpose... lower deep baselines but 80s synth sounds";
+//   then "too Japanese inspired versus 80s synth pop"). Not the console band: an 80s polysynth and drum machine. D
+//   minor at 100 BPM on the VI–VII–i climb (B♭, C, Dm): a deep sawtooth bass pulsing in eighths, swelling sawtooth
+//   string pads, a sixteenth-note arpeggio, a big gated snare over a deep kick, and a plain detuned-sawtooth lead
+//   (no slides, barely any vibrato). It replaced "Neon Coastline" and, before it, "Coastline Cruise" (both original
+//   too). Written for this game in that style; no real song is copied.
 
 import { MUSIC } from '../config/audio';
 
@@ -74,8 +76,12 @@ export type Drum = 'shaker' | 'kick' | 'snare' | 'hat';
 
 /** How a song is played: the instruments' sounds, and the rhythm section's patterns within a bar. */
 export interface Band {
-  /** The melody: pulse duty (0.5 = square, 0.125 = thin), low-pass (Hz), vibrato on long notes (cents), level. */
-  lead: { duty: number; tone: number; vibrato: number; level: number };
+  /**
+   * The melody: pulse duty (0.5 = square, 0.125 = thin), low-pass (Hz), vibrato on long notes (cents), level.
+   * `synth`: instead of the console's pulse, two sawtooths `detune` cents apart through a resonant low-pass that opens
+   * on each note (an 80s polysynth).
+   */
+  lead: { duty: number; tone: number; vibrato: number; level: number; synth?: { detune: number; resonance: number } };
   /** An echo on the melody. */
   echo: { time: number; feedback: number; wet: number };
   /**
@@ -89,20 +95,27 @@ export interface Band {
     duty: number;
     tone: number;
     level: number;
+    /** Sawtooth string pads instead of plucked pulses: two detuned saws a note, swelling in and held to the next. */
+    pad?: { attack: number; release: number; detune: number };
   };
+  /** A sequencer arpeggio: the chord's notes in sixteenths (`pattern` indexes the voicing), short filtered plucks. */
+  arp?: { pattern: readonly number[]; octave: number; tone: number; decay: number; level: number };
   /**
    * 'twoFeel': root and fifth, stepping into chord changes. 'bounce': root, octave, fifth, octave on the beats.
    * 'drive': pumping eighths, root and octave, with the fifth near the end of the bar.
    * 'sequence': a sequencer's sixteenths, the root with the octave on every fourth, the fifth leading into the next bar.
    * 'pulse': a relentless eighth-note root, the octave on the last eighth.
-   * `wave`: the console's round triangle (the default) or a gritty sawtooth through a low-pass at `tone` (Hz).
+   * `wave`: the console's round triangle (the default) or a gritty sawtooth through a low-pass at `tone` (Hz), which
+   * opens a little at the start of each note.
    * `octave`: semitones to shift the line by (−12: an octave down, deep).
    */
   bass: { style: 'twoFeel' | 'bounce' | 'drive' | 'sequence' | 'pulse'; level: number; wave?: 'triangle' | 'saw'; tone?: number; octave?: number };
   /** One bar of percussion: beat, drum, velocity. */
   drums: readonly (readonly [beat: number, drum: Drum, velocity: number])[];
-  /** The big 80s snare: lower, longer and louder, as if through a gated reverb. */
+  /** The big 80s snare: a drum's body under a burst of room noise, held, then cut dead by a gate. */
   gatedSnare?: boolean;
+  /** A drum machine's deep, booming kick instead of the console's short thump. */
+  deepKick?: boolean;
   /** Chime bells (the `bells` line). */
   bell: { level: number };
   /** A gentle top-end roll-off for the whole band (Hz). */
@@ -352,68 +365,72 @@ const PAWS_UP: Song = {
 
 // ---- "Last Light"
 
-/** The first half: a low, lonely line over D minor, rising to the C and falling back, hanging on the dark A. */
+/** The hook, twice: up through D minor to the D, down over B♭ and C, the second time reaching the F. */
 const LAST_A: readonly Note[] = [
-  [69, 3, 3], [67, 0.5], [65, 0.5],
-  [62, 4, 2],
-  [65, 2], [70, 1], [69, 1],
-  [67, 3, 2], [64, 1],
-  [69, 3, 3], [72, 0.5], [70, 0.5],
-  [69, 2], [65, 1], [62, 1],
-  [67, 2], [70, 1], [74, 1],
-  [73, 3, 1], [null, 1],
-];
-/** The second half: up an octave over B♭ and C, home to D minor, then the climb into the A again. */
-const LAST_B: readonly Note[] = [
-  [74, 3, 2], [72, 1],
+  [69, 1.5], [65, 0.5], [69, 1], [72, 1],
+  [74, 3], [72, 0.5], [69, 0.5],
+  [74, 1.5], [72, 0.5], [70, 2],
   [72, 2], [67, 1], [64, 1],
-  [65, 3], [64, 0.5], [62, 0.5],
-  [62, 4],
-  [70, 2, 2], [65, 1], [69, 1],
-  [67, 2], [72, 1], [76, 1],
-  [76, 3, 2], [73, 1],
-  [69, 3], [null, 1],
+  [69, 1.5], [65, 0.5], [69, 1], [72, 1],
+  [77, 3], [76, 0.5], [74, 0.5],
+  [74, 1.5], [72, 0.5], [70, 1], [65, 1],
+  [64, 2], [67, 2],
+];
+/** The lift: over G minor, B♭ and C, climbing to the high F, then the dark A major turning back into the hook. */
+const LAST_B: readonly Note[] = [
+  [74, 2], [70, 1], [67, 1],
+  [67, 1.5], [70, 0.5], [74, 2],
+  [77, 2], [74, 1], [72, 1],
+  [76, 3], [72, 1],
+  [74, 2], [70, 1], [74, 1],
+  [77, 2], [74, 1], [77, 1],
+  [76, 3], [73, 1],
+  [69, 2], [null, 2],
 ];
 
 const LAST_LIGHT: Song = {
   id: 'cruise',
   title: 'Last Light',
-  bpm: 104,
+  bpm: 100,
   swing: 0.5,
-  bars: ['Dm', 'Dm', 'Bb', 'C', 'Dm', 'Dm', 'Gm', 'A', 'Bb', 'C', 'Dm', 'Dm', 'Bb', 'C', 'A', 'A'],
+  bars: ['Dm', 'Dm', 'Bb', 'C', 'Dm', 'Dm', 'Bb', 'C', 'Gm', 'Gm', 'Bb', 'C', 'Gm', 'Bb', 'A', 'A'],
   melody: [...LAST_A, ...LAST_B],
   band: {
-    // A thin, nasal square lead, a slow wide vibrato, sitting back in the mix.
-    lead: { duty: 0.25, tone: 2200, vibrato: 16, level: 0.14 },
-    // A long dotted-eighth echo trailing behind it.
-    echo: { time: 0.433, feedback: 0.45, wet: 0.32 },
-    // Pads: one long, dark chord a bar, low-passed.
+    // A plain polysynth lead: two detuned sawtooths, a touch of resonance, almost no vibrato.
+    lead: { duty: 0.5, tone: 1700, vibrato: 5, level: 0.09, synth: { detune: 8, resonance: 3 } },
+    // A dotted-eighth echo, kept short.
+    echo: { time: 0.45, feedback: 0.3, wet: 0.22 },
+    // Sawtooth strings: one chord a bar, swelling in and held into the next.
     comp: {
       steps: [[0, 'down', 1]],
-      ring: 2.3,
-      spread: 0.012,
+      ring: 3,
+      spread: 0,
       duty: 0.5,
-      tone: 950,
-      level: 0.05,
+      tone: 1300,
+      level: 0.03,
+      pad: { attack: 0.35, release: 0.5, detune: 10 },
     },
+    // The sequencer under it all: the chord in sixteenths, up and back.
+    arp: { pattern: [0, 1, 2, 3, 2, 1, 2, 3], octave: 0, tone: 1900, decay: 0.12, level: 0.18 },
     // The engine of it: a deep sawtooth pulsing in eighths, an octave down.
-    bass: { style: 'pulse', level: 0.2, wave: 'saw', tone: 420, octave: -12 },
-    // A heavy kick on 1 and 3 (and pushing into 3), the big gated snare on 2 and 4, quiet eighth hats.
+    bass: { style: 'pulse', level: 0.22, wave: 'saw', tone: 380, octave: -12 },
+    // A deep kick on 1 and 3 (and pushing into 3), the big gated snare on 2 and 4, eighth hats.
     drums: [
       [0, 'kick', 1],
       [2, 'kick', 1],
       [1.5, 'kick', 0.55],
       [1, 'snare', 1],
       [3, 'snare', 1],
-      ...[0, 1, 2, 3, 4, 5, 6, 7].map((e) => [e / 2, 'hat', e % 2 ? 0.3 : 0.18] as const),
+      ...[0, 1, 2, 3, 4, 5, 6, 7].map((e) => [e / 2, 'hat', e % 2 ? 0.4 : 0.2] as const),
     ],
     gatedSnare: true,
+    deepKick: true,
     bell: { level: 0 },
-    mellow: 6000,
+    mellow: 8000,
   },
-  // Offline render at gain 1: −40.9 dB against "Aloha, Moke"'s −34.1 (measured the same way, 2026-10-17). ×2.2 puts it
-  // within ~0.1 dB of it.
-  gain: 2.2,
+  // Offline render at gain 1: −39.9 dB against "Aloha, Moke"'s −34.1 (measured the same way, 2026-10-17). ×1.95 puts
+  // it within ~0.1 dB of it. Alone, each part: bass −42.9, lead −45.9, drums −48.8, pads −49.4, arpeggio −56.4.
+  gain: 1.95,
 };
 
 export const SONGS: Readonly<Record<SongId, Song>> = { hawaiian: ALOHA, japan: IRASSHAIMASE };
@@ -427,7 +444,7 @@ export const SONG = ALOHA;
 
 // ---- From the score to timed events
 
-export type Voice = 'lead' | 'comp' | 'bass' | 'bell' | Drum;
+export type Voice = 'lead' | 'comp' | 'arp' | 'bass' | 'bell' | Drum;
 
 export interface MusicEvent {
   voice: Voice;
@@ -515,6 +532,12 @@ export function songEvents(song: Song = SONG): MusicEvent[] {
       const notes = direction === 'down' ? chord.voicing : [...chord.voicing].slice(1).reverse();
       add('comp', b + beat, b + end, notes, velocity);
     });
+    if (band.arp) {
+      const { pattern, octave } = band.arp;
+      for (let e = 0; e < 16; e++) {
+        add('arp', b + e / 4, b + (e + 1) / 4, [chord.voicing[pattern[e % pattern.length]!]! + octave], e % 4 === 0 ? 1 : 0.7);
+      }
+    }
     for (const [beat, drum, velocity] of band.drums) add(drum, b + beat, b + beat + 0.5, [], velocity);
   });
 
@@ -722,7 +745,9 @@ export class MusicPlayer {
       case 'lead':
         return this.lead(event, time, seconds);
       case 'comp':
-        return this.comp(event, time, seconds);
+        return this.band.comp.pad ? this.pad(event, time, seconds) : this.comp(event, time, seconds);
+      case 'arp':
+        return this.arp(event, time);
       case 'bass':
         return this.bass(event, time, seconds);
       case 'bell':
@@ -733,26 +758,36 @@ export class MusicPlayer {
         return this.noiseHit(time, 'highpass', 7500, DRUM_LEVEL.hat * event.velocity, 0.03);
       case 'snare':
         return this.band.gatedSnare
-          ? this.noiseHit(time, 'bandpass', 1500, DRUM_LEVEL.snare * 1.5 * event.velocity, 0.26)
+          ? this.gatedSnare(time, event.velocity)
           : this.noiseHit(time, 'bandpass', 1900, DRUM_LEVEL.snare * event.velocity, 0.13);
       case 'kick':
-        return this.kick(event, time);
+        return this.band.deepKick ? this.deepKick(event, time) : this.kick(event, time);
     }
   }
 
   /** The melody: slides up into slide-marked notes, sings with a slow vibrato on long notes, legato. */
   private lead(event: MusicEvent, t: number, seconds: number): void {
     const ctx = this.ctx;
-    const { duty, tone: cutoff, vibrato, level } = this.band.lead;
+    const { duty, tone: cutoff, vibrato, level, synth } = this.band.lead;
     const midi = event.notes[0]!;
-    const osc = ctx.createOscillator();
-    osc.setPeriodicWave(this.wave(duty));
+    // The console's one pulse, or the polysynth's two sawtooths a few cents apart.
+    const oscs = synth
+      ? [-synth.detune, synth.detune].map((cents) => {
+          const osc = ctx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.detune.value = cents;
+          return osc;
+        })
+      : [ctx.createOscillator()];
+    if (!synth) oscs[0]!.setPeriodicWave(this.wave(duty));
     const target = midiHz(midi);
-    if (event.slide > 0) {
-      osc.frequency.setValueAtTime(midiHz(midi - event.slide), t);
-      osc.frequency.exponentialRampToValueAtTime(target, t + Math.min(0.14, seconds * 0.4));
-    } else {
-      osc.frequency.setValueAtTime(target, t);
+    for (const osc of oscs) {
+      if (event.slide > 0) {
+        osc.frequency.setValueAtTime(midiHz(midi - event.slide), t);
+        osc.frequency.exponentialRampToValueAtTime(target, t + Math.min(0.14, seconds * 0.4));
+      } else {
+        osc.frequency.setValueAtTime(target, t);
+      }
     }
     if (seconds > 0.6 && vibrato > 0) {
       const lfo = ctx.createOscillator();
@@ -760,22 +795,87 @@ export class MusicPlayer {
       const depth = ctx.createGain();
       depth.gain.setValueAtTime(0, t);
       depth.gain.linearRampToValueAtTime(vibrato, t + 0.4); // cents: the vibrato blooms as the note holds
-      lfo.connect(depth).connect(osc.detune);
+      lfo.connect(depth);
+      for (const osc of oscs) depth.connect(osc.detune);
       lfo.start(t);
       lfo.stop(t + seconds + 0.2);
     }
     const tone = ctx.createBiquadFilter();
     tone.type = 'lowpass';
-    tone.frequency.value = cutoff;
+    if (synth) {
+      // The filter opens on the note and settles: the 80s lead's bite.
+      tone.Q.value = synth.resonance;
+      tone.frequency.setValueAtTime(cutoff * 2.2, t);
+      tone.frequency.exponentialRampToValueAtTime(cutoff, t + 0.25);
+    } else {
+      tone.frequency.value = cutoff;
+    }
     const amp = ctx.createGain();
     const peak = level * event.velocity;
     amp.gain.setValueAtTime(0.0001, t);
     amp.gain.exponentialRampToValueAtTime(peak, t + 0.02);
     amp.gain.exponentialRampToValueAtTime(peak * 0.7, t + Math.max(0.03, seconds));
     amp.gain.exponentialRampToValueAtTime(0.0001, t + seconds + 0.12);
-    osc.connect(tone).connect(amp).connect(this.leadIn);
+    tone.connect(amp).connect(this.leadIn);
+    for (const osc of oscs) {
+      osc.connect(tone);
+      osc.start(t);
+      osc.stop(t + seconds + 0.15);
+    }
+    oscs[0]!.onended = () => amp.disconnect();
+  }
+
+  /** Sawtooth strings: each note two detuned saws, swelling in, held for the chord, then let go. */
+  private pad(event: MusicEvent, t: number, seconds: number): void {
+    const ctx = this.ctx;
+    const { tone: cutoff, level, pad } = this.band.comp;
+    const { attack, release, detune } = pad!;
+    const tone = ctx.createBiquadFilter();
+    tone.type = 'lowpass';
+    tone.frequency.value = cutoff;
+    const amp = ctx.createGain();
+    const peak = level * event.velocity;
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.linearRampToValueAtTime(peak, t + attack);
+    amp.gain.setValueAtTime(peak, t + Math.max(attack, seconds));
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(attack, seconds) + release);
+    tone.connect(amp).connect(this.voicesOut);
+    const oscs = event.notes.flatMap((midi) =>
+      [-detune, detune].map((cents) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.value = midiHz(midi);
+        osc.detune.value = cents;
+        return osc;
+      }),
+    );
+    for (const osc of oscs) {
+      osc.connect(tone);
+      osc.start(t);
+      osc.stop(t + Math.max(attack, seconds) + release + 0.02);
+    }
+    oscs[0]!.onended = () => amp.disconnect();
+  }
+
+  /** One step of the arpeggio: a short sawtooth pluck through a low-pass that snaps shut. */
+  private arp(event: MusicEvent, t: number): void {
+    const ctx = this.ctx;
+    const { tone: cutoff, decay, level } = this.band.arp!;
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = midiHz(event.notes[0]!);
+    const tone = ctx.createBiquadFilter();
+    tone.type = 'lowpass';
+    tone.Q.value = 4;
+    tone.frequency.setValueAtTime(cutoff * 2, t);
+    tone.frequency.exponentialRampToValueAtTime(cutoff * 0.5, t + decay);
+    const amp = ctx.createGain();
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.exponentialRampToValueAtTime(level * event.velocity, t + 0.003);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    osc.connect(tone).connect(amp).connect(this.voicesOut);
     osc.start(t);
-    osc.stop(t + seconds + 0.15);
+    osc.stop(t + decay + 0.02);
     osc.onended = () => amp.disconnect();
   }
 
@@ -814,7 +914,9 @@ export class MusicPlayer {
     if (wave === 'saw') {
       const tone = ctx.createBiquadFilter();
       tone.type = 'lowpass';
-      tone.frequency.value = cutoff ?? 500;
+      // Opens a little at the start of each note, then settles: the growl of an analogue bass.
+      tone.frequency.setValueAtTime((cutoff ?? 500) * 2.2, t);
+      tone.frequency.exponentialRampToValueAtTime(cutoff ?? 500, t + 0.1);
       tone.Q.value = 2;
       source = osc.connect(tone);
     }
@@ -875,6 +977,55 @@ export class MusicPlayer {
     src.connect(tone).connect(amp).connect(this.voicesOut);
     src.start(t, Math.random() * 0.8, decay + 0.015);
     src.onended = () => amp.disconnect();
+  }
+
+  /** The big 80s snare: a drum's body under a burst of room noise, held, then cut dead by the gate. */
+  private gatedSnare(t: number, velocity: number): void {
+    const ctx = this.ctx;
+    const peak = DRUM_LEVEL.snare * 1.6 * velocity;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    const room = ctx.createBiquadFilter();
+    room.type = 'bandpass';
+    room.frequency.value = 1700;
+    room.Q.value = 0.6;
+    const amp = ctx.createGain();
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.exponentialRampToValueAtTime(peak, t + 0.003);
+    amp.gain.linearRampToValueAtTime(peak * 0.45, t + 0.2);
+    amp.gain.linearRampToValueAtTime(0.0001, t + 0.23);
+    src.connect(room).connect(amp).connect(this.voicesOut);
+    src.start(t, Math.random() * 0.7, 0.25);
+    src.onended = () => amp.disconnect();
+    const body = ctx.createOscillator();
+    body.type = 'triangle';
+    body.frequency.setValueAtTime(210, t);
+    body.frequency.exponentialRampToValueAtTime(165, t + 0.06);
+    const bodyAmp = ctx.createGain();
+    bodyAmp.gain.setValueAtTime(0.0001, t);
+    bodyAmp.gain.exponentialRampToValueAtTime(peak * 1.3, t + 0.002);
+    bodyAmp.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    body.connect(bodyAmp).connect(this.voicesOut);
+    body.start(t);
+    body.stop(t + 0.15);
+    body.onended = () => bodyAmp.disconnect();
+  }
+
+  /** A drum machine's kick: a sine falling from a click to a deep, long boom. */
+  private deepKick(event: MusicEvent, t: number): void {
+    const ctx = this.ctx;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(170, t);
+    osc.frequency.exponentialRampToValueAtTime(46, t + 0.11);
+    const amp = ctx.createGain();
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.exponentialRampToValueAtTime(DRUM_LEVEL.kick * 1.4 * event.velocity, t + 0.002);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+    osc.connect(amp).connect(this.voicesOut);
+    osc.start(t);
+    osc.stop(t + 0.44);
+    osc.onended = () => amp.disconnect();
   }
 
   /** A console kick: a triangle dropping fast in pitch. */

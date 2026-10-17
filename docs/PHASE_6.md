@@ -192,7 +192,8 @@ before 6.2 photo mode and 6.3 the day.
   pulsing synth bass, bright chords and a singable lead. It follows the Music setting. No real song is copied.
   **Changed by the owner (2026-10-17):** "more edgy like a Miami Vice, more dramatic": now "Neon Coastline", in A
   minor with a sequenced bass and synth-brass stabs. **Changed again (2026-10-17):** "more edgy and dark for a brooding
-  drive with purpose": now "Last Light", D minor, a deep sawtooth bass, dark pads. The drive is at golden hour, the sun
+  drive with purpose": now "Last Light", D minor, a deep sawtooth bass, dark pads. **And again** ("too Japanese inspired versus 80s
+  synth pop"): the same song played by an 80s polysynth and drum machine, not the 8-bit console. The drive is at golden hour, the sun
   setting as it ends (owner).
 - **Length:** about **3–4 minutes**, never more than 5. Pause → **Head Home** skips straight to the drive home.
 - **Home again:** into the garage, the roll-up door comes down, the falcon-wing door rises, the human lifts him out

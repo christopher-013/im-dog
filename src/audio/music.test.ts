@@ -111,6 +111,28 @@ describe('the background music', () => {
     expect(song.gain).toBeGreaterThan(1);
   });
 
+  it('"Last Light" (the ride): 80s synth-pop, not the console: a polysynth lead with no slides, pads, an arpeggio, a deep bass', () => {
+    const song = TUNES.cruise;
+    const { band } = song;
+    expect(band.lead.synth).toBeDefined();
+    expect(band.lead.vibrato).toBeLessThanOrEqual(6);
+    expect(song.melody.every(([, , slide]) => !slide)).toBe(true);
+    expect(band.comp.pad).toBeDefined();
+    expect(band.gatedSnare && band.deepKick).toBe(true);
+    const events = songEvents(song);
+    for (let bar = 0; bar < song.bars.length; bar++) {
+      const inBar = (voice: string) => events.filter((e) => e.voice === voice && e.beat >= bar * 4 && e.beat < bar * 4 + 4);
+      // The sequencer's sixteenths, all chord notes.
+      const chord = CHORDS[song.bars[bar]!];
+      expect(inBar('arp')).toHaveLength(16);
+      for (const e of inBar('arp')) expect(chord.voicing).toContain(e.notes[0]);
+      // The bass: eighth notes, deep (below the chord's written root).
+      const bass = inBar('bass');
+      expect(bass).toHaveLength(8);
+      expect(bass[0]!.notes[0]).toBeLessThan(chord.bass[0]);
+    }
+  });
+
   it('hands out every note exactly once per loop, a little ahead of time, and loops without a seam', () => {
     const events = songEvents();
     const seq = new MusicSequencer(events, SONG.bpm, SONG.bars.length * 4);

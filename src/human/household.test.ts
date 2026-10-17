@@ -61,7 +61,7 @@ describe('who lives here this visit (the man or the woman)', () => {
 
   it('the woman is a shorter build in a long dress; the man is unchanged', () => {
     expect(HOUSEHOLD.woman.figure).toBe('woman');
-    expect(HOUSEHOLD.woman.height).toBeLessThan(0.95);
+    expect(HOUSEHOLD.woman.height).toBeLessThan(0.9);
     expect(HOUSEHOLD.man.figure ?? 'man').toBe('man');
     expect(HOUSEHOLD.man.height ?? 1).toBe(1);
   });

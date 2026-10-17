@@ -52,6 +52,17 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner after seeing the household woman: "Remove the shadow from her face since it looks like
+a beard. Make her features more Asian and skin a shade darker. Make her hair darker and less grey more dark brown.
+Make her shorter compared to the male"): all in `HOUSEHOLD_WOMAN_LOOK` through new optional `HumanLook` settings (the
+man and the courier are unchanged: every default is his old value). `features.evenLight` bends her face's normals
+toward the front (`evenlyLit`), so the key light no longer shades her lower face and jaw; almond eyes tilted up at
+the corners (`eyeTilt` 0.12 rad, `eyeHeight` 0.86), `lidRest` 0.36, a smaller, flatter nose (`nose` 0.78), straighter
+brows (`browArch`); skin `#e2b089`; hair `#4b2e1d` with warm highlights and a warm shade tint (`hairTint`) and less rim
+(`rim.hair`, replacing `clothRim` with `rim.cloth`); height 0.85 (about 1.50 m, was 0.9). Checked: unit tests; headless
+renders standing beside him (front, three-quarter, close-up) and in the real game with `?human=woman` (the Padres,
+the phone, relaxing, folding, sipping, chopping carrots), no console errors. Not checked: a phone.
+
 Claude Code (2026-10-17, owner request: "Add another NPC Human this will be a female who will do all the same
 activities as the male. The female will be a shorter Asian lady wearing a dark green dress that is v neck and down to
 the ankles. Hair will be light brown. It will be random if the NPC will be a male or female but will be distributed

@@ -99,12 +99,21 @@ export interface HumanLook {
   /** Standing height against the rig's 1.77 m (default 1): the whole body is scaled (see HumanVisual.scale). */
   height?: number;
   /**
-   * How much of the toon shading's warm rim light the clothes catch (default 1). It's added on top, so on a dark
-   * fabric's shaded side it reads as a grey sheen: a dark dress takes less.
+   * How much of the toon shading's warm rim light the clothes and the hair catch (default 1 each). It's added on top,
+   * so on a dark fabric or dark hair it reads as a grey sheen: a dark dress and dark hair take less.
    */
-  clothRim?: number;
+  rim?: { cloth?: number; hair?: number };
+  /** The hair's highlights lean toward this colour (default white) and its shaded side is tinted this (default cool). */
+  hairTint?: { sheen: string; shade: string };
   /** How far the upper lids come down at rest (a share of the eye's height; default 0.2): lower is a softer, hooded eye. */
   lidRest?: number;
+  /**
+   * The face's own features (defaults: his). `evenLight` (0..1) turns the face's surface toward the front, so the
+   * key light from above doesn't shade the lower face and jaw (which reads as stubble); `eyeTilt` lifts the outer
+   * corners of the eyes (rad); `eyeHeight` scales the eyes' height (an almond eye below 1); `nose` scales the nose
+   * (smaller and flatter below 1); `browArch` is how much the brows arch (m).
+   */
+  features?: { evenLight?: number; eyeTilt?: number; eyeHeight?: number; nose?: number; browArch?: number };
 }
 
 /** The household human: warm tan skin, short black hair, an untucked sage button-down, blue jeans, one striped sock. */
@@ -129,16 +138,18 @@ export const HOUSEHOLD_LOOK: HumanLook = {
 };
 
 /**
- * The other household human (owner, 2026-10-17): a shorter Asian woman with long light-brown hair, in a dark green,
+ * The other household human (owner, 2026-10-17): a shorter Asian woman with long dark-brown hair, in a dark green,
  * V-necked dress down to her ankles. She does everything the household man does (same rig, same animation), and,
- * like him, has one striped sock on and one bare foot (Moke has the other sock).
+ * like him, has one striped sock on and one bare foot (Moke has the other sock). After the owner saw her: no shadow on
+ * her lower face, more Asian features (almond eyes lifting at the corners, a softer lid, a smaller, flatter nose,
+ * straighter brows), skin a shade darker, the hair a warm dark brown, and shorter.
  */
 export const HOUSEHOLD_WOMAN_LOOK: HumanLook = {
-  skin: '#efc8a4',
-  lips: '#c9777a',
-  hair: '#a97d56',
-  brow: '#6e5038',
-  iris: '#2c1e17',
+  skin: '#e2b089',
+  lips: '#c06c68',
+  hair: '#4b2e1d',
+  brow: '#2f1e15',
+  iris: '#24170f',
   shirt: '#1e4a33',
   shirtTrim: '#153826',
   shirtButton: '#153826',
@@ -151,9 +162,11 @@ export const HOUSEHOLD_WOMAN_LOOK: HumanLook = {
   // Out for a ride: socks on both feet and black flats with pale soles.
   outing: { shoe: '#1d1b1e', sole: '#e3ddd4', sock: '#34373d' },
   figure: 'woman',
-  height: 0.9,
-  clothRim: 0.3,
-  lidRest: 0.3,
+  height: 0.85,
+  rim: { cloth: 0.3, hair: 0.35 },
+  hairTint: { sheen: '#a86f43', shade: '#d6c0b0' },
+  lidRest: 0.36,
+  features: { evenLight: 0.85, eyeTilt: 0.12, eyeHeight: 0.86, nose: 0.78, browArch: 0.003 },
 };
 
 /**
@@ -408,9 +421,10 @@ export class StylizedHumanVisual implements HumanVisual {
       if (!merged) throw new Error(`Could not build the human's ${name} mesh`);
       for (const g of geometries) g.dispose();
       this.geometries.push(merged);
-      const material = createToonMaterial('#ffffff', SHADE[name]);
+      const material = createToonMaterial('#ffffff', name === 'hair' ? (this.look.hairTint?.shade ?? SHADE.hair) : SHADE[name]);
       material.vertexColors = true;
-      if (name === 'shirt' && this.look.clothRim !== undefined) (material.userData.toon as { uRim: { value: Vector2 } }).uRim.value.y *= this.look.clothRim;
+      const rim = name === 'shirt' ? this.look.rim?.cloth : name === 'hair' ? this.look.rim?.hair : undefined;
+      if (rim !== undefined) (material.userData.toon as { uRim: { value: Vector2 } }).uRim.value.y *= rim;
       this.materials.push(material);
       const mesh = new SkinnedMesh(merged, material);
       mesh.name = `${prefix}:${name}`;
@@ -1210,6 +1224,26 @@ const BROW_Z = faceZ(EYE.x, EYE.y + BROW_ABOVE_EYE) + 0.0015;
 /** How far the upper lid comes down at rest (a share of the eye's height): calm, just touching the irises. */
 const LID = { open: 0.2 };
 
+/**
+ * Turns the front of the face toward the front (by `amount`, 0..1): its normals, not its shape. The key light comes
+ * from above, so the lower face and jaw, facing down, would otherwise fall into the shade colour (like stubble).
+ */
+function evenlyLit(g: BufferGeometry, amount: number): BufferGeometry {
+  if (amount <= 0) return g;
+  const normal = g.getAttribute('normal');
+  const n = new Vector3();
+  const front = new Vector3();
+  for (let i = 0; i < normal.count; i++) {
+    n.fromBufferAttribute(normal, i);
+    // The face and the jaw below it (facing forward or down), not the top or back of the head.
+    const w = smoothstep(-0.15, 0.45, n.z) * (1 - smoothstep(0.35, 0.75, n.y)) * amount;
+    front.set(n.x * 0.55, 0.22, 1).normalize();
+    n.lerp(front, w).normalize();
+    normal.setXYZ(i, n.x, n.y, n.z);
+  }
+  return g;
+}
+
 /** Head-bone space → character space. */
 function onHead(g: BufferGeometry, x: number, y: number, z: number): BufferGeometry {
   return g.translate(HEAD.x + x, HEAD.y + y, HEAD.z + z);
@@ -1232,11 +1266,14 @@ function head(look: HumanLook): Part[] {
   const woman = look.figure === 'woman';
   const skin = (geometry: BufferGeometry, color = look.skin): Part => ({ geometry, material: 'skin', color, bind: 'head' });
   const face = (geometry: BufferGeometry, color: string, bind: Bind = 'head'): Part => ({ geometry, material: 'face', color, bind });
-  parts.push(skin(onHead(SKULL.clone(), 0, 0, 0)));
+  const f = look.features ?? {};
+  parts.push(skin(onHead(evenlyLit(SKULL.clone(), f.evenLight ?? 0), 0, 0, 0)));
   // Ears (outlined with the head), a soft nose and the lips (drawn without a line, like Moke's muzzle).
   for (const sx of [1, -1]) parts.push(skin(onHead(new SphereGeometry(0.027, 10, 8).scale(0.4, 1.22, 0.74).rotateY(sx * 0.25), sx * 0.094, 0.06, -0.01)));
-  parts.push(face(onHead(new SphereGeometry(1, 12, 10).scale(0.0085, 0.019, 0.0075).rotateX(0.3), 0, 0.046, faceZ(0, 0.046) - 0.004), look.skin));
-  parts.push(face(onHead(new SphereGeometry(1, 14, 10).scale(0.0128, 0.0092, 0.0082), 0, 0.034, faceZ(0, 0.034) - 0.0015), look.skin));
+  // The nose: a bridge and a soft tip (smaller and flatter for some faces: `features.nose`).
+  const nose = f.nose ?? 1;
+  parts.push(face(onHead(new SphereGeometry(1, 12, 10).scale(0.0085 * nose, 0.019 * nose, 0.0075 * nose * nose).rotateX(0.3), 0, 0.046, faceZ(0, 0.046) - 0.004), look.skin));
+  parts.push(face(onHead(new SphereGeometry(1, 14, 10).scale(0.0128 * Math.sqrt(nose), 0.0092 * nose, 0.0082 * nose), 0, 0.034, faceZ(0, 0.034) - 0.0015), look.skin));
   parts.push(face(onHead(new SphereGeometry(0.015, 12, 6).scale(1.05, 0.3, 0.4), 0, MOUTH.y - 0.009, faceZ(0, MOUTH.y - 0.01) - 0.003), look.lips));
 
   // Eyes: the whites on the head, the irises and pupils on the eye bones (they slide), a catch-light that stays put.
@@ -1246,9 +1283,11 @@ function head(look: HumanLook): Part[] {
   ] as const) {
     // Each eye turns a little outward with the face, so its outer corner follows the head round instead of poking out.
     const turn = sx * EYE.turn;
-    const eye = (g: BufferGeometry, x: number, y: number, z: number) => onHead(g.translate(x, y, z).rotateY(turn), sx * EYE.x, EYE.y, EYE.z);
+    // An almond eye lifts at its outer corner (`features.eyeTilt`).
+    const tilt = sx * (f.eyeTilt ?? 0);
+    const eye = (g: BufferGeometry, x: number, y: number, z: number) => onHead(g.translate(x, y, z).rotateZ(tilt).rotateY(turn), sx * EYE.x, EYE.y, EYE.z);
     const white = EYE.white;
-    parts.push(face(eye(new SphereGeometry(1, 20, 14).scale(white.x, white.y, white.z), 0, 0, -0.002), COLORS.eyeWhite));
+    parts.push(face(eye(new SphereGeometry(1, 20, 14).scale(white.x, white.y * (f.eyeHeight ?? 1), white.z), 0, 0, -0.002), COLORS.eyeWhite));
     const front = white.z - 0.002;
     const iris = new CylinderGeometry(EYE.iris, EYE.iris, 0.0012, 20).rotateX(Math.PI / 2);
     parts.push(face(eye(iris, 0, 0, front - 0.0002), look.iris, `eye${side}`));
@@ -1266,7 +1305,7 @@ function head(look: HumanLook): Part[] {
     for (let i = 0; i < bp.count; i++) {
       const bx = bp.getX(i);
       const taper = 1 - (woman ? 0.6 : 0.45) * Math.max(0, (bx * sx) / 0.019);
-      bp.setY(i, bp.getY(i) * taper + (woman ? 0.0065 : 0.004) * (1 - (bx / 0.019) ** 2));
+      bp.setY(i, bp.getY(i) * taper + (f.browArch ?? 0.004) * (1 - (bx / 0.019) ** 2));
     }
     brow.rotateZ(sx * -0.04);
     parts.push(face(onHead(brow, sx * (EYE.x + 0.002), EYE.y + BROW_ABOVE_EYE, BROW_Z), look.brow, `brow${side}`));
@@ -1283,7 +1322,7 @@ function head(look: HumanLook): Part[] {
   // so only the sides above the ears and the back show.
   const capBase = SKULL_CENTER + 0.026;
   // Hers is smoother, the fringe swept back off her forehead, and long (see longHair).
-  const hair = hairShell(look.hair, look.cap ? (capBase - SKULL_CENTER) / SKULL_SIZE.up : null, woman ? { tipFront: 0.03, ridge: 0.003 } : {});
+  const hair = hairShell(look.hair, look.cap ? (capBase - SKULL_CENTER) / SKULL_SIZE.up : null, woman ? { tipFront: 0.03, ridge: 0.003, sheen: look.hairTint?.sheen } : {});
   parts.push({ geometry: onHead(hair, 0, 0, 0), material: 'hair', color: look.hair, bind: 'head' });
   if (woman) parts.push(...longHair(look));
   if (look.cap) {
@@ -1324,12 +1363,17 @@ const CROWN_E2 = new Vector3().crossVectors(CROWN, CROWN_E1);
 /** Under a cap, the hair lies this close to the scalp (m): well inside the cap's crown. */
 const HAIR_UNDER_CAP = 0.003;
 
-/** The hair's two shades from its colour: deep between the locks, a soft sheen down the middle of each. */
-function hairShades(hair: string): { deep: Color; sheen: Color } {
+/**
+ * The hair's two shades from its colour: deep between the locks, a soft sheen down the middle of each (toward white,
+ * or toward `toward`: a warm brown keeps dark brown hair from going grey in its highlights).
+ */
+function hairShades(hair: string, toward?: string): { deep: Color; sheen: Color } {
   const { r, g, b } = new Color(hair).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace);
+  const to = toward ? new Color(toward).getRGB({ r: 0, g: 0, b: 0 }, SRGBColorSpace) : { r: 1, g: 1, b: 1 };
+  const k = toward ? 0.6 : HAIR.sheen;
   return {
     deep: new Color().setRGB(r * HAIR.deep, g * HAIR.deep, b * HAIR.deep, SRGBColorSpace),
-    sheen: new Color().setRGB(lerp(r, 1, HAIR.sheen), lerp(g, 1, HAIR.sheen), lerp(b, 1, HAIR.sheen), SRGBColorSpace),
+    sheen: new Color().setRGB(lerp(r, to.r, k), lerp(g, to.g, k), lerp(b, to.b, k), SRGBColorSpace),
   };
 }
 
@@ -1340,10 +1384,10 @@ function hairShades(hair: string): { deep: Color; sheen: Color } {
  * and nape are scalloped by lock tips instead of cut along a line. Below the hairline the shell tucks under the skin.
  * Under a cap (`capAt`: the cap's lower edge, as a height on the unit skull) it lies flat to the scalp above that edge.
  */
-function hairShell(color: string, capAt: number | null, style: { tipFront?: number; ridge?: number } = {}): BufferGeometry {
+function hairShell(color: string, capAt: number | null, style: { tipFront?: number; ridge?: number; sheen?: string } = {}): BufferGeometry {
   const tipFront = style.tipFront ?? HAIR.tipFront;
   const ridge = style.ridge ?? HAIR.ridge;
-  const { deep, sheen } = hairShades(color);
+  const { deep, sheen } = hairShades(color, style.sheen);
   const g = new SphereGeometry(1, 64, 56);
   const p = g.getAttribute('position');
   const colors = new Float32Array(p.count * 3);
@@ -1407,7 +1451,7 @@ const HAIR_FALL: readonly Ring[] = [
 ];
 
 function longHair(look: HumanLook): Part[] {
-  const { deep, sheen } = hairShades(look.hair);
+  const { deep, sheen } = hairShades(look.hair, look.hairTint?.sheen);
   const strands = (g: BufferGeometry) =>
     paint(g, (p, _n, out) => {
       // Fine strands down its length, a little sheen on each.

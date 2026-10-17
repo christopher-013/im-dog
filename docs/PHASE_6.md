@@ -217,9 +217,14 @@ brown. It will be random if the NPC will be a male or female but will be distrib
 - **Everything the same:** the same brain, routine, body, rig and animation (`src/human/`); only the look differs
   (`HOUSEHOLD_WOMAN_LOOK`). She folds the laundry, cooks, reads, watches the Padres, runs the Sock Heist (one striped
   sock on, one bare foot: Moke has the other), plays, feeds him, and takes him for the ride and drives.
-- **Her look:** about 1.60 m (0.9 of his height), a shorter Asian woman with long light-brown hair down her back
-  and locks framing her face, finer arched brows, fuller lashes, softer resting lids, in a fitted dark green V-neck
-  dress with short sleeves, a sash at the waist and a skirt to just above her ankles; black flats to go out.
+- **Her look:** about 1.50 m (0.85 of his height), a shorter Asian woman with long dark-brown hair down her back
+  and locks framing her face, almond eyes lifting at the outer corners under a softer lid, a small, flat nose, fine
+  straight brows, fuller lashes, warm light-tan skin, in a fitted dark green V-neck dress with short sleeves, a sash
+  at the waist and a skirt to just above her ankles; black flats to go out. **Changed after the owner saw her
+  (2026-10-17):** "Remove the shadow from her face since it looks like a beard. Make her features more Asian and skin
+  a shade darker. Make her hair darker and less grey more dark brown. Make her shorter compared to the male": her
+  face is lit evenly (no shade under the jaw), the features above, skin a shade darker, the hair a warm dark brown
+  (warm highlights and shading, less of the grey rim light), and 0.85 of his height instead of 0.9.
 - **Shorter, not re-animated:** the body is scaled and the animation turns everything asked for in metres into the
   rig's own units (`HumanAnimationController.scale`), so she sits on the same seats, reaches the same spots and takes
   her own strides; her speech bubbles sit lower.

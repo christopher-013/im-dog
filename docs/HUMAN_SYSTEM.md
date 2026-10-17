@@ -145,17 +145,20 @@ straight into its seat.
   a knife, the remote, and a two-handed folded cloth) appear when the activity asks. The laundry cloth and larger
   chest-height folding motion make the opening routine readable from Moke's low rear camera.
 - **The household woman (`HOUSEHOLD_WOMAN_LOOK`, `figure: 'woman'`, Phase 6, D35):** the same skeleton and face rig,
-  scaled to 0.9 (about 1.60 m). A fitted, lofted bodice (in at the waist, out over the bust, the shirt's shoulders so
+  scaled to 0.85 (about 1.50 m). A fitted, lofted bodice (in at the waist, out over the bust, the shirt's shoulders so
   the short sleeves meet it) with a **V neckline** laid on it (finely subdivided so it follows the curve into the neck)
   and a sash over the seam; an **ankle-length A-line skirt**, one lofted piece round both legs, weighted so that in
   front each side follows its own leg (a raised knee never comes through) and behind each side is shared with the
   other leg (walking sways it instead of twisting its back panel round; sitting and lounging move both legs together,
   so it drapes over the knees); bare shins below it and the household feet (one striped sock, one bare: the Sock Heist
-  is hers too). **Long light-brown hair**: a smoother shell with the fringe swept off her forehead, a lofted fall
+  is hers too). **Long dark-brown hair**: a smoother shell with the fringe swept off her forehead, a lofted fall
   from under the crown out behind her shoulders to the middle of her back (the top moves with her head, the length
-  with her back), and a lock framing each side of her face. Finer arched brows, fuller lashes, softer resting lids
-  (`lidRest`), slimmer hands, a slimmer neck. Her dark dress takes less of the toon rim light (`clothRim`), which
-  would otherwise read as a grey sheen on its shaded side. Black flats to go out. About 29,000 triangles in 11 meshes (his: about 25,000 in 13).
+  with her back), and a lock framing each side of her face; its highlights lean warm and its shaded side is tinted
+  warm (`hairTint`), so dark brown never goes grey. Her face (`features`): lit evenly (`evenLight` turns the face's
+  normals toward the front, so the key light from above doesn't shade her lower face and jaw, which read as a beard),
+  almond eyes that lift at the outer corners (`eyeTilt`, `eyeHeight`) under softer resting lids (`lidRest`), a
+  smaller, flatter nose, fine straight brows (`browArch`), fuller lashes; slimmer hands and neck. Her dark dress and
+  hair take less of the toon rim light (`rim`), which would otherwise read as a grey sheen. Black flats to go out. About 29,000 triangles in 11 meshes (his: about 25,000 in 13).
 - Fades see-through when between the camera and Moke (Phase 3 behaviour).
 - **Fallbacks:** an unknown pose is simply idle; a missing prop shows nothing; a future modelled human only has to
   implement `HumanVisual` (`apply(dt, pose)`, `hands`, `setSeeThrough`, `dispose`) and map the rig's joints (or clips)

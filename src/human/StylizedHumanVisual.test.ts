@@ -143,8 +143,8 @@ describe('StylizedHumanVisual', () => {
     };
     expect(lowest(woman)).toBeLessThan(1.25);
     expect(lowest(man)).toBeGreaterThan(1.4);
-    // Shorter: standing, the top of her head is lower than his by about a tenth.
-    expect(woman.scale).toBeCloseTo(0.9, 5);
+    // Shorter: standing, the top of her head is lower than his by about a seventh.
+    expect(woman.scale).toBeCloseTo(0.85, 5);
     const animation = new HumanAnimationController();
     const pose = animation.update(0, createVisualState());
     const top = (visual: StylizedHumanVisual) => {
@@ -152,7 +152,7 @@ describe('StylizedHumanVisual', () => {
       visual.object.updateMatrixWorld(true);
       return new Box3().setFromObject(visual.object, true).max.y;
     };
-    expect(top(woman)).toBeLessThan(top(man) * 0.93);
+    expect(top(woman)).toBeLessThan(top(man) * 0.88);
     // She holds things and goes out in shoes like him.
     expect(woman.hands.right.parent).not.toBeNull();
     expect(woman.object.getObjectByName('Human:outing:sock')).toBeDefined();

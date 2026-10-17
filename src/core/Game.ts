@@ -41,6 +41,7 @@ import { ToiletPaperMischief } from '../activities/ToiletPaperMischief';
 import { CouchPillows } from '../world/CouchPillows';
 import { FrontDoor } from '../world/FrontDoor';
 import { HalloweenDecor } from '../world/HalloweenDecor';
+import { GarageView } from '../world/GarageView';
 import { DogCostume } from '../player/DogCostume';
 import { halloweenOn } from '../config/seasons';
 import { HALLOWEEN_VISIT } from '../config/halloween';
@@ -215,6 +216,8 @@ export class Game {
   private halloween = false;
   private settings: PlayerSettings = loadSettings();
   private readonly halloweenDecor = new HalloweenDecor();
+  /** The Garage's door, roll-up door and the family car (Phase 6, D32). */
+  private readonly garage = new GarageView();
   private costume: DogCostume | null = null;
   /** Halloween: the pumpkin biscuit the human brings him after the trick-or-treaters. */
   private readonly biscuitTreat = new Treat('pumpkin', 3, 'pumpkin');
@@ -434,6 +437,7 @@ export class Game {
     this.pillows?.reset();
     this.frontDoor.dispose();
     this.halloweenDecor.dispose();
+    this.garage.dispose();
     this.costume?.dispose();
     this.biscuitTreat.dispose();
     this.bathroom.dispose();
@@ -585,7 +589,7 @@ export class Game {
         this.showVoiceBubble('I win! Strongest in the house!');
       },
     });
-    this.scene.add(this.frontDoor.object, this.halloweenDecor.object);
+    this.scene.add(this.frontDoor.object, this.halloweenDecor.object, this.garage.object);
     this.scene.add(this.bathroom.object, this.conure.object);
     this.scent.register(this.biscuitTreat.scent);
     this.attention.register(this.biscuitTreat.attention);

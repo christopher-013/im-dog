@@ -2,6 +2,7 @@ import { Group, Vector3 } from 'three';
 import type { StaticBox } from '../physics/PhysicsWorld';
 import { HOME_BOUNDS, PLAY_BOUNDS, ROOMS, roomAt, type RoomArea } from './home/layout';
 import { FIRE, HOME_PLACES, KITCHEN_TREATS, NAP_SPOTS, TREAT_HIDING_SPOTS, TV_SCREENS, type HomePlace, type NapSpot, type Spot, type TvScreenSpot } from './home/places';
+import { buildGarage } from './home/Garage';
 import { buildWing } from './home/Wing';
 import { LivingRoom } from './LivingRoom';
 import { createRoomMaterials } from './materials';
@@ -45,9 +46,10 @@ export class Home {
   constructor() {
     const materials = createRoomMaterials();
     this.tv = new TvChannels([materials.tvLiving, materials.tvFamily, materials.tvDining]);
-    this.livingRoom = new LivingRoom({ materials, hallwayOpen: true });
+    this.livingRoom = new LivingRoom({ materials, hallwayOpen: true, garageDoor: true });
     const wing = new StaticSceneBuilder();
     buildWing(wing, materials);
+    buildGarage(wing, materials);
     this.colliders = [...this.livingRoom.colliders, ...wing.colliders];
     this.object.name = 'Home';
     this.object.add(this.livingRoom.object, wing.build('Wing'));

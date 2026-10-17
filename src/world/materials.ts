@@ -159,6 +159,13 @@ export function createRoomMaterials() {
     toyTeal: mat('toyTeal', '#3aa6a0', 0.6),
     // The sliding glass doors to the backyard: warm off-white vinyl frames.
     doorFrame: mat('doorFrame', '#e6d2bd', 0.6),
+    // The Garage (Phase 6): sealed concrete, plain white walls, grey steel shelving, the roll-up door.
+    concrete: mat('concrete', '#b8b4ab', 0.85),
+    garageWall: mat('garageWall', '#eceae4', 0.95),
+    steelGrey: mat('steelGrey', '#8d939b', 0.5, { metalness: 0.4 }),
+    rollUpDoor: mat('rollUpDoor', '#f3f2ee', 0.55),
+    storageBin: mat('storageBin', '#3f6f9a', 0.6),
+    storageLid: mat('storageLid', '#2f3238', 0.6),
     // The backyard, beyond the glass.
     patio: (() => {
       const map = flagstoneTexture();

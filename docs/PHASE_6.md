@@ -35,6 +35,9 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
 - **References:** none: **a standard two-car garage**.
 
 ## Milestones (in build order)
+**Order changed by the owner (2026-10-17):** after 6.1, **6.4 the Garage and the car and 6.5 the ride come next**,
+before 6.2 photo mode and 6.3 the day.
+
 | # | Milestone | Why this order |
 |---|---|---|
 | 6.1 | Halloween | **Built 2026-10-16**, published to the live site. Halloween is 2026-10-31: it has to ship first to be worth anything this year. Small, reuses the doorbell. |

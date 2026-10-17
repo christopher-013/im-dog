@@ -57,6 +57,27 @@ export const OPENINGS = {
   diningWindow: { center: 8.85, width: 1.3, sill: 0.95, height: 1.2 },
 } as const;
 
+/**
+ * The Garage (Phase 6, D32): a standard two-car garage behind the living room (south of it), through a door in the
+ * living room's south wall to the left of the TV (seen from the couch). The door stays locked except for a ride: in
+ * play its doorway is solid, and only the ride's scripted walk passes through. Interior faces; the family car is
+ * parked nose-in (toward the house) in the east bay, its passenger side toward the east wall.
+ */
+export const GARAGE = {
+  xMin: -3.5,
+  xMax: 3.5,
+  /** The living room's south wall is its north wall (3.0 inside the living room, 3.12 inside the garage). */
+  zMin: 3 + WALL,
+  zMax: 9.9,
+  ceiling: 2.75,
+  /** The door from the living room: its centre along x, in the wall at z = 3. */
+  houseDoor: { x: 2.45, width: 0.9, height: 2.05 },
+  /** The roll-up door in the south wall, both bays wide. */
+  rollUp: { xMin: -3.0, xMax: 3.0, height: 2.3 },
+  /** The car's middle (x, z) and which way its nose points (−z: toward the house). */
+  car: { x: 1.42, z: 6.55, heading: Math.PI },
+} as const;
+
 /** The way out to the backyard through the open slider (z along the east wall), and its sill. */
 export const BACKYARD_DOORWAY = (() => {
   const d = OPENINGS.backyardDoors;

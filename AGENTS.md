@@ -37,7 +37,7 @@ Shared, tool-independent instructions for every coding agent working in this rep
   asked for the fixes listed there; the device and browser weren't recorded, so don't claim phone testing.
 - **Phase 6 is in progress:** "A Day with Moke", approved by the owner on 2026-10-16. Scope, milestones and the
   owner's answers: `docs/PHASE_6.md` (D30–D34): Halloween, photo mode, a day in the life, the Garage and a car ride to
-  Torrey Pines, in that order. Add or change milestones only as the owner approves them. Don't add
+  Torrey Pines (6.1 Halloween is done; the owner moved 6.4 the Garage and 6.5 the ride ahead of 6.2 and 6.3). Add or change milestones only as the owner approves them. Don't add
   more humans, more rooms, outdoors beyond the backyard, more dogs or another mini-game without the owner's approval.
   Also carried over: `docs/PHASE_5.md` → "Carried forward", and the Known Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.

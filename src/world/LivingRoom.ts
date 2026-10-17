@@ -20,7 +20,7 @@ import {
 } from './furniture';
 import { createRoomMaterials, FLOOR_TILE, type RoomMaterials } from './materials';
 import { StaticSceneBuilder } from './StaticSceneBuilder';
-import { BATHROOM, HALL } from './home/layout';
+import { BATHROOM, GARAGE, HALL } from './home/layout';
 import { buildBathroom } from './Bathroom';
 
 /** Room interior spans x -3.5..3.5 and z -3..3. */
@@ -38,6 +38,8 @@ export interface LivingRoomOptions {
   readonly materials?: RoomMaterials;
   /** The hallway's far end opens into the rest of the house (Phase 4) instead of ending at a closed door. */
   readonly hallwayOpen?: boolean;
+  /** A doorway in the south wall, left of the TV, into the Garage (Phase 6): solid in play (locked; GarageView). */
+  readonly garageDoor?: boolean;
 }
 
 /**
@@ -93,7 +95,25 @@ export class LivingRoom {
     b.add(new BoxGeometry(W, 0.1, D), m.floorGrey, [0, -0.05, 0], { cast: false, solid: true, worldUV: FLOOR_TILE });
     b.add(new BoxGeometry(W + 2 * T, 0.1, D + 2 * T), m.ceiling, [0, H + 0.05, 0], { receive: false });
     b.add(new BoxGeometry(W + 2 * T, H, T), m.accentWall, [0, H / 2, -hd - T / 2], solid);
-    b.add(new BoxGeometry(W + 2 * T, H, T), m.wall, [0, H / 2, hd + T / 2], solid);
+    if (this.options.garageDoor) {
+      // The south wall round the Garage door. The doorway itself is solid: the door's locked (only a ride's scripted
+      // walk goes through it), and the house door you see is GarageView's.
+      const g = GARAGE.houseDoor;
+      const lo = g.x - g.width / 2;
+      const hi = g.x + g.width / 2;
+      const zs = hd + T / 2;
+      b.add(new BoxGeometry(lo + hw + T, H, T), m.wall, [(lo - hw - T) / 2, H / 2, zs], solid);
+      b.add(new BoxGeometry(hw + T - hi, H, T), m.wall, [(hi + hw + T) / 2, H / 2, zs], solid);
+      b.add(new BoxGeometry(g.width, H - g.height, T), m.wall, [g.x, (H + g.height) / 2, zs], solid);
+      b.addCollider([g.x, g.height / 2, zs], [g.width, g.height, T]);
+      // Casing on both faces of the doorway.
+      for (const z of [hd - 0.015, hd + T + 0.015]) {
+        for (const x of [lo - 0.035, hi + 0.035]) b.add(new BoxGeometry(0.07, g.height + 0.07, 0.03), m.trim, [x, (g.height + 0.07) / 2, z]);
+        b.add(new BoxGeometry(g.width + 0.14, 0.07, 0.03), m.trim, [g.x, g.height + 0.035, z]);
+      }
+    } else {
+      b.add(new BoxGeometry(W + 2 * T, H, T), m.wall, [0, H / 2, hd + T / 2], solid);
+    }
 
     // Exterior west wall: window and a door to its left when viewed from inside.
     const xl = -hw - T / 2;
@@ -129,7 +149,15 @@ export class LivingRoom {
     const bh = 0.09;
     const bt = 0.02;
     b.add(new BoxGeometry(W, bh, bt), m.trim, [0, bh / 2, -hd + bt / 2]);
-    b.add(new BoxGeometry(W, bh, bt), m.trim, [0, bh / 2, hd - bt / 2]);
+    if (this.options.garageDoor) {
+      const g = GARAGE.houseDoor;
+      const lo = g.x - g.width / 2 - 0.07;
+      const hi = g.x + g.width / 2 + 0.07;
+      b.add(new BoxGeometry(lo + hw, bh, bt), m.trim, [(lo - hw) / 2, bh / 2, hd - bt / 2]);
+      b.add(new BoxGeometry(hw - hi, bh, bt), m.trim, [(hi + hw) / 2, bh / 2, hd - bt / 2]);
+    } else {
+      b.add(new BoxGeometry(W, bh, bt), m.trim, [0, bh / 2, hd - bt / 2]);
+    }
     b.add(new BoxGeometry(bt, bh, lo + hd), m.trim, [-hw + bt / 2, bh / 2, (lo - hd) / 2]);
     b.add(new BoxGeometry(bt, bh, hd - hi), m.trim, [-hw + bt / 2, bh / 2, (hi + hd) / 2]);
     b.add(new BoxGeometry(bt, bh, d.zMin + hd), m.trim, [hw - bt / 2, bh / 2, (d.zMin - hd) / 2]);

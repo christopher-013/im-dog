@@ -46,7 +46,7 @@ export type DriveView = (typeof DRIVE_VIEWS)[number];
 /** Each shot in the car's space (+z ahead, −x the passenger side, the sea's): where the camera is, what it looks at. */
 const SHOTS: Record<DriveView, { pos: readonly [number, number, number]; look: readonly [number, number, number]; fov: number }> = {
   alongside: { pos: [-2.55, 1.6, -2.6], look: [-0.9, 1.15, 6], fov: 55 },
-  face: { pos: [-1.5, 1.12, 2.2], look: [-1.12, 1.4, 0.45], fov: 46 },
+  face: { pos: [-1.75, 1.2, 2.0], look: [-1.12, 1.4, 0.45], fov: 46 },
   chase: { pos: [-1.0, 3.1, -9.5], look: [-0.7, 1.3, 9], fov: 55 },
   drone: { pos: [-17, 16, -15], look: [-6, 0, 22], fov: 55 },
 };

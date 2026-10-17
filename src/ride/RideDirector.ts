@@ -59,7 +59,7 @@ export interface RideHooks {
 
 /**
  * Going for a ride (Phase 6, D33), from the Garage door on: the cinematic out to the car (the door opens on the car
- * waiting, he trots down its side and hops in, the human walks round and gets in, the roll-up door goes up and they
+ * waiting, it raises its falcon-wing doors to greet them, he trots down its side and hops in, the human walks round and gets in, the roll-up door goes up and they
  * back out), the drive along the coast (`CoastDrive`, loaded now), and the cinematic home again (in, out, back through
  * the door, harness off). While it runs the house stands still; the game hands its two visuals over and takes them
  * back at the end. Input is just the ride's own: bark, head in or out, change the view, head home.
@@ -103,6 +103,7 @@ export class RideDirector {
     g.setRollUp(0);
     g.car.setPassengerDoor(0);
     g.car.setPassengerWindow(0);
+    g.car.setFalconDoors(0);
     this.place(this.cast.dog.object, SPOTS.dogAtDoor, 0);
     this.place(this.cast.human.object, SPOTS.humanAtDoor, 0);
     this.lastDog.copy(this.cast.dog.object.position);
@@ -173,9 +174,11 @@ export class RideDirector {
       if (t > 0.3) this.sayOnce('Come on, Moke! The car’s in here.');
       return;
     }
-    // The Garage: down the passenger side, the door opens, he hops in.
+    // The Garage: the car greets them, raising its falcon-wing doors; down the passenger side, the front door opens,
+    // he hops in.
     if (t < 9) {
       this.shot(SPOTS.shots.passengerSide);
+      car.setFalconDoors(smoothRange(3.0, 4.6, t));
       const h = along(SPOTS.humanToCar, (t - 2.6) / 3);
       const d = along(SPOTS.dogToCar, (t - 2.8) / 3.2);
       car.setPassengerDoor(smoothRange(5.6, 6.4, t) - smoothRange(7.6, 8.3, t));
@@ -195,8 +198,10 @@ export class RideDirector {
       }
       return;
     }
-    // The front: round the car to the driver's side and in; the roll-up door goes up; backing out.
+    // The front: the falcon doors come down, round the car to the driver's side and in; the roll-up door goes up;
+    // backing out.
     this.shot(SPOTS.shots.front);
+    car.setFalconDoors(1 - smoothRange(9.4, 10.8, t));
     const seat = car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.passenger));
     this.poseDog(dt, [seat.x, seat.z], Math.PI, { y: seat.y, sit: 1, wag: 0.8 });
     if (t < 12) {
@@ -297,6 +302,8 @@ export class RideDirector {
     }
     if (t < 13) {
       this.shot(SPOTS.shots.passengerSide);
+      // Parked: up go the falcon doors, and down again as they head in.
+      car.setFalconDoors(smoothRange(7.0, 8.3, t) - smoothRange(11.4, 12.8, t));
       car.setPassengerDoor(smoothRange(7.2, 7.9, t) - smoothRange(9.2, 9.9, t));
       const human = SPOTS.humanToCar[SPOTS.humanToCar.length - 1]!;
       if (t < 10) this.poseHuman(dt, human, Math.PI * 0.75, { pose: t > 7.2 && t < 8 ? 'place' : 'idle', reach: t > 7.2 && t < 8 ? [-0.2, 0.95, 0.5] : null });
@@ -338,6 +345,7 @@ export class RideDirector {
     this.hooks.fade(0);
     this.hooks.music(false);
     this.cast.garage.setHouseDoor(0);
+    this.cast.garage.car.setFalconDoors(0);
     this.moveCar(GARAGE.car.z);
     this.hooks.done(SPOTS.dogAtDoor, Math.PI * 0.55, SPOTS.humanAtDoor, Math.PI * 1.15);
   }

@@ -176,8 +176,9 @@ ride?"**
   Moke's light blue with a teal buckle, like his real one; each dog's own colours, `DogLook.harness`; over any costume) and clip on the **leash**, "Yes? Let's go! Harness on…", and walk him to the Garage door, the
   dog at their heel (the game steers him: FSD's route-following; held up, the leash just brings him).
 - **No:** walking off (5 m) or ignoring them for 15 s: "Okay, maybe later."
-- **The Garage** (locked the rest of the time): the door opens on the black family car. He trots down its
-  passenger side, the front door opens and he hops onto the seat; the human walks round the front to the driver's
+- **The Garage** (locked the rest of the time): the door opens on the black family car (modelled on the family's
+  own Model X, from the owner's photo; no badge). It greets them by raising its **falcon-wing doors**. He trots down
+  its passenger side, the front door opens and he hops onto the seat; the human walks round the front to the driver's
   side; the roll-up door goes up and they back out.
 - **The drive** (`ride/CoastDrive.ts`, loaded now; reworked at the owner's request, 2026-10-17, from a still of a
   real Del Mar → Torrey Pines drive): down the hill from home through the palm-lined streets, over Los Peñasquitos
@@ -190,7 +191,7 @@ ride?"**
   view** (alongside, his face, behind, the drone; the view glides over); the pause screen's **HEAD HOME** skips to the
   end. The original song "Neon Coastline" plays, dramatic 80s synth-pop in the style of mid-80s crime-drama themes (it
   follows the Music setting). About 3 minutes, never more than 5.
-- **Home:** after a fade, the car drives in, the roll-up door comes down, he hops out, they walk back in, the door shuts and locks,
+- **Home:** after a fade, the car drives in, the roll-up door comes down, up go the falcon doors, he hops out, they walk back in, the door shuts and locks,
   the harness comes off: "Best ride ever, Moke!". **CAR + WINDOW = WIND IN MY EARS.** The human goes back to their day.
 - While they're out the house stands still (the doorbell can't ring for an empty house).
 - **FSD** says yes most of the time (85%), stands still for the harness, and on the road the views change and he

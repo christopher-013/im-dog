@@ -34,7 +34,7 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     let body: SkinnedMesh | undefined;
     human.object.traverse((o) => { if (!body && o instanceof SkinnedMesh) body = o; });
     const solid = () => (body!.material as { opacity: number }).opacity === 1;
-    let alwaysSolid = true, atTheWheel = false;
+    let alwaysSolid = true, atTheWheel = false, wingsUp = 0;
     // The cinematic out: the door opens, he hops in, the roll-up door goes up, they back out.
     let doorOpened = false, inTheCar = false, rolledUp = false;
     for (let i = 0; i < 20 / dt && !loaded; i++) {
@@ -45,7 +45,11 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
       if (i > 30) alwaysSolid &&= solid();
       // Once in, they're at the wheel (seen through the windshield), not gone.
       atTheWheel ||= human.object.parent === garage.car.object && human.object.visible;
+      wingsUp = Math.max(wingsUp, garage.car.falconDoorsOpen);
     }
+    // The car raised its falcon doors to greet them, and shut them again before backing out.
+    expect(wingsUp).toBeGreaterThan(0.95);
+    expect(garage.car.falconDoorsOpen).toBe(0);
     expect(alwaysSolid).toBe(true);
     expect(atTheWheel).toBe(true);
     expect(doorOpened && inTheCar && rolledUp).toBe(true);

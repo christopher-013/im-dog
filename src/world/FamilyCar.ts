@@ -1,33 +1,39 @@
 import {
   BoxGeometry,
   BufferGeometry,
+  CanvasTexture,
+  CatmullRomCurve3,
   CylinderGeometry,
   DoubleSide,
-  ExtrudeGeometry,
+  EquirectangularReflectionMapping,
   Float32BufferAttribute,
   Group,
+  Matrix4,
   Mesh,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
-  Path,
   Quaternion,
-  Shape,
-  ShapeGeometry,
+  SphereGeometry,
+  SRGBColorSpace,
   TorusGeometry,
-  Vector2,
+  TubeGeometry,
   Vector3,
   type Material,
   type Object3D,
+  type Texture,
 } from 'three';
 
 /**
- * The family car (Phase 6, D34): an original, code-built black electric SUV that reads as the family's Model X by its
- * shape (a long body, a huge windshield sweeping back over the front seats into a gently sloping roof, a light bar
- * across the nose, flush handles, aero wheels), with no name, logo or badge anywhere.
+ * The family car (Phase 6, D34): an original, code-built black electric SUV modelled on the family's own Model X
+ * (owner's photo, 2026-10-17; the photo is private and not in the repo). One smooth sculpted body: a rounded nose and
+ * hood, swept-back headlamps with their light strip, a thin chrome strip across the nose, a dark lower intake with
+ * chrome fog-lamp trim; a glasshouse in one arc, the panoramic windscreen sweeping up over the cream seats into the
+ * roof and down the rear window, chrome along the windows; and the falcon-wing rear doors, each hinged at the roof's
+ * spine and again at the top of its window, rising up and out like wings. No name, logo, badge or number plate.
  *
  * Its own space: +z is forward, +y up, the floor at y 0; the passenger (right-hand) side is −x. The passenger's front
- * door opens and its window rolls down (the dog sits there for a ride, head out of the window); the wheels turn.
- * One mesh per part; materials and geometries are its own (dispose()).
+ * door opens and its window rolls down (the dog sits there for a ride, head out of the window); the falcon doors rise;
+ * the wheels turn. Materials and geometries are its own (dispose()).
  */
 export class FamilyCar {
   readonly object = new Group();
@@ -41,109 +47,175 @@ export class FamilyCar {
   static readonly WINDOW = new Vector3(-0.9, 1.22, 0.42);
   private readonly passengerDoor = new Group();
   private readonly passengerWindow: Mesh;
+  /** Each falcon door: the part that turns at the roof's spine, and the part that turns at the top of its window. */
+  private readonly falcons: { hinge: Group; elbow: Group; side: 1 | -1 }[] = [];
   private readonly wheels: Group[] = [];
   private readonly geometries: BufferGeometry[] = [];
   private readonly materials: Material[] = [];
+  private readonly textures: Texture[] = [];
   private doorOpen = 0;
   private windowDown = 0;
+  private falconOpen = 0;
 
   constructor() {
     this.object.name = 'Family car';
-    const paint = this.material(new MeshPhysicalMaterial({ color: '#0b0c10', metalness: 0.55, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.12 }));
-    const glass = this.material(new MeshStandardMaterial({ color: '#0e141c', metalness: 0.8, roughness: 0.05, transparent: true, opacity: 0.86, side: DoubleSide }));
-    const trim = this.material(new MeshStandardMaterial({ color: '#050506', roughness: 0.45 }));
-    const rubber = this.material(new MeshStandardMaterial({ color: '#141416', roughness: 0.9 }));
-    const rim = this.material(new MeshStandardMaterial({ color: '#a3a8ae', metalness: 0.75, roughness: 0.32 }));
-    const chrome = this.material(new MeshStandardMaterial({ color: '#c8ccd2', metalness: 0.9, roughness: 0.2 }));
-    const lamp = this.material(new MeshStandardMaterial({ color: '#ffffff', emissive: '#f4f8ff', emissiveIntensity: 1.2 }));
-    const tail = this.material(new MeshStandardMaterial({ color: '#7a0a10', emissive: '#d0101e', emissiveIntensity: 0.8 }));
-    const seat = this.material(new MeshStandardMaterial({ color: '#ebe5d8', roughness: 0.75 }));
-    const cabin = this.material(new MeshStandardMaterial({ color: '#1d1e22', roughness: 0.8, side: DoubleSide }));
-
-    const W = FamilyCar.SIZE.width;
-    // ---- The body below the windows: one rounded extrusion of its side profile across the car, wheel arches cut
-    // out of its bottom edge and the front doors' opening through it (the cabin's front row).
-    const bevel = 0.07;
-    const body = this.geometry(new ExtrudeGeometry(sideProfile(), {
-      depth: W - 2 * bevel, bevelEnabled: true, bevelThickness: bevel, bevelSize: 0.06, bevelSegments: 4, curveSegments: 18,
+    const sky = this.reflections();
+    const paint = this.material(new MeshPhysicalMaterial({
+      color: '#07080b', metalness: 0.35, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.06, envMap: sky, envMapIntensity: 1.1, side: DoubleSide,
     }));
-    // Shape (u, v) → car (z, y); the extrusion's depth → car −x, centred.
-    body.rotateY(-Math.PI / 2).translate(W / 2 - bevel, 0, 0);
-    this.add(body, paint, this.object).name = 'body';
+    const glassLook = { metalness: 0.6, roughness: 0.04, transparent: true, envMap: sky, envMapIntensity: 1.2, side: DoubleSide, depthWrite: false } as const;
+    // Up top and at the back the glass is dark (the roof glass in the falcon doors, the tinted rear window).
+    const windscreen = this.material(new MeshStandardMaterial({ color: '#18222c', opacity: 0.45, ...glassLook }));
+    const glass = this.material(new MeshStandardMaterial({ color: '#0d1319', opacity: 0.8, ...glassLook }));
+    const roofGlass = this.material(new MeshStandardMaterial({ color: '#07090c', opacity: 0.93, ...glassLook }));
+    const trim = this.material(new MeshStandardMaterial({ color: '#050506', roughness: 0.4, side: DoubleSide }));
+    const rubber = this.material(new MeshStandardMaterial({ color: '#141416', roughness: 0.9, side: DoubleSide }));
+    const rim = this.material(new MeshStandardMaterial({ color: '#2b2e33', metalness: 0.6, roughness: 0.35, envMap: sky }));
+    const spoke = this.material(new MeshStandardMaterial({ color: '#9ba1a8', metalness: 0.85, roughness: 0.25, envMap: sky }));
+    const chrome = this.material(new MeshStandardMaterial({ color: '#d6dae0', metalness: 1, roughness: 0.12, envMap: sky, envMapIntensity: 1.4 }));
+    const lens = this.material(new MeshStandardMaterial({ color: '#1a1d22', metalness: 0.8, roughness: 0.1, envMap: sky, envMapIntensity: 1.3, side: DoubleSide }));
+    const lamp = this.material(new MeshStandardMaterial({ color: '#ffffff', emissive: '#f4f8ff', emissiveIntensity: 1.4 }));
+    const tail = this.material(new MeshStandardMaterial({ color: '#6a0a10', emissive: '#d0101e', emissiveIntensity: 0.8, roughness: 0.2 }));
+    const seat = this.material(new MeshStandardMaterial({ color: '#ece6da', roughness: 0.7 }));
+    const cabin = this.material(new MeshStandardMaterial({ color: '#202126', roughness: 0.85, side: DoubleSide }));
 
-    // ---- The cabin's front row, inside the door opening: a dark interior, two cream seats, the dash and the wheel.
-    this.add(this.geometry(new BoxGeometry(W - 0.2, 0.02, 0.95)), cabin, this.object, [0, 0.45, 0.55]);
-    this.add(this.geometry(new BoxGeometry(W - 0.2, 0.55, 0.02)), cabin, this.object, [0, 0.72, 0.08]);
-    for (const s of [FamilyCar.SEATS.passenger, FamilyCar.SEATS.driver]) {
-      this.add(this.geometry(new BoxGeometry(0.52, 0.12, 0.5)), seat, this.object, [s.x, s.y - 0.06, s.z + 0.05]);
-      this.add(this.geometry(new BoxGeometry(0.5, 0.75, 0.12)), seat, this.object, [s.x, s.y + 0.33, s.z - 0.24], [0.22, 0, 0]);
-      this.add(this.geometry(new BoxGeometry(0.28, 0.16, 0.1)), seat, this.object, [s.x, s.y + 0.8, s.z - 0.36], [0.22, 0, 0]);
+    // ---- The body: one smooth shell lofted along the car, open on top along the cabin (the glasshouse sits on it),
+    // the wheel arches cut into its sides; the front doors' and the falcon doors' panels are cut out of it.
+    const body = loftBody();
+    this.add(this.geometry(body.body), paint, this.object).name = 'body';
+    for (const axle of [AXLES.front, AXLES.rear]) {
+      // The wheel wells' dark liners.
+      const well = new CylinderGeometry(ARCH - 0.01, ARCH - 0.01, FamilyCar.SIZE.width - 0.14, 20, 1, true, 0, Math.PI);
+      this.add(this.geometry(well.rotateZ(Math.PI / 2)), rubber, this.object, [0, WHEEL.radius - 0.02, axle]);
     }
-    this.add(this.geometry(new BoxGeometry(W - 0.25, 0.16, 0.35)), cabin, this.object, [0, 0.98, 1.12]);
-    const wheel = this.add(this.geometry(new TorusGeometry(0.17, 0.022, 8, 24)), trim, this.object, [FamilyCar.SEATS.driver.x, 1.05, 0.88], [-1.0, 0, 0]);
+    // ---- The glasshouse, likewise one shell: the windscreen, the falcon doors' tops and windows, the rear window,
+    // the front doors' and the fixed rear windows, with the black pillars between.
+    const house = loftGlasshouse();
+    this.add(this.geometry(house.windscreen), windscreen, this.object).name = 'windshield';
+    this.add(this.geometry(house.rear), roofGlass, this.object).name = 'rear window';
+    this.add(this.geometry(house.quarters), glass, this.object);
+    this.add(this.geometry(house.pillars), trim, this.object).name = 'roof';
+    this.add(this.geometry(house.windows[1]), glass, this.object);
+
+    // ---- Inside: the floor, the dash, the console, cream seats (two in front, two captain's chairs behind), the wheel.
+    this.add(this.geometry(new BoxGeometry(1.7, 0.03, 3.4)), cabin, this.object, [0, 0.4, -0.55]);
+    this.add(this.geometry(new BoxGeometry(1.66, 0.2, 0.42)), cabin, this.object, [0, 0.92, 1.12]);
+    this.add(this.geometry(new BoxGeometry(0.22, 0.24, 0.9)), cabin, this.object, [0, 0.52, 0.55]);
+    const seats: [number, number, number][] = [
+      [FamilyCar.SEATS.passenger.x, FamilyCar.SEATS.passenger.y, FamilyCar.SEATS.passenger.z],
+      [FamilyCar.SEATS.driver.x, FamilyCar.SEATS.driver.y, FamilyCar.SEATS.driver.z],
+      [-0.45, 0.66, -0.78],
+      [0.45, 0.66, -0.78],
+    ];
+    for (const [x, y, z] of seats) {
+      this.add(this.geometry(roundedBox(0.5, 0.13, 0.5)), seat, this.object, [x, y - 0.065, z + 0.05]);
+      this.add(this.geometry(roundedBox(0.48, 0.66, 0.12)), seat, this.object, [x, y + 0.31, z - 0.23], [0.2, 0, 0]);
+      this.add(this.geometry(roundedBox(0.3, 0.2, 0.11)), seat, this.object, [x, y + 0.76, z - 0.33], [0.2, 0, 0]);
+    }
+    const wheel = this.add(this.geometry(new TorusGeometry(0.17, 0.022, 8, 24)), trim, this.object, [FamilyCar.SEATS.driver.x, 1.03, 0.9], [-1.0, 0, 0]);
     wheel.name = 'steering wheel';
 
-    // ---- The glass: a panoramic windshield running back over the front seats, the roof, the rear window and the
-    // side windows (the passenger's front one is the door's, below), with black pillars between.
-    const P = GLASS;
-    this.add(this.geometry(quad([P.bottomHalf, P.belt, P.cowl], [P.bottomHalf, P.belt, P.cowl], [P.topHalf, P.roofY, P.roofFront], [P.topHalf, P.roofY, P.roofFront])), glass, this.object).name = 'windshield';
-    // Behind the windshield the roof is painted (both faces: it's a single skin), meeting the side windows' tops.
-    const roofPaint = this.material(new MeshPhysicalMaterial({ color: '#0b0c10', metalness: 0.55, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.12, side: DoubleSide }));
-    this.add(this.geometry(quad([P.topHalf, P.roofY, P.roofFront], [P.topHalf, P.roofY, P.roofFront], [P.topHalf, P.roofBackY, P.roofBack], [P.topHalf, P.roofBackY, P.roofBack])), roofPaint, this.object).name = 'roof';
-    this.add(this.geometry(quad([P.topHalf, P.roofBackY, P.roofBack], [P.topHalf, P.roofBackY, P.roofBack], [P.bottomHalf, P.belt, P.tail], [P.bottomHalf, P.belt, P.tail])), glass, this.object).name = 'rear window';
     for (const side of [1, -1] as const) {
-      // Rear side windows (both sides), and the driver's front one.
-      this.add(this.geometry(sideGlass(side, rearWindowOutline())), glass, this.object);
-      if (side === 1) this.add(this.geometry(sideGlass(side, frontWindowOutline())), glass, this.object);
-      // The pillars: along the windshield's edge (A), between the side windows (B), and behind (D).
-      this.add(this.geometry(strip([side * P.bottomHalf, P.belt, P.cowl], [side * P.topHalf, P.roofY, P.roofFront], 0.05)), trim, this.object);
-      this.add(this.geometry(strip([side * P.bottomHalf, P.belt, 0.0], [side * (P.topHalf + 0.01), 1.6, 0.0], 0.07)), trim, this.object);
-      this.add(this.geometry(strip([side * P.bottomHalf, P.belt, P.tail], [side * P.topHalf, P.roofBackY, P.roofBack], 0.06)), trim, this.object);
-      // Door seams: the front door's outline, and the long rear (falcon-wing) door's running up into the roof.
-      for (const [z0, z1] of [[DOOR.front + 0.02, DOOR.back - 0.02], [DOOR.back - 0.05, -1.32]] as const) {
-        this.add(this.geometry(new BoxGeometry(0.006, DOOR.top - DOOR.sill + 0.08, 0.012)), trim, this.object, [side * (W / 2 + 0.012), (DOOR.sill + DOOR.top) / 2 + 0.01, z1]);
-        this.add(this.geometry(new BoxGeometry(0.006, 0.012, Math.abs(z1 - z0))), trim, this.object, [side * (W / 2 + 0.012), DOOR.sill - 0.03, (z0 + z1) / 2]);
-      }
-      // Mirrors.
-      this.add(this.geometry(new BoxGeometry(0.2, 0.12, 0.08)), trim, this.object, [side * 1.06, 1.1, 1.18]);
+      // Chrome along the bottom of the windows (the fixed stretches; the doors carry their own).
+      this.add(this.geometry(beltLine(side, GLASS.cowl, DOOR.front)), chrome, this.object);
+      this.add(this.geometry(beltLine(side, FALCON.back, GLASS.tail + 0.08)), chrome, this.object);
+      // The A-pillars, along the windscreen's sides.
+      this.add(this.geometry(houseLine(side, DOOR.back, GLASS.cowl - 0.02, 0.045)), trim, this.object);
+      // Mirrors: a rounded black shell on a short stalk.
+      const mirror = this.add(this.geometry(new SphereGeometry(1, 14, 10)), paint, this.object, [side * 1.05, 1.08, 1.12]);
+      mirror.scale.set(0.12, 0.075, 0.075);
+      this.add(this.geometry(new BoxGeometry(0.12, 0.03, 0.05)), trim, this.object, [side * 0.95, 1.06, 1.13]);
+      // Door seams.
+      for (const z of [DOOR.front, DOOR.back, FALCON.front, FALCON.back]) this.add(this.geometry(seam(side, z)), trim, this.object);
     }
 
-    // ---- Doors. The driver's, closed over its side of the opening; the passenger's opens on a hinge at its front.
-    const doorX = W / 2 + 0.005;
-    this.add(this.geometry(doorPanel(1)), paint, this.object, [doorX, 0, 0]).name = 'driver door';
-    this.add(this.geometry(new BoxGeometry(0.02, 0.025, 0.16)), chrome, this.object, [doorX + 0.01, 0.92, 0.25]);
+    // ---- The front doors. The driver's, closed; the passenger's opens on a hinge at its front.
+    const hingeX = sideX(DOOR.front, 0.75);
+    this.add(this.geometry(body.doors[1]), paint, this.object).name = 'driver door';
+    this.add(this.geometry(doorCard(1, DOOR.back, DOOR.front)), cabin, this.object);
+    this.add(this.geometry(beltLine(1, DOOR.front, DOOR.back + 0.01)), chrome, this.object);
     this.passengerDoor.name = 'passenger door';
-    this.passengerDoor.position.set(-doorX, 0, DOOR.front);
+    this.passengerDoor.position.set(-hingeX, 0, DOOR.front);
     this.object.add(this.passengerDoor);
-    this.add(this.geometry(doorPanel(-1)), paint, this.passengerDoor, [0, 0, -DOOR.front]);
-    this.add(this.geometry(new BoxGeometry(0.02, 0.025, 0.16)), chrome, this.passengerDoor, [-0.01, 0.92, 0.25 - DOOR.front]);
-    this.passengerWindow = this.add(this.geometry(sideGlass(-1, frontWindowOutline(), -doorX)), glass, this.passengerDoor, [0, 0, -DOOR.front]);
+    const local: [number, number, number] = [hingeX, 0, -DOOR.front];
+    this.add(this.geometry(body.doors[-1]), paint, this.passengerDoor, local);
+    this.add(this.geometry(doorCard(-1, DOOR.back, DOOR.front)), cabin, this.passengerDoor, local);
+    this.add(this.geometry(beltLine(-1, DOOR.front, DOOR.back + 0.01)), chrome, this.passengerDoor, local);
+    this.passengerWindow = this.add(this.geometry(house.windows[-1]), glass, this.passengerDoor, local);
     this.passengerWindow.name = 'passenger window';
 
-    // ---- Wheels: tyres, silver-grey aero rims with five spokes, and a cap.
+    // ---- The falcon doors. Each turns at the roof's spine (its top half), and its window and lower door turn the
+    // other way at the top of the window: up, they stand tall and reach out over the side.
+    for (const side of [1, -1] as const) {
+      const spine = axis(houseRim(FALCON.front, Math.PI / 2), houseRim(FALCON.back, Math.PI / 2));
+      const elbowAngle = side === 1 ? RIM.elbow : Math.PI - RIM.elbow;
+      const rim = axis(houseRim(FALCON.front, elbowAngle), houseRim(FALCON.back, elbowAngle));
+      const hingeRest = new Group();
+      hingeRest.name = side === 1 ? 'falcon door (driver side)' : 'falcon door (passenger side)';
+      hingeRest.applyMatrix4(spine);
+      this.object.add(hingeRest);
+      const hinge = new Group();
+      hingeRest.add(hinge);
+      const elbowRest = new Group();
+      elbowRest.applyMatrix4(new Matrix4().copy(spine).invert().multiply(rim));
+      hinge.add(elbowRest);
+      const elbow = new Group();
+      elbowRest.add(elbow);
+      const fromSpine = new Matrix4().copy(spine).invert();
+      const fromRim = new Matrix4().copy(rim).invert();
+      this.add(this.geometry(house.falconTops[side]), roofGlass, hinge).applyMatrix4(fromSpine);
+      const lower: [BufferGeometry, Material][] = [
+        [house.falconWindows[side], glass],
+        [body.falcons[side], paint],
+        [doorCard(side, FALCON.back, FALCON.front), cabin],
+        [beltLine(side, FALCON.front, FALCON.back), chrome],
+        [houseLine(side, FALCON.back + 0.01, FALCON.front - 0.01, 0.03), trim],
+      ];
+      for (const [geometry, material] of lower) this.add(this.geometry(geometry), material, elbow).applyMatrix4(fromRim);
+      this.falcons.push({ hinge, elbow, side });
+    }
+
+    // ---- Wheels: tyres, dark grey aero rims with ten silver spokes, and a cap.
+    const W = FamilyCar.SIZE.width;
     for (const [x, z] of [[1, AXLES.front], [-1, AXLES.front], [1, AXLES.rear], [-1, AXLES.rear]] as const) {
       const group = new Group();
-      group.position.set(x * (W / 2 - 0.16), WHEEL.radius, z);
+      group.position.set(x * (W / 2 - 0.17), WHEEL.radius, z);
       this.object.add(group);
       this.wheels.push(group);
       const spin = new Group();
       group.add(spin);
       this.add(this.geometry(new CylinderGeometry(WHEEL.radius, WHEEL.radius, WHEEL.width, 28)), rubber, spin, [0, 0, 0], [0, 0, Math.PI / 2]);
-      this.add(this.geometry(new CylinderGeometry(0.26, 0.26, WHEEL.width + 0.012, 28)), rim, spin, [0, 0, 0], [0, 0, Math.PI / 2]);
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * Math.PI * 2;
-        this.add(this.geometry(new BoxGeometry(0.02, 0.21, 0.035)), trim, spin, [x * (WHEEL.width / 2 + 0.008), Math.cos(a) * 0.12, Math.sin(a) * 0.12], [a, 0, 0]);
+      this.add(this.geometry(new CylinderGeometry(0.27, 0.27, WHEEL.width + 0.012, 28)), rim, spin, [0, 0, 0], [0, 0, Math.PI / 2]);
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2;
+        this.add(this.geometry(new BoxGeometry(0.02, 0.22, 0.035)), spoke, spin, [x * (WHEEL.width / 2 + 0.008), Math.cos(a) * 0.13, Math.sin(a) * 0.13], [a, 0, 0]);
       }
       this.add(this.geometry(new CylinderGeometry(0.05, 0.05, WHEEL.width + 0.02, 14)), trim, spin, [0, 0, 0], [0, 0, Math.PI / 2]);
     }
 
-    // ---- Lights: the light bar across the nose with the headlamps at its ends, and the full-width tail light.
-    this.add(this.geometry(new BoxGeometry(1.5, 0.018, 0.02)), lamp, this.object, [0, 0.77, 2.48]);
-    for (const side of [1, -1]) this.add(this.geometry(new BoxGeometry(0.32, 0.05, 0.05)), lamp, this.object, [side * 0.7, 0.72, 2.45], [0, side * -0.3, 0]);
-    this.add(this.geometry(new BoxGeometry(1.7, 0.05, 0.03)), tail, this.object, [0, 0.98, -2.55]);
-    // A dark lower intake under the nose, and the number-plate recess at the back (blank).
-    this.add(this.geometry(new BoxGeometry(1.2, 0.14, 0.04)), trim, this.object, [0, 0.38, 2.54]);
-    this.add(this.geometry(new BoxGeometry(0.52, 0.13, 0.02)), trim, this.object, [0, 0.68, -2.58]);
+    // ---- The nose: swept-back headlamps (a dark lens, the light strip along its lower edge), the thin chrome strip
+    // across the front, the dark lower intake, chrome fog-lamp trim; at the back, the tail lamps and a chrome strip.
+    for (const side of [1, -1] as const) {
+      const strip = LAMP.strip.map(([x, y]) => onNose(side * x, y, 0.006));
+      const top = LAMP.top.map(([x, y]) => onNose(side * x, y, 0.004));
+      this.add(this.geometry(ribbon(strip, top)), lens, this.object);
+      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(strip), 16, 0.01, 6)), lamp, this.object);
+      for (let i = 0; i < 3; i++) {
+        const at = onNose(side * (0.7 + i * 0.05), 0.36 + i * 0.025, 0.004);
+        this.add(this.geometry(new BoxGeometry(0.012, 0.09, 0.012)), chrome, this.object, [at.x, at.y, at.z], [0.2, side * 0.5, side * 0.35]);
+      }
+      const tailLine = [[0.5, 1.02], [0.68, 1.015], [0.84, 1.0], [0.92, 0.97]].map(([x, y]) => onTail(side * x!, y!, 0.006));
+      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(tailLine), 16, 0.03, 6)), tail, this.object);
+    }
+    const nose = [-0.48, -0.24, 0, 0.24, 0.48].map((x) => onNose(x, 0.725 - 0.035 * Math.cos((x / 0.48) * (Math.PI / 2)), 0.006));
+    this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(nose), 24, 0.008, 6)), chrome, this.object).name = 'nose strip';
+    const intakeLow = [-0.62, -0.31, 0, 0.31, 0.62].map((x) => onNose(x, 0.36, 0.004));
+    const intakeHigh = [-0.62, -0.31, 0, 0.31, 0.62].map((x) => onNose(x, 0.47, 0.004));
+    this.add(this.geometry(ribbon(intakeLow, intakeHigh)), trim, this.object);
+    const tailStrip = [-0.42, -0.21, 0, 0.21, 0.42].map((x) => onTail(x, 0.86, 0.006));
+    this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(tailStrip), 20, 0.007, 6)), chrome, this.object);
+
+    this.setFalconDoors(0);
   }
 
   /** The passenger's front door: 0 shut, 1 wide open. */
@@ -155,8 +227,21 @@ export class FamilyCar {
   /** The passenger window: 0 up, 1 all the way down (into the door). */
   setPassengerWindow(down: number): void {
     this.windowDown = Math.min(1, Math.max(0, down));
-    this.passengerWindow.position.y = -0.52 * this.windowDown;
+    this.passengerWindow.position.y = -0.56 * this.windowDown;
     this.passengerWindow.visible = this.windowDown < 0.98;
+  }
+
+  /**
+   * The falcon-wing doors (both): 0 shut, 1 up. Each one's top swings up about the roof's spine, and the rest folds
+   * the other way at the top of the window, so the open door stands tall and reaches out over the side like a wing.
+   */
+  setFalconDoors(open: number): void {
+    this.falconOpen = Math.min(1, Math.max(0, open));
+    const k = this.falconOpen * this.falconOpen * (3 - 2 * this.falconOpen);
+    for (const { hinge, elbow, side } of this.falcons) {
+      hinge.rotation.z = side * FALCON.lift * k;
+      elbow.rotation.z = -side * FALCON.fold * k;
+    }
   }
 
   get passengerDoorOpen(): number {
@@ -167,6 +252,10 @@ export class FamilyCar {
     return this.windowDown;
   }
 
+  get falconDoorsOpen(): number {
+    return this.falconOpen;
+  }
+
   /** Turns the wheels for `distance` metres travelled (negative: backwards). */
   roll(distance: number): void {
     for (const wheel of this.wheels) wheel.children[0]!.rotation.x += distance / WHEEL.radius;
@@ -175,7 +264,34 @@ export class FamilyCar {
   dispose(): void {
     for (const g of this.geometries) g.dispose();
     for (const m of this.materials) m.dispose();
+    for (const t of this.textures) t.dispose();
     this.object.removeFromParent();
+  }
+
+  /** A soft sky and ground for the paint and glass to reflect (a small canvas, no image files). */
+  private reflections(): Texture | null {
+    if (typeof document === 'undefined') return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 64;
+    const g = canvas.getContext('2d');
+    if (!g) return null;
+    const grad = g.createLinearGradient(0, 0, 0, 64);
+    grad.addColorStop(0, '#9fc3e6');
+    grad.addColorStop(0.45, '#e9f1f7');
+    grad.addColorStop(0.5, '#ffffff');
+    grad.addColorStop(0.53, '#8b8f86');
+    grad.addColorStop(1, '#3a3b38');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 128, 64);
+    // A few soft bright panels (the sun, clouds), so the black paint shows its curves.
+    g.fillStyle = 'rgba(255,255,255,0.85)';
+    for (const [x, w] of [[14, 10], [52, 18], [96, 8]] as const) g.fillRect(x, 12, w, 14);
+    const texture = new CanvasTexture(canvas);
+    texture.mapping = EquirectangularReflectionMapping;
+    texture.colorSpace = SRGBColorSpace;
+    this.textures.push(texture);
+    return texture;
   }
 
   private add(geometry: BufferGeometry, material: Material, parent: Object3D, at: [number, number, number] = [0, 0, 0], rotation?: [number, number, number]): Mesh {
@@ -201,100 +317,335 @@ export class FamilyCar {
 
 const WHEEL = { radius: 0.37, width: 0.25 } as const;
 const AXLES = { front: 1.49, rear: -1.48 } as const;
-const ARCH = 0.44;
-/** The front doors' opening (car z from `back` to `front`, y from `sill` to `top`), and how far the passenger's opens. */
-const DOOR = { front: 1.02, back: 0.05, sill: 0.44, top: 1.0, openAngle: 1.15 } as const;
-/** The glasshouse: half-widths at the beltline and the roof, and its profile along the car (z) and up (y). */
-const GLASS = {
-  bottomHalf: 0.86, topHalf: 0.7, belt: 1.06, cowl: 1.32, roofFront: 0.05, roofY: 1.68, roofBack: -1.35, roofBackY: 1.6, tail: -2.36,
+const ARCH = 0.45;
+/** The front doors (car z from `back` to `front`), their bottom edge, and how far the passenger's opens. */
+const DOOR = { front: 1.02, back: 0.06, sill: 0.42, openAngle: 1.15 } as const;
+/** The falcon doors (car z from `back` to `front`), and how far each part turns when they're up (radians). */
+const FALCON = { front: -0.02, back: -1.3, lift: 1.2, fold: 0.22 } as const;
+/** The glasshouse: where it starts (the windscreen's foot) and ends (the rear window's), its highest point, and height. */
+const GLASS = { cowl: 1.3, tail: -2.3, apex: -0.35, top: 1.68 } as const;
+/**
+ * Round the glasshouse (0 the driver's side at the window line, π/2 the top, π the passenger's): where the side
+ * windows give way to the roof and the windscreen, and where each falcon door folds (its elbow).
+ */
+const RIM = { pillar: 0.62, elbow: 0.62 } as const;
+/** The car's ends (z). */
+const ENDS = { nose: 2.53, tail: -2.52 } as const;
+/** The headlamps (x, y on the nose): the light strip along the bottom, the lens's top edge. */
+const LAMP = {
+  strip: [[0.5, 0.76], [0.64, 0.785], [0.76, 0.82], [0.86, 0.865]],
+  top: [[0.45, 0.85], [0.6, 0.875], [0.72, 0.905], [0.82, 0.93]],
 } as const;
 
-/** The body's side profile below the windows (z along the car, y up), with the wheel arches and the door opening. */
-function sideProfile(): Shape {
-  const s = new Shape();
-  s.moveTo(2.38, 0.2);
-  s.quadraticCurveTo(2.54, 0.22, 2.55, 0.4);
-  s.lineTo(2.55, 0.56);
-  s.quadraticCurveTo(2.54, 0.78, 2.3, 0.84);
-  s.quadraticCurveTo(1.8, 0.96, GLASS.cowl, GLASS.belt - 0.02);
-  s.lineTo(-2.1, GLASS.belt + 0.02);
-  s.quadraticCurveTo(-2.5, GLASS.belt, -2.56, 0.9);
-  s.lineTo(-2.55, 0.4);
-  s.quadraticCurveTo(-2.54, 0.22, -2.38, 0.2);
-  // Along the bottom, round the rear arch, on, round the front arch, back to the nose.
-  for (const axle of [AXLES.rear, AXLES.front]) {
-    s.lineTo(axle - ARCH, 0.2);
-    s.absarc(axle, WHEEL.radius - 0.02, ARCH, Math.PI, 0, true);
-    s.lineTo(axle + ARCH, 0.2);
-  }
-  s.closePath();
-  const door = new Path();
-  door.moveTo(DOOR.front, DOOR.sill);
-  door.lineTo(DOOR.front, DOOR.top);
-  door.lineTo(DOOR.back, DOOR.top);
-  door.lineTo(DOOR.back, DOOR.sill);
-  door.closePath();
-  s.holes.push(door);
-  return s;
+function smooth01(t: number): number {
+  const k = Math.min(1, Math.max(0, t));
+  return k * k * (3 - 2 * k);
 }
 
 /**
- * A front door's panel: flat, filling the opening with a little overlap, its outer face at x = 0 and its thickness
- * inward (for `side` +1, the driver's, that's −x; for −1, the passenger's, +x).
+ * The body's top along its middle: the hood falling gently from the windscreen and curving down into the nose, the
+ * window line along the cabin, and the tail rounding down at the back.
  */
-function doorPanel(side: 1 | -1): BufferGeometry {
-  const len = DOOR.front - DOOR.back + 0.05;
-  return new BoxGeometry(0.04, DOOR.top - DOOR.sill + 0.06, len).translate(-side * 0.02, (DOOR.sill + DOOR.top) / 2, (DOOR.front + DOOR.back) / 2);
+function topAt(z: number): number {
+  if (z > GLASS.cowl) {
+    const hood = 1.07 - 0.18 * ((z - GLASS.cowl) / (2.22 - GLASS.cowl)) ** 1.3;
+    return z <= 2.22 ? hood : 0.89 - 0.38 * ((z - 2.22) / (ENDS.nose - 2.22)) ** 2.2;
+  }
+  const line = 1.07 + 0.03 * ((GLASS.cowl - z) / 3.6);
+  return z >= -2.2 ? line : line - 0.32 * ((-2.2 - z) / (-2.2 - ENDS.tail)) ** 2.2;
 }
 
-/** The front side window's outline (z, y): under the sweep of the windshield, from the mirror back to the B-pillar. */
-function frontWindowOutline(): [number, number][] {
-  const G = GLASS;
-  const yAt = (z: number) => G.belt + ((G.cowl - z) / (G.cowl - G.roofFront)) * (G.roofY - G.belt);
-  return [[1.2, G.belt + 0.01], [0.04, G.belt + 0.01], [0.04, yAt(0.04) - 0.03], [1.2, yAt(1.2) - 0.01]];
+/** The window line: where the body's open top (and the glass) begins along the cabin. */
+function beltAt(z: number): number {
+  return topAt(z) - 0.03;
 }
 
-/** The rear side window's outline (z, y): from the B-pillar back under the roof to the tail. */
-function rearWindowOutline(): [number, number][] {
-  const G = GLASS;
-  const roofAt = (z: number) => G.roofY + ((G.roofFront - z) / (G.roofFront - G.roofBack)) * (G.roofBackY - G.roofY);
-  return [[-0.04, G.belt + 0.01], [G.tail + 0.08, G.belt + 0.03], [G.roofBack, G.roofBackY], [-0.04, roofAt(-0.04)]];
+interface Section {
+  hw: number;
+  yc: number;
+  hh: number;
+  nUp: number;
+  nLow: number;
+}
+
+/** The body's cross-section at `z`: a rounded box (a superellipse, squarer below), rounding off in plan at the ends. */
+function section(z: number): Section {
+  const top = topAt(z);
+  const bottom = 0.22 + 0.12 * smooth01((z - 1.95) / 0.58) + 0.14 * smooth01((-1.95 - z) / 0.57);
+  let hw = 0.99 - 0.05 * smooth01((z - 1.2) / 1.0) - 0.05 * smooth01((-1.6 - z) / 0.7);
+  const e = z > 2.02 ? (z - 2.02) / (ENDS.nose - 2.02) : z < -2.28 ? (-2.28 - z) / (-2.28 - ENDS.tail) : 0;
+  if (e > 0) hw *= (1 - Math.min(1, e) ** 2.7) ** (1 / 2.7);
+  const nUp = 6 - 0.8 * smooth01((z - 1.2) / 0.6);
+  return { hw, yc: (top + bottom) / 2, hh: Math.max(0.005, (top - bottom) / 2), nUp, nLow: 5 };
+}
+
+/** A point on the section at angle `a` (0 = the driver's side, π/2 the top). */
+function sectionPoint(sec: Section, a: number, out: Vector3): Vector3 {
+  const c = Math.cos(a), s = Math.sin(a);
+  const n = s >= 0 ? sec.nUp : sec.nLow;
+  const t = Math.sign(s) * Math.abs(s) ** (2 / n);
+  // Tumblehome: the sides lean in toward the top.
+  const x = sec.hw * Math.sign(c) * Math.abs(c) ** (2 / n) * (1 - 0.07 * Math.max(0, t));
+  return out.set(x, sec.yc + sec.hh * t, 0);
+}
+
+/** How far out the body's side is at (z, y) (its half-width there). */
+function sideX(z: number, y: number): number {
+  const sec = section(z);
+  const t = (y - sec.yc) / sec.hh;
+  if (Math.abs(t) >= 1) return 0;
+  const n = t >= 0 ? sec.nUp : sec.nLow;
+  return sec.hw * (1 - Math.abs(t) ** n) ** (1 / n) * (1 - 0.07 * Math.max(0, t));
+}
+
+/** The point on the nose's surface at (x, y), pushed out `out` along z. */
+function onNose(x: number, y: number, out: number): Vector3 {
+  let lo = 1.4, hi: number = ENDS.nose;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (sideX(mid, y) >= Math.abs(x)) lo = mid;
+    else hi = mid;
+  }
+  return new Vector3(x, y, lo + out);
+}
+
+/** The same at the tail. */
+function onTail(x: number, y: number, out: number): Vector3 {
+  let lo: number = ENDS.tail, hi = -1.8;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (sideX(mid, y) >= Math.abs(x)) hi = mid;
+    else lo = mid;
+  }
+  return new Vector3(x, y, hi - out);
+}
+
+/** Sections along the car, from `from` to `to`, with one exactly on every door edge and break. */
+function stations(from: number, to: number): number[] {
+  const zs = new Set<number>();
+  for (let z = from; z <= to + 1e-9; z += 0.04) zs.add(Math.round(z * 1000) / 1000);
+  for (const z of [from, to, DOOR.front, DOOR.back, FALCON.front, FALCON.back, FALCON.front + 0.08, FALCON.back - 0.08, GLASS.cowl, GLASS.tail]) {
+    if (z >= from && z <= to) zs.add(z);
+  }
+  return [...zs].sort((a, b) => a - b);
 }
 
 /**
- * A side window: the outline (z, y) as a flat pane on the `side` (+1 the driver's, −1 the passenger's), leaning in
- * toward the roof (from the beltline's half-width to the roof's). `originX`: where its parent sits across the car
- * (a door's own pane is built relative to the door).
+ * A lofted shell: sections along z, each `around` points from `point(z, j)`, its quads sorted into parts by `pick`
+ * (null leaves the quad out). Smooth normals from the whole shell, so the parts meet without a crease.
  */
-function sideGlass(side: 1 | -1, outline: [number, number][], originX = 0): BufferGeometry {
-  const shape = new Shape(outline.map(([z, y]) => new Vector2(z, y)));
-  const geometry = new ShapeGeometry(shape);
-  const position = geometry.attributes.position!;
-  for (let i = 0; i < position.count; i++) {
-    const z = position.getX(i), y = position.getY(i);
-    const t = (y - GLASS.belt) / (GLASS.roofY - GLASS.belt);
-    const half = GLASS.bottomHalf + (GLASS.topHalf - GLASS.bottomHalf) * t;
-    position.setXYZ(i, side * half - originX, y, z);
+function loft<K extends string>(zs: number[], around: number, closed: boolean, point: (z: number, j: number, out: Vector3) => Vector3, pick: (z: number, centre: Vector3, j: number) => K | null): Record<K, BufferGeometry> {
+  const columns = closed ? around : around + 1;
+  const positions: number[] = [];
+  const p = new Vector3();
+  for (const z of zs) {
+    for (let j = 0; j < columns; j++) {
+      point(z, j, p);
+      positions.push(p.x, p.y, p.z);
+    }
   }
-  geometry.computeVertexNormals();
-  return geometry;
+  const index = (i: number, j: number) => i * columns + (closed ? j % around : j);
+  const all: number[] = [];
+  const parts = new Map<K, number[]>();
+  const centre = new Vector3();
+  for (let i = 0; i < zs.length - 1; i++) {
+    for (let j = 0; j < around; j++) {
+      const a = index(i, j), b = index(i + 1, j), c = index(i + 1, j + 1), d = index(i, j + 1);
+      const tri = [a, b, c, a, c, d];
+      all.push(...tri);
+      centre.set((positions[a * 3]! + positions[c * 3]!) / 2, (positions[a * 3 + 1]! + positions[c * 3 + 1]!) / 2, (zs[i]! + zs[i + 1]!) / 2);
+      const key = pick(centre.z, centre, j);
+      if (key === null) continue;
+      const list = parts.get(key) ?? [];
+      list.push(...tri);
+      parts.set(key, list);
+    }
+  }
+  const shell = new BufferGeometry();
+  shell.setAttribute('position', new Float32BufferAttribute(positions, 3));
+  shell.setIndex(all);
+  shell.computeVertexNormals();
+  const out = {} as Record<K, BufferGeometry>;
+  for (const [key, indices] of parts) {
+    const g = new BufferGeometry();
+    g.setAttribute('position', shell.attributes.position!.clone());
+    g.setAttribute('normal', shell.attributes.normal!.clone());
+    g.setIndex(indices);
+    out[key] = g;
+  }
+  shell.dispose();
+  return out;
 }
 
-/** A quad across the car: its near edge from (−a, y, z) to (+a, y, z), its far edge likewise (each [half-width, y, z]). */
-function quad(a: [number, number, number], b: [number, number, number], c: [number, number, number], d: [number, number, number]): BufferGeometry {
-  const p = [[-a[0], a[1], a[2]], [b[0], b[1], b[2]], [-c[0], c[1], c[2]], [d[0], d[1], d[2]]];
+/**
+ * The body as lofted sections: the body itself, each front door's panel, each falcon door's lower panel. The top is
+ * left open along the cabin (the glass sits on the window line), and the sides are lifted clear of each wheel.
+ */
+function loftBody(): { body: BufferGeometry; doors: Record<1 | -1, BufferGeometry>; falcons: Record<1 | -1, BufferGeometry> } {
+  const around = 72;
+  const parts = loft(stations(ENDS.tail, ENDS.nose), around, true, (z, j, out) => {
+    sectionPoint(section(z), (j / around) * Math.PI * 2, out);
+    for (const axle of [AXLES.front, AXLES.rear]) {
+      const dz = z - axle;
+      if (Math.abs(dz) < ARCH) out.y = Math.max(out.y, WHEEL.radius - 0.02 + Math.sqrt(ARCH * ARCH - dz * dz));
+    }
+    return out.setZ(z);
+  }, (z, c) => {
+    if (z < GLASS.cowl && z > GLASS.tail && c.y > beltAt(z) - 0.004) return null;
+    const onSide = Math.abs(c.x) > 0.5 && c.y > DOOR.sill;
+    const side = c.x > 0 ? 'R' : 'L';
+    if (onSide && z > DOOR.back && z < DOOR.front) return `door${side}`;
+    if (onSide && z > FALCON.back && z < FALCON.front) return `falcon${side}`;
+    return 'body';
+  });
+  return { body: parts.body, doors: { 1: parts.doorR, [-1]: parts.doorL }, falcons: { 1: parts.falconR, [-1]: parts.falconL } };
+}
+
+/** The glasshouse's height along its middle: the windscreen sweeping up into the roof, down the rear window. */
+function roofAt(z: number): number {
+  const G = GLASS;
+  if (z >= G.apex) return G.top - (G.top - beltAt(G.cowl)) * Math.min(1, (z - G.apex) / (G.cowl - G.apex)) ** 1.55;
+  return G.top - (G.top - beltAt(G.tail)) * Math.min(1, (G.apex - z) / (G.apex - G.tail)) ** 2.3;
+}
+
+/**
+ * A point round the glasshouse at `z` and angle `a` (0 the driver's side at the window line, π/2 the top, π the
+ * passenger's): from the body's side at the window line, leaning in and rounding over the roof.
+ */
+function houseRim(z: number, a: number, out = new Vector3()): Vector3 {
+  const belt = beltAt(z);
+  const half = sideX(z, belt) - 0.01;
+  const c = Math.cos(a), s = Math.max(0, Math.sin(a));
+  const n = 2.6;
+  const up = s ** (2 / n);
+  return out.set(half * Math.sign(c) * Math.abs(c) ** (2 / n) * (1 - 0.2 * up), belt + (roofAt(z) - belt) * up, z);
+}
+
+/**
+ * The glasshouse as a lofted shell, split into the windscreen (it runs back over the front seats), the front doors'
+ * windows, the black pillars and the bar between windscreen and roof, the falcon doors' tops (each half of the roof)
+ * and windows, the rear window, and the small fixed windows behind the falcon doors.
+ */
+function loftGlasshouse() {
+  const around = 48;
+  const parts = loft(stations(GLASS.tail, GLASS.cowl), around, false, (z, j, out) => houseRim(z, (j / around) * Math.PI, out), (z, c, j) => {
+    const a = ((j + 0.5) / around) * Math.PI;
+    const top = a > RIM.pillar && a < Math.PI - RIM.pillar;
+    const side = c.x > 0 ? 'R' : 'L';
+    if (z > FALCON.front + 0.08) {
+      if (top) return 'windscreen';
+      return z > DOOR.back + 0.02 ? `window${side}` : 'pillars';
+    }
+    if (z > FALCON.front) return 'pillars';
+    if (z > FALCON.back) {
+      const elbow = a < RIM.elbow || a > Math.PI - RIM.elbow;
+      return elbow ? `falconWindow${side}` : `falconTop${side}`;
+    }
+    if (z > FALCON.back - 0.08) return 'pillars';
+    return top ? 'rear' : 'quarters';
+  });
+  return {
+    windscreen: parts.windscreen,
+    windows: { 1: parts.windowR, [-1]: parts.windowL } as Record<1 | -1, BufferGeometry>,
+    pillars: parts.pillars,
+    falconTops: { 1: parts.falconTopR, [-1]: parts.falconTopL } as Record<1 | -1, BufferGeometry>,
+    falconWindows: { 1: parts.falconWindowR, [-1]: parts.falconWindowL } as Record<1 | -1, BufferGeometry>,
+    rear: parts.rear,
+    quarters: parts.quarters,
+  };
+}
+
+/** A frame on the line between two points: at its middle, its z along the line (a hinge's axis). */
+function axis(front: Vector3, back: Vector3): Matrix4 {
+  const dir = front.clone().sub(back).normalize();
+  const q = new Quaternion().setFromUnitVectors(new Vector3(0, 0, 1), dir);
+  return new Matrix4().compose(front.clone().add(back).multiplyScalar(0.5), q, new Vector3(1, 1, 1));
+}
+
+/** A door's inside: a dark card just inboard of its panel, from its bottom edge to the window line. */
+function doorCard(side: 1 | -1, back: number, front: number): BufferGeometry {
+  const mid = (back + front) / 2;
+  const x = side * (sideX(mid, 0.75) - 0.07);
+  return new BoxGeometry(0.03, beltAt(mid) - DOOR.sill, front - back - 0.04).translate(x, (beltAt(mid) + DOOR.sill) / 2, mid);
+}
+
+/** A thin band along the body's side (`side`) at the window line, from z `a` to `b`: the chrome under the windows. */
+function beltLine(side: 1 | -1, a: number, b: number): BufferGeometry {
+  return band(side, a, b, (z) => beltAt(z) - 0.008, 0.014, false);
+}
+
+/** A door seam: a thin dark line up the body's side at `z`, from the sill to the window line. */
+function seam(side: 1 | -1, z: number): BufferGeometry {
+  return band(side, DOOR.sill - 0.02, beltAt(z) - 0.02, () => z, 0.006, true);
+}
+
+/**
+ * A thin band lying on the body's side, proud of the paint: along z (from z `a` to `b` at height `at(z)`) or, when
+ * `upright`, up it (from y `a` to `b` at z `at()`).
+ */
+function band(side: 1 | -1, a: number, b: number, at: (z: number) => number, width: number, upright: boolean): BufferGeometry {
+  const steps = 16;
+  const verts: number[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const k = a + (b - a) * (i / steps);
+    const z = upright ? at(0) : k;
+    const y = upright ? k : at(k);
+    const x = side * (sideX(z, y) + 0.004);
+    if (upright) verts.push(x, y, z - width / 2, x, y, z + width / 2);
+    else verts.push(x, y - width / 2, z, x, y + width / 2, z);
+  }
+  return quadStrip(verts, steps);
+}
+
+/** A thin line along the glasshouse where the side windows meet the roof (`side`), from z `a` to `b`: a pillar. */
+function houseLine(side: 1 | -1, a: number, b: number, width: number): BufferGeometry {
+  const steps = 20;
+  const verts: number[] = [];
+  const angle = side === 1 ? RIM.pillar : Math.PI - RIM.pillar;
+  const p = new Vector3(), q = new Vector3();
+  for (let i = 0; i <= steps; i++) {
+    const z = a + (b - a) * (i / steps);
+    houseRim(z, angle - width, p);
+    houseRim(z, angle + width, q);
+    verts.push(p.x * 1.004, p.y + 0.002, p.z, q.x * 1.004, q.y + 0.002, q.z);
+  }
+  return quadStrip(verts, steps);
+}
+
+/** A strip of quads from pairs of points. */
+function quadStrip(verts: number[], steps: number): BufferGeometry {
+  const index: number[] = [];
+  for (let i = 0; i < steps; i++) index.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2);
   const geometry = new BufferGeometry();
-  geometry.setAttribute('position', new Float32BufferAttribute([...p[0]!, ...p[1]!, ...p[3]!, ...p[0]!, ...p[3]!, ...p[2]!], 3));
+  geometry.setAttribute('position', new Float32BufferAttribute(verts, 3));
+  geometry.setIndex(index);
   geometry.computeVertexNormals();
   return geometry;
 }
 
-/** A thin bar (a pillar) from `from` to `to`, `width` wide. */
-function strip(from: [number, number, number], to: [number, number, number], width: number): BufferGeometry {
-  const a = new Vector3(...from), b = new Vector3(...to);
-  const geometry = new BoxGeometry(0.035, a.distanceTo(b), width);
-  geometry.applyQuaternion(new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), b.clone().sub(a).normalize()));
-  const mid = a.add(b).multiplyScalar(0.5);
-  geometry.translate(mid.x, mid.y, mid.z);
-  return geometry;
+/** A band between two curves of points (equal counts): a lens, an intake. */
+function ribbon(a: Vector3[], b: Vector3[]): BufferGeometry {
+  const ca = new CatmullRomCurve3(a), cb = new CatmullRomCurve3(b);
+  const steps = 20;
+  const verts: number[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const p = ca.getPoint(i / steps), q = cb.getPoint(i / steps);
+    verts.push(p.x, p.y, p.z, q.x, q.y, q.z);
+  }
+  return quadStrip(verts, steps);
+}
+
+/** A box with softened corners: seat cushions. */
+function roundedBox(w: number, h: number, d: number): BufferGeometry {
+  const g = new BoxGeometry(w, h, d, 4, 4, 4);
+  const pos = g.attributes.position!;
+  const v = new Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const nx = v.x / (w / 2), ny = v.y / (h / 2), nz = v.z / (d / 2);
+    const k = 1 - 0.12 * (Math.abs(nx * ny) + Math.abs(ny * nz) + Math.abs(nx * nz)) / 3;
+    pos.setXYZ(i, v.x * k, v.y * k, v.z * k);
+  }
+  g.computeVertexNormals();
+  return g;
 }

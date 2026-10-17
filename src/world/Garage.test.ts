@@ -1,3 +1,4 @@
+import { Box3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { HUMAN } from '../config/human';
 import { MOKE_BODY, MOVEMENT } from '../config/movement';
@@ -62,5 +63,26 @@ describe('the Garage (Phase 6, D32)', () => {
     garage.setRollUp(1);
     expect(garage.houseDoorOpenness).toBe(1);
     garage.dispose();
+  });
+
+  it('the falcon-wing doors: shut, flush with the roof; up, they stand above it and reach out over the sides, clear of the Garage ceiling', () => {
+    const car = new FamilyCar();
+    const size = () => {
+      car.object.updateMatrixWorld(true);
+      return new Box3().setFromObject(car.object);
+    };
+    const shut = size();
+    expect(shut.max.y).toBeLessThan(FamilyCar.SIZE.height + 0.05);
+    car.setFalconDoors(1);
+    expect(car.falconDoorsOpen).toBe(1);
+    const up = size();
+    expect(up.max.y).toBeGreaterThan(2.1);
+    expect(up.max.y).toBeLessThan(GARAGE.ceiling - 0.1);
+    // Out over both sides (mirrors aside, the shut car's widest point).
+    expect(up.max.x).toBeGreaterThan(shut.max.x + 0.2);
+    expect(up.min.x).toBeLessThan(shut.min.x - 0.2);
+    car.setFalconDoors(0);
+    expect(size().max.y).toBeCloseTo(shut.max.y, 5);
+    car.dispose();
   });
 });

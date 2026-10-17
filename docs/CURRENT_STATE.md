@@ -52,6 +52,25 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner request with a photo of their car: "Make the car look more like my Tesla Model X
+including the falcon doors"): **the family car rebuilt** (`world/FamilyCar.ts`).
+- One smooth body lofted from shape functions (`section`, `topAt`, `sideX`): a rounded nose and hood, swept-back
+  headlamps with their light strip, a thin chrome strip across the nose, a dark lower intake, chrome fog-lamp trim,
+  wheel arches cut into the shell, tail lamps; the front doors' and the falcon doors' panels are cut out of the same
+  shell. The glasshouse is lofted too (`houseRim`, `roofAt`): the panoramic windscreen sweeping up over the cream
+  seats (now four: two in front, two captain's chairs), tinted roof glass in the falcon doors, a tinted rear window,
+  chrome along the windows, black pillars. The paint and glass reflect a small canvas sky (`reflections`).
+- **Falcon-wing doors** (`setFalconDoors(0..1)`): each turns at the roof's spine and folds back at the top of its
+  window, so open they stand up and reach out like wings (under the Garage ceiling; tested). In the ride the car
+  raises them as the two of them come into the Garage and lowers them before backing out, and again when they get
+  home (`RideDirector`; tested).
+- Kept: the API (`SEATS`, `WINDOW`, the passenger door and window, `roll`), so the ride and the Garage are unchanged.
+  No logo, badge, brand name or number plate (D34); the owner's photo isn't in the repo.
+- The drive's face view moved a little (the new mirror was in the way).
+- **Checked** headless: renders from the front (the photo's angle), the side, the back, above, doors shut and open;
+  the Garage cinematic in the game; the drive's views. 95 files / 682 tests, the build and the private-photo check pass.
+  **Not checked:** on a phone.
+
 Claude Code (2026-10-17, owner feedback after riding it on the live site: the human see-through in the Garage, the
 trees, the right side of the road, choppy with black empty space, palms, "the ocean on the right with people swimming
 and picnic'ing", like a still of a real Del Mar → Torrey Pines drive, the harness like Moke's real one (a photo), and

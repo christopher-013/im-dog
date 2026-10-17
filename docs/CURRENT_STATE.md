@@ -54,7 +54,8 @@ carries into Phase 2.
 ## Last Developer
 Claude Code (2026-10-17, owner request with four photos of their car: "Update the car to closer match the model x with
 the black wheels and red brake calipers. The roof still isn't right. Make the drive a minute shorter and allow Moke to
-move his head around and see the view of the passenger side beach when driving"):
+move his head around and see the view of the passenger side beach when driving"; then third person only, the paw
+changes the view; pushed to `main` at the owner's request):
 - **The car** (`world/FamilyCar.ts`): black turbine wheels (ten swept blades, `turbine()`), brake discs and red
   calipers that stay put while the wheels turn; the roof flatter across with defined sides, black glass over it (the
   windscreen tinted black above the front seats, `SCREEN_CLEAR`; the falcon doors' roof glass and the rear window

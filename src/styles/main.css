@@ -2123,6 +2123,12 @@ html[data-input='touch'][data-paw-open] .fsd {
 }
 
 /* FSD Engaged!: light green, gently pulsing while it drives (owner, 2026-10-05). Dark green words to stay readable. */
+/* Going for a ride: the FSD button steps aside for Change View (and Change View hides off the road). */
+.fsd-button[hidden],
+.fsd-status[hidden] {
+  display: none;
+}
+
 .fsd-button[aria-pressed='true'] {
   border-color: rgba(255, 255, 255, 0.95);
   background: rgba(150, 232, 150, 0.92);

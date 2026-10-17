@@ -64,7 +64,7 @@ export class FamilyCar {
     this.object.name = 'Family car';
     const sky = this.reflections();
     const paint = this.material(new MeshPhysicalMaterial({
-      color: '#07080b', metalness: 0.35, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.06, envMap: sky, envMapIntensity: 1.1, side: DoubleSide,
+      color: '#07080b', metalness: 0.35, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.06, envMap: sky, envMapIntensity: 0.5, side: DoubleSide,
     }));
     const glassLook = { metalness: 0.6, roughness: 0.04, transparent: true, envMap: sky, envMapIntensity: 1.2, side: DoubleSide, depthWrite: false } as const;
     const windscreen = this.material(new MeshStandardMaterial({ color: '#18222c', opacity: 0.45, ...glassLook }));
@@ -328,7 +328,7 @@ export class FamilyCar {
     const grad = g.createLinearGradient(0, 0, 0, 64);
     grad.addColorStop(0, '#9fc3e6');
     grad.addColorStop(0.45, '#e9f1f7');
-    grad.addColorStop(0.5, '#ffffff');
+    grad.addColorStop(0.5, '#dfe6ec');
     grad.addColorStop(0.53, '#8b8f86');
     grad.addColorStop(1, '#3a3b38');
     g.fillStyle = grad;

@@ -191,7 +191,9 @@ before 6.2 photo mode and 6.3 the day.
 - **Music:** an **original 80s-style synth-pop song** for the drive: a drum machine with a big gated snare, a
   pulsing synth bass, bright chords and a singable lead. It follows the Music setting. No real song is copied.
   **Changed by the owner (2026-10-17):** "more edgy like a Miami Vice, more dramatic": now "Neon Coastline", in A
-  minor with a sequenced bass and synth-brass stabs.
+  minor with a sequenced bass and synth-brass stabs. **Changed again (2026-10-17):** "more edgy and dark for a brooding
+  drive with purpose": now "Last Light", D minor, a deep sawtooth bass, dark pads. The drive is at golden hour, the sun
+  setting as it ends (owner).
 - **Length:** about **3–4 minutes**, never more than 5. Pause → **Head Home** skips straight to the drive home.
 - **Home again:** into the garage, the roll-up door comes down, the falcon-wing door rises, the human lifts him out
   and walks him in on the leash, then takes off the harness: "Best ride ever, Moke!". Dog Logic "CAR + WINDOW =

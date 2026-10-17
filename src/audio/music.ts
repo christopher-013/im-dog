@@ -12,18 +12,17 @@
 // - "Paws Up!" (Choose Your Dog only, not a Music setting): an arcade fighting game's character-select theme, in
 //   8-bit. Fast and in a minor key: a pumping octave bass, power-chord stabs on a 3-3-2 rhythm, four-on-the-floor
 //   kicks and a heroic pulse lead. Written for this game in that genre's style; no real game's music is copied.
-// - "Neon Coastline" (going for a ride only, Phase 6): dramatic, edgy 80s synth-pop for the drive along the coast,
-//   in the style of mid-80s TV crime-drama themes (owner, 2026-10-17: "more edgy like a Miami Vice, more dramatic but
-//   80s synth pop"). A minor at 124 BPM, the verse turning on a dark E major (harmonic minor), a sixteenth-note
-//   sequenced synth bass, synth-brass stabs on a syncopated rhythm, a big gated snare, and a fat square-wave lead
-//   sliding into its long notes with a dotted-eighth echo. Written for this game in that style; no real song (and no
-//   TV theme) is copied.
+// - "Last Light" (going for a ride only, Phase 6): a dark, brooding 80s synth drive into the sunset (owner,
+//   2026-10-17: "more edgy and dark for a brooding drive with purpose... lower deep baselines but 80s synth sounds"). D
+//   minor at 104 BPM: a low, gritty sawtooth bass pulsing in eighths, long dark synth pads, a big gated snare, and a
+//   lonely square lead sliding into its long notes over a long echo. It replaced "Neon Coastline" and, before it,
+//   "Coastline Cruise" (both original too). Written for this game in that style; no real song is copied.
 
 import { MUSIC } from '../config/audio';
 
 type ChordName =
   | 'C6' | 'Cmaj7' | 'F' | 'F6' | 'D7' | 'G7' | 'A7' | 'Fmaj7' | 'Dm7' | 'Gm7' | 'C7' | 'Bbmaj7' | 'Am7'
-  | 'Em' | 'C' | 'D' | 'B7' | 'Am' | 'A' | 'Bm' | 'G' | 'E' | 'Dm';
+  | 'Em' | 'C' | 'D' | 'B7' | 'Am' | 'A' | 'Bm' | 'G' | 'E' | 'Dm' | 'Bb' | 'Gm';
 
 interface Chord {
   /** Bass notes (MIDI): the root, and the note for beat 3 (usually the fifth). */
@@ -63,6 +62,9 @@ export const CHORDS: Readonly<Record<ChordName, Chord>> = {
   // The ride's minor-key drama: a dark E major (the harmonic minor's V) and D minor.
   E: { bass: [40, 47], voicing: [59, 64, 68, 71], tones: [4, 8, 11] },
   Dm: { bass: [50, 45], voicing: [62, 65, 69, 74], tones: [2, 5, 9] },
+  // "Last Light": dark pads, voiced low.
+  Bb: { bass: [46, 41], voicing: [58, 62, 65, 70], tones: [10, 2, 5] },
+  Gm: { bass: [43, 50], voicing: [55, 58, 62, 67], tones: [7, 10, 2] },
 };
 
 /** A note: MIDI (null = rest), length in beats, and optionally a slide up from this many semitones below. */
@@ -92,8 +94,11 @@ export interface Band {
    * 'twoFeel': root and fifth, stepping into chord changes. 'bounce': root, octave, fifth, octave on the beats.
    * 'drive': pumping eighths, root and octave, with the fifth near the end of the bar.
    * 'sequence': a sequencer's sixteenths, the root with the octave on every fourth, the fifth leading into the next bar.
+   * 'pulse': a relentless eighth-note root, the octave on the last eighth.
+   * `wave`: the console's round triangle (the default) or a gritty sawtooth through a low-pass at `tone` (Hz).
+   * `octave`: semitones to shift the line by (−12: an octave down, deep).
    */
-  bass: { style: 'twoFeel' | 'bounce' | 'drive' | 'sequence'; level: number };
+  bass: { style: 'twoFeel' | 'bounce' | 'drive' | 'sequence' | 'pulse'; level: number; wave?: 'triangle' | 'saw'; tone?: number; octave?: number };
   /** One bar of percussion: beat, drum, velocity. */
   drums: readonly (readonly [beat: number, drum: Drum, velocity: number])[];
   /** The big 80s snare: lower, longer and louder, as if through a gated reverb. */
@@ -345,81 +350,77 @@ const PAWS_UP: Song = {
   gain: 1.9,
 };
 
-// ---- "Neon Coastline"
+// ---- "Last Light"
 
-/** The verse: a moody hook in A minor, climbing over F and G and hanging on the dark E major. */
-const NEON_A: readonly Note[] = [
-  [76, 1.5, 2], [72, 0.5], [69, 1], [72, 1],
-  [76, 1], [79, 1], [72, 0.5], [74, 0.5], [76, 1],
-  [72, 1.5], [69, 0.5], [72, 1], [77, 1],
-  [79, 3, 3], [null, 1],
-  [81, 1.5, 2], [79, 0.5], [76, 1], [72, 1],
-  [76, 1], [81, 1], [84, 1], [83, 0.5], [81, 0.5],
-  [81, 1.5], [77, 0.5], [79, 1], [81, 1],
-  [80, 3, 1], [null, 1],
+/** The first half: a low, lonely line over D minor, rising to the C and falling back, hanging on the dark A. */
+const LAST_A: readonly Note[] = [
+  [69, 3, 3], [67, 0.5], [65, 0.5],
+  [62, 4, 2],
+  [65, 2], [70, 1], [69, 1],
+  [67, 3, 2], [64, 1],
+  [69, 3, 3], [72, 0.5], [70, 0.5],
+  [69, 2], [65, 1], [62, 1],
+  [67, 2], [70, 1], [74, 1],
+  [73, 3, 1], [null, 1],
 ];
-/** The chorus: up an octave over D minor, the big climb over F and G, and the drop back down the E major. */
-const NEON_B: readonly Note[] = [
-  [86, 2, 2], [81, 1], [84, 1],
-  [77, 1], [81, 1], [86, 1], [88, 1],
-  [88, 1.5], [84, 0.5], [81, 1], [76, 1],
-  [81, 3], [null, 1],
-  [84, 1], [81, 0.5], [84, 0.5], [86, 1], [84, 1],
-  [83, 1], [79, 0.5], [83, 0.5], [86, 1], [91, 1],
-  [88, 2, 2], [83, 1], [80, 1],
-  [80, 2], [76, 1], [null, 1],
+/** The second half: up an octave over B♭ and C, home to D minor, then the climb into the A again. */
+const LAST_B: readonly Note[] = [
+  [74, 3, 2], [72, 1],
+  [72, 2], [67, 1], [64, 1],
+  [65, 3], [64, 0.5], [62, 0.5],
+  [62, 4],
+  [70, 2, 2], [65, 1], [69, 1],
+  [67, 2], [72, 1], [76, 1],
+  [76, 3, 2], [73, 1],
+  [69, 3], [null, 1],
 ];
 
-const NEON_COASTLINE: Song = {
+const LAST_LIGHT: Song = {
   id: 'cruise',
-  title: 'Neon Coastline',
-  bpm: 124,
+  title: 'Last Light',
+  bpm: 104,
   swing: 0.5,
-  bars: ['Am', 'Am', 'F', 'G', 'Am', 'Am', 'F', 'E', 'Dm', 'Dm', 'Am', 'Am', 'F', 'G', 'E', 'E'],
-  melody: [...NEON_A, ...NEON_B],
+  bars: ['Dm', 'Dm', 'Bb', 'C', 'Dm', 'Dm', 'Gm', 'A', 'Bb', 'C', 'Dm', 'Dm', 'Bb', 'C', 'A', 'A'],
+  melody: [...LAST_A, ...LAST_B],
   band: {
-    // A fat square lead, singing with a wide vibrato on its long notes.
-    lead: { duty: 0.5, tone: 3000, vibrato: 18, level: 0.16 },
-    // The dotted-eighth echo (three sixteenths at 124 BPM).
-    echo: { time: 0.363, feedback: 0.36, wet: 0.27 },
-    // Synth-brass stabs, pushed: on 1, the last sixteenth of 1, the "and" of 2, and 4.
+    // A thin, nasal square lead, a slow wide vibrato, sitting back in the mix.
+    lead: { duty: 0.25, tone: 2200, vibrato: 16, level: 0.14 },
+    // A long dotted-eighth echo trailing behind it.
+    echo: { time: 0.433, feedback: 0.45, wet: 0.32 },
+    // Pads: one long, dark chord a bar, low-passed.
     comp: {
-      steps: [
-        [0, 'down', 1],
-        [0.75, 'down', 0.7],
-        [1.5, 'down', 0.85],
-        [3, 'down', 0.8],
-      ],
-      ring: 0.24,
-      spread: 0.002,
+      steps: [[0, 'down', 1]],
+      ring: 2.3,
+      spread: 0.012,
       duty: 0.5,
-      tone: 1900,
-      level: 0.055,
+      tone: 950,
+      level: 0.05,
     },
-    bass: { style: 'sequence', level: 0.19 },
-    // Kicks on 1, 3 and the last sixteenth of 3; the big snare on 2 and 4; sixteenth hats, accented on the beat.
+    // The engine of it: a deep sawtooth pulsing in eighths, an octave down.
+    bass: { style: 'pulse', level: 0.2, wave: 'saw', tone: 420, octave: -12 },
+    // A heavy kick on 1 and 3 (and pushing into 3), the big gated snare on 2 and 4, quiet eighth hats.
     drums: [
       [0, 'kick', 1],
-      [2, 'kick', 0.95],
-      [2.75, 'kick', 0.6],
+      [2, 'kick', 1],
+      [1.5, 'kick', 0.55],
       [1, 'snare', 1],
       [3, 'snare', 1],
-      ...Array.from({ length: 16 }, (_, e) => [e / 4, 'hat', e % 4 === 0 ? 0.6 : e % 2 ? 0.25 : 0.4] as const),
+      ...[0, 1, 2, 3, 4, 5, 6, 7].map((e) => [e / 2, 'hat', e % 2 ? 0.3 : 0.18] as const),
     ],
     gatedSnare: true,
     bell: { level: 0 },
-    mellow: 8000,
+    mellow: 6000,
   },
-  // Offline render at gain 1: −38.8 dB against "Aloha, Moke"'s −34.1 (measured the same way, 2026-10-17). ×1.7 puts it
+  // Offline render at gain 1: −40.9 dB against "Aloha, Moke"'s −34.1 (measured the same way, 2026-10-17). ×2.2 puts it
   // within ~0.1 dB of it.
-  gain: 1.7,
+  gain: 2.2,
 };
 
 export const SONGS: Readonly<Record<SongId, Song>> = { hawaiian: ALOHA, japan: IRASSHAIMASE };
 /** Choose Your Dog's theme. */
 export const FIGHT_THEME = PAWS_UP;
 /** The ride's song (Phase 6). */
-export const CRUISE_THEME = NEON_COASTLINE;
+export const CRUISE_THEME = LAST_LIGHT;
 export const TUNES: Readonly<Record<TuneId, Song>> = { ...SONGS, fight: FIGHT_THEME, cruise: CRUISE_THEME };
 /** The first song ("Aloha, Moke"). */
 export const SONG = ALOHA;
@@ -482,6 +483,10 @@ export function songEvents(song: Song = SONG): MusicEvent[] {
         add('bass', b + 2, b + 3, [chord.bass[1]], 0.9);
         add('bass', b + 3, b + 4, [next.bass[0] - 1], 0.8);
       }
+    } else if (band.bass.style === 'pulse') {
+      // A relentless eighth-note root, the octave on the last eighth.
+      const root = chord.bass[0] + (band.bass.octave ?? 0);
+      for (let e = 0; e < 8; e++) add('bass', b + e / 2, b + (e + 1) / 2, [e === 7 ? root + 12 : root], e % 2 ? 0.75 : 1);
     } else if (band.bass.style === 'sequence') {
       // A sequencer's sixteenths: the root, the octave on every fourth, the fifth on the last two into the next bar.
       const [root, fifth] = chord.bass;
@@ -798,12 +803,21 @@ export class MusicPlayer {
     });
   }
 
-  /** The triangle bass, like a console's: round and steady. */
+  /** The bass: a console's round triangle, or a gritty sawtooth through a low-pass (`band.bass.wave`). */
   private bass(event: MusicEvent, t: number, seconds: number): void {
     const ctx = this.ctx;
+    const { wave, tone: cutoff } = this.band.bass;
     const osc = ctx.createOscillator();
-    osc.type = 'triangle';
+    osc.type = wave === 'saw' ? 'sawtooth' : 'triangle';
     osc.frequency.value = midiHz(event.notes[0]!);
+    let source: AudioNode = osc;
+    if (wave === 'saw') {
+      const tone = ctx.createBiquadFilter();
+      tone.type = 'lowpass';
+      tone.frequency.value = cutoff ?? 500;
+      tone.Q.value = 2;
+      source = osc.connect(tone);
+    }
     const amp = ctx.createGain();
     const peak = this.band.bass.level * event.velocity;
     const end = t + seconds * 0.88;
@@ -811,7 +825,7 @@ export class MusicPlayer {
     amp.gain.exponentialRampToValueAtTime(peak, t + 0.012);
     amp.gain.setValueAtTime(peak, end - 0.05);
     amp.gain.exponentialRampToValueAtTime(0.0001, end);
-    osc.connect(amp).connect(this.voicesOut);
+    source.connect(amp).connect(this.voicesOut);
     osc.start(t);
     osc.stop(end + 0.02);
     osc.onended = () => amp.disconnect();

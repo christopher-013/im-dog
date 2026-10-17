@@ -190,9 +190,12 @@ ride?"**
   Every tree is a Southern California palm (`ride/palms.ts`: Mexican fan palms, Canary Island date palms, queen
   palms). His head is out with his ears streaming in the wind. **Bark**, put his **head in or out** (Jump), **look
   around** (turns his head; left alone he looks about at the beach himself), **change the view** with the paw or
-  Trick (alongside, his face, behind, the drone; always on him, third person; the view glides over); the pause screen's **HEAD HOME** skips to the
-  end. The original song "Neon Coastline" plays, dramatic 80s synth-pop in the style of mid-80s crime-drama themes (it
-  follows the Music setting). About a minute and a quarter (shortened twice at the owner's request, 2026-10-17), never
+  Trick, or the **Change View** button that takes FSD's place on the road (alongside, his face, behind, the drone;
+  always on him, third person; the view glides over); the pause screen's **HEAD HOME** skips to the end. It's
+  **golden hour**: the sun low over the sea ahead and to the right, sinking as they go and setting on the horizon
+  just as the drive ends (the light, the sky, the haze and the clouds warm and darken with it). The cars ahead stay
+  ahead (a little quicker than us); oncoming cars come round out of sight. The original song "Last Light" plays, a
+  dark, brooding 80s synth drive with a deep bass (it follows the Music setting). About a minute and a quarter (shortened twice at the owner's request, 2026-10-17), never
   more than 5.
 - **Home:** after a fade, the car drives in, the roll-up door comes down, the human gets out of the driver's door
   (it opens and shuts), up go the falcon doors, he hops out, they walk back in, the door shuts and locks,

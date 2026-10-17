@@ -23,6 +23,8 @@ export interface UIHandlers {
   onTvExit?(): void;
   /** Going for a ride: the pause screen's HEAD HOME. */
   onRideHome?(): void;
+  /** Going for a ride: the Change View button (on the road, in the FSD button's place). */
+  onRideView?(): void;
 }
 
 /** Choose Your Dog: what the screen's buttons, taps and swipes ask for. */
@@ -122,6 +124,10 @@ export class UIManager {
     this.el('btn-play').addEventListener('click', () => this.handlers?.onPlay());
     this.el('btn-resume').addEventListener('click', () => this.handlers?.onResume());
     this.el('btn-ride-home').addEventListener('click', () => this.handlers?.onRideHome?.());
+    this.el('btn-ride-view').addEventListener('click', (e) => {
+      this.handlers?.onRideView?.();
+      (e.currentTarget as HTMLElement).blur();
+    });
     this.el('btn-fsd').addEventListener('click', (e) => {
       this.handlers?.onFsd?.();
       // Back to the game: no lingering focus ring, and Space/Enter keep meaning jump/interact.
@@ -357,6 +363,21 @@ export class UIManager {
   /** Going for a ride: HEAD HOME on the pause screen while out on the road. */
   setRideHome(show: boolean): void {
     this.el<HTMLButtonElement>('btn-ride-home').hidden = !show;
+  }
+
+  /**
+   * Going for a ride: the FSD button gives way (`riding`), and on the road (`view`: the current view's name) the Change
+   * View button takes its place.
+   */
+  setRideView(riding: boolean, view: string | null): void {
+    const button = this.el<HTMLButtonElement>('btn-ride-view');
+    if (button.hidden !== (view === null)) button.hidden = view === null;
+    if (view !== null && this.el('ride-view-name').textContent !== view) this.el('ride-view-name').textContent = view;
+    const fsd = this.el<HTMLButtonElement>('btn-fsd');
+    if (fsd.hidden !== riding) {
+      fsd.hidden = riding;
+      this.el('fsd-status').hidden = riding;
+    }
   }
 
   /** Going for a ride: black over the game (0..1), between the Garage and the road. */

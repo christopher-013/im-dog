@@ -33,11 +33,14 @@ const e = new Euler();
 const p = new Vector3();
 const t = new Vector3();
 const one = new Vector3(1, 1, 1);
+/** How far ahead a car comes round again (m): too far to see it appear. */
+const RESPAWN = 1000;
 const none = new Vector3(0, 0, 0);
 
 /**
- * Other cars on the coast road: a couple ahead of us going our way, and traffic coming the other way (they pass and
- * come round again far ahead). Simple toy cars, instanced. Built in code.
+ * Other cars on the coast road: a couple ahead of us going our way (a little quicker than us, so we follow them down
+ * the coast and never catch them), and traffic coming the other way (once past, they come round again far ahead, out
+ * of sight). Nothing ever jumps while it's in view. Simple toy cars, instanced. Built in code.
  */
 export class Traffic {
   readonly object = new Group();
@@ -50,11 +53,12 @@ export class Traffic {
   private readonly length: number;
   private readonly rand = mulberry32(23);
 
-  constructor(private readonly curve: CatmullRomCurve3) {
+  /** `cruise`: how fast we go (m/s); the cars going our way go a touch quicker. */
+  constructor(private readonly curve: CatmullRomCurve3, cruise: number) {
     this.object.name = 'traffic';
     this.length = curve.getLength();
-    this.cars.push({ s: 55, way: 1, speed: 12 }, { s: 130, way: 1, speed: 12.3 });
-    for (let i = 0; i < 8; i++) this.cars.push({ s: 90 + i * 85 + this.rand() * 40, way: -1, speed: 12 + this.rand() * 3 });
+    this.cars.push({ s: 60, way: 1, speed: cruise + 0.4 }, { s: 145, way: 1, speed: cruise + 0.9 });
+    for (let i = 0; i < 8; i++) this.cars.push({ s: 120 + i * 140 + this.rand() * 60, way: -1, speed: 12 + this.rand() * 3 });
     const n = this.cars.length;
     const paint = this.material(new MeshStandardMaterial({ roughness: 0.35, metalness: 0.3 }));
     this.body = new InstancedMesh(this.geometry(new BoxGeometry(1.85, 0.7, 4.4).translate(0, 0.62, 0)), paint, n);
@@ -77,9 +81,10 @@ export class Traffic {
   update(dt: number, ours: number): void {
     this.cars.forEach((car, i) => {
       car.s += car.way * car.speed * dt;
-      if (car.way === -1 && car.s < ours - 40) car.s = ours + 450 + this.rand() * 300;
-      // Going our way: always ahead (after a skip ahead, round again further on).
-      if (car.way === 1 && car.s < ours + 20) car.s = ours + 250 + this.rand() * 100;
+      // Past us: round again, far enough ahead to be out of sight (in the haze, or beyond the end of the road).
+      if (car.way === -1 && car.s < ours - 60) car.s = ours + RESPAWN + this.rand() * 400;
+      // Going our way they stay ahead; only a skip ahead (heading home) can leave one behind: on again, out of sight.
+      if (car.way === 1 && car.s < ours + 15) car.s = ours + RESPAWN + this.rand() * 200;
       const hidden = car.s < 0 || car.s > this.length;
       const u = Math.min(1, Math.max(0, car.s / this.length));
       this.curve.getPointAt(u, p);

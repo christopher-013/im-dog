@@ -347,6 +347,7 @@ export class Game {
         this.ride?.headHome();
         this.resume();
       },
+      onRideView: () => this.ride?.nextView(),
     });
     const settings = this.settings;
     applySettings(settings);
@@ -1606,6 +1607,7 @@ export class Game {
     }
     this.barkTimer.update(playing ? dt : 0);
     this.ui.setRideHome(this.state === 'paused' && ride.driving);
+    this.ui.setRideView(true, ride.driving ? ride.viewName : null);
     this.gfx.syncSize(this.camera);
     ride.update(playing ? dt : 0, this.camera.aspect, this.fsdOn);
     this.harness?.update();
@@ -1635,6 +1637,7 @@ export class Game {
     if (this.fsdOn) this.fsd?.reset();
     this.ui.setObjective(null);
     this.ui.setRideHome(false);
+    this.ui.setRideView(false, null);
     this.dogLogic.discover('car+window=wind');
     this.showVoiceBubble('Best day ever! Wind in my ears!');
     this.followCamera.recenterBehind(this.updateCameraTarget());

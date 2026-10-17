@@ -21,9 +21,12 @@ import {
   MeshStandardMaterial,
   PerspectiveCamera,
   PlaneGeometry,
+  AdditiveBlending,
   Quaternion,
   Scene,
   SphereGeometry,
+  Sprite,
+  SpriteMaterial,
   Vector3,
   type Material,
 } from 'three';
@@ -56,6 +59,31 @@ const SPEED = { cruise: 18.5, ease: 5 } as const;
 /** Changing the view glides over this long (s). */
 const VIEW_BLEND = 0.9;
 
+/**
+ * The sunset (owner, 2026-10-17: "during sunset at the golden hour, and the drive ends just as the sun is setting"):
+ * the way the sun is (x, z: southwest, out over the sea, ahead and to the right going south, so it's in view), how high it is at
+ * the start and at the end (radians), and the colours and strengths from the start to the end.
+ */
+const SUNSET = {
+  toward: [-0.36, 0.93] as const,
+  elevation: [0.16, -0.004] as const,
+  sunLight: ['#ffd08a', '#ff7a3c'] as const,
+  sunIntensity: [2.3, 0.95] as const,
+  skyLight: ['#a9b8d6', '#6f6f9c'] as const,
+  groundLight: ['#a07a5a', '#5e4436'] as const,
+  skyIntensity: [1.05, 0.6] as const,
+  zenith: ['#5b86c4', '#2f3c72'] as const,
+  horizon: ['#f6c896', '#ef8d63'] as const,
+  skyGlow: ['#ffe0a0', '#ffa45a'] as const,
+  disc: ['#fff1c4', '#ffc070'] as const,
+  glow: ['#ffc27a', '#ff8a4a'] as const,
+  clouds: ['#ffe9d6', '#ffa08a'] as const,
+  headland: ['#b49aa8', '#7c6388'] as const,
+  sea: ['#ffffff', '#f2c4b0'] as const,
+};
+const tmpColor = new Color();
+/** How far off the sun's disc is drawn (m): inside the sky, beyond everything else. */
+const SUN_DISTANCE = 2600;
 const tmpPos = new Vector3();
 const tmpDir = new Vector3();
 const tmpA = new Vector3();
@@ -83,7 +111,19 @@ export class CoastDrive {
   private speed = 0;
   private time = 0;
   private skipping = false;
-  private readonly sun = new DirectionalLight('#fff3dd', 2.5);
+  private readonly sun = new DirectionalLight('#ffd08a', 2.3);
+  private readonly sky = new HemisphereLight('#9fb6d8', '#a07a5a', 1.05);
+  /** The sunset (the drive's light, sky and haze, by how far along it is): see `light()`. */
+  private readonly sunset: {
+    dir: Vector3;
+    dome: Mesh<BufferGeometry, MeshBasicMaterial>;
+    disc: Mesh<CircleGeometry, MeshBasicMaterial>;
+    glow: Sprite;
+    clouds: MeshBasicMaterial;
+    headland: MeshBasicMaterial;
+    sea: MeshStandardMaterial | null;
+    shown: number;
+  };
   private readonly seaTime = { value: 0 };
   private readonly foam: Mesh<BufferGeometry, MeshBasicMaterial>[] = [];
   private readonly surf: Mesh<BufferGeometry, MeshBasicMaterial>;
@@ -101,20 +141,25 @@ export class CoastDrive {
 
   constructor() {
     this.scene.name = 'Coast drive';
-    this.scene.fog = new Fog('#dcebf3', 220, 1700);
-    this.scene.add(this.sky(), this.clouds(), this.headland());
-    this.scene.add(new HemisphereLight('#dceeff', '#a08d6a', 1.2));
+    this.scene.fog = new Fog('#f2c7a0', 220, 1700);
+    const clouds = this.clouds();
+    const headland = this.headland();
+    this.sunset = { dir: new Vector3(), dome: this.dome(), ...this.sunDisc(), clouds: clouds.material, headland: headland.material, sea: null, shown: -1 };
+    this.scene.add(this.sunset.dome, this.sunset.disc, this.sunset.glow, clouds.group, headland.mesh);
+    this.scene.add(this.sky);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(1024, 1024);
     const s = this.sun.shadow.camera;
-    s.left = s.bottom = -16;
-    s.right = s.top = 16;
+    s.left = s.bottom = -22;
+    s.right = s.top = 22;
     s.near = 1;
-    s.far = 240;
+    s.far = 320;
     this.scene.add(this.sun, this.sun.target);
 
     this.scene.add(this.terrain());
-    this.scene.add(this.sea());
+    const sea = this.sea();
+    this.sunset.sea = sea.material as MeshStandardMaterial;
+    this.scene.add(sea);
     this.surf = this.shoreRibbon(0.5, 7, 0.7);
     this.scene.add(this.surf);
     for (let i = 0; i < 3; i++) {
@@ -125,7 +170,7 @@ export class CoastDrive {
     this.scene.add(this.road());
     this.scene.add(this.palms(), this.scrub(), this.houses(), this.signs(), this.flock());
     this.scene.add(this.life.object);
-    this.traffic = new Traffic(this.curve);
+    this.traffic = new Traffic(this.curve, SPEED.cruise);
     this.scene.add(this.traffic.object);
 
     this.car.object.add(this.dogSeat, this.driverSeat);
@@ -133,6 +178,7 @@ export class CoastDrive {
     this.driverSeat.position.copy(FamilyCar.SEATS.driver);
     this.car.setPassengerWindow(1);
     this.scene.add(this.car.object);
+    this.light(0);
     this.place(0);
     this.aim();
   }
@@ -204,6 +250,7 @@ export class CoastDrive {
     if (left < 0.2) this.speed = 0;
     this.distance += step;
     this.car.roll(step);
+    this.light(this.progress);
     this.place(this.distance);
     this.seaTime.value = this.time;
     this.animateShore();
@@ -238,8 +285,8 @@ export class CoastDrive {
     // Nose along the way (smoothly: the heading comes from either side of here), pitched with the slope.
     tmpA.copy(tmpPos).add(tmpDir);
     car.lookAt(tmpA);
-    // The sun's shadow box follows the car (the afternoon sun, out over the sea).
-    this.sun.position.set(tmpPos.x - 70, tmpPos.y + 85, tmpPos.z + 45);
+    // The sun's shadow box follows the car (the low sun, out over the sea).
+    this.sun.position.copy(tmpPos).addScaledVector(this.sunset.dir, 150);
     this.sun.target.position.copy(tmpPos);
     this.sun.target.updateMatrixWorld();
   }
@@ -270,6 +317,11 @@ export class CoastDrive {
     cam.up.copy(UP);
     cam.lookAt(tmpB);
     cam.updateProjectionMatrix();
+    // The sun, out at the sky's distance the way it is from wherever the camera is.
+    const { disc, glow, dir } = this.sunset;
+    disc.position.copy(cam.position).addScaledVector(dir, SUN_DISTANCE);
+    disc.lookAt(cam.position);
+    glow.position.copy(disc.position);
   }
 
   private animateShore(): void {
@@ -296,27 +348,90 @@ export class CoastDrive {
 
   // ---- building the world
 
-  private sky(): Mesh {
-    const geometry = this.geometry(new SphereGeometry(2800, 32, 16));
-    const colors: number[] = [];
-    const top = new Color('#4f9bdc'), horizon = new Color('#e6f1f8'), c = new Color();
-    const pos = geometry.attributes.position!;
-    for (let i = 0; i < pos.count; i++) {
-      const h = Math.max(0, pos.getY(i) / 2800);
-      c.copy(horizon).lerp(top, Math.pow(h, 0.55));
-      colors.push(c.r, c.g, c.b);
-    }
-    geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
-    const sky = new Mesh(geometry, this.material(new MeshBasicMaterial({ vertexColors: true, side: BackSide, fog: false, depthWrite: false })));
-    sky.renderOrder = -1;
-    sky.frustumCulled = false;
+  /** The sky: a dome round the camera, coloured each moment by `light()` (vertex colours). */
+  private dome(): Mesh<BufferGeometry, MeshBasicMaterial> {
+    const geometry = this.geometry(new SphereGeometry(2800, 40, 20));
+    geometry.setAttribute('color', new Float32BufferAttribute(new Float32Array(geometry.attributes.position!.count * 3), 3));
+    const dome = new Mesh(geometry, this.material(new MeshBasicMaterial({ vertexColors: true, side: BackSide, fog: false, depthWrite: false })));
+    dome.renderOrder = -2;
+    dome.frustumCulled = false;
     // It follows the camera, so there's always sky all round, however far along the road.
-    sky.onBeforeRender = (_r, _s, camera) => sky.position.copy(camera.position);
-    return sky;
+    dome.onBeforeRender = (_r, _s, camera) => dome.position.copy(camera.position);
+    return dome;
   }
 
-  /** A few fair-weather clouds, far off over the sea. */
-  private clouds(): Group {
+  /** The sun itself, low over the sea, and its glow (out at the sky's distance the way the sun is). */
+  private sunDisc(): { disc: Mesh<CircleGeometry, MeshBasicMaterial>; glow: Sprite } {
+    const disc = new Mesh(this.geometry(new CircleGeometry(48, 40)), this.material(new MeshBasicMaterial({ color: '#fff1c4', fog: false, depthWrite: false })));
+    disc.renderOrder = -1;
+    disc.frustumCulled = false;
+    const canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
+    let map: CanvasTexture | null = null;
+    const g = canvas?.getContext('2d');
+    if (canvas && g) {
+      canvas.width = canvas.height = 128;
+      const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+      grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+      grad.addColorStop(0.25, 'rgba(255,255,255,0.35)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 128, 128);
+      map = new CanvasTexture(canvas);
+      this.textures.push(map);
+    }
+    const glow = new Sprite(this.material(new SpriteMaterial({ map, color: '#ffc27a', fog: false, depthWrite: false, transparent: true, blending: AdditiveBlending })));
+    glow.scale.setScalar(900);
+    glow.renderOrder = -1;
+    glow.frustumCulled = false;
+    // (They follow the camera: see `aim()`.)
+    return { disc, glow };
+  }
+
+  /**
+   * The light at `k` of the way along (0 → 1): golden hour turning to sunset. The sun sinks from about 9° up over the
+   * sea ahead and to the right to the horizon as the drive ends; the light warms and dims, the sky glows round the sun
+   * (and darkens overhead), the haze, the clouds and the far headland go with it.
+   */
+  private light(k: number): void {
+    const S = SUNSET;
+    k = Math.min(1, Math.max(0, k));
+    const e = k * k * (3 - 2 * k) * 0.35 + k * 0.65;
+    const elevation = S.elevation[0] + (S.elevation[1] - S.elevation[0]) * e;
+    const dir = this.sunset.dir.set(S.toward[0] * Math.cos(elevation), Math.sin(elevation), S.toward[1] * Math.cos(elevation)).normalize();
+    const mix = (pair: readonly [string, string], out: Color) => out.set(pair[0]).lerp(tmpColor.set(pair[1]), e);
+    mix(S.sunLight, this.sun.color);
+    this.sun.intensity = S.sunIntensity[0] + (S.sunIntensity[1] - S.sunIntensity[0]) * e;
+    mix(S.skyLight, this.sky.color);
+    mix(S.groundLight, this.sky.groundColor);
+    this.sky.intensity = S.skyIntensity[0] + (S.skyIntensity[1] - S.skyIntensity[0]) * e;
+    const horizon = mix(S.horizon, new Color());
+    (this.scene.fog as Fog).color.copy(horizon);
+    mix(S.disc, this.sunset.disc.material.color);
+    mix(S.glow, this.sunset.glow.material.color);
+    mix(S.clouds, this.sunset.clouds.color);
+    mix(S.headland, this.sunset.headland.color);
+    if (this.sunset.sea) mix(S.sea, this.sunset.sea.color);
+    // The sky's colours: only every so often (it changes slowly).
+    if (Math.abs(k - this.sunset.shown) < 0.01) return;
+    this.sunset.shown = k;
+    const zenith = mix(S.zenith, new Color()), glow = mix(S.skyGlow, new Color());
+    const pos = this.sunset.dome.geometry.attributes.position!;
+    const colors = this.sunset.dome.geometry.attributes.color!;
+    const d = new Vector3(), c = new Color();
+    for (let i = 0; i < pos.count; i++) {
+      d.fromBufferAttribute(pos, i).normalize();
+      const up = Math.max(0, d.y);
+      c.copy(horizon).lerp(zenith, Math.pow(up, 0.5));
+      const toSun = Math.acos(Math.min(1, Math.max(-1, d.dot(dir))));
+      c.lerp(glow, Math.exp(-(toSun * toSun) / 0.3) * (1 - up * 0.7));
+      if (d.y < 0) c.multiplyScalar(0.85);
+      colors.setXYZ(i, c.r, c.g, c.b);
+    }
+    colors.needsUpdate = true;
+  }
+
+  /** A few fair-weather clouds, far off over the sea (lit by the sunset: see `light()`). */
+  private clouds(): { group: Group; material: MeshBasicMaterial } {
     const group = new Group();
     const rand = mulberry32(31);
     const material = this.material(new MeshBasicMaterial({ color: '#ffffff', fog: false, transparent: true, opacity: 0.92 }));
@@ -333,18 +448,16 @@ export class CoastDrive {
       group.add(cloud);
     }
     puff.dispose();
-    return group;
+    return { group, material };
   }
 
-  /** The headland far down the coast (La Jolla), hazy blue in the distance. */
-  private headland(): Mesh {
-    const mesh = new Mesh(
-      this.geometry(new SphereGeometry(1, 28, 10, 0, Math.PI * 2, 0, Math.PI / 2)),
-      this.material(new MeshBasicMaterial({ color: '#a4b9c6', fog: false })),
-    );
+  /** The headland far down the coast (La Jolla), hazy in the distance (its colour by the sunset: see `light()`). */
+  private headland(): { mesh: Mesh; material: MeshBasicMaterial } {
+    const material = this.material(new MeshBasicMaterial({ color: '#a4b9c6', fog: false }));
+    const mesh = new Mesh(this.geometry(new SphereGeometry(1, 28, 10, 0, Math.PI * 2, 0, Math.PI / 2)), material);
     mesh.scale.set(620, 95, 480);
     mesh.position.set(-560, -6, 2500);
-    return mesh;
+    return { mesh, material };
   }
 
   /** The land: one height field, the road cut in, coloured by what it is. */

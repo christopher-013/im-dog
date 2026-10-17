@@ -127,7 +127,7 @@ himself. To ask for a ride, stand at the Garage door (in the living room, left o
 |---|---|---|---|
 | Bark | F | the bark button | Bark |
 | Look around (turns his head to the beach ahead, beside or behind) | Mouse | Right stick | Drag on the right |
-| Change the view (alongside, his face, behind the car, the drone) | E or Q | A or the trick button | the paw or Trick |
+| Change the view (alongside, his face, behind the car, the drone); or the **Change View** button (FSD's place) | E or Q | A or the trick button | the paw or Trick |
 | Head in or out of the window | Space (Jump) | the jump button | Jump (hold the paw) |
 | Head home now | Esc → **HEAD HOME** | Start → **HEAD HOME** | ⏸ → **HEAD HOME** |
 

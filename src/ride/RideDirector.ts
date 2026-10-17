@@ -7,7 +7,10 @@ import type { MokeVisual } from '../player/MokeVisual';
 import { FamilyCar } from '../world/FamilyCar';
 import type { GarageView } from '../world/GarageView';
 import { GARAGE } from '../world/home/layout';
-import type { CoastDrive } from './CoastDrive';
+import type { CoastDrive, DriveView } from './CoastDrive';
+
+/** The views' names on the Change View button. */
+const VIEW_NAMES: Readonly<Record<DriveView, string>> = { alongside: 'Alongside', face: 'His face', chase: 'Behind', drone: 'Drone' };
 
 type V2 = readonly [number, number];
 type Phase = 'off' | 'out' | 'loading' | 'drive' | 'home';
@@ -140,6 +143,11 @@ export class RideDirector {
 
   nextView(): void {
     this.drive?.nextView();
+  }
+
+  /** The view on the road, as the Change View button names it. */
+  get viewName(): string {
+    return VIEW_NAMES[this.drive?.view ?? 'alongside'];
   }
 
   /**

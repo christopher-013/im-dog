@@ -52,6 +52,25 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner request: "Verify how the other cars are on the drive as cars in front disappear...
+Remove the FSD button during the drive and replace with 'Change View'... sunset at the golden hour and the drive ends
+just as the sun is setting... a song more edgy and dark for a brooding drive with purpose... lower deep baselines"):
+- **Traffic** (`ride/traffic.ts`): confirmed the bug: the cars ahead drove at 12 m/s, we at 18.5, so we caught them in
+  seconds and they were moved 250 m ahead in plain view; oncoming cars came round 450–750 m ahead, also in view. Now
+  the cars ahead go a touch quicker than us (`Traffic(curve, cruise)`), so we follow them down the coast, and anything
+  coming round does so 1 km ahead. Tested (`traffic.test.ts`: nothing jumps while within view, someone's ahead nearly
+  all the way).
+- **Change View** (`#btn-ride-view`, `UIManager.setRideView`, `RideDirector.viewName`): the FSD button is hidden for
+  the whole ride; on the road a Change View button takes its place (naming the view). Checked in the game at phone
+  size: shown only on the road, a tap changes the view, FSD back after.
+- **Golden hour** (`CoastDrive.light`, `SUNSET`): the sun from ~9° up to the horizon over the drive (by its progress),
+  ahead and to the right over the sea, with a disc and a glow; the sun's light, the sky (a dome coloured round the
+  sun), the haze, the clouds, the headland and the sea warm and darken. The car's paint reflects less (it read silver).
+- **"Last Light"** (`audio/music.ts`) replaces "Neon Coastline": D minor, 104 BPM, a sawtooth bass an octave down
+  pulsing in eighths (new: `bass.wave`, `tone`, `octave`, style `pulse`), long dark pads, gated snare, a lonely lead
+  with a long echo; gain from an offline render.
+- Not checked: on a phone; the song by ear.
+
 Claude Code (2026-10-17, owner's phone screenshot: the Dog Logic card "CAR + WINDOW = WIND IN MY EARS" ran off both
 sides; "Fix the wording for this and others so it doesn't get cut off"): the card's equation now wraps between whole
 pieces (each term with its "+" or "=", `.discovery-term`, built in `UIManager.renderEquation` and the starting markup in

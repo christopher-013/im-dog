@@ -43,7 +43,7 @@ export const RIDE = {
    * within `near` (m) of it, or within `lookRange` and facing it (within `lookAngle`, rad, of straight at it). It
    * fades in over `fadeIn` s and out over `fadeOut` s, pulsing `pulse` times a second, at most `strength` opaque.
    */
-  doorGlow: { near: 2.2, lookRange: 6.5, lookAngle: 0.4, fadeIn: 0.5, fadeOut: 1.2, pulse: 0.8, color: '#2f7dff', strength: 0.85 },
+  doorGlow: { near: 2.2, lookRange: 6.5, lookAngle: 0.4, fadeIn: 0.5, fadeOut: 1.2, pulse: 0.8, color: '#7cc8ff', strength: 0.9 },
   /**
    * With his head out on the road he pants now and then (owner, 2026-10-17: the tongue out only a few times, at
    * random, not the whole way): a pant starts every `every` s (random in the range) and lasts `lasts` s.

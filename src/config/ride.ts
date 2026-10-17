@@ -20,6 +20,11 @@ export const RIDE = {
   waitForHim: 12,
   /** Where the human stands to open the Garage door (in the living room, in front of it). */
   doorStand: { x: 2.45, z: 2.45 },
+  /**
+   * The dog can ask too (owner, 2026-10-17): **Bark at the Garage Door** from about here (or any bark this close to
+   * it), and the human comes over and offers a ride. He looks at the door while he barks (`lookAt`, s).
+   */
+  askAt: { x: 2.45, z: 2.55, reach: 1.0, lookAt: { x: 2.45, y: 1.0, z: 3.0 }, lookFor: 2.5 },
   /** They set off but can't get to him or the door: give up after this long. */
   walkTimeout: 40,
   /**
@@ -32,6 +37,8 @@ export const RIDE = {
   },
   lines: {
     ask: 'Moke, want to go for a ride?',
+    /** When he's asked by barking at the Garage door. */
+    asked: 'Barking at the Garage, Moke? Do you want to go for a ride?',
     yes: 'Yes? Let’s go! Harness on…',
     no: 'Okay, maybe later.',
     home: 'Best ride ever, Moke!',

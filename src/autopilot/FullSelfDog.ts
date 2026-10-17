@@ -382,6 +382,12 @@ export class FullSelfDog {
         plan: () => (this.random() < 0.85 ? [this.interact('ride:yes')] : [this.wait(16, 'Hmm… not right now.')]),
       },
       {
+        // Asking for a ride himself (owner, 2026-10-17): a bark at the Garage door now and then.
+        id: 'askRide', status: 'Woof! Car ride?', weight: 0.5, cooldown: 600,
+        available: (w) => w.interactables.some((t) => t.id === 'garage:bark' && t.enabled),
+        plan: () => [this.interact('garage:bark'), this.wait(5, 'Waiting by the Garage door…')],
+      },
+      {
         id: 'giveSock', status: 'Trading the sock for a treat', weight: 0, urgent: true,
         available: (w) => enabled(w, 'heist:give'),
         plan: () => [this.interact('heist:give'), this.wait(1)],

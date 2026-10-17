@@ -32,6 +32,8 @@ player can (D27); every input device feeds the same actions (D15); the dogs' loo
 - **The Garage:** its door stays **locked except when the human asks the dog to go for a ride**.
 - **The car:** no badge is fine. **It's black.**
 - **The ride:** **only when the human offers**, randomly **every 5–10 minutes** of play. The dog can't ask.
+  **Changed by the owner (2026-10-17):** the dog can ask too: at the Garage door he can bark and look at it, and the
+  human comes and offers a ride.
 - **References:** none: **a standard two-car garage**.
 
 ## Milestones (in build order)
@@ -156,7 +158,9 @@ before 6.2 photo mode and 6.3 the day.
   - **Yes:** interact, or bark. "Let's go!"
   - **No:** wander off or ignore it for 15 seconds. "Okay, maybe later."
   
-  FSD says yes most of the time. The dog can't ask for a ride; only the human offers (owner).
+  FSD says yes most of the time.
+- **Asking** (owner, 2026-10-17): at the Garage door the prompt reads **Bark at the Garage Door**; he barks and looks
+  at it, and the human comes over: "Barking at the Garage, Moke? Do you want to go for a ride?" FSD asks sometimes.
 - **Harness and leash:** the human crouches and puts on a **harness** (each dog's own colour, worn over the collar,
   attached to the visual like the costumes) and clips on the **leash** (a line from the harness to their hand). Then
   they walk him to the garage door: on the leash he follows them, and the player can still look around, bark and wag.

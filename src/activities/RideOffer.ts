@@ -15,6 +15,8 @@ interface RideOfferDeps {
   onAtDoor(): void;
   /** Anything else that should hold off an offer right now (the course, a show on TV…). */
   canOffer?(): boolean;
+  /** He barked at the Garage door (the prompt): the game's bark, and a look at the door. */
+  onGarageBark?(): void;
   random?: () => number;
 }
 
@@ -32,6 +34,10 @@ export class RideOffer extends DogActivity {
   readonly name = 'Go for a Ride';
   readonly needsHuman = true;
   readonly interactable: Interactable;
+  /** Bark at the Garage Door: the dog asks for a ride (owner, 2026-10-17). */
+  readonly garageBark: Interactable;
+  /** He's asked (barked at the Garage door): the human comes as soon as they're free. */
+  requested = false;
   private step: Step = 'done';
   private elapsed = 0;
   private due: number;
@@ -51,6 +57,23 @@ export class RideOffer extends DogActivity {
       get enabled() { return offer.asking; },
       interact: () => offer.accept(),
     };
+    const ask = tuning.askAt;
+    this.garageBark = {
+      id: 'garage:bark', type: 'BARK', label: 'Bark at the Garage Door', interactionDistance: ask.reach, priority: 30, requiresFacing: false,
+      position: { x: ask.x, y: 0, z: ask.z },
+      get enabled() { return offer.state === 'AVAILABLE' && !offer.requested; },
+      interact: () => {
+        deps.onGarageBark?.();
+        offer.request();
+      },
+    };
+  }
+
+  /** He's asked for a ride (barked at the Garage door): the human comes over and offers one as soon as they can. */
+  request(): void {
+    if (this.state !== 'AVAILABLE') return;
+    this.requested = true;
+    this.due = 0;
   }
 
   /** They're asking right now ("want to go for a ride?"), waiting for his answer. */
@@ -92,18 +115,21 @@ export class RideOffer extends DogActivity {
 
   override get objective(): string | null {
     if (this.asking) return 'Want to go for a ride? Say yes!';
+    if (this.running && this.step === 'approach' && this.requested) return 'Your human heard you at the Garage door…';
     if (this.leading) return 'Off to the Garage on your leash…';
     return null;
   }
 
-  /** A bark near them while they ask is a yes too. */
+  /** A bark near them while they ask is a yes too; a bark at the Garage door asks for a ride. */
   noteBark(at: Vec3Like): void {
     if (this.asking && flatDistance(at, this.humanAt) <= this.tuning.answerReach) this.accept();
+    else if (flatDistance(at, { x: this.tuning.askAt.x, y: 0, z: this.tuning.askAt.z }) <= this.tuning.askAt.reach) this.request();
   }
 
   /** Home again: the human's done, and the next offer is 5–10 minutes away. */
   home(): void {
     if (!this.away) return;
+    this.requested = false;
     this.step = 'done';
     this.due = this.delay();
     this.succeed();
@@ -135,6 +161,7 @@ export class RideOffer extends DogActivity {
   protected onUpdate(): void {}
 
   protected onCancel(): void {
+    this.requested = false;
     if (this.step === 'lead' || this.step === 'harness') this.deps.onHarness(false);
     this.step = 'done';
     this.due = this.delay();
@@ -156,7 +183,7 @@ export class RideOffer extends DogActivity {
         walkTo(intent, s.moke, HUMAN.move.walkSpeed, t.askFrom * 0.8);
         intent.lookAt = s.moke;
         if (d <= t.askFrom) {
-          this.deps.routine.say(t.lines.ask, 'happy', intent);
+          this.deps.routine.say(this.requested ? t.lines.asked : t.lines.ask, 'happy', intent);
           this.said = true;
           this.activate();
           this.go('ask');

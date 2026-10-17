@@ -227,6 +227,8 @@ export class Game {
   private ride: RideDirector | null = null;
   private harness: Harness | null = null;
   private readonly heelSpot = { x: 0, y: 0, z: 0 };
+  /** Seconds left looking at the Garage door (he's just barked at it to ask for a ride). */
+  private garageLook = 0;
   private costume: DogCostume | null = null;
   /** Halloween: the pumpkin biscuit the human brings him after the trick-or-treaters. */
   private readonly biscuitTreat = new Treat('pumpkin', 3, 'pumpkin');
@@ -716,8 +718,14 @@ export class Game {
       onHarness: (on) => this.harnessOn(on),
       onAtDoor: () => this.startRide(),
       canOffer: () => this.course.phase === 'idle' && !this.watchTv?.watching && !this.watchGame?.watchingScreen,
+      // Bark at the Garage Door: a bark (it asks), and a long look at the door.
+      onGarageBark: () => {
+        this.bark();
+        this.garageLook = RIDE.askAt.lookFor;
+      },
     });
     this.interactions.register(this.rideOffer.interactable);
+    this.interactions.register(this.rideOffer.garageBark);
     const self = this;
     this.ride = new RideDirector(
       // The dog's visual changes with the dog chosen (Choose Your Dog), so it's looked up each time.
@@ -1145,6 +1153,11 @@ export class Game {
     // Watching the ballgame (or any show): eyes on the screen.
     const screen = this.watchGame?.watchingScreen ?? this.watchTv?.watching;
     if (screen && this.moke) this.moke.lookAt = screen;
+    // Asking for a ride: eyes on the Garage door.
+    if (this.garageLook > 0 && this.moke) {
+      this.garageLook -= playing ? dt : 0;
+      this.moke.lookAt = RIDE.askAt.lookAt;
+    }
     const chewing = this.updateChewing(playing);
     this.moke?.update(dt, alpha);
     // FSD's way ahead, in rainbow on the floor (only while it drives and he's on his way somewhere).

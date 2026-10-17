@@ -542,6 +542,36 @@ describe('Going for a ride: the offer (real house and household human)', () => {
     expect(w.offer.running).toBe(false);
   }, 60_000);
 
+  it('he can ask: Bark at the Garage Door (or any bark right there), and the human comes and offers a ride', async () => {
+    const w = await rideWorld(63);
+    let barked = 0;
+    const offer = new RideOffer({ routine: w.routine, onHarness: () => {}, onAtDoor: () => {}, onGarageBark: () => barked++, random: () => 0.5 });
+    const director = new DogActivityDirector([offer]);
+    const at = RIDE.askAt;
+    Object.assign(w.moke, { x: at.x, z: at.z });
+    w.step(director);
+    expect(offer.garageBark.enabled).toBe(true);
+    offer.garageBark.interact();
+    expect(barked).toBe(1);
+    expect(offer.requested).toBe(true);
+    expect(offer.garageBark.enabled).toBe(false);
+    for (let i = 0; i < 60 / DT && !offer.asking; i++) w.step(director);
+    expect(offer.asking).toBe(true);
+    expect(w.said).toContain(RIDE.lines.asked);
+    const h = w.human.controller.position;
+    expect(Math.hypot(h.x - at.x, h.z - at.z)).toBeLessThan(RIDE.askFrom + 0.3);
+    // Declined this time: asking again is up to him (the prompt's back), not 5-10 minutes away.
+    for (let i = 0; i < (RIDE.answerWithin + 1) / DT; i++) w.step(director);
+    expect(offer.running).toBe(false);
+    for (let i = 0; i < 3 / DT; i++) w.step(director);
+    expect(offer.garageBark.enabled).toBe(true);
+    // A plain bark there asks too; a bark anywhere else doesn't.
+    offer.noteBark({ x: -2, y: 0, z: -2 });
+    expect(offer.requested).toBe(false);
+    offer.noteBark({ x: at.x + 0.3, y: 0, z: at.z });
+    expect(offer.requested).toBe(true);
+  }, 60_000);
+
   it('a bark is a yes too; walking off (or ignoring them) is a no: "Okay, maybe later."', async () => {
     const w = await rideWorld(62);
     Object.assign(w.moke, { x: 0.3, z: -0.8 });

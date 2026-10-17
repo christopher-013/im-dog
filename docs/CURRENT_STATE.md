@@ -52,6 +52,16 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner request: "add a way to trigger the ride, if Moke stands by the garage door give an
+option to bark and look at the door and the NPC will offer a ride"): **the dog can ask for a ride** (D33 refined).
+- `RideOffer.garageBark`: a **Bark at the Garage Door** prompt at `RIDE.askAt` (in front of the door) while no ride
+  is offered or under way; any bark that close does the same (`noteBark`). It barks, he looks at the door for 2.5 s
+  (`Game.garageLook`), and the offer comes due now: the human comes over once free and says `RIDE.lines.asked`.
+  Yes/no as before. FSD has an `askRide` routine (weight 0.5, every 10 minutes at most).
+- **Checked in the game** (headless, real physics, screenshots): the prompt in front of the door, the look, the human
+  asking 2.8 s later with the new line, yes → the ride started. Test: the prompt, a nearby bark asks and a far one
+  doesn't, the asked line, the prompt back after a no. Not checked on a phone.
+
 Claude Code (2026-10-17, owner request: "start 6.4 garage and the car and 6.5 the ride before the others"; pushed
 to `main` at the owner's request): **6.4 the Garage and the family car** and **6.5 going for a ride**.
 - **The Garage:** `world/home/Garage.ts` (shell, shelves, bikes, charger, bins), a doorway in the living room's south

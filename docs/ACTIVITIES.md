@@ -166,7 +166,12 @@ timings: `config/halloween.ts`.
 ### Going for a ride (`RideOffer.ts`, `ride/`; Phase 6, D33)
 Every 5–10 minutes of play (owner; timed from the last offer, taken or not, and only while nothing else has the
 human, the course isn't running and no show is on), the human comes over to the dog: **"Moke, want to go for a
-ride?"** Only the human offers; the dog can't ask (owner).
+ride?"**
+- **He can ask** (owner, 2026-10-17): standing at the Garage door in the living room, **Bark at the Garage Door**
+  (the paw; any bark right there counts too). He barks and looks at the door, and the human comes over as soon as
+  they're free (the same conditions as above): **"Barking at the Garage, Moke? Do you want to go for a ride?"**
+  Then yes or no as below; a no puts the 5–10 minutes back on the clock, but he can ask again. FSD asks now and then
+  too (at most every 10 minutes). Where: `RIDE.askAt` (`config/ride.ts`).
 - **Yes:** Go for a Ride! (the paw), or a bark near them. They kneel and put on his **harness** (his collar's colour,
   over any costume) and clip on the **leash**, "Yes? Let's go! Harness on…", and walk him to the Garage door, the
   dog at their heel (the game steers him: FSD's route-following; held up, the leash just brings him).

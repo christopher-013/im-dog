@@ -120,7 +120,8 @@ screen always opens on Moke, in the middle. There's no switching dog mid-game: r
 ## Going for a ride (Phase 6)
 When the human asks "want to go for a ride?", **Go for a Ride!** on the paw (E / A / tap the paw) says yes, and so
 does a bark nearby; walk away or ignore them and it's a no. On the leash to the Garage he walks at their heel by
-himself. In the car:
+himself. To ask for a ride, stand at the Garage door (in the living room, left of the TV) and press the paw for
+**Bark at the Garage Door** (or just bark there): the human comes and asks. In the car:
 
 | | Keyboard and mouse | Controller | Touch |
 |---|---|---|---|

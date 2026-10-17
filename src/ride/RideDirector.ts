@@ -320,7 +320,9 @@ export class RideDirector {
     const pose = this.headOut ? RIDE.dogInCar.headOut : RIDE.dogInCar.headIn;
     const dog = this.cast.dog.object;
     dog.position.set(pose.x, pose.y, pose.z);
-    dog.rotation.set(0, pose.heading, 0);
+    // Turned toward the window, then (head out) tipped nose-up against the door.
+    dog.rotation.order = 'YXZ';
+    dog.rotation.set(pose.pitch, pose.heading, 0);
     const s = this.dogAnim.update(dt, { speed: 0, turnRate: 0, headroom: 2 });
     s.sit = this.headOut ? 0 : 1;
     s.rest = 0;
@@ -328,7 +330,7 @@ export class RideDirector {
     s.tailWag = Math.max(s.tailWag, 0.9);
     s.wind = this.headOut ? 1 : 0.15;
     s.headYaw = this.lookNow.yaw;
-    s.headPitch = (this.headOut ? 0.12 : 0) + this.lookNow.pitch;
+    s.headPitch = pose.headPitch + this.lookNow.pitch;
     s.attention = 1;
     this.cast.dog.update(dt, s);
     this.sitAtWheel(dt, drive.driverSeat, true);

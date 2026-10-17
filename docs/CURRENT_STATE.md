@@ -52,6 +52,20 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner: "Fix as the dog isn't sticking their head out the car door when driving make that
+the default and make the dog happy with a big smile and tongue wagging during the drive. The air is blowing in their
+face"):
+- **Head out, for real** (`RIDE.dogInCar.headOut`, applied in `RideDirector`; head-out was already the default, but he
+  floated at the window line, his whole body over the door, his head barely past the glass): now up on the seat
+  at the window, tipped nose-up against the door (new `pitch`, rotation order YXZ), his front paws over the sill and
+  his head out past the glass (mouth at car x ≈ −0.95, the glass ≈ −0.9), lifted a little (`headPitch`). Tuned with
+  renders (and a low view of the door so no hind paw comes through it).
+- **Happy in the wind** (`ToonMokeVisual`, only when `wind` is high, i.e. head out; every dog, D29; nothing changes
+  otherwise): a wide open grin, a happy squint, and the tongue hanging well out, a little down, wider, flapping side to
+  side (`tongueRest` keeps its place in the mouth).
+- Checked: unit tests (699); renders from the drive's views and close-ups; the whole ride with `?human=man` (no
+  errors). Not checked: a phone.
+
 Claude Code (2026-10-17, owner's phone screenshot of the Garage: "Fix the driver when they are sitting in the car since
 their head goes above the windshield. Fix the headlights as they are too long into the fender and don't look like
 headlights with the white lamps. The drive is beautiful but Make the drive about 20sec shorter"):

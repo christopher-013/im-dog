@@ -28,12 +28,14 @@ export const RIDE = {
   /** They set off but can't get to him or the door: give up after this long. */
   walkTimeout: 40,
   /**
-   * His pose in the car on the road (in the passenger seat's space, its cushion top): standing up on the seat turned
-   * to the window, head and shoulders out; or sitting back facing forward ("head in").
+   * His pose in the car on the road (in the passenger seat's space, its cushion top): up on the seat at the window,
+   * tipped nose-up against the door (`pitch`, rad), his front paws over the sill and his head right out in the wind
+   * (the default; owner, 2026-10-17: he hadn't really been putting his head out), lifted a little more (`headPitch`);
+   * or sitting back facing forward ("head in").
    */
   dogInCar: {
-    headOut: { x: -0.43, y: 0.33, z: 0.08, heading: -Math.PI / 2 + 0.25 },
-    headIn: { x: 0.0, y: 0.0, z: 0.02, heading: 0 },
+    headOut: { x: -0.52, y: 0.24, z: 0.06, heading: -Math.PI / 2 + 0.2, pitch: -0.75, headPitch: 0.2 },
+    headIn: { x: 0.0, y: 0.0, z: 0.02, heading: 0, pitch: 0, headPitch: 0 },
   },
   /**
    * Looking around on the road (look input turns his head; owner, 2026-10-17): how far (radians: yaw + to his left,

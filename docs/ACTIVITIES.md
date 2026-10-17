@@ -188,8 +188,9 @@ ride?"**
   surfers out past the break, lifeguard towers, people walking the path beyond the guard rail, pelicans, traffic both
   ways. Then up the grade between the sandstone bluffs to the reserve, the sea below; one way (home is a fade).
   Every tree is a Southern California palm (`ride/palms.ts`: Mexican fan palms, Canary Island date palms, queen
-  palms). By default his head is out of the window (up on the seat, his paws inside the door), ears streaming,
-  squinting happily into the wind with a big open grin and his tongue out and flapping (owner, 2026-10-17). **Bark**, put his **head in or out** (Jump), **look
+  palms). By default he rides at the window with just his head and neck out over the sill, ears streaming, squinting
+  happily into the wind; every so often (at random) he pants, his tongue a little way out and flapping (owner,
+  2026-10-17). **Bark**, put his **head in or out** (Jump), **look
   around** (turns his head; left alone he looks about at the beach himself), **change the view** with the paw or
   Trick, or the **Change View** button that takes FSD's place on the road (alongside, his face, behind, the drone;
   always on him, third person; the view glides over); the pause screen's **HEAD HOME** skips to the end. It's

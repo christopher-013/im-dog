@@ -52,6 +52,18 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner's screenshot of the live ride: "Moke tongue is sticking out too much, don't keep the
+tongue wagging the whole time only a few times randomly. Make the dog look like they are actually riding in the car
+with just the head and neck sticking out the car and not look like they are floating outside the car window"):
+- **Pose** (`RIDE.dogInCar.headOut`): lower and a little tipped nose-up, so only his head and neck are above the
+  sill (the rest of him inside, behind the door; no paws through it), his head out past the glass (mouth at car x
+  ≈ −0.98). Checked with renders from the Alongside view, close up and from below the door outside.
+- **Tongue now and then** (new `MokeAnimationState.tongue`, 0..1, set by the ride; `RIDE.pant`): with his head out,
+  a pant starts every 6–13 s (random) and lasts 1.4–2.8 s, easing in and out; the tongue comes a little way out
+  (shorter than before) and flaps. Otherwise his mouth is closed; the happy squint in the wind stays. Reset to 0
+  outside the drive.
+- Checked: unit tests; the whole ride (no errors). Not checked: a phone.
+
 Claude Code (2026-10-17, owner: "Don't make the front paws stick outside the car they look like they are coming thru
 the door. Make the dog position in the car same as last time"): back to the earlier head-out pose (same height, turn
 and head lift, no tilt), moved 12 cm in from the door (`RIDE.dogInCar.headOut.x` −0.43 → −0.31), which the old pose

@@ -99,6 +99,8 @@ export interface MokeAnimationState {
    * whoever's posing him (the ride); 0 otherwise.
    */
   wind: number;
+  /** 0..1: his tongue out in a happy pant (now and then on a ride, with his head out). Set by the ride; 0 otherwise. */
+  tongue: number;
 }
 
 export class MokeAnimationController {
@@ -134,6 +136,7 @@ export class MokeAnimationController {
     trickBlend: 0,
     time: 0,
     wind: 0,
+    tongue: 0,
   };
 
   private chewingNow = false;

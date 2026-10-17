@@ -865,8 +865,8 @@ export class ToonMokeVisual implements MokeVisual {
     // Tail up while sniffing or barking.
     this.tail.rotation.x = -s.runBlend * 0.9 - lie * 1.1 - s.crouch * 1.2 + trick.tailX + s.sniff * 0.2 + s.bark * 0.25 - s.air * 0.4;
 
-    // His head out of the car window (a ride, Phase 6): the wind in his face makes him grin, squint and let his tongue
-    // fly (only when his head's really out, not the light breeze inside the car).
+    // His head out of the car window (a ride, Phase 6): the wind in his face makes him squint (only when his head's
+    // really out, not the light breeze inside the car); now and then he pants, his tongue out flapping (`s.tongue`).
     const breeze = Math.min(1, Math.max(0, (s.wind - 0.3) / 0.7));
     // Eyes: idle blinks; closed while resting, a little squint while sniffing or barking, or in the wind.
     const eyeOpen =
@@ -879,16 +879,17 @@ export class ToonMokeVisual implements MokeVisual {
     for (const lid of this.lids) lid.visible = shut;
 
     // A growl reveals four tiny teeth; bark/panting shows the tongue instead.
-    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0, trick.mouthOpen, s.eat * (0.25 + 0.45 * chew), s.drink * 0.45, s.air * 0.5, breeze * 0.85) : s.chew * 0.45 * bite;
+    const open = s.carry < 0.5 ? Math.max(s.bark, s.growl * 0.72, s.runBlend > 0.25 ? 0.7 : 0, trick.mouthOpen, s.eat * (0.25 + 0.45 * chew), s.drink * 0.45, s.air * 0.5, s.tongue * 0.8) : s.chew * 0.45 * bite;
     this.mouth.visible = open > 0.05;
     this.tongue.visible = open > 0.05 && s.growl < 0.2 && s.eat < 0.2 && s.chew < 0.2;
-    // Lapping: the tongue flicks out and back into the water. In the wind it hangs well out of a wide grin, a little
-    // down, and flaps from side to side.
-    const tongueLength = TONGUE_LENGTH * (1 + 1.2 * s.drink * lap + 2.4 * breeze);
-    this.tongue.scale.set(0.009 * (1 + 0.45 * breeze), 0.004 * (1 + 0.35 * breeze), tongueLength);
-    this.tongue.position.set(this.tongueRest.x, this.tongueRest.y - 0.005 * breeze, this.tongueRest.z + (tongueLength - TONGUE_LENGTH) * 0.85);
-    this.tongue.rotation.set(0.45 * breeze, breeze * 0.4 * Math.sin(s.time * 15), breeze * 0.25 * Math.sin(s.time * 15 + 1.2));
-    this.mouth.scale.x = 0.014 * (1 + 0.45 * breeze);
+    // Lapping: the tongue flicks out and back into the water. Panting in the wind it hangs a little way out of a wide
+    // grin, a little down, and flaps from side to side.
+    const pant = s.tongue;
+    const tongueLength = TONGUE_LENGTH * (1 + 1.2 * s.drink * lap + 1.3 * pant);
+    this.tongue.scale.set(0.009 * (1 + 0.25 * pant), 0.004 * (1 + 0.25 * pant), tongueLength);
+    this.tongue.position.set(this.tongueRest.x, this.tongueRest.y - 0.004 * pant, this.tongueRest.z + (tongueLength - TONGUE_LENGTH) * 0.8);
+    this.tongue.rotation.set(0.4 * pant, pant * 0.35 * Math.sin(s.time * 15), pant * 0.2 * Math.sin(s.time * 15 + 1.2));
+    this.mouth.scale.x = 0.014 * (1 + 0.4 * pant);
     this.teeth.visible = s.carry < 0.5 && s.growl > 0.05;
     this.mouth.scale.y = 0.004 + 0.008 * open;
 

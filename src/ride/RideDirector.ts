@@ -86,6 +86,10 @@ export class RideDirector {
   private headOut = true;
   private autoViewIn = 15;
   private autoBarkIn = 20;
+  /** A happy pant now and then with his head out: when the next one starts, how long it lasts, and how far out it is. */
+  private pantIn = 3;
+  private pantLeft = 0;
+  private pant = 0;
   private said = new Set<string>();
   private readonly lastDog = new Vector3();
   private readonly lastHuman = new Vector3();
@@ -115,6 +119,9 @@ export class RideDirector {
     this.time = 0;
     this.said.clear();
     this.headOut = true;
+    this.pantIn = RIDE.pant.every[0];
+    this.pantLeft = 0;
+    this.pant = 0;
     this.lookAim.yaw = this.lookAim.pitch = this.lookNow.yaw = this.lookNow.pitch = 0;
     this.sinceLook = 99;
     const g = this.cast.garage;
@@ -329,6 +336,16 @@ export class RideDirector {
     s.crouch = 0;
     s.tailWag = Math.max(s.tailWag, 0.9);
     s.wind = this.headOut ? 1 : 0.15;
+    // Now and then (head out), his tongue comes out for a happy pant in the wind, then goes back in.
+    const P = RIDE.pant;
+    if (this.pantLeft > 0) this.pantLeft -= dt;
+    else if ((this.pantIn -= dt) <= 0 && this.headOut) {
+      this.pantLeft = P.lasts[0] + Math.random() * (P.lasts[1] - P.lasts[0]);
+      this.pantIn = P.every[0] + Math.random() * (P.every[1] - P.every[0]);
+    }
+    const panting = this.headOut && this.pantLeft > 0 ? 1 : 0;
+    this.pant += (panting - this.pant) * Math.min(1, dt * 6);
+    s.tongue = this.pant;
     s.headYaw = this.lookNow.yaw;
     s.headPitch = pose.headPitch + this.lookNow.pitch;
     s.attention = 1;
@@ -463,6 +480,7 @@ export class RideDirector {
     s.rest = 0;
     s.tailWag = Math.max(s.tailWag, o.wag ?? 0);
     s.wind = 0;
+    s.tongue = 0;
     this.cast.dog.update(dt, s);
   }
 

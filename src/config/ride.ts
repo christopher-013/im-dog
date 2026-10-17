@@ -28,15 +28,20 @@ export const RIDE = {
   /** They set off but can't get to him or the door: give up after this long. */
   walkTimeout: 40,
   /**
-   * His pose in the car on the road (in the passenger seat's space, its cushion top): standing up on the seat turned
-   * to the window, his head out in the wind (the default), his paws inside the door (owner, 2026-10-17: the same
-   * place as before, just far enough in that his front paws don't come out through the door); `pitch` tips him
-   * (rad, unused) and `headPitch` lifts his head; or sitting back facing forward ("head in").
+   * His pose in the car on the road (in the passenger seat's space, its cushion top): up at the window, inside the
+   * car, with just his head and neck out over the sill in the wind (the default; owner, 2026-10-17: riding in the car,
+   * not floating outside the window, and no paws through the door). `pitch` tips him nose-up a little (rad) and
+   * `headPitch` lifts his head; or sitting back facing forward ("head in").
    */
   dogInCar: {
-    headOut: { x: -0.31, y: 0.33, z: 0.08, heading: -Math.PI / 2 + 0.25, pitch: 0, headPitch: 0.12 },
+    headOut: { x: -0.37, y: 0.24, z: 0.08, heading: -Math.PI / 2 + 0.25, pitch: -0.2, headPitch: 0.3 },
     headIn: { x: 0.0, y: 0.0, z: 0.02, heading: 0, pitch: 0, headPitch: 0 },
   },
+  /**
+   * With his head out on the road he pants now and then (owner, 2026-10-17: the tongue out only a few times, at
+   * random, not the whole way): a pant starts every `every` s (random in the range) and lasts `lasts` s.
+   */
+  pant: { every: [6, 13] as const, lasts: [1.4, 2.8] as const },
   /**
    * Looking around on the road (look input turns his head; owner, 2026-10-17): how far (radians: yaw + to his left,
    * toward the front of the car; pitch + up), how quickly his head follows, and after how long left alone he looks

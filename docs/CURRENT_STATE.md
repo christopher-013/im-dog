@@ -53,7 +53,7 @@ carries into Phase 2.
 
 ## Last Developer
 Claude Code (2026-10-17, owner request: "add a way to trigger the ride, if Moke stands by the garage door give an
-option to bark and look at the door and the NPC will offer a ride"): **the dog can ask for a ride** (D33 refined).
+option to bark and look at the door and the NPC will offer a ride"; pushed to `main` at the owner's request): **the dog can ask for a ride** (D33 refined).
 - `RideOffer.garageBark`: a **Bark at the Garage Door** prompt at `RIDE.askAt` (in front of the door) while no ride
   is offered or under way; any bark that close does the same (`noteBark`). It barks, he looks at the door for 2.5 s
   (`Game.garageLook`), and the offer comes due now: the human comes over once free and says `RIDE.lines.asked`.

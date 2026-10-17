@@ -845,8 +845,10 @@ export class ToonMokeVisual implements MokeVisual {
       // Drop ears: they bounce and sweep back at speed rather than sticking out sideways.
       // In the air they fly up, and float out on the way down.
       const floaty = s.air * 0.15 * clamp(-s.rise, 0, 1);
-      ear.pivot.rotation.z = ear.side * (0.12 + flop + s.runBlend * 0.15 - s.bark * 0.25 - s.sniff * 0.08 - s.growl * 0.16 + floaty);
-      ear.pivot.rotation.x = s.runBlend * 0.6 - s.bark * 0.3 - s.growl * 0.38 - s.air * 0.35;
+      // Head out of a car window: streaming back and up, fluttering.
+      const gust = s.wind * (0.85 + 0.25 * Math.sin(s.time * 23 + ear.side * 1.7));
+      ear.pivot.rotation.z = ear.side * (0.12 + flop + s.runBlend * 0.15 - s.bark * 0.25 - s.sniff * 0.08 - s.growl * 0.16 + floaty + s.wind * (0.4 + 0.15 * Math.sin(s.time * 17 + ear.side)));
+      ear.pivot.rotation.x = s.runBlend * 0.6 - s.bark * 0.3 - s.growl * 0.38 - s.air * 0.35 + gust;
     }
 
     // The tag hangs down whatever his head does, and jingles a little as he trots.

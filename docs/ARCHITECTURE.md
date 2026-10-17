@@ -44,6 +44,7 @@ src/
     autopilot.ts          FSD, Full Self Dog (Phase 5): route following, getting unstuck, hopping up, how long he does things
     seasons.ts            Halloween's date window and the Auto/On/Off choice (Phase 6, D30; tested)
     halloween.ts          Halloween: the trick-or-treat visit's timings and lines, the shelf, the decorations' places
+    ride.ts               going for a ride: how often it's offered, the leash, the dog's pose in the car, the lines
   core/
     Game.ts               state machine + frame orchestration
     GameLoop.ts           FixedStep accumulator + rAF loop
@@ -65,6 +66,7 @@ src/
     MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking, sit/stretch, look-at, tricks (tested)
     MokeVisual.ts         the visual interface (object, attachments, update, dispose) + createMokeVisual(): model or stand-in (tested)
     ToonMokeVisual.ts     the procedural stand-in: Moke built in code after the real dog (curly fur, soft shading, silhouette line, face, collar), animated procedurally (tested)
+    Harness.ts            going for a ride: the harness on the back socket and the leash to the human's hand (presentation)
     DogCostume.ts         the Halloween costumes (pumpkin, cape, witch hat) on the visual's back and head sockets; presentation only (tested)
     toon/                 furGeometry.ts (fur clumps with curls and creases, tested), toonMaterials.ts (soft toon + outline), faceTextures.ts (eye), tagTexture.ts (name tag)
     gltf/                 the final-model path: GltfMokeVisual.ts (moke.glb: mixer, crossfades, sockets, procedural layer; tested),
@@ -99,6 +101,11 @@ src/
     WatchTv.ts            in front of any TV, its show full screen until any button (tested)
     CourseAssist.ts       one-press help on the course: "Jump Hurdle" / "Weave Pole n/5" on the paw, then Moke does that one (tested in Rapier)
     CourseReward.ts       after the course, the human waits inside the open slider with a hamburger patty (tested in the house)
+    RideOffer.ts          going for a ride (Phase 6): every 5–10 minutes the human asks; yes → the harness, the leash to the Garage door (tested in the house)
+  ride/                   going for a ride, from the Garage door on (Phase 6, D33)
+    RideDirector.ts       the cinematic out to the car and home again, and the drive in between; poses the dog's and the human's visuals (tested)
+    CoastDrive.ts         the drive: the coast road to Torrey Pines and back, built in code, its own scene; loaded only for a ride (its own chunk)
+    coastRoute.ts         the road, the coastline, the land's heights (pure; tested)
   autopilot/              FSD, Full Self Dog (Phase 5, D27; see docs/PHASE_5.md)
     FsdPathView.ts        the rainbow path on the floor ahead of Moke while FSD drives (a ribbon mesh and a small shader; tested)
     FullSelfDog.ts        a virtual player: routines → a move direction + button presses each frame, on its own NavGrid (tested; DOM/three-free,
@@ -118,6 +125,7 @@ src/
     MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
     TvCloseUp.ts          the straight-on shot of a TV that fills the view (watching the ballgame) (tested)
   world/
+    GarageView.ts         the Garage's door (locked in play), roll-up door and the family car (FamilyCar.ts, original, unbadged; tested)
     Home.ts               the whole house: the living room + the wing; colliders, landmarks, places, nap and hiding spots (navigation-tested with Rapier)
     home/                 the new wing (Phase 4; see docs/HOME_REFERENCE.md)
       layout.ts           walls, openings, rooms (roomAt), the house's bounds

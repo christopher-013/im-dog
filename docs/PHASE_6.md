@@ -43,8 +43,8 @@ before 6.2 photo mode and 6.3 the day.
 | 6.1 | Halloween | **Built 2026-10-16**, published to the live site. Halloween is 2026-10-31: it has to ship first to be worth anything this year. Small, reuses the doorbell. |
 | 6.2 | Photo mode | Small and self-contained; makes the costumes (and everything after) shareable. |
 | 6.3 | A day in the life | The clock, daily goals, the Dog Logic album, the end-of-day card. The ride slots into the day afterwards. |
-| 6.4 | The Garage and the car | A new room behind the living room and the car in it; locked except for rides, nothing to drive yet. |
-| 6.5 | Going for a ride | The invitation, the harness and leash, getting in, the coastal drive, home again. The biggest piece. |
+| 6.4 | The Garage and the car | **Built 2026-10-17** (on the working branch). A new room behind the living room and the car in it; locked except for rides. |
+| 6.5 | Going for a ride | **Built 2026-10-17** (on the working branch). The invitation, the harness and leash, getting in, the coastal drive, home again. |
 | 6.6 | Polish and the phone | Owner playtests, tuning, a recorded phone/browser check with measured frame rate (carried since Phase 3). |
 
 ## 6.1 Halloween
@@ -119,6 +119,10 @@ before 6.2 photo mode and 6.3 the day.
 - **FSD** plays through the days like a player, and its goals and days count (owner: it's the same dog).
 
 ## 6.4 The Garage and the car
+> **Built 2026-10-17** as below. The doorway is solid in play (the door's locked); only the ride's scripted walk goes
+> through it. The car's passenger **front** door opens (on the real car the front doors are hinged; the rear
+> falcon-wing doors are drawn as seams and don't open). Details: `HOME_REFERENCE.md` → "The Garage".
+
 - **The door:** in the living room's south wall, **to the left of the TV** as you face it from the couch (around
   x 2.4, between the TV console and the room's east corner), a white interior door like the others.
 - **The garage:** a two-car garage behind the living room, about 6.6 × 6.5 m (x −3.4…3.4, z 3.1…9.6). It has:
@@ -139,6 +143,12 @@ before 6.2 photo mode and 6.3 the day.
   an affectionate homage, not a copy. **Black** (owner), with dark glass and silver-grey wheels.
 
 ## 6.5 Going for a ride
+> **Built 2026-10-17.** How it plays: `ACTIVITIES.md` → "Going for a ride"; controls: `CONTROLS.md`. Differences from
+> the plan below: he hops in through the passenger's front door (not a falcon-wing door); the camera shots are his
+> face from just ahead of the window, alongside behind it, behind the car, and a drone (an in-car view looked too
+> boxy); the drive is always a sunny afternoon until 6.3's clock exists; the song's loudness is set like "Paws Up!"
+> but not measured.
+
 - **The invitation:** randomly **every 5–10 minutes** of play (owner; not during the Sock Heist, the ballgame or
   another activity, and the next one is timed from when the last ride ended or was declined), the human picks up the
   keys by the garage door: "**Moke, want to go for a ride?**" The prompt reads

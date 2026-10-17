@@ -274,6 +274,15 @@
           <path d="M8.6 11.5l1.6-2 1 2.2zM13 11.7l1.4-2.2 1.4 2.2z" fill="#ffd46a" />
           <path d="M8 15q4 3.5 8 0-1.2 2.8-4 2.8T8 15z" fill="#ffd46a" />
         </symbol>
+        <symbol id="icon-car" viewBox="0 0 24 24">
+          <path d="M3 16v-3.2q0-1.3 1.3-1.6l2.5-.6 2.4-3.2q.7-.9 1.8-.9h4.2q1.1 0 1.9.8l2.6 3 1.3.4q1 .4 1 1.4V16z" fill="#2b2e35" />
+          <path d="M9.6 8.2h3v3h-4.6zM13.6 8.2h1.8q.6 0 1 .4l2.2 2.4h-5z" fill="#9fc6e4" />
+          <circle cx="7.4" cy="16.3" r="2.2" fill="#1b1c20" /><circle cx="7.4" cy="16.3" r=".9" fill="#b8bec6" />
+          <circle cx="17.4" cy="16.3" r="2.2" fill="#1b1c20" /><circle cx="17.4" cy="16.3" r=".9" fill="#b8bec6" />
+        </symbol>
+        <symbol id="icon-wind" viewBox="0 0 24 24" fill="none" stroke="#5b9fd6" stroke-width="2.2" stroke-linecap="round">
+          <path d="M3 9h11a3 3 0 1 0-3-3" /><path d="M3 14h15a3 3 0 1 1-3 3" /><path d="M3 19h7" />
+        </symbol>
         <symbol id="icon-warm" viewBox="0 0 24 24">
           <path d="M12 2.5c3 3.5 6 6.5 6 10.5a6 6 0 0 1-12 0c0-2.4 1.2-4 2.4-5.4.2 1.9 1.1 3 2.3 3.4-.4-3.3.3-6 1.3-8.5z" fill="#f08a4b" />
           <path d="M12 21a3 3 0 0 1-3-3c0-1.6 1.4-2.8 3-4.6 1.6 1.8 3 3 3 4.6a3 3 0 0 1-3 3z" fill="#f6c453" />
@@ -301,6 +310,8 @@
         </div>
         <!-- Sock Heist: the human's speech bubble, a small objective line, and the Dog Logic moment. -->
         <div id="speech-bubble" class="speech-bubble" role="status" aria-live="polite" aria-hidden="true"></div>
+        <!-- Going for a ride (Phase 6): black between the Garage and the road. -->
+        <div id="ride-fade" class="ride-fade" aria-hidden="true"></div>
         <div id="heist-chip" class="heist-chip" aria-live="polite" aria-hidden="true"></div>
         <div id="discovery" class="discovery" role="status" aria-hidden="true">
           <p class="discovery-kicker">Dog Logic!</p>
@@ -518,6 +529,8 @@
           </div>
           <div class="menu-buttons">
             <button id="btn-resume" class="btn btn-primary" type="button">RESUME</button>
+            <!-- Going for a ride (Phase 6): only while out on the road. -->
+            <button id="btn-ride-home" class="btn btn-secondary" type="button" hidden>HEAD HOME</button>
             <button class="btn btn-secondary" type="button" data-open-controls>CONTROLS</button>
             <button class="btn btn-secondary" type="button" data-open-about>ABOUT I'M DOG?</button>
             <button class="btn btn-secondary" type="button" data-open-feedback hidden>FEEDBACK</button>

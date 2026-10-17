@@ -18,12 +18,23 @@ off the kitchen through a wide cased opening, and the **home gym** opens off the
 | Dining room | x 6.74…10.9, z −4.2…0.39 | through a 2.9 m cased opening from the kitchen |
 | Home gym | x 11.0…16.9, z −4.2…0.39 | open from the dining room; big glass doors onto the backyard, one slider open |
 | Backyard (Phase 5) | x 17.0…29.9, z −5.4…4.4 | out through the open slider: the patio, the lawn and Liam's Obstacle Course |
+| Garage (Phase 6) | x −3.5…3.5, z 3.12…9.9 | behind the living room; its door is left of the TV, **locked except for a ride** (the doorway is solid in play) |
 
 (As built in `src/world/home/layout.ts`; the dining room is deep enough for the human and Moke to get round the
 ends of the table.) Walking out of the hallway: the dining room is on your left (north), the kitchen on your right
 (south), and the family room straight ahead beyond the island.
 
 ## Room by room
+
+### The Garage (Phase 6, D32)
+A standard two-car garage behind the living room. Its white door is in the living room's south wall, to the left of
+the TV as you face it from the couch; it stays locked except when the human takes the dog out for a ride. Inside:
+sealed concrete, white walls, a light over each bay, steel shelving with blue storage bins and boxes on the north wall,
+two bikes on the west wall, a wall charger by the car, bins by the roll-up door, and the **family car**: an original,
+code-built black electric SUV in the shape of their Model X, unbadged (D34), parked nose-in in the east bay with its
+passenger side to the east wall. Its passenger door opens onto cream seats and its window rolls down. Through the
+roll-up door: the driveway, lawns, a hedge and the sky. Code: `world/home/Garage.ts` (the shell),
+`world/GarageView.ts` (the doors and the car), `world/FamilyCar.ts`; positions in `layout.ts` (`GARAGE`).
 
 ### Family room
 - **Fireplace wall** (south): a white surround with a deep mantel, a dark firebox with a low gas fire, a raised

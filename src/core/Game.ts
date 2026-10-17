@@ -42,6 +42,10 @@ import { CouchPillows } from '../world/CouchPillows';
 import { FrontDoor } from '../world/FrontDoor';
 import { HalloweenDecor } from '../world/HalloweenDecor';
 import { GarageView } from '../world/GarageView';
+import { RideOffer } from '../activities/RideOffer';
+import { Harness } from '../player/Harness';
+import { RideDirector } from '../ride/RideDirector';
+import { RIDE } from '../config/ride';
 import { DogCostume } from '../player/DogCostume';
 import { halloweenOn } from '../config/seasons';
 import { HALLOWEEN_VISIT } from '../config/halloween';
@@ -91,7 +95,7 @@ import { createRoomScents } from '../senses/roomScents';
 import { ScentSystem } from '../senses/ScentSystem';
 import { ScentWisps } from '../senses/ScentWisps';
 import { DebugPanel, FrameStats, type DebugValues } from '../ui/DebugPanel';
-import { controlsSummary } from '../ui/ControlGlyphs';
+import { actionGlyph, controlsSummary } from '../ui/ControlGlyphs';
 import type { UIManager } from '../ui/UIManager';
 import { Home } from '../world/Home';
 import { applySoftEnvironment, RoomLighting } from '../world/RoomLighting';
@@ -218,6 +222,11 @@ export class Game {
   private readonly halloweenDecor = new HalloweenDecor();
   /** The Garage's door, roll-up door and the family car (Phase 6, D32). */
   private readonly garage = new GarageView();
+  /** Going for a ride (Phase 6, D33): the human's offer and the leash walk; then the ride itself (the cinematic, the drive). */
+  private rideOffer: RideOffer | null = null;
+  private ride: RideDirector | null = null;
+  private harness: Harness | null = null;
+  private readonly heelSpot = { x: 0, y: 0, z: 0 };
   private costume: DogCostume | null = null;
   /** Halloween: the pumpkin biscuit the human brings him after the trick-or-treaters. */
   private readonly biscuitTreat = new Treat('pumpkin', 3, 'pumpkin');
@@ -332,6 +341,10 @@ export class Game {
       onResume: () => this.resume(),
       onFsd: () => this.setFsd(!this.fsdOn),
       onTvExit: () => this.watchTv?.stop(),
+      onRideHome: () => {
+        this.ride?.headHome();
+        this.resume();
+      },
     });
     const settings = this.settings;
     applySettings(settings);
@@ -698,7 +711,28 @@ export class Game {
         this.showVoiceBubble(COURSE_REWARD.lines.fed);
       },
     });
-    this.director = new DogActivityDirector([this.delivery, this.courseReward, this.kitchenBeg, this.dinnerBeg, this.watchGame, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
+    this.rideOffer = new RideOffer({
+      routine: this.routine,
+      onHarness: (on) => this.harnessOn(on),
+      onAtDoor: () => this.startRide(),
+      canOffer: () => this.course.phase === 'idle' && !this.watchTv?.watching && !this.watchGame?.watchingScreen,
+    });
+    this.interactions.register(this.rideOffer.interactable);
+    const self = this;
+    this.ride = new RideDirector(
+      // The dog's visual changes with the dog chosen (Choose Your Dog), so it's looked up each time.
+      { get dog() { return self.moke!.visual; }, human: human.visual, scene: this.scene, garage: this.garage },
+      {
+        loadDrive: () => import('../ride/CoastDrive'),
+        music: (on) => this.audio.rideMusic(on),
+        fade: (alpha) => this.ui.setFade(alpha),
+        say: (text) => this.routine.say(text, 'happy'),
+        leash: (hand) => this.moke && this.harness?.wear(this.moke.visual, hand),
+        harnessOff: () => this.harnessOn(false),
+        done: (dogAt, dogHeading, humanAt, humanHeading) => this.endRide(dogAt, dogHeading, humanAt, humanHeading),
+      },
+    );
+    this.director = new DogActivityDirector([this.delivery, this.courseReward, this.rideOffer, this.kitchenBeg, this.dinnerBeg, this.watchGame, this.pillowDig, this.tableManners, this.toiletPaper, hunt, nap, play]);
     this.spawnFsd(moke);
 
     // "Get Pets": close to the human while they're free.
@@ -1075,11 +1109,17 @@ export class Game {
     else if (command === 'closeControls') this.ui.closeControls();
     // The press that started or resumed play mustn't also count as an in-game action (A is also "interact").
     const enteredPlay = command === 'resume' || command === 'begin';
+    // Going for a ride: it has the screen (the house stands still) until they're home.
+    if (this.ride?.active) {
+      this.updateRide(dt, elapsed, enteredPlay);
+      return;
+    }
 
     const playing = this.state === 'playing';
     this.usage?.update(dt, playing, this.moveIntent.x !== 0 || this.moveIntent.z !== 0);
     // FSD drives: this frame's moves and button presses (read below and in the fixed steps, like a player's).
-    this.fsdCmd = playing && this.fsdOn && this.fsd && this.fsdWorld ? this.fsd.update(dt, this.fsdWorld) : null;
+    // (Once he's said yes to a ride, the ride has him: no FSD steering or presses until he's home.)
+    this.fsdCmd = playing && this.fsdOn && this.fsd && this.fsdWorld && !this.rideOffer?.holdsDog ? this.fsd.update(dt, this.fsdWorld) : null;
     if (this.fsdCmd && this.fsd) this.ui.setFsdStatus(this.fsd.status);
     // Watching TV full screen: any button (or FSD wanting to do something else) and he's done; that press does
     // nothing else.
@@ -1225,6 +1265,18 @@ export class Game {
     if (this.watchTv?.watching) {
       this.moveIntent.x = this.moveIntent.z = 0;
       this.moveIntent.walk = this.moveIntent.run = false;
+      return;
+    }
+    // On the leash to the Garage (going for a ride): he walks at the human's side whatever's pressed.
+    if (this.rideOffer?.leading && this.fsd && this.fsdWorld) {
+      const heel = this.rideOffer.heel(this.heelSpot);
+      const cmd = this.fsd.followOnLeash(step, this.fsdWorld, heel, RIDE.heel);
+      this.moveIntent.x = cmd.x;
+      this.moveIntent.z = cmd.z;
+      this.moveIntent.walk = cmd.walk;
+      this.moveIntent.run = false;
+      // Hopelessly held up: the leash brings him along (to heel).
+      if (cmd.stuck && this.moke) this.moke.controller.teleport(heel, this.moke.controller.heading);
       return;
     }
     const axis = input.getMoveAxis(this.moveAxis);
@@ -1422,6 +1474,7 @@ export class Game {
     this.barkedThisFrame = true;
     this.heist?.noteBark();
     this.delivery?.noteBark(this.moke.controller.position);
+    this.rideOffer?.noteBark(this.moke.controller.position);
     this.conure.startle(this.moke.controller.position);
     this.barkForActivities = true;
   }
@@ -1475,6 +1528,93 @@ export class Game {
     this.growledThisFrame = false;
     const words = ['grrr…', 'grr!', 'tiny grrr…'];
     this.showVoiceBubble(words[Math.floor(Math.random() * words.length)]!);
+  }
+
+  /** The harness on (and the leash to the human's hand), or off. */
+  private harnessOn(on: boolean): void {
+    const moke = this.moke;
+    if (!moke) return;
+    if (!on) {
+      this.harness?.dispose();
+      this.harness = null;
+      return;
+    }
+    // Up out of bed and nothing in his mouth: he's going out.
+    this.rest.standUp();
+    if (this.pickup?.carried) this.pickup.drop();
+    this.harness?.dispose();
+    this.harness = new Harness(this.dog.look.collar.lit);
+    this.harness.wear(moke.visual, this.heist?.human.visual.hands.left ?? null);
+    this.scene.add(this.harness.leash);
+  }
+
+  /** At the Garage door: the ride takes over (the cinematic, then the drive). */
+  private startRide(): void {
+    if (!this.ride || !this.moke) return;
+    this.watchTv?.stop();
+    this.ui.setPrompt(null, null);
+    this.fsdPath.update(0, null, null);
+    this.ui.setObjective('Going for a ride!');
+    this.ui.showToast(this.rideControls(), 6000);
+    this.ride.start();
+  }
+
+  /** The ride's buttons, in the player's own controls. */
+  private rideControls(): string {
+    const mode = this.input.mode;
+    if (mode === 'touch') return 'On the ride: Bark, the paw puts his head in or out, Trick changes the view.';
+    const g = (a: Action) => actionGlyph(a, mode) ?? '';
+    return `On the ride: ${g('bark')} bark · ${g('interact')} head in or out · ${g('trick')} change the view`;
+  }
+
+  /** While the ride has the screen: its own buttons, the ride, the leash and the human's words, then its picture. */
+  private updateRide(dt: number, elapsed: number, enteredPlay: boolean): void {
+    const ride = this.ride!;
+    const playing = this.state === 'playing';
+    const input = this.input.state;
+    if (playing && !enteredPlay) {
+      if (input.wasPressed('autopilot')) this.setFsd(!this.fsdOn);
+      if (input.wasPressed('bark') && this.barkTimer.tryBark()) {
+        this.audio.play('bark');
+        ride.bark();
+      }
+      if (input.wasPressed('interact')) ride.toggleHead();
+      if (input.wasPressed('trick')) ride.nextView();
+    }
+    this.barkTimer.update(playing ? dt : 0);
+    this.ui.setRideHome(this.state === 'paused' && ride.driving);
+    this.gfx.syncSize(this.camera);
+    ride.update(playing ? dt : 0, this.camera.aspect, this.fsdOn);
+    this.harness?.update();
+    // The human's words float near the top of the screen while they're out.
+    this.ui.placeSpeech(this.gfx.canvas.clientWidth / 2, 0);
+    if (this.ride?.active) ride.render(this.gfx.renderer);
+    else this.gfx.render(this.scene, this.camera);
+    this.frameStats.record(elapsed);
+    this.debug.update(dt);
+  }
+
+  /** Home from the ride: their bodies where the cinematic left them, the human back to their day, a Dog Logic moment. */
+  private endRide(dogAt: readonly [number, number], dogHeading: number, humanAt: readonly [number, number], humanHeading: number): void {
+    const moke = this.moke;
+    const human = this.heist?.human;
+    if (moke) {
+      moke.controller.teleport({ x: dogAt[0], y: 0, z: dogAt[1] }, dogHeading);
+      if (moke.visual.object.parent !== this.scene) this.scene.add(moke.visual.object);
+    }
+    if (human) {
+      human.controller.teleport({ x: humanAt[0], y: 0, z: humanAt[1] }, humanHeading);
+      if (human.visual.object.parent !== this.scene) this.scene.add(human.visual.object);
+    }
+    this.harnessOn(false);
+    this.rideOffer?.home();
+    // FSD picks up from scratch (whatever it was doing before the ride is long over).
+    if (this.fsdOn) this.fsd?.reset();
+    this.ui.setObjective(null);
+    this.ui.setRideHome(false);
+    this.dogLogic.discover('car+window=wind');
+    this.showVoiceBubble('Best day ever! Wind in my ears!');
+    this.followCamera.recenterBehind(this.updateCameraTarget());
   }
 
   /**

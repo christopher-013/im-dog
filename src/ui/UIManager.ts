@@ -21,6 +21,8 @@ export interface UIHandlers {
   onFsd?(): void;
   /** A tap or click on the full-screen TV: stop watching. */
   onTvExit?(): void;
+  /** Going for a ride: the pause screen's HEAD HOME. */
+  onRideHome?(): void;
 }
 
 /** Choose Your Dog: what the screen's buttons, taps and swipes ask for. */
@@ -119,6 +121,7 @@ export class UIManager {
 
     this.el('btn-play').addEventListener('click', () => this.handlers?.onPlay());
     this.el('btn-resume').addEventListener('click', () => this.handlers?.onResume());
+    this.el('btn-ride-home').addEventListener('click', () => this.handlers?.onRideHome?.());
     this.el('btn-fsd').addEventListener('click', (e) => {
       this.handlers?.onFsd?.();
       // Back to the game: no lingering focus ring, and Space/Enter keep meaning jump/interact.
@@ -349,6 +352,16 @@ export class UIManager {
       onChange({ ...current });
     });
     this.settingsChanged = onChange;
+  }
+
+  /** Going for a ride: HEAD HOME on the pause screen while out on the road. */
+  setRideHome(show: boolean): void {
+    this.el<HTMLButtonElement>('btn-ride-home').hidden = !show;
+  }
+
+  /** Going for a ride: black over the game (0..1), between the Garage and the road. */
+  setFade(alpha: number): void {
+    this.el('ride-fade').style.opacity = String(Math.min(1, Math.max(0, alpha)));
   }
 
   /** The costume setting changed elsewhere (the Choose Your Dog button): keep the pause screen in step and save it. */

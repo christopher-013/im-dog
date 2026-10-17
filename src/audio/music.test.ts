@@ -13,12 +13,12 @@ function fillsBars(song: Song, notes: readonly Note[]): void {
 }
 
 /** The background songs are 24 bars; Choose Your Dog's short fight theme, 16. */
-const BARS: Readonly<Record<keyof typeof TUNES, number>> = { hawaiian: 24, japan: 24, fight: 16 };
+const BARS: Readonly<Record<keyof typeof TUNES, number>> = { hawaiian: 24, japan: 24, fight: 16, cruise: 16 };
 
 describe('the background music', () => {
   it('the Music setting offers the background songs only (the fight theme belongs to Choose Your Dog)', () => {
     expect(Object.keys(SONGS)).toEqual(['hawaiian', 'japan']);
-    expect(Object.keys(TUNES)).toEqual(['hawaiian', 'japan', 'fight']);
+    expect(Object.keys(TUNES)).toEqual(['hawaiian', 'japan', 'fight', 'cruise']);
   });
 
   for (const [id, song] of Object.entries(TUNES) as [keyof typeof TUNES, Song][]) {

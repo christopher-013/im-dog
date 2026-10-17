@@ -12,12 +12,16 @@
 // - "Paws Up!" (Choose Your Dog only, not a Music setting): an arcade fighting game's character-select theme, in
 //   8-bit. Fast and in a minor key: a pumping octave bass, power-chord stabs on a 3-3-2 rhythm, four-on-the-floor
 //   kicks and a heroic pulse lead. Written for this game in that genre's style; no real game's music is copied.
+// - "Coastline Cruise" (going for a ride only, Phase 6): sunny 80s synth-pop for the drive along the coast. D major
+//   at 118 BPM on the era's favourite progression (I–V–vi–IV), pumping eighth-note synth bass, pulsing chord stabs,
+//   a big snare on 2 and 4 and a bright lead with a long echo. Written for this game in that style; no real song is
+//   copied.
 
 import { MUSIC } from '../config/audio';
 
 type ChordName =
   | 'C6' | 'Cmaj7' | 'F' | 'F6' | 'D7' | 'G7' | 'A7' | 'Fmaj7' | 'Dm7' | 'Gm7' | 'C7' | 'Bbmaj7' | 'Am7'
-  | 'Em' | 'C' | 'D' | 'B7' | 'Am';
+  | 'Em' | 'C' | 'D' | 'B7' | 'Am' | 'A' | 'Bm' | 'G';
 
 interface Chord {
   /** Bass notes (MIDI): the root, and the note for beat 3 (usually the fifth). */
@@ -50,6 +54,10 @@ export const CHORDS: Readonly<Record<ChordName, Chord>> = {
   D: { bass: [50, 45], voicing: [62, 66, 69, 74], tones: [2, 6, 9] },
   B7: { bass: [47, 42], voicing: [59, 63, 66, 69], tones: [11, 3, 6, 9] },
   Am: { bass: [45, 52], voicing: [57, 60, 64, 69], tones: [9, 0, 4] },
+  // The ride's 80s pop triads, bright and open.
+  A: { bass: [45, 52], voicing: [61, 64, 69, 73], tones: [9, 1, 4] },
+  Bm: { bass: [47, 42], voicing: [62, 66, 71, 74], tones: [11, 2, 6] },
+  G: { bass: [43, 50], voicing: [62, 67, 71, 74], tones: [7, 11, 2] },
 };
 
 /** A note: MIDI (null = rest), length in beats, and optionally a slide up from this many semitones below. */
@@ -90,8 +98,8 @@ export interface Band {
 
 /** The background songs (the pause screen's Music setting). */
 export type SongId = 'hawaiian' | 'japan';
-/** Every tune: the background songs, and Choose Your Dog's theme. */
-export type TuneId = SongId | 'fight';
+/** Every tune: the background songs, Choose Your Dog's theme and the ride's. */
+export type TuneId = SongId | 'fight' | 'cruise';
 
 export interface Song {
   id: TuneId;
@@ -329,10 +337,77 @@ const PAWS_UP: Song = {
   gain: 1.9,
 };
 
+// ---- "Coastline Cruise"
+
+/** The verse: a hook that rises and falls over D → A → Bm → G, twice, the second time reaching higher. */
+const CRUISE_A: readonly Note[] = [
+  [78, 1], [81, 1], [81, 0.5], [79, 0.5], [78, 1],
+  [76, 1.5], [73, 0.5], [76, 1], [78, 1],
+  [74, 1], [78, 1], [83, 1.5], [81, 0.5],
+  [79, 3], [null, 1],
+  [78, 1], [81, 1], [86, 1], [85, 0.5], [83, 0.5],
+  [81, 1.5], [76, 0.5], [81, 1], [85, 1],
+  [86, 1], [85, 1], [83, 1], [78, 1],
+  [81, 3], [null, 1],
+];
+/** The chorus: up to the top of the tune and home to D, windows down. */
+const CRUISE_B: readonly Note[] = [
+  [83, 1], [83, 0.5], [81, 0.5], [83, 1], [86, 1],
+  [85, 1.5], [81, 0.5], [81, 1], [null, 1],
+  [86, 1], [85, 0.5], [83, 0.5], [81, 1], [78, 1],
+  [83, 2], [78, 1], [81, 1],
+  [79, 1], [83, 1], [86, 1], [88, 1],
+  [88, 1.5], [86, 0.5], [85, 1], [81, 1],
+  [86, 2], [81, 1], [78, 1],
+  [74, 3], [null, 1],
+];
+
+const COASTLINE_CRUISE: Song = {
+  id: 'cruise',
+  title: 'Coastline Cruise',
+  bpm: 118,
+  swing: 0.5,
+  bars: ['D', 'A', 'Bm', 'G', 'D', 'A', 'Bm', 'A', 'G', 'A', 'D', 'Bm', 'G', 'A', 'D', 'D'],
+  melody: [...CRUISE_A, ...CRUISE_B],
+  band: {
+    lead: { duty: 0.25, tone: 4200, vibrato: 14, level: 0.18 },
+    // The era's long, bright echo.
+    echo: { time: 0.38, feedback: 0.32, wet: 0.24 },
+    // Synth stabs pulsing on every eighth, the downbeats a little harder.
+    comp: {
+      steps: [
+        [0, 'down', 0.85], [0.5, 'up', 0.5], [1, 'down', 0.7], [1.5, 'up', 0.5],
+        [2, 'down', 0.8], [2.5, 'up', 0.5], [3, 'down', 0.7], [3.5, 'up', 0.5],
+      ],
+      ring: 0.17,
+      spread: 0.002,
+      duty: 0.5,
+      tone: 2600,
+      level: 0.05,
+    },
+    bass: { style: 'drive', level: 0.21 },
+    // A big snare on 2 and 4, kicks on 1, 3 and the "and" of 3, eighth-note hats.
+    drums: [
+      [0, 'kick', 1],
+      [2, 'kick', 0.95],
+      [2.5, 'kick', 0.7],
+      [1, 'snare', 1],
+      [3, 'snare', 1],
+      ...[0, 1, 2, 3, 4, 5, 6, 7].map((e) => [e / 2, 'hat', e % 2 ? 0.6 : 0.35] as const),
+    ],
+    bell: { level: 0 },
+    mellow: 8500,
+  },
+  // Not yet measured against the others with an offline render: set like "Paws Up!" (the same bass and drums).
+  gain: 1.9,
+};
+
 export const SONGS: Readonly<Record<SongId, Song>> = { hawaiian: ALOHA, japan: IRASSHAIMASE };
 /** Choose Your Dog's theme. */
 export const FIGHT_THEME = PAWS_UP;
-export const TUNES: Readonly<Record<TuneId, Song>> = { ...SONGS, fight: FIGHT_THEME };
+/** The ride's song (Phase 6). */
+export const CRUISE_THEME = COASTLINE_CRUISE;
+export const TUNES: Readonly<Record<TuneId, Song>> = { ...SONGS, fight: FIGHT_THEME, cruise: CRUISE_THEME };
 /** The first song ("Aloha, Moke"). */
 export const SONG = ALOHA;
 

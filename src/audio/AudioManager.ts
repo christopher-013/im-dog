@@ -35,6 +35,7 @@ export class AudioManager {
   private musicDucked = false;
   /** Choose Your Dog is up: its own theme plays instead of the background song. */
   private selectTheme = false;
+  private rideTheme = false;
   /** The announcer is talking: the music dips under the voice. */
   private voiceDucked = false;
 
@@ -141,6 +142,12 @@ export class AudioManager {
     this.updateMusic();
   }
 
+  /** The ride's song ("Coastline Cruise", Phase 6) while out in the car; like the others it follows the Music settings. */
+  rideMusic(on: boolean): void {
+    this.rideTheme = on;
+    this.updateMusic();
+  }
+
   /** The music dips while the announcer speaks (see MUSIC.voiceDuck). */
   duckForVoice(speaking: boolean): void {
     if (speaking === this.voiceDucked) return;
@@ -151,6 +158,7 @@ export class AudioManager {
   private wantedTune(): TuneId | null {
     if (this.musicChoice === 'off' || this.musicVolume <= 0.001) return null;
     if (this.selectTheme) return 'fight';
+    if (this.rideTheme) return 'cruise';
     return this.musicStarted ? this.musicChoice : null;
   }
 

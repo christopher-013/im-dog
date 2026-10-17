@@ -94,6 +94,11 @@ export interface MokeAnimationState {
   trickBlend: number;
   /** Seconds since creation, for cyclic motion. */
   time: number;
+  /**
+   * 0..1: wind in his face (his head out of the car window on a ride, Phase 6): ears stream back and flutter. Set by
+   * whoever's posing him (the ride); 0 otherwise.
+   */
+  wind: number;
 }
 
 export class MokeAnimationController {
@@ -128,6 +133,7 @@ export class MokeAnimationController {
     trickTime: 0,
     trickBlend: 0,
     time: 0,
+    wind: 0,
   };
 
   private chewingNow = false;

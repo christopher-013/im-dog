@@ -117,6 +117,20 @@ Tab moves through the arrows, the dogs' names and BEGIN. There's no BACK button 
 B still go back. The hint under the button follows the input in use. The dogs stand Dougie, Moke, Nori, and the
 screen always opens on Moke, in the middle. There's no switching dog mid-game: reload the page and choose again.
 
+## Going for a ride (Phase 6)
+When the human asks "want to go for a ride?", **Go for a Ride!** on the paw (E / A / tap the paw) says yes, and so
+does a bark nearby; walk away or ignore them and it's a no. On the leash to the Garage he walks at their heel by
+himself. In the car:
+
+| | Keyboard and mouse | Controller | Touch |
+|---|---|---|---|
+| Bark | F | the bark button | Bark |
+| Head in or out of the window | E | A | the paw |
+| Change the view (his face, alongside, behind the car, the drone) | Q | the trick button | Trick |
+| Head home now | Esc → **HEAD HOME** | Start → **HEAD HOME** | ⏸ → **HEAD HOME** |
+
+With FSD on, he says yes most of the time, and the views change and he barks by himself.
+
 ## First play
 The first time on each kind of controls, a few seconds of how-to:
 - keyboard or controller: a small card with Move, Look, Interact, Run, Jump, Sniff, Bark;

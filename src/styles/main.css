@@ -2666,3 +2666,17 @@ html[data-input='touch'] .tv-hint-touch {
     opacity: 0;
   }
 }
+
+/* Going for a ride (Phase 6): the fade between the Garage and the road. Under the menus, over the game. */
+.ride-fade {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+#btn-ride-home[hidden] {
+  display: none;
+}

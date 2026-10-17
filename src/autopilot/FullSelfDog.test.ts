@@ -241,6 +241,34 @@ describe('FSD, Full Self Dog (the autopilot)', () => {
     expect(fsd.stats.failed.get('patty') ?? 0).toBe(0);
   });
 
+  it('says yes to a ride (most of the time): to the human asking, and Go for a Ride!', () => {
+    const w = world();
+    const human = { x: -2, y: 0, z: 2 };
+    w.human = { position: human, available: false, effect: null, placeKind: null };
+    const ask = target('ride:yes', human.x, human.z, true, 1.9);
+    w.interactables.push(ask);
+    let said = false;
+    w.onPress = (press, current) => {
+      if (press === 'interact' && current === 'ride:yes') {
+        said = true;
+        ask.enabled = false;
+      }
+    };
+    const fsd = new FullSelfDog(nav, () => 0.3);
+    w.step(6, fsd);
+    expect(said).toBe(true);
+    // And on the leash he heads for heel, standing still once there.
+    const heel = { x: 1, y: 0, z: 4 };
+    w.moke.position = { x: -1, y: 0, z: 4 };
+    for (let i = 0; i < 4 / DT; i++) {
+      const cmd = fsd.followOnLeash(DT, w, heel, 0.35);
+      w.moke.position.x += cmd.x * 1.8 * DT;
+      w.moke.position.z += cmd.z * 1.8 * DT;
+      expect(cmd.run).toBe(false);
+    }
+    expect(Math.hypot(w.moke.position.x - heel.x, w.moke.position.z - heel.z)).toBeLessThan(0.45);
+  });
+
   it('routes round walls, never through them', () => {
     const w = world();
     const fsd = new FullSelfDog(nav, () => 0.3);

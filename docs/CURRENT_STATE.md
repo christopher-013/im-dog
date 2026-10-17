@@ -30,7 +30,7 @@ to every open question (D30–D34). Milestones: 6.1 Halloween, 6.2 photo mode, 6
 and the car, 6.5 going for a ride, 6.6 polish and the phone.
 
 ## Current Milestone
-**6.1 Halloween** (Phase 6): built 2026-10-16 and published to the live site at the owner's request; waiting for the owner's verdict. Next: 6.2 photo mode. Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
+**6.4 the Garage and the car and 6.5 going for a ride** (Phase 6): built 2026-10-17 on the working branch, waiting for the owner (the owner moved them ahead of 6.2 and 6.3). 6.1 Halloween: published, waiting for the owner's verdict. Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
 `phase-5-complete`). Halloween is due 2026-10-31.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
@@ -52,6 +52,41 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner request: "start 6.4 garage and the car and 6.5 the ride before the others"; on the
+working branch, **not pushed to `main`**): **6.4 the Garage and the family car** and **6.5 going for a ride**.
+- **The Garage:** `world/home/Garage.ts` (shell, shelves, bikes, charger, bins), a doorway in the living room's south
+  wall left of the TV (`LivingRoom` option `garageDoor`; the opening is a collider: locked in play),
+  `world/GarageView.ts` (the door, the roll-up door, the driveway glimpse), `GARAGE` in `layout.ts`.
+- **The car:** `world/FamilyCar.ts`, an original, code-built black SUV in the shape of their Model X: a rounded
+  extruded body with the front doors' opening through it, a panoramic windshield, a painted roof, a light bar, aero
+  wheels. No badge or brand name anywhere (tested). The passenger door opens, its window rolls down.
+- **The offer:** `activities/RideOffer.ts` (every 5–10 minutes, `config/ride.ts`), "Go for a Ride!" or a bark is a
+  yes; walking off or 15 s is a no. Harness and leash: `player/Harness.ts`. The leash walk steers the dog to heel
+  with FSD's route-following (`FullSelfDog.followOnLeash`); held up, he's brought to heel. FSD hands over once he's
+  said yes (no steering or presses until he's home).
+- **The ride:** `ride/RideDirector.ts` (the cinematic out and home, poses the real dog and human visuals, fades, the
+  drive in between), `ride/CoastDrive.ts` (the coast road to Torrey Pines and back, a separate 17 KB chunk) and
+  `ride/coastRoute.ts`. While it runs `Game.frame` hands it the screen and the house stands still. Pause → HEAD HOME.
+  New: `MokeAnimationState.wind` (ears streaming), the song "Coastline Cruise" (`audio/music.ts`,
+  `AudioManager.rideMusic`), Dog Logic CAR + WINDOW = WIND IN MY EARS (car and wind icons).
+- **Checked in the game** (headless, real physics, rendered screenshots at every stage):
+  - a full ride as a player, about 3½ minutes of driving;
+  - with FSD: asked at 6 s, yes at 8 s, at the door at 14 s;
+  - views cycling on their own;
+  - pause → HEAD HOME → home in about 30 s.
+  
+  Afterwards the human resumed their day, the harness was off, the Dog Logic was learned, FSD carried on, and there
+  were no console errors. Fixed along the way:
+  - the car stalling 20 cm before the end;
+  - FSD running off during the harness;
+  - the dog blocking the human on the leash (now at heel);
+  - the see-through human in the cinematic.
+- **Not checked:** on a phone (the drive's frame rate), or by ear (the song); the owner hasn't seen the car or the
+  coast yet.
+- Tests: the garage locked (nav and physics), the car's parts and no badge, the route (no jumps, the sea on his side
+  coming home, the climb), the offer (timing, yes, bark, no, ignored), the whole ride end to end (director), FSD's
+  yes and the leash. 95 files / 679 tests, typecheck, build and the private-photo check pass.
+
 Claude Code (2026-10-16, owner request: plan Phase 6, then the owner's answers; pushed to `main`
 at the owner's request): **Phase 6 approved** (`docs/PHASE_6.md`, D30–D34) and **6.1 Halloween built**.
 - **The switch:** `config/seasons.ts` (17 Oct – 1 Nov, both included, local time). `PlayerSettings` gains

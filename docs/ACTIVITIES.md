@@ -163,6 +163,29 @@ no colliders, no lights): jack-o'-lanterns with flickering carved faces by the f
 console, on the family-room mantel and on the patio; paper bats strung over the living-room window. Positions and
 timings: `config/halloween.ts`.
 
+### Going for a ride (`RideOffer.ts`, `ride/`; Phase 6, D33)
+Every 5–10 minutes of play (owner; timed from the last offer, taken or not, and only while nothing else has the
+human, the course isn't running and no show is on), the human comes over to the dog: **"Moke, want to go for a
+ride?"** Only the human offers; the dog can't ask (owner).
+- **Yes:** Go for a Ride! (the paw), or a bark near them. They kneel and put on his **harness** (his collar's colour,
+  over any costume) and clip on the **leash**, "Yes? Let's go! Harness on…", and walk him to the Garage door, the
+  dog at their heel (the game steers him: FSD's route-following; held up, the leash just brings him).
+- **No:** walking off (5 m) or ignoring them for 15 s: "Okay, maybe later."
+- **The Garage** (locked the rest of the time): the door opens on the black family car. He trots down its
+  passenger side, the front door opens and he hops onto the seat; the human walks round the front to the driver's
+  side; the roll-up door goes up and they back out.
+- **The drive** (`ride/CoastDrive.ts`, loaded now): out of the neighbourhood and down to the coast, north behind
+  Torrey Pines State Beach (umbrellas, a lifeguard tower, surfers, pelicans), over the lagoon bridge, up the grade
+  between sandstone bluffs and Torrey pines to the reserve's turnaround, and back down with the sea right below his
+  window. His head is out with his ears streaming in the wind. **Bark**, put his **head in or out**, **change the
+  view** (his face, alongside, behind, the drone); the pause screen's **HEAD HOME** skips to the end. The original
+  80s synth-pop song "Coastline Cruise" plays (it follows the Music setting). About 3½ minutes, never more than 5.
+- **Home:** the car drives in, the roll-up door comes down, he hops out, they walk back in, the door shuts and locks,
+  the harness comes off: "Best ride ever, Moke!". **CAR + WINDOW = WIND IN MY EARS.** The human goes back to their day.
+- While they're out the house stands still (the doorbell can't ring for an empty house).
+- **FSD** says yes most of the time (85%), stands still for the harness, and on the road the views change and he
+  barks by himself.
+
 ### Dinner Helper (`KitchenBeg.ts`, owner-requested addition, 2026-09-27)
 While the human chops carrots at the island (meal prep or the prep stage of dinner), stand within 1.15 m with an
 empty mouth for 4 seconds. Leaving, running or carrying something clears that wait. The objective explains it,

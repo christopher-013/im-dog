@@ -168,6 +168,7 @@ export class FullSelfDog {
   /** Seconds since FSD was last switched on. */
   private sinceOn = 0;
   private readonly cmd: FsdCommand = { x: 0, z: 0, run: false, walk: false, presses: new Set() };
+  private leashRoute: Route | null = null;
   private readonly routines: Routine[];
 
   constructor(
@@ -204,6 +205,30 @@ export class FullSelfDog {
   }
 
   /** Each rendered frame while playing. The command is reused: read it before the next call. */
+  /**
+   * On the leash (going for a ride, Phase 6): walks after `to` (the human, moving), standing still once within
+   * `within`. The game uses it in place of the player's (or FSD's own) steering while the leash is on; a command,
+   * like update(). `stuck` is how long he's been held up (the leash then just brings him along).
+   */
+  followOnLeash(dt: number, w: FsdWorld, to: Vec3Like, within: number): FsdCommand & { readonly stuck: boolean } {
+    const cmd = this.cmd;
+    cmd.x = cmd.z = 0;
+    cmd.run = cmd.walk = false;
+    cmd.presses.clear();
+    this.leashRoute ??= new Route(this.nav, this.tuning, this.tight, null);
+    const d = flat(w.moke.position, to);
+    let ok = true;
+    if (d <= within) this.leashRoute.replan();
+    else {
+      ok = this.leashRoute.steer(dt, w, to, cmd, false);
+      // Trot to keep up; no sprinting on a leash.
+      cmd.run = false;
+      cmd.walk = d < within + 0.4;
+      cmd.presses.delete('jump');
+    }
+    return Object.assign(cmd, { stuck: !ok });
+  }
+
   update(dt: number, w: FsdWorld): FsdCommand {
     const cmd = this.cmd;
     this.trail.length = 0;
@@ -349,6 +374,12 @@ export class FullSelfDog {
         plan: (w) => [...emptyMouth(w), ...offFurniture(w), this.interact('door:bark'), this.wait(1),
           this.go(this.tuning.doorWaitAt, 0.3, false, 'Out of the way: the human is coming!'),
           this.waitUntil((x) => !x.deliveryOn, this.tuning.doorWaitFor, 'Guarding the door till the package is in…')],
+      },
+      {
+        // A ride (Phase 6): "want to go for a ride?" Yes, most of the time (once in a while he's too busy sniffing).
+        id: 'ride', status: 'A ride? Yes please!', weight: 0, urgent: true,
+        available: (w) => enabled(w, 'ride:yes'),
+        plan: () => (this.random() < 0.85 ? [this.interact('ride:yes')] : [this.wait(16, 'Hmm… not right now.')]),
       },
       {
         id: 'giveSock', status: 'Trading the sock for a treat', weight: 0, urgent: true,

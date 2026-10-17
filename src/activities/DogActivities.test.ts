@@ -26,6 +26,8 @@ import { MakeHumanPlay } from './MakeHumanPlay';
 import { PerfectNap } from './PerfectNap';
 import { TreatHunt } from './TreatHunt';
 import { DoorDelivery } from './DoorDelivery';
+import { RideOffer } from './RideOffer';
+import { RIDE } from '../config/ride';
 import { KitchenBeg } from './KitchenBeg';
 import { DinnerBeg } from './DinnerBeg';
 import { CourseReward } from './CourseReward';
@@ -489,6 +491,87 @@ describe('Kitchen begging (real island and household human)', () => {
     expect(w.beg.requestBeg()).toBe(false);
     expect(w.counts()).toEqual({ begs: 0, fed: 0 });
   });
+});
+
+describe('Going for a ride: the offer (real house and household human)', () => {
+  async function rideWorld(seed = 61) {
+    const w = await world(seed);
+    let harness: boolean[] = [], atDoor = 0;
+    const offer = new RideOffer({ routine: w.routine, onHarness: (on) => harness.push(on), onAtDoor: () => atDoor++, random: () => 0.5 });
+    const director = new DogActivityDirector([offer]);
+    const tick = (seconds: number, each?: () => void) => {
+      for (let i = 0; i < seconds / DT; i++) {
+        w.step(director);
+        each?.();
+      }
+    };
+    return { ...w, offer, director, tick, harness: () => harness, atDoor: () => atDoor, reset: () => { harness = []; atDoor = 0; } };
+  }
+
+  it('every 5–10 minutes the human comes over and asks; Go for a Ride! is a yes: harness, the leash to the Garage door, the ride', async () => {
+    const w = await rideWorld();
+    Object.assign(w.moke, { x: 0.3, z: -0.8 });
+    // Halfway through 5–10 minutes (random 0.5): nothing at 7 minutes 20, the offer by 7 minutes 40.
+    w.tick(440);
+    expect(w.offer.running).toBe(false);
+    let t = 0;
+    for (; t < 60 && !w.offer.asking; t += DT) w.step(w.director);
+    expect(w.offer.asking).toBe(true);
+    expect(w.said).toContain(RIDE.lines.ask);
+    expect(w.offer.interactable.enabled).toBe(true);
+    w.offer.interactable.interact();
+    // He stays put; they kneel and put the harness on, then lead him to the door (he's at heel: here, carried along).
+    for (let i = 0; i < 20 / DT && !w.offer.leading; i++) w.step(w.director);
+    expect(w.harness()).toEqual([true]);
+    expect(w.said).toContain(RIDE.lines.yes);
+    const heel = { x: 0, y: 0, z: 0 };
+    for (let i = 0; i < 40 / DT && w.atDoor() === 0; i++) {
+      w.step(w.director);
+      Object.assign(w.moke, w.offer.heel(heel));
+    }
+    expect(w.atDoor()).toBe(1);
+    expect(w.offer.away).toBe(true);
+    const h = w.human.controller.position;
+    expect(Math.hypot(h.x - RIDE.doorStand.x, h.z - RIDE.doorStand.z)).toBeLessThan(0.5);
+    // The ride is the game's; when it's over the human's free again, and the next offer is 5–10 minutes off.
+    w.offer.home();
+    w.tick(3);
+    expect(w.routine.available).toBe(true);
+    expect(w.offer.running).toBe(false);
+    w.tick(250);
+    expect(w.offer.running).toBe(false);
+  }, 60_000);
+
+  it('a bark is a yes too; walking off (or ignoring them) is a no: "Okay, maybe later."', async () => {
+    const w = await rideWorld(62);
+    Object.assign(w.moke, { x: 0.3, z: -0.8 });
+    w.offer.offerIn(0);
+    for (let i = 0; i < 60 / DT && !w.offer.asking; i++) w.step(w.director);
+    w.offer.noteBark(w.moke);
+    w.tick(0.1);
+    expect(w.offer.asking).toBe(false);
+    expect(w.offer.running).toBe(true); // harness next
+    w.offer.cancel();
+    w.tick(3);
+    w.reset();
+    // Next time: he wanders off while they ask.
+    w.offer.offerIn(0);
+    for (let i = 0; i < 60 / DT && !w.offer.asking; i++) w.step(w.director);
+    expect(w.offer.asking).toBe(true);
+    Object.assign(w.moke, { x: -3, z: -2.6 });
+    const h = w.human.controller.position;
+    if (Math.hypot(h.x + 3, h.z + 2.6) < RIDE.walkAwayAt + 0.5) Object.assign(w.moke, { x: 6, z: 1.1 });
+    w.tick(1);
+    expect(w.said).toContain(RIDE.lines.no);
+    expect(w.offer.running).toBe(false);
+    expect(w.harness()).toEqual([]);
+    // Ignored: no after 15 s.
+    Object.assign(w.moke, { x: 0.3, z: -0.8 });
+    w.offer.offerIn(0);
+    for (let i = 0; i < 60 / DT && !w.offer.asking; i++) w.step(w.director);
+    w.tick(RIDE.answerWithin + 0.5);
+    expect(w.offer.running).toBe(false);
+  }, 60_000);
 });
 
 describe("The obstacle course's reward (real house and household human)", () => {

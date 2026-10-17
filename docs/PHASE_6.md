@@ -168,11 +168,12 @@ before 6.2 photo mode and 6.3 the day.
   human lifts him onto the **front passenger seat** and buckles the harness to the seat. They get in on the driver's
   side, the roll-up door goes up, and they back out.
 - **The drive** (a separate scene, not the house):
-  - **The route:** out of the neighbourhood and down to the coast. Then north along the beach to **Torrey Pines**:
-    Torrey Pines State Beach, the lagoon bridge, the sandstone bluffs and the gnarled Torrey pines on top, the climb
-    up the grade. Then back down and south along the ocean.
-  - **The ocean on his side:** with the dog on the passenger (right) side, the ocean is right below his window on
-    the drive back south, which is why the route turns round at the top.
+  - **The route** (changed by the owner, 2026-10-17, after playing it: "the ocean on the right with people swimming
+    and picnic'ing", like a real Del Mar → Torrey Pines drive): out of the neighbourhood and down to the coast, over
+    the lagoon, then **south** along Torrey Pines State Beach in the right-hand lane, and up the grade between the
+    sandstone bluffs to the reserve. One way; home is a fade. Every tree is a Southern California palm (owner).
+  - **The ocean on his side:** heading south, the ocean is on the right, below the dog's (passenger) window, all
+    along the beach.
   - **What's on show:** surfers, pelicans and gulls, the sun on the water, the beach on one side and the cliffs on
     the other.
   - **The light:** the time of day follows the day clock (an evening ride is a sunset drive).
@@ -189,6 +190,8 @@ before 6.2 photo mode and 6.3 the day.
   Nobody but the human drives.
 - **Music:** an **original 80s-style synth-pop song** for the drive: a drum machine with a big gated snare, a
   pulsing synth bass, bright chords and a singable lead. It follows the Music setting. No real song is copied.
+  **Changed by the owner (2026-10-17):** "more edgy like a Miami Vice, more dramatic": now "Neon Coastline", in A
+  minor with a sequenced bass and synth-brass stabs.
 - **Length:** about **3–4 minutes**, never more than 5. Pause → **Head Home** skips straight to the drive home.
 - **Home again:** into the garage, the roll-up door comes down, the falcon-wing door rises, the human lifts him out
   and walks him in on the leash, then takes off the harness: "Best ride ever, Moke!". Dog Logic "CAR + WINDOW =

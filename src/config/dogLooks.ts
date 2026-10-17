@@ -77,9 +77,18 @@ export interface CoatPattern {
   readonly tail: CoatRegion;
 }
 
+/** His harness for going for a ride (Phase 6): a soft mesh vest, its edging, the buckle on his chest, the leash. */
+export interface HarnessLook {
+  readonly vest: string;
+  readonly trim: string;
+  readonly buckle: string;
+  readonly leash: string;
+}
+
 export interface DogLook {
   readonly palette: DogPalette;
   readonly collar: CollarLook;
+  readonly harness: HarnessLook;
   /** Markings as vertex colours over the fur, or null for one colour (the palette's). */
   readonly coat: CoatPattern | null;
   /** The ear clumps' radii (m): how big the drop ears are. */
@@ -90,6 +99,8 @@ export interface DogLook {
 export const MOKE_DOG_LOOK: DogLook = {
   palette: MOKE_LOOK.palette,
   collar: MOKE_LOOK.collar,
+  /** The real Moke's (owner's photo, 2026-10-17): a light blue mesh vest, a teal buckle, a black leash. */
+  harness: { vest: '#b6d8ea', trim: '#77a9c6', buckle: '#3cc4bc', leash: '#1c1c1f' },
   coat: null,
   earRadii: [0.046, 0.068, 0.054],
 };
@@ -134,6 +145,8 @@ export const DOUGIE_LOOK: DogLook = {
     ringShade: '#a3a8b4',
     text: '#33373d',
   },
+  harness: { vest: '#b9c7a8', trim: '#7d8d6c', buckle: '#d4d7dd', leash: '#2b2d2a' },
+
   coat: {
     head: {
       base: DOUGIE_COAT.charcoal,
@@ -219,6 +232,8 @@ export const NORI_LOOK: DogLook = {
     ringShade: '#a3a8b4',
     text: '#5a3d0e',
   },
+  harness: { vest: '#93d4cd', trim: '#3aa39b', buckle: '#efc65c', leash: '#23302e' },
+
   coat: {
     head: {
       base: NORI_COAT.apricot,

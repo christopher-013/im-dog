@@ -52,6 +52,37 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner feedback after riding it on the live site: the human see-through in the Garage, the
+trees, the right side of the road, choppy with black empty space, palms, "the ocean on the right with people swimming
+and picnic'ing", like a still of a real Del Mar → Torrey Pines drive, the harness like Moke's real one (a photo), and
+"more edgy like a Miami Vice" music): **the ride reworked**.
+- **The see-through human:** the ride begins inside a game frame whose heist update had just faded the human (they
+  were between the camera and the dog), and that update doesn't run during the ride, so they stayed faded. The ride
+  now keeps them solid every frame (`RideDirector.update`), and they sit at the wheel (seen through the windscreen)
+  instead of vanishing once in. Tested (`RideDirector.test.ts`).
+- **The route** (`ride/coastRoute.ts`): one way **south**, the ocean on the right (his window's side), in the
+  right-hand lane (tested): down the hill, over the lagoon, ~1.1 km along Torrey Pines State Beach, up the grade to
+  the reserve; ~1.77 km, about 3 minutes; home is a fade. A two-lane road with bike lanes and a guard rail, the land
+  built round it (`landHeight`, `roadAt`), the bluff falling away seaward up the grade so the sea stays in view.
+- **The scene** (`ride/CoastDrive.ts`): a GPU-animated sea (turquoise shallows to deep blue, rolling white water),
+  `ride/beachLife.ts` (~700 instanced people: swimmers, waders, picnics, sunbathers, families, surfers, walkers,
+  umbrellas, towers), `ride/palms.ts` (fan, date and queen palms, instanced in stretches), `ride/traffic.ts`, scrub,
+  clouds, a hazy headland, signs (Los Peñasquitos Lagoon, the beach, the reserve).
+- **Smoothness:** the car's heading came from the path's 2 m points and stepped every few frames (the choppiness);
+  it's now taken from interpolated points either side (tested: under a degree per half metre). The view changes
+  glide. The sea's normals are no longer recomputed on the CPU each frame: `update` is ~0.34 ms. The cameras are kept
+  above the land as built (the old clamp used the land before the road was cut in, so at the start the camera sat
+  high on the hill looking at grass). Views: alongside (first), his face (low, against the sky, the beach behind),
+  behind, the drone.
+- **The harness** (`player/Harness.ts`): a soft mesh vest with edging, a buckle and the leash ring; colours per dog
+  in `DogLook.harness` (Moke: light blue, teal buckle, black leash, from the owner's photo).
+- **The song:** "Neon Coastline" replaces "Coastline Cruise" (`audio/music.ts`): A minor, 124 BPM, a sequenced
+  sixteenth bass (`bass.style 'sequence'`), brass stabs, a gated snare (`band.gatedSnare`), a square lead with a
+  dotted-eighth echo; gain set from an offline render to match "Aloha, Moke".
+- **Checked** headless (SwiftShader): renders along the whole route in every view, the palms and the harness close
+  up, the full ride in the game (offer, harness, Garage, drive, home). **Not checked:** on a phone (its frame rate:
+  about 500k triangles a frame with shadows), or the song by ear.
+
 Claude Code (2026-10-17, owner request: "add a way to trigger the ride, if Moke stands by the garage door give an
 option to bark and look at the door and the NPC will offer a ride"; pushed to `main` at the owner's request): **the dog can ask for a ride** (D33 refined).
 - `RideOffer.garageBark`: a **Bark at the Garage Door** prompt at `RIDE.askAt` (in front of the door) while no ride

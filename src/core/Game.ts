@@ -1556,7 +1556,7 @@ export class Game {
     this.rest.standUp();
     if (this.pickup?.carried) this.pickup.drop();
     this.harness?.dispose();
-    this.harness = new Harness(this.dog.look.collar.lit);
+    this.harness = new Harness(this.dog.look.harness);
     this.harness.wear(moke.visual, this.heist?.human.visual.hands.left ?? null);
     this.scene.add(this.harness.leash);
   }

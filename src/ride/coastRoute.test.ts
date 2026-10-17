@@ -1,40 +1,52 @@
 import { Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { coastX, drivePath, landHeight, routeCurve, samplePath } from './coastRoute';
+import { BEACH, coastX, drivePath, landHeight, roadAt, routeCurve, samplePath } from './coastRoute';
 
 describe('the ride’s road (Phase 6)', () => {
   const curve = routeCurve();
   const path = drivePath(curve);
 
-  it('goes out and back as one smooth way round: no jumps, a sensible length', () => {
+  it('is one smooth way, south from home down the coast: no jumps, a sensible length', () => {
     for (let i = 1; i < path.points.length; i++) expect(path.points[i]!.distanceTo(path.points[i - 1]!)).toBeLessThan(4);
-    expect(path.length).toBeGreaterThan(2000);
-    expect(path.length).toBeLessThan(2600);
-    // It ends where it started, in the other lane.
-    expect(path.points[0]!.distanceTo(path.points[path.points.length - 1]!)).toBeLessThan(8);
+    expect(path.length).toBeGreaterThan(1500);
+    expect(path.length).toBeLessThan(2200);
+    expect(path.points[path.points.length - 1]!.z).toBeGreaterThan(path.points[0]!.z + 1200);
   });
 
-  it('keeps the road on land, behind the beach, and the sea on the passenger side (right) on the way home', () => {
+  it('turns smoothly: the heading never jumps from one moment to the next', () => {
+    const pos = new Vector3(), dir = new Vector3(), last = new Vector3();
+    samplePath(path, 0, pos, last);
+    for (let s = 0.5; s < path.length; s += 0.5) {
+      samplePath(path, s, pos, dir);
+      // At 11 m/s, half a metre is a frame or two: never more than a degree of turn.
+      expect(dir.angleTo(last)).toBeLessThan(0.02);
+      last.copy(dir);
+    }
+  });
+
+  it('keeps to the right-hand lane, on land, with the sea on his side (the right) all along the beach', () => {
     const pos = new Vector3(), dir = new Vector3();
     let seaOnRight = 0, beachStretch = 0;
     for (let s = 0; s < path.length; s += 10) {
       samplePath(path, s, pos, dir);
       expect(pos.x).toBeGreaterThan(coastX(pos.z) + 25);
       const right = { x: -dir.z, z: dir.x };
-      // Along the beach (z -150…-450), heading home: is the sea on his side?
-      if (pos.z < -150 && pos.z > -450 && dir.z > 0.5) {
+      if (pos.z > BEACH.zMin && pos.z < BEACH.zMax) {
         beachStretch++;
-        if (landHeight(pos.x + right.x * 85, pos.z + right.z * 85) < 0) seaOnRight++;
+        // Right of the centre line (west: the beach side), and the sea that way.
+        expect(pos.x).toBeLessThan(roadAt(pos.z).x - 1);
+        if (landHeight(pos.x + right.x * 75, pos.z + right.z * 75) < 0) seaOnRight++;
       }
     }
-    expect(beachStretch).toBeGreaterThan(10);
-    expect(seaOnRight / beachStretch).toBeGreaterThan(0.9);
+    expect(beachStretch).toBeGreaterThan(80);
+    expect(seaOnRight / beachStretch).toBeGreaterThan(0.95);
   });
 
-  it('climbs the grade to the top and comes back down', () => {
+  it('ends up the grade between the bluffs, the sea below', () => {
     const top = Math.max(...path.points.map((p) => p.y));
-    expect(top).toBeGreaterThan(45);
-    expect(landHeight(coastX(-700) + 40, -700)).toBeGreaterThan(30); // bluffs up there
-    expect(landHeight(coastX(-300) - 30, -300)).toBeLessThan(0); // the sea off the beach
+    expect(top).toBeGreaterThan(40);
+    expect(landHeight(roadAt(1100).x + 60, 1100)).toBeGreaterThan(45); // the bluffs inland
+    expect(landHeight(coastX(1100) + 4, 1100)).toBeLessThan(4); // the beach under the cliffs
+    expect(landHeight(coastX(300) - 30, 300)).toBeLessThan(0); // the sea off the beach
   });
 });

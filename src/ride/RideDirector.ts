@@ -107,7 +107,6 @@ export class RideDirector {
     this.place(this.cast.human.object, SPOTS.humanAtDoor, 0);
     this.lastDog.copy(this.cast.dog.object.position);
     this.lastHuman.copy(this.cast.human.object.position);
-    // Solid all the way (the game fades them when they're between its camera and the dog).
     this.cast.human.setSeeThrough(false);
     this.hooks.music(true);
   }
@@ -138,6 +137,9 @@ export class RideDirector {
   update(dt: number, aspect: number, auto: boolean): void {
     if (!this.active) return;
     this.time += dt;
+    // Solid all the way: the game fades the human while they're between its camera and the dog, and the ride can
+    // begin in the middle of a frame that has just faded them (the game's fading doesn't run again until it's over).
+    this.cast.human.setSeeThrough(false);
     if (this.phase === 'out') this.updateOut(dt);
     else if (this.phase === 'drive') this.updateDrive(dt, aspect, auto);
     else if (this.phase === 'home') this.updateHome(dt);
@@ -201,7 +203,7 @@ export class RideDirector {
       const h = along(SPOTS.humanRound, (t - 9) / 2.8);
       this.poseHuman(dt, h.at, h.heading, {});
     } else {
-      this.cast.human.object.visible = false;
+      this.sitAtWheel(dt, car.object);
     }
     g.setRollUp(smoothRange(12, 13.5, t));
     const back = smoothRange(13.4, 17, t);
@@ -218,16 +220,7 @@ export class RideDirector {
     const drive = (this.drive = new CoastDrive());
     // Into the car: the dog in his seat, the human at the wheel.
     drive.dogSeat.add(this.cast.dog.object);
-    drive.driverSeat.add(this.cast.human.object);
-    this.cast.human.object.visible = true;
-    this.cast.human.object.position.set(0, -0.17, -0.08);
-    this.cast.human.object.rotation.set(0, 0, 0);
-    this.humanPose.sit = 1;
-    this.humanPose.sitStyle = 'lounge';
-    this.humanPose.seatHeight = 0.17;
-    this.humanPose.speed = 0;
-    this.humanPose.pose = 'idle';
-    this.humanPose.reach = null;
+    this.sitAtWheel(0, drive.driverSeat, true);
     this.phase = 'drive';
     this.time = 0;
     this.sayOnce('Windows down! Here we go, Moke!');
@@ -259,7 +252,7 @@ export class RideDirector {
     s.wind = this.headOut ? 1 : 0.15;
     s.headPitch = this.headOut ? 0.12 : 0;
     this.cast.dog.update(dt, s);
-    this.cast.human.apply(dt, this.humanAnim.update(dt, this.humanPose));
+    this.sitAtWheel(dt, drive.driverSeat, true);
     if (drive.done && dt >= 0) this.endDrive();
   }
 
@@ -268,14 +261,11 @@ export class RideDirector {
     // Back into the house's scene, the car outside the Garage's open roll-up door, everything ready to drive in.
     drive.dogSeat.remove(this.cast.dog.object);
     drive.driverSeat.remove(this.cast.human.object);
-    this.cast.scene.add(this.cast.dog.object, this.cast.human.object);
-    this.cast.human.object.visible = false;
+    this.cast.scene.add(this.cast.dog.object);
     drive.dispose();
     this.drive = null;
-    this.humanPose.sit = 0;
-    this.humanPose.sitStyle = 'upright';
-    this.humanPose.seatHeight = 0.45;
     const g = this.cast.garage;
+    this.sitAtWheel(0, g.car.object);
     g.setRollUp(1);
     g.car.setPassengerWindow(0);
     this.moveCar(OUTSIDE_Z);
@@ -302,7 +292,7 @@ export class RideDirector {
         const back = [...SPOTS.humanRound].reverse();
         const h = along(back, (t - 4.6) / 2.4);
         this.poseHuman(dt, h.at, h.heading, {});
-      } else this.cast.human.object.visible = false;
+      } else this.sitAtWheel(dt, car.object);
       return;
     }
     if (t < 13) {
@@ -387,6 +377,29 @@ export class RideDirector {
     this.cast.dog.update(dt, s);
   }
 
+  /**
+   * The human in the driver's seat, sitting back with their hands on the wheel: `parent` is the car (the Garage's) or
+   * the drive's driver seat (`inSeat`: already at the seat).
+   */
+  private sitAtWheel(dt: number, parent: Object3D, inSeat = false): void {
+    const human = this.cast.human.object;
+    if (human.parent !== parent) parent.add(human);
+    human.visible = true;
+    const seat = FamilyCar.SEATS.driver;
+    if (inSeat) human.position.set(0, -0.17, -0.08);
+    else human.position.set(seat.x, seat.y - 0.17, seat.z - 0.08);
+    human.rotation.set(0, 0, 0);
+    const p = this.humanPose;
+    p.sit = 1;
+    p.sitStyle = 'lounge';
+    p.seatHeight = 0.17;
+    p.speed = 0;
+    p.crouch = 0;
+    p.pose = 'idle';
+    p.reach = null;
+    this.cast.human.apply(dt, this.humanAnim.update(dt, p));
+  }
+
   private poseHuman(dt: number, at: V2, heading: number, o: { pose?: import('../human/HumanRig').HumanPose; reach?: readonly number[] | null; crouch?: number }): void {
     const human = this.cast.human.object;
     if (human.parent !== this.cast.scene) this.cast.scene.add(human);
@@ -399,6 +412,8 @@ export class RideDirector {
     p.pose = o.pose ?? 'idle';
     p.crouch = o.crouch ?? 0;
     p.sit = 0;
+    p.sitStyle = 'upright';
+    p.seatHeight = 0.45;
     p.reach = o.reach ? { x: o.reach[0]!, y: o.reach[1]!, z: o.reach[2]! } : null;
     this.cast.human.apply(dt, this.humanAnim.update(dt, p));
   }

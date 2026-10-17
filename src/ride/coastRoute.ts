@@ -1,106 +1,88 @@
 import { CatmullRomCurve3, Vector3 } from 'three';
 
 /**
- * The ride's road (Phase 6, D33/D34): a stylized homage to the drive from home down to the coast and north along
- * Torrey Pines State Beach, over the lagoon and up the grade to the reserve at the top, then back. Pure numbers and
- * maths (tested), shared by the scenery and the car. Metres; x east, z south, y up; the ocean is to the west.
+ * The ride's road (Phase 6, D33/D34): a stylized homage to the drive south from Del Mar along Torrey Pines State Beach
+ * (owner, 2026-10-17: "all about the ocean on the right"): down the hill from home to the coast, over the lagoon,
+ * along the beach with the sea on the passenger side, then up the grade between the sandstone bluffs to the reserve
+ * at the top. One way; home is a fade. Pure numbers and maths (tested), shared by the scenery and the car. Metres;
+ * x east, z south, y up; the ocean is to the west, so heading south it's on the right.
  */
 
 /** Where the shoreline is at each z (the sea to the west of it). */
 export function coastX(z: number): number {
-  return -345 + 14 * Math.sin(z / 95) + 6 * Math.sin(z / 37);
+  return -340 + 9 * Math.sin(z / 120 + 0.6) + 4 * Math.sin(z / 43);
 }
 
-/** The road's centre line, from the street outside home to the top of the grade (outbound, heading north). */
+/** The road's centre line, from the street outside home to the top of the grade (heading south, z growing). */
 export const ROUTE_POINTS: readonly [number, number, number][] = [
-  [0, 24, 12],
-  [-70, 23, 12],
-  [-150, 17, 4],
-  [-220, 9, -30],
-  [-268, 5, -95],
-  [-285, 4.5, -170],
-  [-290, 4.5, -250],
-  [-291, 5, -330],
-  [-288, 6, -410],
-  [-276, 13, -500],
-  [-258, 25, -590],
-  [-242, 37, -680],
-  [-232, 47, -770],
-  [-228, 53, -850],
-  [-226, 55, -905],
+  [0, 24, -400],
+  [-60, 23, -398],
+  [-130, 18, -388],
+  [-200, 11, -360],
+  [-252, 6, -310],
+  [-281, 4.4, -245],
+  [-290, 4.2, -170],
+  [-292, 4.2, -80],
+  [-292, 4.2, 20],
+  [-291, 4.2, 120],
+  [-290, 4.2, 220],
+  [-289, 4.2, 320],
+  [-288, 4.3, 420],
+  [-286, 4.4, 520],
+  [-285, 4.5, 620],
+  [-284, 4.8, 720],
+  [-282, 6, 810],
+  [-275, 11.5, 890],
+  [-264, 21, 965],
+  [-254, 31, 1040],
+  [-247, 40, 1115],
+  [-244, 44, 1165],
 ];
 
-/** The lagoon (inland of the road, crossed on a low bridge). */
-export const LAGOON = { x: -215, z: -290, rx: 55, rz: 34, y: 0.9 } as const;
-/** Torrey Pines' turnaround at the top: a loop round a planted island this big, just beyond the road's end. */
-export const TURNAROUND_RADIUS = 11;
-
-/** The turnaround's middle: straight on from the end of the road. */
-export function turnaroundCenter(curve: CatmullRomCurve3): Vector3 {
-  const end = curve.getPointAt(1);
-  const t = curve.getTangentAt(1);
-  const len = Math.hypot(t.x, t.z) || 1;
-  return new Vector3(end.x + (t.x / len) * (TURNAROUND_RADIUS + 3), end.y, end.z + (t.z / len) * (TURNAROUND_RADIUS + 3));
-}
-/** Lanes: drive on the right, this far from the centre line. */
-export const LANE = 2.4;
-/** Half the road's width. */
-export const ROAD_HALF = 4.6;
+/** The lagoon (inland of the road, crossed on a low causeway with a rail either side). */
+export const LAGOON = { x: -228, z: -120, rx: 44, rz: 72, y: 0.9 } as const;
+/** Driving on the right: the middle of his lane, this far right of the centre line. */
+export const LANE = 1.8;
+/** Half the road's width: a lane each way and a bike lane each side. */
+export const ROAD_HALF = 5.8;
+/** Where each lane's bike lane begins (the solid white line), from the centre line. */
+export const BIKE_LANE = 3.6;
+/** The beach (between the road and the sea) from here to here (z): the people, the towers, the rail. */
+export const BEACH = { zMin: -200, zMax: 900 } as const;
 
 export function routeCurve(): CatmullRomCurve3 {
   return new CatmullRomCurve3(ROUTE_POINTS.map(([x, y, z]) => new Vector3(x, y, z)), false, 'centripetal');
 }
 
-/**
- * The car's way round: out along the road in the right-hand (east) lane, round the turnaround at the top, and back in
- * the other lane (now the west one, by the sea), as one list of points with their distances along the way.
- */
-export function drivePath(curve: CatmullRomCurve3, step = 2): { points: Vector3[]; distances: number[]; length: number } {
-  const length = curve.getLength();
-  const out: Vector3[] = [];
-  const n = Math.ceil(length / step);
-  const tangent = new Vector3();
-  for (const dir of [1, -1] as const) {
-    if (dir === -1) {
-      // The turnaround: from the end of the outbound lane, round the far side of the island, into the inbound lane.
-      const c = turnaroundCenter(curve);
-      const from = out[out.length - 1]!;
-      const end = curve.getPointAt(1);
-      curve.getTangentAt(1, tangent);
-      const len = Math.hypot(tangent.x, tangent.z) || 1;
-      const to = new Vector3(end.x + (tangent.z / len) * LANE, end.y, end.z - (tangent.x / len) * LANE);
-      const a0 = Math.atan2(from.z - c.z, from.x - c.x);
-      let a1 = Math.atan2(to.z - c.z, to.x - c.x);
-      // Round the far side: the long way, turning left.
-      while (a1 > a0) a1 -= Math.PI * 2;
-      const r0 = Math.hypot(from.x - c.x, from.z - c.z), r1 = Math.hypot(to.x - c.x, to.z - c.z);
-      const bulge = TURNAROUND_RADIUS + 2;
-      for (let i = 1; i < 48; i++) {
-        const f = i / 48;
-        const a = a0 + (a1 - a0) * f;
-        const r = Math.max(r0 + (r1 - r0) * f, bulge * Math.sin(Math.PI * f));
-        out.push(new Vector3(c.x + Math.cos(a) * r, end.y, c.z + Math.sin(a) * r));
-      }
-    }
-    for (let i = 0; i <= n; i++) {
-      const u = dir === 1 ? i / n : 1 - i / n;
-      const p = curve.getPointAt(u);
-      curve.getTangentAt(u, tangent);
-      if (dir === -1) tangent.negate();
-      // Right of the way he's going: (−dz, dx) in x–z.
-      const len = Math.hypot(tangent.x, tangent.z) || 1;
-      p.x += (-tangent.z / len) * LANE;
-      p.z += (tangent.x / len) * LANE;
-      out.push(p);
-    }
-  }
-  const distances = [0];
-  for (let i = 1; i < out.length; i++) distances.push(distances[i - 1]! + out[i]!.distanceTo(out[i - 1]!));
-  return { points: out, distances, length: distances[distances.length - 1]! };
+export interface DrivePath {
+  points: Vector3[];
+  distances: number[];
+  length: number;
 }
 
-/** Where along `path` distance `s` is (position, and the heading of travel), interpolated. */
-export function samplePath(path: { points: Vector3[]; distances: number[] }, s: number, outPos: Vector3, outDir: Vector3): void {
+/** The car's way: along the road in the right-hand lane, start to end, as points with their distances along it. */
+export function drivePath(curve: CatmullRomCurve3, step = 2): DrivePath {
+  const length = curve.getLength();
+  const points: Vector3[] = [];
+  const n = Math.ceil(length / step);
+  const tangent = new Vector3();
+  for (let i = 0; i <= n; i++) {
+    const u = i / n;
+    const p = curve.getPointAt(u);
+    curve.getTangentAt(u, tangent);
+    // Right of the way he's going: (−dz, dx) in x–z.
+    const len = Math.hypot(tangent.x, tangent.z) || 1;
+    p.x += (-tangent.z / len) * LANE;
+    p.z += (tangent.x / len) * LANE;
+    points.push(p);
+  }
+  const distances = [0];
+  for (let i = 1; i < points.length; i++) distances.push(distances[i - 1]! + points[i]!.distanceTo(points[i - 1]!));
+  return { points, distances, length: distances[distances.length - 1]! };
+}
+
+/** The point `s` along `path`, interpolated. */
+export function pointAt(path: DrivePath, s: number, out: Vector3): Vector3 {
   const d = path.distances;
   const last = d.length - 1;
   s = Math.min(Math.max(s, 0), d[last]!);
@@ -110,29 +92,79 @@ export function samplePath(path: { points: Vector3[]; distances: number[] }, s: 
     if (d[mid]! <= s) lo = mid;
     else hi = mid;
   }
-  const a = path.points[lo]!, b = path.points[hi]!;
   const span = d[hi]! - d[lo]! || 1;
-  outPos.lerpVectors(a, b, (s - d[lo]!) / span);
-  // Heading from a little ahead, so turns are smooth.
-  const ahead = path.points[Math.min(last, hi + 2)]!;
-  const behind = path.points[Math.max(0, lo - 1)]!;
-  outDir.subVectors(ahead, behind).normalize();
+  return out.lerpVectors(path.points[lo]!, path.points[hi]!, (s - d[lo]!) / span);
 }
 
-/** The terrain's height at (x, z) before the road is cut in: sea, beach, the lagoon, the bluffs and the hills. */
+const ahead = new Vector3();
+const behind = new Vector3();
+
+/**
+ * Where along `path` distance `s` is (position, and the heading of travel). The heading is taken across a few metres
+ * either side, from interpolated points, so it turns smoothly (no steps from one path point to the next).
+ */
+export function samplePath(path: DrivePath, s: number, outPos: Vector3, outDir: Vector3): void {
+  pointAt(path, s, outPos);
+  pointAt(path, s + 4, ahead);
+  pointAt(path, s - 4, behind);
+  outDir.subVectors(ahead, behind);
+  if (outDir.lengthSq() < 1e-6) outDir.set(0, 0, 1);
+  outDir.normalize();
+}
+
+/** The road's middle (x) and height (y) where it passes `z`, along the coast (it heads steadily south). */
+export function roadAt(z: number): { x: number; y: number } {
+  const t = roadTable();
+  const f = Math.min(t.x.length - 1.001, Math.max(0, (z - t.z0) / t.step));
+  const i = Math.floor(f), k = f - i;
+  return { x: t.x[i]! + (t.x[i + 1]! - t.x[i]!) * k, y: t.y[i]! + (t.y[i + 1]! - t.y[i]!) * k };
+}
+
+let table: { z0: number; step: number; x: Float32Array; y: Float32Array } | null = null;
+
+function roadTable(): NonNullable<typeof table> {
+  if (table) return table;
+  const curve = routeCurve();
+  const samples = curve.getSpacedPoints(1200);
+  const z0 = ROUTE_POINTS[0]![2], z1 = ROUTE_POINTS[ROUTE_POINTS.length - 1]![2], step = 2;
+  const n = Math.ceil((z1 - z0) / step) + 1;
+  const x = new Float32Array(n), y = new Float32Array(n);
+  let j = 0;
+  for (let i = 0; i < n; i++) {
+    const z = z0 + i * step;
+    while (j < samples.length - 2 && samples[j + 1]!.z < z) j++;
+    const a = samples[j]!, b = samples[j + 1]!;
+    const k = b.z > a.z ? Math.min(1, Math.max(0, (z - a.z) / (b.z - a.z))) : 0;
+    x[i] = a.x + (b.x - a.x) * k;
+    y[i] = a.y + (b.y - a.y) * k;
+  }
+  return (table = { z0, step, x, y });
+}
+
+/**
+ * The terrain's height at (x, z) before the road is cut in: the sea floor, the beach, the lagoon, the land inland of
+ * the road (the hill round home in the north, the bluffs rising to the mesa in the south). West of the road it's beach,
+ * and up the grade the bluff falling away to the sandstone cliffs, the beach below them.
+ */
 export function landHeight(x: number, z: number): number {
   const shore = coastX(z);
   const fromShore = x - shore;
   if (fromShore < 0) return -1.5 + fromShore * 0.06; // the sea floor
-  // The bluffs: from south of the grade northward, the land behind the beach rises into sandstone cliffs.
-  const bluff = smooth(-430, -620, z) * 48 + smooth(-620, -880, z) * 8;
-  const beach = Math.min(3, fromShore * 0.09);
-  // Cliff face a few metres in from the waterline, then the mesa top, rising a little inland.
-  const cliff = bluff > 0.5 ? bluff * smooth(14, 26, fromShore) : 0;
-  const inland = Math.max(0, fromShore - 70) * 0.06 + 2.5 * Math.sin(x / 41) * Math.sin(z / 53);
-  // The neighbourhood up the hill to the east, round home.
-  const hill = smooth(-260, -40, x) * 20 * smooth(-160, 30, z);
-  let h = Math.max(beach, beach + cliff) + inland * smooth(40, 90, fromShore) + hill;
+  const beach = Math.min(2.6, 0.3 + fromShore * 0.08);
+  const road = roadAt(z);
+  const east = x - road.x;
+  // Inland of the road: low and green by the lagoon, rising into the bluffs and the mesa further south.
+  const bluff = smooth(580, 960, z) * 46;
+  const roll = 2.2 * Math.sin(x / 37) * Math.sin(z / 49);
+  const inland = road.y + 0.5 + (bluff + 6 + roll) * smooth(6, 70, east);
+  // Seaward of the road: the beach; where the road climbs the grade, the bluff falling away from it to the cliffs
+  // over the beach (so the sea is in view all the way up).
+  const fromRoad = Math.max(0, road.x - ROAD_HALF - x);
+  const mesa = smooth(760, 1000, z) * Math.min(road.y - 1.2 - fromRoad * 0.45, road.y * smooth(8, 30, fromShore));
+  let h = east <= 0 ? Math.max(beach, mesa) : Math.max(beach, inland);
+  // The neighbourhood up the hill round home (the north end, where the road comes down from the east).
+  const north = 1 - smooth(-290, -220, z);
+  if (north > 0) h = h * (1 - north) + (beach + (1.5 + 22 * smooth(-280, -20, x) + roll) * smooth(0, 40, fromShore)) * north;
   // The lagoon: a shallow basin.
   const lx = (x - LAGOON.x) / LAGOON.rx, lz = (z - LAGOON.z) / LAGOON.rz;
   const l = lx * lx + lz * lz;

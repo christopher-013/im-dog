@@ -1,4 +1,4 @@
-import { Scene } from 'three';
+import { Scene, SkinnedMesh } from 'three';
 import { describe, expect, it } from 'vitest';
 import { StylizedHumanVisual } from '../human/StylizedHumanVisual';
 import { ToonMokeVisual } from '../player/ToonMokeVisual';
@@ -29,6 +29,12 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     ride.start();
     expect(ride.active).toBe(true);
     const dt = 1 / 30;
+    // The game can fade the human (in its way) in the very frame the ride starts: they're solid again at once.
+    human.setSeeThrough(true);
+    let body: SkinnedMesh | undefined;
+    human.object.traverse((o) => { if (!body && o instanceof SkinnedMesh) body = o; });
+    const solid = () => (body!.material as { opacity: number }).opacity === 1;
+    let alwaysSolid = true, atTheWheel = false;
     // The cinematic out: the door opens, he hops in, the roll-up door goes up, they back out.
     let doorOpened = false, inTheCar = false, rolledUp = false;
     for (let i = 0; i < 20 / dt && !loaded; i++) {
@@ -36,7 +42,12 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
       doorOpened ||= garage.houseDoorOpenness > 0.95;
       rolledUp ||= garage.rollUpOpenness > 0.95;
       inTheCar ||= dog.object.position.y > 0.5 && dog.object.position.z > 5.5;
+      if (i > 30) alwaysSolid &&= solid();
+      // Once in, they're at the wheel (seen through the windshield), not gone.
+      atTheWheel ||= human.object.parent === garage.car.object && human.object.visible;
     }
+    expect(alwaysSolid).toBe(true);
+    expect(atTheWheel).toBe(true);
     expect(doorOpened && inTheCar && rolledUp).toBe(true);
     expect(garage.car.object.position.z).toBeGreaterThan(GARAGE.zMax);
     await loaded;

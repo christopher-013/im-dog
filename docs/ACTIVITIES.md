@@ -172,20 +172,25 @@ ride?"**
   they're free (the same conditions as above): **"Barking at the Garage, Moke? Do you want to go for a ride?"**
   Then yes or no as below; a no puts the 5–10 minutes back on the clock, but he can ask again. FSD asks now and then
   too (at most every 10 minutes). Where: `RIDE.askAt` (`config/ride.ts`).
-- **Yes:** Go for a Ride! (the paw), or a bark near them. They kneel and put on his **harness** (his collar's colour,
-  over any costume) and clip on the **leash**, "Yes? Let's go! Harness on…", and walk him to the Garage door, the
+- **Yes:** Go for a Ride! (the paw), or a bark near them. They kneel and put on his **harness** (a soft mesh vest:
+  Moke's light blue with a teal buckle, like his real one; each dog's own colours, `DogLook.harness`; over any costume) and clip on the **leash**, "Yes? Let's go! Harness on…", and walk him to the Garage door, the
   dog at their heel (the game steers him: FSD's route-following; held up, the leash just brings him).
 - **No:** walking off (5 m) or ignoring them for 15 s: "Okay, maybe later."
 - **The Garage** (locked the rest of the time): the door opens on the black family car. He trots down its
   passenger side, the front door opens and he hops onto the seat; the human walks round the front to the driver's
   side; the roll-up door goes up and they back out.
-- **The drive** (`ride/CoastDrive.ts`, loaded now): out of the neighbourhood and down to the coast, north behind
-  Torrey Pines State Beach (umbrellas, a lifeguard tower, surfers, pelicans), over the lagoon bridge, up the grade
-  between sandstone bluffs and Torrey pines to the reserve's turnaround, and back down with the sea right below his
-  window. His head is out with his ears streaming in the wind. **Bark**, put his **head in or out**, **change the
-  view** (his face, alongside, behind, the drone); the pause screen's **HEAD HOME** skips to the end. The original
-  80s synth-pop song "Coastline Cruise" plays (it follows the Music setting). About 3½ minutes, never more than 5.
-- **Home:** the car drives in, the roll-up door comes down, he hops out, they walk back in, the door shuts and locks,
+- **The drive** (`ride/CoastDrive.ts`, loaded now; reworked at the owner's request, 2026-10-17, from a still of a
+  real Del Mar → Torrey Pines drive): down the hill from home through the palm-lined streets, over Los Peñasquitos
+  Lagoon, then **south along Torrey Pines State Beach with the ocean on the right**, right below his window, in the
+  right-hand lane: the beach full of people swimming, wading, picnicking on blankets under umbrellas and sunbathing,
+  surfers out past the break, lifeguard towers, people walking the path beyond the guard rail, pelicans, traffic both
+  ways. Then up the grade between the sandstone bluffs to the reserve, the sea below; one way (home is a fade).
+  Every tree is a Southern California palm (`ride/palms.ts`: Mexican fan palms, Canary Island date palms, queen
+  palms). His head is out with his ears streaming in the wind. **Bark**, put his **head in or out**, **change the
+  view** (alongside, his face, behind, the drone; the view glides over); the pause screen's **HEAD HOME** skips to the
+  end. The original song "Neon Coastline" plays, dramatic 80s synth-pop in the style of mid-80s crime-drama themes (it
+  follows the Music setting). About 3 minutes, never more than 5.
+- **Home:** after a fade, the car drives in, the roll-up door comes down, he hops out, they walk back in, the door shuts and locks,
   the harness comes off: "Best ride ever, Moke!". **CAR + WINDOW = WIND IN MY EARS.** The human goes back to their day.
 - While they're out the house stands still (the doorbell can't ring for an empty house).
 - **FSD** says yes most of the time (85%), stands still for the harness, and on the road the views change and he

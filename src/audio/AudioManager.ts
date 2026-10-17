@@ -142,7 +142,7 @@ export class AudioManager {
     this.updateMusic();
   }
 
-  /** The ride's song ("Coastline Cruise", Phase 6) while out in the car; like the others it follows the Music settings. */
+  /** The ride's song ("Neon Coastline", Phase 6) while out in the car; like the others it follows the Music settings. */
   rideMusic(on: boolean): void {
     this.rideTheme = on;
     this.updateMusic();

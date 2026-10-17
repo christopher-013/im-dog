@@ -66,7 +66,7 @@ src/
     MokeAnimationController.ts  model-independent body language: lean, idle looks/tilts, tail, ducking, sit/stretch, look-at, tricks (tested)
     MokeVisual.ts         the visual interface (object, attachments, update, dispose) + createMokeVisual(): model or stand-in (tested)
     ToonMokeVisual.ts     the procedural stand-in: Moke built in code after the real dog (curly fur, soft shading, silhouette line, face, collar), animated procedurally (tested)
-    Harness.ts            going for a ride: the harness on the back socket and the leash to the human's hand (presentation)
+    Harness.ts            going for a ride: the mesh-vest harness on the back socket and the leash to the human's hand (presentation)
     DogCostume.ts         the Halloween costumes (pumpkin, cape, witch hat) on the visual's back and head sockets; presentation only (tested)
     toon/                 furGeometry.ts (fur clumps with curls and creases, tested), toonMaterials.ts (soft toon + outline), faceTextures.ts (eye), tagTexture.ts (name tag)
     gltf/                 the final-model path: GltfMokeVisual.ts (moke.glb: mixer, crossfades, sockets, procedural layer; tested),
@@ -104,7 +104,10 @@ src/
     RideOffer.ts          going for a ride (Phase 6): every 5–10 minutes the human asks; yes → the harness, the leash to the Garage door (tested in the house)
   ride/                   going for a ride, from the Garage door on (Phase 6, D33)
     RideDirector.ts       the cinematic out to the car and home again, and the drive in between; poses the dog's and the human's visuals (tested)
-    CoastDrive.ts         the drive: the coast road to Torrey Pines and back, built in code, its own scene; loaded only for a ride (its own chunk)
+    CoastDrive.ts         the drive: south along the coast road to Torrey Pines, built in code, its own scene; loaded only for a ride (its own chunk)
+    palms.ts              the Southern California palms (fan, date, queen), one geometry each, drawn instanced
+    beachLife.ts          the people on the beach and in the sea, umbrellas, blankets, surfers, lifeguard towers (instanced)
+    traffic.ts            the other cars on the coast road (instanced)
     coastRoute.ts         the road, the coastline, the land's heights (pure; tested)
   autopilot/              FSD, Full Self Dog (Phase 5, D27; see docs/PHASE_5.md)
     FsdPathView.ts        the rainbow path on the floor ahead of Moke while FSD drives (a ribbon mesh and a small shader; tested)

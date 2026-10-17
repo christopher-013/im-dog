@@ -8,9 +8,9 @@ describe('the ride’s road (Phase 6)', () => {
 
   it('is one smooth way, south from home down the coast: no jumps, a sensible length', () => {
     for (let i = 1; i < path.points.length; i++) expect(path.points[i]!.distanceTo(path.points[i - 1]!)).toBeLessThan(4);
-    // About two minutes at the drive's speed (owner: a minute shorter than the first version's three).
-    expect(path.length).toBeGreaterThan(1400);
-    expect(path.length).toBeLessThan(1800);
+    // About a minute and a quarter at the drive's speed (owner: shorter than the first version's three, twice).
+    expect(path.length).toBeGreaterThan(1200);
+    expect(path.length).toBeLessThan(1500);
     expect(path.points[path.points.length - 1]!.z).toBeGreaterThan(path.points[0]!.z + 1200);
   });
 
@@ -43,9 +43,9 @@ describe('the ride’s road (Phase 6)', () => {
     expect(seaOnRight / beachStretch).toBeGreaterThan(0.95);
   });
 
-  it('ends up the grade between the bluffs, the sea below', () => {
+  it('ends on the way up the grade between the bluffs, the sea below', () => {
     const top = Math.max(...path.points.map((p) => p.y));
-    expect(top).toBeGreaterThan(35);
+    expect(top).toBeGreaterThan(18);
     expect(landHeight(roadAt(1100).x + 60, 1100)).toBeGreaterThan(45); // the bluffs inland
     expect(landHeight(coastX(1100) + 4, 1100)).toBeLessThan(4); // the beach under the cliffs
     expect(landHeight(coastX(300) - 30, 300)).toBeLessThan(0); // the sea off the beach

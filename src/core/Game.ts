@@ -1547,6 +1547,8 @@ export class Game {
   private harnessOn(on: boolean): void {
     const moke = this.moke;
     if (!moke) return;
+    // Going out: the human puts their shoes on (both socks, too) with his harness, and takes them off with it.
+    this.heist?.human.visual.setGoingOut?.(on);
     if (!on) {
       this.harness?.dispose();
       this.harness = null;

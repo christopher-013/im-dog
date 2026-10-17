@@ -47,6 +47,7 @@ export class FamilyCar {
   /** The passenger window's opening: the dog's head goes out about here (car space). */
   static readonly WINDOW = new Vector3(-0.9, 1.22, 0.42);
   private readonly passengerDoor = new Group();
+  private readonly driverDoor = new Group();
   private readonly passengerWindow: Mesh;
   /** Each falcon door: the part that turns at the roof's spine, and the part that turns at the top of its window. */
   private readonly falcons: { hinge: Group; elbow: Group; side: 1 | -1 }[] = [];
@@ -55,6 +56,7 @@ export class FamilyCar {
   private readonly materials: Material[] = [];
   private readonly textures: Texture[] = [];
   private doorOpen = 0;
+  private driverOpen = 0;
   private windowDown = 0;
   private falconOpen = 0;
 
@@ -99,7 +101,6 @@ export class FamilyCar {
     this.add(this.geometry(house.rear), roofGlass, this.object).name = 'rear window';
     this.add(this.geometry(house.quarters), glass, this.object);
     this.add(this.geometry(house.pillars), trim, this.object).name = 'roof';
-    this.add(this.geometry(house.windows[1]), glass, this.object);
 
     // ---- Inside: the floor, the dash, the console, cream seats (two in front, two captain's chairs behind), the wheel.
     this.add(this.geometry(new BoxGeometry(1.7, 0.03, 3.4)), cabin, this.object, [0, 0.4, -0.55]);
@@ -135,12 +136,17 @@ export class FamilyCar {
       for (const z of [DOOR.front, DOOR.back, FALCON.front, FALCON.back]) this.add(this.geometry(seam(side, z)), trim, this.object);
     }
 
-    // ---- The front doors. The driver's, closed; the passenger's opens on a hinge at its front.
+    // ---- The front doors, each on a hinge at its front, its window in it.
     const hingeX = sideX(DOOR.front, 0.75);
-    this.add(this.geometry(body.doors[1]), paint, this.object).name = 'driver door';
-    this.add(this.geometry(doorCard(1, DOOR.back, DOOR.front)), cabin, this.object);
-    this.add(this.geometry(beltLine(1, DOOR.front, DOOR.back + 0.01)), chrome, this.object);
-    this.add(this.geometry(handle(1)), chrome, this.object);
+    this.driverDoor.name = 'driver door';
+    this.driverDoor.position.set(hingeX, 0, DOOR.front);
+    this.object.add(this.driverDoor);
+    const driverLocal: [number, number, number] = [-hingeX, 0, -DOOR.front];
+    this.add(this.geometry(body.doors[1]), paint, this.driverDoor, driverLocal);
+    this.add(this.geometry(doorCard(1, DOOR.back, DOOR.front)), cabin, this.driverDoor, driverLocal);
+    this.add(this.geometry(beltLine(1, DOOR.front, DOOR.back + 0.01)), chrome, this.driverDoor, driverLocal);
+    this.add(this.geometry(handle(1)), chrome, this.driverDoor, driverLocal);
+    this.add(this.geometry(house.windows[1]), glass, this.driverDoor, driverLocal);
     this.passengerDoor.name = 'passenger door';
     this.passengerDoor.position.set(-hingeX, 0, DOOR.front);
     this.object.add(this.passengerDoor);
@@ -212,13 +218,27 @@ export class FamilyCar {
       this.add(clamp, caliper, group, [x * 0.01, 0.07, -0.16], [0.4, 0, 0]);
     }
 
-    // ---- The nose: swept-back headlamps (a dark lens, the light strip along its lower edge), the thin chrome strip
-    // across the front, the dark lower intake, chrome fog-lamp trim; at the back, the tail lamps and a chrome strip.
+    // ---- The nose: the headlamps (like the real car's: long and swept, thin toward the middle and taller at the
+    // corner, wrapping round onto the fender; a smoked lens over chrome and a projector, and the thick light strip
+    // along the bottom hooking up at the outer end), the thin chrome strip across the front, the dark lower intake,
+    // chrome fog-lamp trim; at the back, the tail lamps and a chrome strip.
     for (const side of [1, -1] as const) {
-      const strip = LAMP.strip.map(([x, y]) => onNose(side * x, y, 0.006));
-      const top = LAMP.top.map(([x, y]) => onNose(side * x, y, 0.004));
-      this.add(this.geometry(ribbon(strip, top)), lens, this.object);
-      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(strip), 16, 0.01, 6)), lamp, this.object);
+      const at = (s: number, y: number, out: number) => lampPoint(side, s, y, out);
+      const bottom = LAMP.s.map((s, i) => at(s, LAMP.bottom[i]!, 0.006));
+      const top = LAMP.s.map((s, i) => at(s, LAMP.top[i]!, 0.004));
+      this.add(this.geometry(ribbon(bottom, top)), lens, this.object);
+      // The chrome inside it, and the projector's round lens at the corner.
+      const inner = LAMP.s.slice(1, -1);
+      this.add(this.geometry(ribbon(
+        inner.map((s, i) => at(s, LAMP.bottom[i + 1]! + 0.018, 0.007)),
+        inner.map((s, i) => at(s, LAMP.top[i + 1]! - 0.014, 0.007)),
+      )), chrome, this.object);
+      const eye = at(0.98, (LAMP.bottom[3]! + LAMP.top[3]!) / 2, 0.012);
+      const projector = this.add(this.geometry(new SphereGeometry(1, 12, 8)), lens, this.object, [eye.x, eye.y, eye.z]);
+      projector.scale.set(0.028, 0.028, 0.012);
+      // The light strip: along the bottom, then curling up the outer end.
+      const strip = [...bottom, at(LAMP.s[LAMP.s.length - 1]! + 0.04, LAMP.top[LAMP.top.length - 1]! - 0.01, 0.006)];
+      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(strip), 32, 0.016, 6)), lamp, this.object);
       for (let i = 0; i < 3; i++) {
         const at = onNose(side * (0.7 + i * 0.05), 0.36 + i * 0.025, 0.004);
         this.add(this.geometry(new BoxGeometry(0.012, 0.09, 0.012)), chrome, this.object, [at.x, at.y, at.z], [0.2, side * 0.5, side * 0.35]);
@@ -241,6 +261,16 @@ export class FamilyCar {
   setPassengerDoor(open: number): void {
     this.doorOpen = Math.min(1, Math.max(0, open));
     this.passengerDoor.rotation.y = this.doorOpen * DOOR.openAngle;
+  }
+
+  /** The driver's door: 0 shut, 1 wide open (it swings out the other way, on the other side). */
+  setDriverDoor(open: number): void {
+    this.driverOpen = Math.min(1, Math.max(0, open));
+    this.driverDoor.rotation.y = -this.driverOpen * DOOR.openAngle;
+  }
+
+  get driverDoorOpen(): number {
+    return this.driverOpen;
   }
 
   /** The passenger window: 0 up, 1 all the way down (into the door). */
@@ -352,11 +382,26 @@ const RIM = { pillar: 0.62, elbow: 0.62 } as const;
 const SCREEN_CLEAR = 0.62;
 /** The car's ends (z). */
 const ENDS = { nose: 2.53, tail: -2.52 } as const;
-/** The headlamps (x, y on the nose): the light strip along the bottom, the lens's top edge. */
+/**
+ * The headlamps, along their length `s` (0 at the inner end, 1 at the nose's corner, past 1 wrapping back along the
+ * fender; see `lampPoint`): the bottom edge (where the light strip runs) and the top edge's heights.
+ */
 const LAMP = {
-  strip: [[0.5, 0.76], [0.64, 0.785], [0.76, 0.82], [0.86, 0.865]],
-  top: [[0.45, 0.85], [0.6, 0.875], [0.72, 0.905], [0.82, 0.93]],
+  s: [0, 0.35, 0.7, 1.0, 1.14, 1.26],
+  bottom: [0.775, 0.765, 0.775, 0.8, 0.83, 0.875],
+  top: [0.812, 0.835, 0.868, 0.905, 0.915, 0.92],
 } as const;
+
+/**
+ * A point on a headlamp (`side` +1 the driver's): `s` 0 → 1 across the nose from x 0.42 to its corner at x 0.86, and on
+ * past 1 back along the side of the fender; at height `y`, `out` proud of the paint.
+ */
+function lampPoint(side: 1 | -1, s: number, y: number, out: number): Vector3 {
+  if (s <= 1) return onNose(side * (0.42 + 0.44 * s), y, out);
+  const corner = onNose(side * 0.86, y, 0);
+  const z = corner.z - (s - 1) * 0.42;
+  return new Vector3(side * (sideX(z, y) + out), y, z);
+}
 
 function smooth01(t: number): number {
   const k = Math.min(1, Math.max(0, t));

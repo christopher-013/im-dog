@@ -83,6 +83,10 @@ describe('the Garage (Phase 6, D32)', () => {
     expect(up.min.x).toBeLessThan(shut.min.x - 0.2);
     car.setFalconDoors(0);
     expect(size().max.y).toBeCloseTo(shut.max.y, 5);
+    // The driver's door swings out on its own side (+x).
+    car.setDriverDoor(1);
+    expect(car.driverDoorOpen).toBe(1);
+    expect(size().max.x).toBeGreaterThan(shut.max.x + 0.5);
     car.dispose();
   });
 });

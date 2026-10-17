@@ -52,7 +52,7 @@ const SHOTS: Record<DriveView, { pos: readonly [number, number, number]; look: r
 };
 
 /** How fast the car goes (m/s), and how long it takes to get up to speed (s). */
-const SPEED = { cruise: 15, ease: 5 } as const;
+const SPEED = { cruise: 18.5, ease: 5 } as const;
 /** Changing the view glides over this long (s). */
 const VIEW_BLEND = 0.9;
 
@@ -65,7 +65,7 @@ const UP = new Vector3(0, 1, 0);
 /**
  * The drive (Phase 6, D33/D34): a stylized homage to the coast road south from Del Mar along Torrey Pines State Beach
  * and up the grade to the reserve, built in code (no map data, no photos), its own scene, loaded only for a ride. The
- * family car keeps to the right-hand lane with the sea on the passenger side, about two minutes, one way (home is a
+ * family car keeps to the right-hand lane with the sea on the passenger side, about a minute and a quarter, one way (home is a
  * fade). Whoever runs the ride puts the dog and the human into `dogSeat` and `driverSeat` (the car's space) and poses
  * them; this scene moves the car, the sea, the people, the traffic, the birds and the camera.
  */

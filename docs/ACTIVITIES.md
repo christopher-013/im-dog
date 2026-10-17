@@ -178,7 +178,8 @@ ride?"**
 - **No:** walking off (5 m) or ignoring them for 15 s: "Okay, maybe later."
 - **The Garage** (locked the rest of the time): the door opens on the black family car (modelled on the family's
   own Model X, from the owner's photo; no badge). It greets them by raising its **falcon-wing doors**. He trots down
-  its passenger side, the front door opens and he hops onto the seat; the human walks round the front to the driver's
+  its passenger side, the front door opens and he hops onto the seat; the human (in socks and sneakers now: they put
+  them on with his harness) walks round, opens the driver's door, gets in and shuts it; the human walks round the front to the driver's
   side; the roll-up door goes up and they back out.
 - **The drive** (`ride/CoastDrive.ts`, loaded now; reworked at the owner's request, 2026-10-17, from a still of a
   real Del Mar → Torrey Pines drive): down the hill from home through the palm-lined streets, over Los Peñasquitos
@@ -191,8 +192,10 @@ ride?"**
   around** (turns his head; left alone he looks about at the beach himself), **change the view** with the paw or
   Trick (alongside, his face, behind, the drone; always on him, third person; the view glides over); the pause screen's **HEAD HOME** skips to the
   end. The original song "Neon Coastline" plays, dramatic 80s synth-pop in the style of mid-80s crime-drama themes (it
-  follows the Music setting). About 2 minutes (a minute shorter at the owner's request, 2026-10-17), never more than 5.
-- **Home:** after a fade, the car drives in, the roll-up door comes down, up go the falcon doors, he hops out, they walk back in, the door shuts and locks,
+  follows the Music setting). About a minute and a quarter (shortened twice at the owner's request, 2026-10-17), never
+  more than 5.
+- **Home:** after a fade, the car drives in, the roll-up door comes down, the human gets out of the driver's door
+  (it opens and shuts), up go the falcon doors, he hops out, they walk back in, the door shuts and locks,
   the harness comes off: "Best ride ever, Moke!". **CAR + WINDOW = WIND IN MY EARS.** The human goes back to their day.
 - While they're out the house stands still (the doorbell can't ring for an empty house).
 - **FSD** says yes most of the time (85%), stands still for the harness, and on the road the views change and he

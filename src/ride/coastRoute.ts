@@ -4,7 +4,7 @@ import { CatmullRomCurve3, Vector3 } from 'three';
  * The ride's road (Phase 6, D33/D34): a stylized homage to the drive south from Del Mar along Torrey Pines State Beach
  * (owner, 2026-10-17: "all about the ocean on the right"): down the hill from home to the coast, over the lagoon,
  * along the beach with the sea on the passenger side, then up the grade between the sandstone bluffs to the reserve
- * at the top (owner, 2026-10-17: a minute shorter, about two minutes). One way; home is a fade. Pure numbers and maths (tested), shared by the scenery and the car. Metres;
+ * at the top (owner, 2026-10-17: shorter twice over, now about a minute and a quarter). One way; home is a fade. Pure numbers and maths (tested), shared by the scenery and the car. Metres;
  * x east, z south, y up; the ocean is to the west, so heading south it's on the right.
  */
 
@@ -15,7 +15,6 @@ export function coastX(z: number): number {
 
 /** The road's centre line, from the street outside home to the top of the grade (heading south, z growing). */
 export const ROUTE_POINTS: readonly [number, number, number][] = [
-  [-150, 16, -384],
   [-200, 11, -360],
   [-252, 6, -310],
   [-281, 4.4, -245],
@@ -32,8 +31,6 @@ export const ROUTE_POINTS: readonly [number, number, number][] = [
   [-282, 6, 810],
   [-275, 11.5, 890],
   [-264, 21, 965],
-  [-254, 31, 1040],
-  [-248, 38.5, 1100],
 ];
 
 /** The lagoon (inland of the road, crossed on a low causeway with a rail either side). */

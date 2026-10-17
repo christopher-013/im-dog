@@ -19,8 +19,8 @@ const SPOTS = {
   /** Through the door, down the passenger side to the front of its open door. */
   humanToCar: [[2.45, 2.45], [2.45, 3.45], [3.0, 4.3], [3.0, 5.15]] as V2[],
   dogToCar: [[2.05, 2.35], [2.45, 3.3], [2.95, 4.4], [2.95, 5.85]] as V2[],
-  /** Round the front of the car to the driver's door. */
-  humanRound: [[3.0, 5.15], [3.0, 4.0], [1.42, 3.6], [0.15, 4.0], [0.15, 5.3]] as V2[],
+  /** Round the front of the car to the driver's side, clear of the door's swing, to stand in its doorway. */
+  humanRound: [[3.0, 5.15], [3.0, 4.0], [1.42, 3.6], [0.15, 4.0], [-0.35, 4.6], [-0.35, 6.25]] as V2[],
   shots: {
     livingRoom: { cam: [1.0, 1.55, 0.9], look: [2.5, 1.0, 3.2] },
     passengerSide: { cam: [3.2, 1.75, 3.55], look: [2.2, 0.7, 5.9] },
@@ -30,6 +30,14 @@ const SPOTS = {
 
 /** The car backs out to here before the drive, and drives in from here after it (z). */
 const OUTSIDE_Z = GARAGE.zMax + 4.5;
+
+/**
+ * Times in the cinematic out (s): when the human sets off round the car (and for how long), the driver's door opening
+ * and shutting, their getting in, the roll-up door going up, backing out.
+ */
+const OUT = { walk: 8.0, walkFor: 3.6, door: [11.4, 12.0], in: [12.1, 12.8], shut: [12.9, 13.5], rollUp: [13.3, 14.8], back: [14.7, 18.2] } as const;
+/** And home: the driver's door opening and shutting, their getting out, and when they're round to his side. */
+const HOME = { door: [4.4, 5.0], out: [5.0, 5.7], shut: [5.8, 6.4], round: 9.0 } as const;
 
 export interface RideCast {
   /** The dog's visual (it's posed by the ride while it runs; costume, harness and all). */
@@ -111,6 +119,7 @@ export class RideDirector {
     g.car.setPassengerDoor(0);
     g.car.setPassengerWindow(0);
     g.car.setFalconDoors(0);
+    g.car.setDriverDoor(0);
     this.place(this.cast.dog.object, SPOTS.dogAtDoor, 0);
     this.place(this.cast.human.object, SPOTS.humanAtDoor, 0);
     this.lastDog.copy(this.cast.dog.object.position);
@@ -201,7 +210,8 @@ export class RideDirector {
       const h = along(SPOTS.humanToCar, (t - 2.6) / 3);
       const d = along(SPOTS.dogToCar, (t - 2.8) / 3.2);
       car.setPassengerDoor(smoothRange(5.6, 6.4, t) - smoothRange(7.6, 8.3, t));
-      this.poseHuman(dt, h.at, h.heading, { pose: t > 5.6 && t < 6.6 ? 'place' : 'idle', reach: t > 5.6 && t < 6.6 ? [-0.2, 0.95, 0.5] : null });
+      if (t < OUT.walk) this.poseHuman(dt, h.at, h.heading, { pose: t > 5.6 && t < 6.6 ? 'place' : 'idle', reach: t > 5.6 && t < 6.6 ? [-0.2, 0.95, 0.5] : null });
+      else this.humanToWheel(dt, t);
       if (t < 6.6) {
         this.poseDog(dt, d.at, d.heading, { wag: 1 });
       } else {
@@ -217,23 +227,44 @@ export class RideDirector {
       }
       return;
     }
-    // The front: the falcon doors come down, round the car to the driver's side and in; the roll-up door goes up;
-    // backing out.
+    // The front: the falcon doors come down; round the car to the driver's side, the door opens, they get in and it
+    // shuts; the roll-up door goes up; backing out.
     this.shot(SPOTS.shots.front);
     car.setFalconDoors(1 - smoothRange(9.4, 10.8, t));
     const seat = car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.passenger));
     this.poseDog(dt, [seat.x, seat.z], Math.PI, { y: seat.y, sit: 1, wag: 0.8 });
-    if (t < 12) {
-      const h = along(SPOTS.humanRound, (t - 9) / 2.8);
-      this.poseHuman(dt, h.at, h.heading, {});
+    this.humanToWheel(dt, t);
+    g.setRollUp(smoothRange(OUT.rollUp[0], OUT.rollUp[1], t));
+    const back = smoothRange(OUT.back[0], OUT.back[1], t);
+    this.moveCar(GARAGE.car.z + (OUTSIDE_Z - GARAGE.car.z) * back);
+    this.hooks.fade(smoothRange(OUT.back[1] - 1.2, OUT.back[1], t));
+    if (t >= OUT.back[1] + 0.2) void this.beginDrive();
+  }
+
+  /**
+   * Out to the car, the human's part from when the dog's in: round the front to the driver's side, the door opens,
+   * they duck in (into their seat), and the door shuts.
+   */
+  private humanToWheel(dt: number, t: number): void {
+    const car = this.cast.garage.car;
+    car.setDriverDoor(smoothRange(OUT.door[0], OUT.door[1], t) - smoothRange(OUT.shut[0], OUT.shut[1], t));
+    if (t < OUT.in[0]) {
+      const h = along(SPOTS.humanRound, (t - OUT.walk) / OUT.walkFor);
+      const there = t > OUT.walk + OUT.walkFor;
+      this.poseHuman(dt, h.at, there ? Math.PI / 2 : h.heading, { pose: there ? 'place' : 'idle', reach: there ? [0.25, 1.0, 0.45] : null });
+    } else if (t < OUT.in[1]) {
+      this.stepThroughDriverDoor(dt, smoothRange(OUT.in[0], OUT.in[1], t));
     } else {
       this.sitAtWheel(dt, car.object);
     }
-    g.setRollUp(smoothRange(12, 13.5, t));
-    const back = smoothRange(13.4, 17, t);
-    this.moveCar(GARAGE.car.z + (OUTSIDE_Z - GARAGE.car.z) * back);
-    this.hooks.fade(smoothRange(15.8, 17, t));
-    if (t >= 17.2) void this.beginDrive();
+  }
+
+  /** Into the driver's seat (`k` 0 → 1) or out of it (1 → 0): from the doorway, ducking in. */
+  private stepThroughDriverDoor(dt: number, k: number): void {
+    const door = SPOTS.humanRound[SPOTS.humanRound.length - 1]!;
+    const seat = this.cast.garage.car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.driver));
+    // Facing the car in the doorway, turning to face its way (−z here, nose-in) as they settle.
+    this.poseHuman(dt, [door[0] + (seat.x - door[0]) * k, door[1] + (seat.z - door[1]) * k], Math.PI / 2 + (Math.PI / 2) * k, { crouch: Math.sin(Math.PI * k) * 0.6 });
   }
 
   // ---- the drive
@@ -320,57 +351,61 @@ export class RideDirector {
     const g = this.cast.garage;
     const car = g.car;
     this.hooks.fade(1 - smoothRange(0.2, 1.2, t));
-    if (t < 7) {
+    // In; the driver's door opens, they climb out, it shuts behind them, and round the front to his side.
+    if (t < HOME.round) {
       this.shot(SPOTS.shots.front);
       this.moveCar(OUTSIDE_Z + (GARAGE.car.z - OUTSIDE_Z) * smoothRange(0.4, 4, t));
       g.setRollUp(1 - smoothRange(4.2, 5.6, t));
+      car.setDriverDoor(smoothRange(HOME.door[0], HOME.door[1], t) - smoothRange(HOME.shut[0], HOME.shut[1], t));
       const seat = car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.passenger));
       this.poseDog(dt, [seat.x, seat.z], Math.PI, { y: seat.y, sit: 1, wag: 1 });
-      if (t > 4.6) {
-        this.cast.human.object.visible = true;
-        const back = [...SPOTS.humanRound].reverse();
-        const h = along(back, (t - 4.6) / 2.4);
+      if (t < HOME.out[0]) this.sitAtWheel(dt, car.object);
+      else if (t < HOME.out[1]) this.stepThroughDriverDoor(dt, 1 - smoothRange(HOME.out[0], HOME.out[1], t));
+      else {
+        const h = along([...SPOTS.humanRound].reverse(), (t - HOME.out[1]) / (HOME.round - HOME.out[1]));
         this.poseHuman(dt, h.at, h.heading, {});
-      } else this.sitAtWheel(dt, car.object);
+      }
       return;
     }
-    if (t < 13) {
+    // (From here on, as it was before the driver's door: two seconds later.)
+    const u = t - (HOME.round - 7);
+    if (u < 13) {
       this.shot(SPOTS.shots.passengerSide);
       // Parked: up go the falcon doors, and down again as they head in.
-      car.setFalconDoors(smoothRange(7.0, 8.3, t) - smoothRange(11.4, 12.8, t));
-      car.setPassengerDoor(smoothRange(7.2, 7.9, t) - smoothRange(9.2, 9.9, t));
+      car.setFalconDoors(smoothRange(7.0, 8.3, u) - smoothRange(11.4, 12.8, u));
+      car.setPassengerDoor(smoothRange(7.2, 7.9, u) - smoothRange(9.2, 9.9, u));
       const human = SPOTS.humanToCar[SPOTS.humanToCar.length - 1]!;
-      if (t < 10) this.poseHuman(dt, human, Math.PI * 0.75, { pose: t > 7.2 && t < 8 ? 'place' : 'idle', reach: t > 7.2 && t < 8 ? [-0.2, 0.95, 0.5] : null });
+      if (u < 10) this.poseHuman(dt, human, Math.PI * 0.75, { pose: u > 7.2 && u < 8 ? 'place' : 'idle', reach: u > 7.2 && u < 8 ? [-0.2, 0.95, 0.5] : null });
       else {
-        const h = along([...SPOTS.humanToCar].reverse(), (t - 10) / 3);
+        const h = along([...SPOTS.humanToCar].reverse(), (u - 10) / 3);
         this.poseHuman(dt, h.at, h.heading, {});
       }
       const seat = car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.passenger));
       const spot = SPOTS.dogToCar[SPOTS.dogToCar.length - 1]!;
-      if (t < 8.2) this.poseDog(dt, [seat.x, seat.z], Math.PI, { y: seat.y, sit: 1, wag: 1 });
-      else if (t < 8.9) {
+      if (u < 8.2) this.poseDog(dt, [seat.x, seat.z], Math.PI, { y: seat.y, sit: 1, wag: 1 });
+      else if (u < 8.9) {
         // The hop down.
-        const k = smoothRange(8.2, 8.9, t);
+        const k = smoothRange(8.2, 8.9, u);
         this.poseDog(dt, [seat.x + (spot[0] - seat.x) * k, seat.z + (spot[1] - seat.z) * k], lerpAngle(Math.PI, Math.PI / 2, k), { y: seat.y * (1 - k) + Math.sin(Math.PI * k) * 0.35, air: true, wag: 1 });
       } else {
         this.hooks.leash(this.cast.human.hands.left);
-        const d = along([...SPOTS.dogToCar].reverse(), (t - 9.6) / 3.2);
+        const d = along([...SPOTS.dogToCar].reverse(), (u - 9.6) / 3.2);
         this.poseDog(dt, d.at, d.heading, { wag: 1 });
       }
       return;
     }
     // Back in the living room: the door shuts behind them, harness off, and that's the ride.
     this.shot(SPOTS.shots.livingRoom);
-    g.setHouseDoor(1 - smoothRange(13.4, 14.4, t));
-    const kneel = t > 14.6 && t < 16.4;
+    g.setHouseDoor(1 - smoothRange(13.4, 14.4, u));
+    const kneel = u > 14.6 && u < 16.4;
     this.poseHuman(dt, SPOTS.humanAtDoor, Math.PI * 1.15, { crouch: kneel ? 1 : 0, pose: kneel ? 'offer' : 'idle', reach: kneel ? [-0.25, 0.3, 0.45] : null });
-    this.poseDog(dt, SPOTS.dogAtDoor, Math.PI * 0.55, { wag: 1, sit: t > 14.4 ? 1 : 0 });
-    if (t > 14.8) this.sayOnce('Best ride ever, Moke!');
-    if (t > 15.8 && !this.said.has('off')) {
+    this.poseDog(dt, SPOTS.dogAtDoor, Math.PI * 0.55, { wag: 1, sit: u > 14.4 ? 1 : 0 });
+    if (u > 14.8) this.sayOnce('Best ride ever, Moke!');
+    if (u > 15.8 && !this.said.has('off')) {
       this.said.add('off');
       this.hooks.harnessOff();
     }
-    if (t > 16.8) this.finish();
+    if (u > 16.8) this.finish();
   }
 
   private finish(): void {
@@ -380,6 +415,7 @@ export class RideDirector {
     this.hooks.music(false);
     this.cast.garage.setHouseDoor(0);
     this.cast.garage.car.setFalconDoors(0);
+    this.cast.garage.car.setDriverDoor(0);
     this.moveCar(GARAGE.car.z);
     this.hooks.done(SPOTS.dogAtDoor, Math.PI * 0.55, SPOTS.humanAtDoor, Math.PI * 1.15);
   }

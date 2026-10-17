@@ -106,6 +106,18 @@ describe('StylizedHumanVisual', () => {
     courier.dispose();
   });
 
+  it('goes out in socks and shoes, and takes them off again at home', () => {
+    const visual = new StylizedHumanVisual();
+    const shoes = visual.object.getObjectByName('Human:outing:sock')!;
+    expect(shoes).toBeDefined();
+    expect(shoes.visible).toBe(false);
+    visual.setGoingOut(true);
+    expect(shoes.visible).toBe(true);
+    visual.setGoingOut(false);
+    expect(shoes.visible).toBe(false);
+    visual.dispose();
+  });
+
   it('fades to see-through and back', () => {
     const visual = new StylizedHumanVisual();
     const animation = new HumanAnimationController();

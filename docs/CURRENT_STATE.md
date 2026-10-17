@@ -52,6 +52,23 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner request with a photo of their car's front: "Make the headlights more like the actual
+car. When the human goes to the car make sure they are wearing the socks and shoes. When the human enters to exits the
+car have the door open and close so they can get out. The drive is still a little long make it 30 seconds shorter"):
+- **Headlamps** (`FamilyCar`, `LAMP`, `lampPoint`): long and swept, thin toward the middle and taller at the corner,
+  wrapping onto the fender; a smoked lens over chrome and a projector; the thick light strip along the bottom,
+  hooking up at the outer end.
+- **Socks and shoes:** `HumanLook.outing` (the household human: charcoal socks, navy sneakers, white soles), built as
+  their own skinned meshes on the body's skeleton and shown by `setGoingOut` (optional on `HumanVisual`). The game
+  dresses them with the harness and undresses them when it comes off (`Game.harnessOn`). Tested.
+- **The driver's door** now opens (`FamilyCar.setDriverDoor`, its window in it): in the cinematic the human walks
+  round clear of its swing, opens it, ducks in, and it shuts; at home it opens, they climb out, it shuts
+  (`RideDirector.humanToWheel`, `stepThroughDriverDoor`, `OUT`, `HOME`; the scenes after it moved 2 s later). Tested.
+- **The drive 30 s shorter:** the road starts at the bottom of the hill and ends partway up the grade (1.36 km) at
+  18.5 m/s; a full ride in the game drove for 77 s (was about 106).
+- **Checked** in the game, headless: the human in shoes walking to the car, opening the driver's door and getting in;
+  coming home, getting out and the door shutting; the headlamps from the photo's angle. Not checked on a phone.
+
 Claude Code (2026-10-17, owner request with four photos of their car: "Update the car to closer match the model x with
 the black wheels and red brake calipers. The roof still isn't right. Make the drive a minute shorter and allow Moke to
 move his head around and see the view of the passenger side beach when driving"; then third person only, the paw

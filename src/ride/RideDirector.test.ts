@@ -35,7 +35,7 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     let body: SkinnedMesh | undefined;
     human.object.traverse((o) => { if (!body && o instanceof SkinnedMesh) body = o; });
     const solid = () => (body!.material as { opacity: number }).opacity === 1;
-    let alwaysSolid = true, atTheWheel = false, wingsUp = 0;
+    let alwaysSolid = true, atTheWheel = false, wingsUp = 0, driverDoor = 0;
     // The cinematic out: the door opens, he hops in, the roll-up door goes up, they back out.
     let doorOpened = false, inTheCar = false, rolledUp = false;
     for (let i = 0; i < 20 / dt && !loaded; i++) {
@@ -47,7 +47,11 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
       // Once in, they're at the wheel (seen through the windshield), not gone.
       atTheWheel ||= human.object.parent === garage.car.object && human.object.visible;
       wingsUp = Math.max(wingsUp, garage.car.falconDoorsOpen);
+      driverDoor = Math.max(driverDoor, garage.car.driverDoorOpen);
     }
+    // They opened the driver's door to get in, and shut it behind them.
+    expect(driverDoor).toBeGreaterThan(0.95);
+    expect(garage.car.driverDoorOpen).toBe(0);
     // The car raised its falcon doors to greet them, and shut them again before backing out.
     expect(wingsUp).toBeGreaterThan(0.95);
     expect(garage.car.falconDoorsOpen).toBe(0);
@@ -80,7 +84,13 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     for (let i = 0; i < 60 / dt && ride.driving; i++) ride.update(dt, 16 / 9, false);
     expect(ride.driving).toBe(false);
     expect(dog.object.parent).toBe(scene);
-    for (let i = 0; i < 30 / dt && ride.active; i++) ride.update(dt, 16 / 9, false);
+    // Home: the driver's door opens to let them out, and shuts again.
+    let outDoor = 0;
+    for (let i = 0; i < 30 / dt && ride.active; i++) {
+      ride.update(dt, 16 / 9, false);
+      outDoor = Math.max(outDoor, garage.car.driverDoorOpen);
+    }
+    expect(outDoor).toBeGreaterThan(0.95);
     expect(ride.active).toBe(false);
     expect(ended).not.toBeNull();
     expect(log).toContain('Best ride ever, Moke!');

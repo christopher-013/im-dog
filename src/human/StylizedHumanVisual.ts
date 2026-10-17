@@ -44,6 +44,8 @@ export interface HumanVisual {
   readonly hands: { readonly left: Object3D; readonly right: Object3D };
   /** Fade toward see-through (they're between the camera and Moke) or back to solid. */
   setSeeThrough(on: boolean): void;
+  /** Dressed to go out (both socks on, and shoes) or as at home. Optional: not every look has an outing outfit. */
+  setGoingOut?(on: boolean): void;
   /** Poses the body for this frame (from HumanAnimationController). */
   apply(dt: number, pose: HumanAnimationState): void;
   dispose(): void;
@@ -82,6 +84,8 @@ export interface HumanLook {
   feet: { kind: 'sockAndBare'; sock: string; stripe: string } | { kind: 'shoes'; shoe: string; sole: string };
   /** A peaked cap over the hair, or none. */
   cap: { crown: string; brim: string } | null;
+  /** Going out (a ride in the car): both socks on and a pair of low sneakers, over whatever's on their feet at home. */
+  outing?: { shoe: string; sole: string; sock: string };
 }
 
 /** The household human: warm tan skin, short black hair, an untucked sage button-down, blue jeans, one striped sock. */
@@ -101,6 +105,8 @@ export const HOUSEHOLD_LOOK: HumanLook = {
   // The other sock of the pair Moke keeps stealing (see propVisuals: the same charcoal and grey).
   feet: { kind: 'sockAndBare', sock: '#34373d', stripe: '#9ca3ad' },
   cap: null,
+  // Out for a ride: socks on both feet (the same charcoal) and navy sneakers with white soles.
+  outing: { shoe: '#2c3446', sole: '#f1eee7', sock: '#34373d' },
 };
 
 /**
@@ -176,6 +182,9 @@ export class StylizedHumanVisual implements HumanVisual {
   private readonly handL = new Vector3();
   private readonly handR = new Vector3();
   private readonly eyes = new Vector3();
+  private skeleton: Skeleton | null = null;
+  /** The going-out socks and shoes (hidden at home). */
+  private readonly outing: SkinnedMesh[] = [];
 
   constructor(readonly look: HumanLook = HOUSEHOLD_LOOK) {
     this.object.name = 'Human';
@@ -184,6 +193,10 @@ export class StylizedHumanVisual implements HumanVisual {
     root.updateMatrixWorld(true);
     const parts = [...torso(look), ...arms(look), ...legs(look), ...head(look), ...hands(look)];
     this.buildMeshes(parts);
+    if (look.outing) {
+      this.outing.push(...this.buildMeshes(outingFeet(look.outing), 'Human:outing'));
+      this.setGoingOut(false);
+    }
     // The skeleton is bound in the rest pose (lids shut, scale 1); open the eyes to their resting look.
     for (const side of ['L', 'R'] as const) this.bones.get(`lid${side}`)!.scale.y = LID.open;
     this.hands = { left: this.anchor('wristL', 0, -0.075, 0.01), right: this.anchor('wristR', 0, -0.075, 0.01) };
@@ -242,6 +255,10 @@ export class StylizedHumanVisual implements HumanVisual {
     this.seeThrough = on;
   }
 
+  setGoingOut(on: boolean): void {
+    for (const mesh of this.outing) mesh.visible = on;
+  }
+
   dispose(): void {
     for (const g of this.geometries) g.dispose();
     for (const m of this.materials) m.dispose();
@@ -283,10 +300,12 @@ export class StylizedHumanVisual implements HumanVisual {
   }
 
   /** Merges the parts per material into skinned meshes sharing one skeleton; each outline shares its body's geometry. */
-  private buildMeshes(parts: Part[]): void {
+  private buildMeshes(parts: Part[], prefix = 'Human'): SkinnedMesh[] {
+    const built: SkinnedMesh[] = [];
     const order: BoneName[] = [...this.bones.keys()];
     const index = new Map(order.map((name, i) => [name, i]));
-    const skeleton = new Skeleton(order.map((name) => this.bones.get(name)!));
+    // One skeleton for every mesh of the body (the going-out shoes too).
+    const skeleton = (this.skeleton ??= new Skeleton(order.map((name) => this.bones.get(name)!)));
     const byMaterial = new Map<MaterialName, BufferGeometry[]>();
     const p = new Vector3();
     const color = new Color();
@@ -331,25 +350,28 @@ export class StylizedHumanVisual implements HumanVisual {
       material.vertexColors = true;
       this.materials.push(material);
       const mesh = new SkinnedMesh(merged, material);
-      mesh.name = `Human:${name}`;
+      mesh.name = `${prefix}:${name}`;
       mesh.bind(skeleton, new Matrix4());
       mesh.castShadow = name !== 'face';
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
       this.object.add(mesh);
+      built.push(mesh);
       if (MOKE_LOOK.outline.enabled && OUTLINED.includes(name)) {
         const outline = createSkinnedOutlineMaterial();
         this.outlines.push(outline);
         const line = new SkinnedMesh(merged, outline);
-        line.name = `Human:${name}:outline`;
+        line.name = `${prefix}:${name}:outline`;
         line.bind(skeleton, new Matrix4());
         line.frustumCulled = false;
         line.onBeforeRender = (renderer: WebGLRenderer) => {
           (outline.uniforms.uResolution!.value as Vector2).copy(renderer.getDrawingBufferSize(drawingBuffer));
         };
         this.object.add(line);
+        built.push(line);
       }
     }
+    return built;
   }
 
   /** A holding point on a bone (palm centre), for props. */
@@ -872,6 +894,24 @@ function legs(look: HumanLook): Part[] {
   return parts;
 }
 const DENIM_FADE = new Color('#7d97b9');
+
+/**
+ * Going out: a sock on each foot (a band of it shows between the shoe and the jeans) and a low sneaker over it, a
+ * little bigger than the foot (about the ankle, so the sole stays on the floor), on a white sole.
+ */
+function outingFeet(outing: NonNullable<HumanLook['outing']>): Part[] {
+  const parts: Part[] = [];
+  for (const side of ['L', 'R'] as const) {
+    const ankle = jointAt(`ankle${side}`);
+    const bind: Bind = `ankle${side}`;
+    const around = (g: BufferGeometry, sx: number, sy: number, sz: number) => g.translate(-ankle.x, 0, -ankle.z).scale(sx, sy, sz).translate(ankle.x, 0, ankle.z);
+    parts.push({ geometry: new CylinderGeometry(0.044, 0.046, 0.06, 12).translate(ankle.x, ankle.y + 0.025, ankle.z), material: 'sock', color: outing.sock, bind });
+    parts.push({ geometry: new CylinderGeometry(0.049, 0.05, 0.04, 12).translate(ankle.x, ankle.y - 0.005, ankle.z), material: 'sock', color: outing.shoe, bind });
+    parts.push({ geometry: around(foot(ankle), 1.16, 1.2, 1.1), material: 'sock', color: outing.shoe, bind });
+    parts.push({ geometry: around(foot(ankle), 1.2, 0.32, 1.13), material: 'sock', color: outing.sole, bind });
+  }
+  return parts;
+}
 
 /** A foot with a flat sole on the floor (y = 0) at rest: the heel just behind the ankle, the toes forward. */
 function foot(ankle: Vector3): BufferGeometry {

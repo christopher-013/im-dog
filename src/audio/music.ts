@@ -19,11 +19,13 @@
 //   string pads, a sixteenth-note arpeggio, a big gated snare over a deep kick, and a plain detuned-sawtooth lead
 //   (no slides, barely any vibrato). It replaced "Neon Coastline" and, before it, "Coastline Cruise" (both original
 //   too). Written for this game in that style; no real song is copied. Now the backup (`MUSIC.rideSong`).
-// - "Sundown Run" (the ride's song, Phase 6): fast synthwave (owner, 2026-10-17: an original "in that style, faster
-//   pumping beat and rolling sixteenth note", after naming a commercial synthwave track the game can't use). A minor
-//   at 118 BPM: four on the floor, a deep sawtooth bass rolling in sixteenths (root, octave on the "and"), wide
-//   sawtooth pads that duck and swell with every kick, a big gated snare, open hats, and a soaring detuned-sawtooth
-//   lead. Written for this game in that genre's style; no real song is copied.
+// - "Sundown Run" (the ride's song, Phase 6): synthwave (owner, 2026-10-17: an original "in that style, faster
+//   pumping beat and rolling sixteenth note", after naming a commercial synthwave track the game can't use; then a
+//   screen recording of it, "try for something like this tempo and beat tones"). A minor at 80 BPM: a deep kick on
+//   every beat, a plucked sawtooth bass rolling in sixteenths (root, octave on the "and") over a sustained sub, both
+//   the sub and the dark sawtooth pads ducking with every kick, a big snare ringing out on 2 and 4, open hats, and a
+//   soaring detuned-sawtooth lead. The recording was measured for tempo, beat and tone only; its melody and chords
+//   weren't transcribed, and no real song is copied.
 
 import { MUSIC } from '../config/audio';
 
@@ -124,8 +126,14 @@ export interface Band {
   gatedSnare?: boolean;
   /** A drum machine's deep, booming kick instead of the console's short thump. */
   deepKick?: boolean;
-  /** Sidechain pumping: the chords duck by this much (0..1) on every kick and swell back before the next. */
+  /** Sidechain pumping: the chords, the bass and the sub duck by this much (0..1) on every kick, swelling back before the next. */
   pump?: number;
+  /** A sub bass under everything: the chord's root an octave below its written bass note, held for the bar (low-pass, Hz). */
+  sub?: { level: number; tone: number };
+  /** How loud the hi-hats (closed and open) are, × their usual level. */
+  hats?: number;
+  /** With `gatedSnare`: let the snare's room ring out for this long (s) before the gate shuts it. */
+  snareTail?: number;
   /** Chime bells (the `bells` line). */
   bell: { level: number };
   /** A gentle top-end roll-off for the whole band (Hz). */
@@ -471,28 +479,33 @@ const SUNDOWN_B: readonly Note[] = [
 const SUNDOWN_RUN: Song = {
   id: 'cruise',
   title: 'Sundown Run',
-  bpm: 118,
+  // The owner's reference (a screen recording, kept private): about 80 BPM, a kick on every beat, the snare on 2 and 4
+  // with a long room tail, open hats on the "and", sixteenths rolling in the middle, a sustained sub pumping on every
+  // kick, the low end loudest and the top end dark. Measured for tempo, beat and tone only: no melody or chords.
+  bpm: 80,
   swing: 0.5,
   bars: ['Am', 'Am', 'Fadd9', 'Fadd9', 'C', 'C', 'G', 'G', 'Fadd9', 'G', 'Am', 'Am', 'Fadd9', 'G', 'E', 'E'],
   melody: [...SUNDOWN_A, ...SUNDOWN_B],
   band: {
-    // A big, bright detuned-sawtooth lead, no slides.
-    lead: { duty: 0.5, tone: 2400, vibrato: 6, level: 0.09, synth: { detune: 10, resonance: 2 } },
+    // A big detuned-sawtooth lead, no slides, a little darker than bright.
+    lead: { duty: 0.5, tone: 1900, vibrato: 6, level: 0.065, synth: { detune: 10, resonance: 2 } },
     // A dotted-eighth echo: the lead hanging in the air.
-    echo: { time: 0.381, feedback: 0.35, wet: 0.26 },
-    // Wide sawtooth pads, a chord a bar, pumping with the kick.
+    echo: { time: 0.5625, feedback: 0.35, wet: 0.24 },
+    // Dark, wide sawtooth pads, a chord a bar, pumping with the kick.
     comp: {
       steps: [[0, 'down', 1]],
       ring: 3,
       spread: 0,
       duty: 0.5,
-      tone: 1800,
-      level: 0.034,
+      tone: 1100,
+      level: 0.036,
       pad: { attack: 0.08, release: 0.4, detune: 14 },
     },
-    // The rolling sixteenths, deep: an octave down.
-    bass: { style: 'roll', level: 0.25, wave: 'saw', tone: 520, octave: -12 },
-    // Four on the floor, the gated snare on 2 and 4, sixteenth hats, an open hat on every "and".
+    // The rolling sixteenths: a plucked sawtooth line in the middle, the root with the octave on each "and".
+    bass: { style: 'roll', level: 0.34, wave: 'saw', tone: 900, octave: 12 },
+    // Under it, the sub, the loudest thing in the song: the root two octaves below the line, held for the bar.
+    sub: { level: 0.27, tone: 90 },
+    // A deep kick on every beat, the big snare on 2 and 4 ringing out, open hats on the "and"s, quiet sixteenth hats.
     drums: [
       [0, 'kick', 1],
       [1, 'kick', 1],
@@ -500,18 +513,23 @@ const SUNDOWN_RUN: Song = {
       [3, 'kick', 1],
       [1, 'snare', 1],
       [3, 'snare', 1],
-      ...[0.25, 0.75, 1.25, 1.75, 2.25, 2.75, 3.25, 3.75].map((b) => [b, 'hat', 0.35] as const),
-      ...[0.5, 1.5, 2.5, 3.5].map((b) => [b, 'open', 0.8] as const),
+      ...[0.5, 1.5, 2.5, 3.5].map((b) => [b, 'open', 1] as const),
+      ...[0.25, 0.75, 1.25, 1.75, 2.25, 2.75, 3.25, 3.75].map((b) => [b, 'hat', 0.5] as const),
     ],
     gatedSnare: true,
+    snareTail: 0.6,
     deepKick: true,
-    pump: 0.7,
+    pump: 0.6,
+    hats: 8,
     bell: { level: 0 },
-    mellow: 9000,
+    mellow: 14000,
   },
-  // Offline render at gain 1: −40.6 dB against "Aloha, Moke"'s −34.1 (measured the same way, 2026-10-17). ×2.1 puts
-  // it within ~0.1 dB of it. Alone, each part: bass −45.0, drums −46.0, lead −46.3, pads −47.9.
-  gain: 2.1,
+  // Offline renders at gain 2: −30.1 dB, and −35.2 dB through a phone-speaker filter, against "Aloha, Moke"'s −34.1
+  // (−34.7) (measured the same way, 2026-10-17): the sub is most of it, and a phone can't play it. ×1.8 splits it: the
+  // bass hits harder than the other songs on headphones or in a car, and it's barely quieter on a phone. Alone at
+  // gain 1, each part: sub −35.9, bass line −40.8, pads −47.5, drums −47.5, lead −49.0. Against the reference, every
+  // band from 20 Hz to 11 kHz is within ~2 dB.
+  gain: 1.8,
 };
 
 export const SONGS: Readonly<Record<SongId, Song>> = { hawaiian: ALOHA, japan: IRASSHAIMASE };
@@ -527,7 +545,7 @@ export const SONG = ALOHA;
 
 // ---- From the score to timed events
 
-export type Voice = 'lead' | 'comp' | 'arp' | 'bass' | 'bell' | Drum;
+export type Voice = 'lead' | 'comp' | 'arp' | 'bass' | 'sub' | 'bell' | Drum;
 
 export interface MusicEvent {
   voice: Voice;
@@ -619,6 +637,7 @@ export function songEvents(song: Song = SONG): MusicEvent[] {
       const notes = direction === 'down' ? chord.voicing : [...chord.voicing].slice(1).reverse();
       add('comp', b + beat, b + end, notes, velocity);
     });
+    if (band.sub) add('sub', b, b + 4, [chord.bass[0] - 12], 1);
     if (band.arp) {
       const { pattern, octave } = band.arp;
       for (let e = 0; e < 16; e++) {
@@ -717,8 +736,8 @@ export class MusicPlayer {
   private readonly leadIn: GainNode;
   /** Where every voice goes (the melody via its echo). */
   private readonly voicesOut: AudioNode;
-  /** Where the chords go: ducked on every kick when the band pumps. */
-  private readonly chordsOut: GainNode;
+  /** Where the chords, the sub and (when the band pumps) the bass go: ducked on every kick when the band pumps. */
+  private readonly pumpedOut: GainNode;
   private readonly sequencer: MusicSequencer;
   private readonly due: Scheduled[] = [];
   private readonly waves = new Map<number, PeriodicWave>();
@@ -758,8 +777,8 @@ export class MusicPlayer {
     this.leadIn.connect(echo).connect(feedback).connect(echo);
     echo.connect(wet).connect(mellow);
     this.voicesOut = mellow;
-    this.chordsOut = ctx.createGain();
-    this.chordsOut.connect(mellow);
+    this.pumpedOut = ctx.createGain();
+    this.pumpedOut.connect(mellow);
   }
 
   get isPlaying(): boolean {
@@ -837,6 +856,8 @@ export class MusicPlayer {
         return this.lead(event, time, seconds);
       case 'comp':
         return this.band.comp.pad ? this.pad(event, time, seconds) : this.comp(event, time, seconds);
+      case 'sub':
+        return this.sub(event, time, seconds);
       case 'arp':
         return this.arp(event, time);
       case 'bass':
@@ -846,9 +867,9 @@ export class MusicPlayer {
       case 'shaker':
         return this.noiseHit(time, 'highpass', 6000, DRUM_LEVEL.shaker * event.velocity, 0.045);
       case 'hat':
-        return this.noiseHit(time, 'highpass', 7500, DRUM_LEVEL.hat * event.velocity, 0.03);
+        return this.noiseHit(time, 'highpass', 7500, DRUM_LEVEL.hat * (this.band.hats ?? 1) * event.velocity, 0.03);
       case 'open':
-        return this.noiseHit(time, 'highpass', 7000, DRUM_LEVEL.open * event.velocity, 0.2);
+        return this.noiseHit(time, 'highpass', 7000, DRUM_LEVEL.open * (this.band.hats ?? 1) * event.velocity, 0.2);
       case 'snare':
         return this.band.gatedSnare
           ? this.gatedSnare(time, event.velocity)
@@ -933,7 +954,7 @@ export class MusicPlayer {
     amp.gain.linearRampToValueAtTime(peak, t + attack);
     amp.gain.setValueAtTime(peak, t + Math.max(attack, seconds));
     amp.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(attack, seconds) + release);
-    tone.connect(amp).connect(this.chordsOut);
+    tone.connect(amp).connect(this.pumpedOut);
     const oscs = event.notes.flatMap((midi) =>
       [-detune, detune].map((cents) => {
         const osc = ctx.createOscillator();
@@ -990,7 +1011,7 @@ export class MusicPlayer {
       amp.gain.setValueAtTime(0.0001, at);
       amp.gain.exponentialRampToValueAtTime(level * event.velocity, at + 0.004);
       amp.gain.exponentialRampToValueAtTime(0.0001, at + ring);
-      osc.connect(tone).connect(amp).connect(this.chordsOut);
+      osc.connect(tone).connect(amp).connect(this.pumpedOut);
       osc.start(at);
       osc.stop(at + ring + 0.02);
       osc.onended = () => amp.disconnect();
@@ -1021,7 +1042,7 @@ export class MusicPlayer {
     amp.gain.exponentialRampToValueAtTime(peak, t + 0.012);
     amp.gain.setValueAtTime(peak, end - 0.05);
     amp.gain.exponentialRampToValueAtTime(0.0001, end);
-    source.connect(amp).connect(this.voicesOut);
+    source.connect(amp).connect(this.band.pump ? this.pumpedOut : this.voicesOut);
     osc.start(t);
     osc.stop(end + 0.02);
     osc.onended = () => amp.disconnect();
@@ -1073,12 +1094,34 @@ export class MusicPlayer {
     src.onended = () => amp.disconnect();
   }
 
-  /** Sidechain pumping: on a kick, the chords drop away and swell back before the next beat. */
+  /** The sub: a low-passed triangle (all fundamental, no octave above), held for the bar, ducking with the kick. */
+  private sub(event: MusicEvent, t: number, seconds: number): void {
+    const ctx = this.ctx;
+    const { level, tone: cutoff } = this.band.sub!;
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = midiHz(event.notes[0]!);
+    const tone = ctx.createBiquadFilter();
+    tone.type = 'lowpass';
+    tone.frequency.value = cutoff;
+    const amp = ctx.createGain();
+    const peak = level * event.velocity;
+    amp.gain.setValueAtTime(0.0001, t);
+    amp.gain.exponentialRampToValueAtTime(peak, t + 0.02);
+    amp.gain.setValueAtTime(peak, t + seconds - 0.04);
+    amp.gain.exponentialRampToValueAtTime(0.0001, t + seconds);
+    osc.connect(tone).connect(amp).connect(this.pumpedOut);
+    osc.start(t);
+    osc.stop(t + seconds + 0.02);
+    osc.onended = () => amp.disconnect();
+  }
+
+  /** Sidechain pumping: on a kick, the chords, the bass and the sub drop away and swell back before the next beat. */
   private duck(t: number): void {
     const depth = this.band.pump;
     if (!depth) return;
     const beat = this.sequencer.secondsPerBeat;
-    const g = this.chordsOut.gain;
+    const g = this.pumpedOut.gain;
     g.setValueAtTime(1, t);
     g.linearRampToValueAtTime(1 - depth, t + 0.01);
     g.linearRampToValueAtTime(1, t + beat * 0.8);
@@ -1097,10 +1140,16 @@ export class MusicPlayer {
     const amp = ctx.createGain();
     amp.gain.setValueAtTime(0.0001, t);
     amp.gain.exponentialRampToValueAtTime(peak, t + 0.003);
-    amp.gain.linearRampToValueAtTime(peak * 0.45, t + 0.2);
-    amp.gain.linearRampToValueAtTime(0.0001, t + 0.23);
+    const tail = this.band.snareTail;
+    if (tail) {
+      // A room ringing out: about 10 dB down a third of the way through, cut off at the end.
+      amp.gain.setTargetAtTime(0.0001, t + 0.003, tail / 3);
+    } else {
+      amp.gain.linearRampToValueAtTime(peak * 0.45, t + 0.2);
+      amp.gain.linearRampToValueAtTime(0.0001, t + 0.23);
+    }
     src.connect(room).connect(amp).connect(this.voicesOut);
-    src.start(t, Math.random() * 0.7, 0.25);
+    src.start(t, Math.random() * 0.2, (tail ?? 0.23) + 0.02);
     src.onended = () => amp.disconnect();
     const body = ctx.createOscillator();
     body.type = 'triangle';
@@ -1121,8 +1170,8 @@ export class MusicPlayer {
     const ctx = this.ctx;
     const osc = ctx.createOscillator();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(170, t);
-    osc.frequency.exponentialRampToValueAtTime(46, t + 0.11);
+    osc.frequency.setValueAtTime(115, t);
+    osc.frequency.exponentialRampToValueAtTime(46, t + 0.07);
     const amp = ctx.createGain();
     amp.gain.setValueAtTime(0.0001, t);
     amp.gain.exponentialRampToValueAtTime(DRUM_LEVEL.kick * 1.4 * event.velocity, t + 0.002);

@@ -120,22 +120,28 @@ describe('the background music', () => {
     expect(RIDE_SONGS.map((song) => song.title)).toEqual(['Sundown Run', 'Last Light']);
   });
 
-  it('"Sundown Run" (the ride): fast synthwave, four on the floor, a rolling sixteenth bass, pads pumping with the kick', () => {
+  it('"Sundown Run" (the ride): synthwave at the reference\'s ~80 BPM, a kick every beat, rolling sixteenths over a pumping sub', () => {
     const song = RIDE_SONGS[0]!;
     const { band } = song;
-    expect(song.bpm).toBeGreaterThanOrEqual(115);
+    expect(song.bpm).toBeGreaterThanOrEqual(76);
+    expect(song.bpm).toBeLessThanOrEqual(90);
+    expect(band.sub).toBeDefined();
     expect(band.lead.synth).toBeDefined();
     expect(song.melody.every(([, , slide]) => !slide)).toBe(true);
     expect(band.comp.pad).toBeDefined();
-    expect(band.pump).toBeGreaterThan(0.5);
+    expect(band.pump).toBeGreaterThanOrEqual(0.4);
     const events = songEvents(song);
     for (let bar = 0; bar < song.bars.length; bar++) {
       const inBar = (voice: string) => events.filter((e) => e.voice === voice && e.beat >= bar * 4 && e.beat < bar * 4 + 4);
-      const root = CHORDS[song.bars[bar]!].bass[0] - 12;
-      // Sixteenths: the deep root, the octave on each "and".
+      const root = CHORDS[song.bars[bar]!].bass[0];
+      // The sub: the chord's root an octave down, held for the whole bar, under the rolling line.
+      expect(inBar('sub').map((e) => [e.beat - bar * 4, e.beats, e.notes[0]])).toEqual([[0, 4, root - 12]]);
+      // Sixteenths, above it: the line's root, the octave on each "and".
+      const line = root + (band.bass.octave ?? 0);
+      expect(line).toBeGreaterThan(root - 12);
       const bass = inBar('bass');
       expect(bass.map((e) => e.beat - bar * 4)).toEqual([...Array(16).keys()].map((e) => e / 4));
-      bass.forEach((e, i) => expect(e.notes[0]).toBe(i % 4 === 2 ? root + 12 : root));
+      bass.forEach((e, i) => expect(e.notes[0]).toBe(i % 4 === 2 ? line + 12 : line));
       expect(inBar('kick').map((e) => e.beat - bar * 4)).toEqual([0, 1, 2, 3]);
       expect(inBar('snare').map((e) => e.beat - bar * 4)).toEqual([1, 3]);
       expect(inBar('open').map((e) => e.beat - bar * 4)).toEqual([0.5, 1.5, 2.5, 3.5]);

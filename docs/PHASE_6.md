@@ -195,7 +195,10 @@ before 6.2 photo mode and 6.3 the day.
   drive with purpose": now "Last Light", D minor, a deep sawtooth bass, dark pads. **And again** ("too Japanese inspired versus 80s
   synth pop"): the same song played by an 80s polysynth and drum machine, not the 8-bit console. **Then** the owner
   named a commercial synthwave track (all rights reserved, so it can't be used) and asked for an original in that style,
-  "faster pumping beat and rolling sixteenth note": now **"Sundown Run"**, with "Last Light" kept as the backup. The drive is at golden hour, the sun
+  "faster pumping beat and rolling sixteenth note": now **"Sundown Run"**, with "Last Light" kept as the backup. Then
+  the owner sent a screen recording of the reference ("try for something like this tempo and beat tones"): it was
+  measured for tempo, beat and tone only, and "Sundown Run" now matches them (80 BPM, a kick on every beat, sixteenths
+  over a pumping sub). The drive is at golden hour, the sun
   setting as it ends (owner).
 - **Length:** about **3–4 minutes**, never more than 5. Pause → **Head Home** skips straight to the drive home.
 - **Home again:** into the garage, the roll-up door comes down, the falcon-wing door rises, the human lifts him out

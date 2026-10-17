@@ -80,6 +80,16 @@ just as the sun is setting... a song more edgy and dark for a brooding drive wit
   pumping beat and rolling sixteenth note". A minor, 118 BPM: four on the floor, a bass rolling in sixteenths (new
   style `roll`), sawtooth pads ducking on every kick (new `pump`, a chord bus whose gain dips per kick), open hats (new
   drum `open`), the gated snare and a detuned sawtooth lead. Tests cover both ride songs.
+- **Then reworked to the reference's tempo and tones** (owner sent a screen recording of the track playing: "try for
+  something like this tempo and beat tones"). Its audio was analysed in the session's scratchpad (a throwaway Python
+  venv with numpy/scipy and a bundled ffmpeg; nothing added to the repo, the recording isn't stored): ~80 BPM, a kick
+  every beat (~54→46 Hz), the snare on 2 and 4 with a ~300 ms room tail, open hats on the "and"s, sixteenths rolling
+  in the 300–1500 Hz range, a sustained sub (≈ E1–C2) loudest of all and ducking each beat, dark highs. Melody and
+  chords weren't transcribed. "Sundown Run" is now 80 BPM with a sub (new `sub` voice, a held triangle two octaves
+  under the rolling line), the rolling line an octave up (`octave: 12`), the bass and sub ducking with the pads (`pump`
+  now covers them), louder hats (new `hats`), a ringing snare (new `snareTail`) and a lower kick sweep. Rendered and
+  measured the same way: every band from 20 Hz to 11 kHz within ~2 dB of the reference. Gain ×1.8 (see its note: the
+  sub makes it louder full range, a phone can't play it).
 - Not checked: on a phone; either song by ear.
 
 Claude Code (2026-10-17, owner's phone screenshot: the Dog Logic card "CAR + WINDOW = WIND IN MY EARS" ran off both

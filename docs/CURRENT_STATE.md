@@ -52,6 +52,15 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner: "Make the garage door pulse with blue light when the dog looks or passes by the door
+to indicate that there is an adventure close by"): `world/GarageDoorGlow.ts` (tested): `doorGlowWanted` says when (a
+ride can be asked for, i.e. `RideOffer.garageBark.enabled`, not mid-ride; he's within `near` 2.2 m of the door, or
+within `lookRange` 6.5 m facing it within `lookAngle` 0.4 rad; never from the Garage side), and `GarageDoorGlow` draws
+it: two blue planes (round the door's edges, and on the floor in front) masked by gradients drawn in code, a tint
+rather than added light so it stays blue on the pale walls; fades in 0.5 s, out 1.2 s, pulsing 0.8 times a second;
+hidden when off (no draw calls, no lights). Tuning `RIDE.doorGlow`; wired in `Game.updateGarageGlow`. Checked: unit
+tests; screenshots in the game near the door, from across the room, and turned away (fading). Not checked: a phone.
+
 Claude Code (2026-10-17, owner's screenshot of the live ride: "Moke tongue is sticking out too much, don't keep the
 tongue wagging the whole time only a few times randomly. Make the dog look like they are actually riding in the car
 with just the head and neck sticking out the car and not look like they are floating outside the car window"):

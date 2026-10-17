@@ -38,6 +38,13 @@ export const RIDE = {
     headIn: { x: 0.0, y: 0.0, z: 0.02, heading: 0, pitch: 0, headPitch: 0 },
   },
   /**
+   * The Garage door glows (owner, 2026-10-17: "pulse with blue light when the dog looks or passes by the door to
+   * indicate that there is an adventure close by"): while a ride can be asked for, the door pulses blue when he's
+   * within `near` (m) of it, or within `lookRange` and facing it (within `lookAngle`, rad, of straight at it). It
+   * fades in over `fadeIn` s and out over `fadeOut` s, pulsing `pulse` times a second, at most `strength` opaque.
+   */
+  doorGlow: { near: 2.2, lookRange: 6.5, lookAngle: 0.4, fadeIn: 0.5, fadeOut: 1.2, pulse: 0.8, color: '#2f7dff', strength: 0.85 },
+  /**
    * With his head out on the road he pants now and then (owner, 2026-10-17: the tongue out only a few times, at
    * random, not the whole way): a pant starts every `every` s (random in the range) and lasts `lasts` s.
    */

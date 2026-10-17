@@ -172,6 +172,10 @@ ride?"**
   they're free (the same conditions as above): **"Barking at the Garage, Moke? Do you want to go for a ride?"**
   Then yes or no as below; a no puts the 5–10 minutes back on the clock, but he can ask again. FSD asks now and then
   too (at most every 10 minutes). Where: `RIDE.askAt` (`config/ride.ts`).
+- **The door glows** (owner, 2026-10-17: "pulse with blue light when the dog looks or passes by the door to
+  indicate that there is an adventure close by"): while a ride can be asked for, the Garage door pulses a soft blue
+  (round its edges, a little on the floor) when he's within 2.2 m of it or looking at it from up to 6.5 m away in
+  the living room; it fades out when he turns away or leaves. `world/GarageDoorGlow.ts`, tuning `RIDE.doorGlow`.
 - **Yes:** Go for a Ride! (the paw), or a bark near them. They kneel and put on his **harness** (a soft mesh vest:
   Moke's light blue with a teal buckle, like his real one; each dog's own colours, `DogLook.harness`; over any costume) and clip on the **leash**, "Yes? Let's go! Harness on…", and walk him to the Garage door, the
   dog at their heel (the game steers him: FSD's route-following; held up, the leash just brings him).

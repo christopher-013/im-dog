@@ -41,6 +41,7 @@ import { ToiletPaperMischief } from '../activities/ToiletPaperMischief';
 import { CouchPillows } from '../world/CouchPillows';
 import { FrontDoor } from '../world/FrontDoor';
 import { HalloweenDecor } from '../world/HalloweenDecor';
+import { doorGlowWanted, GarageDoorGlow } from '../world/GarageDoorGlow';
 import { GarageView } from '../world/GarageView';
 import { RideOffer } from '../activities/RideOffer';
 import { Harness } from '../player/Harness';
@@ -223,6 +224,8 @@ export class Game {
   private readonly halloweenDecor = new HalloweenDecor();
   /** The Garage's door, roll-up door and the family car (Phase 6, D32). */
   private readonly garage = new GarageView();
+  /** The Garage door's blue pulse when he's near it or looking at it and a ride can be had (Phase 6). */
+  private readonly garageGlow = new GarageDoorGlow();
   /** Going for a ride (Phase 6, D33): the human's offer and the leash walk; then the ride itself (the cinematic, the drive). */
   private rideOffer: RideOffer | null = null;
   private ride: RideDirector | null = null;
@@ -455,6 +458,7 @@ export class Game {
     this.frontDoor.dispose();
     this.halloweenDecor.dispose();
     this.garage.dispose();
+    this.garageGlow.dispose();
     this.costume?.dispose();
     this.biscuitTreat.dispose();
     this.bathroom.dispose();
@@ -623,7 +627,7 @@ export class Game {
         this.showVoiceBubble('I win! Strongest in the house!');
       },
     });
-    this.scene.add(this.frontDoor.object, this.halloweenDecor.object, this.garage.object);
+    this.scene.add(this.frontDoor.object, this.halloweenDecor.object, this.garage.object, this.garageGlow.object);
     this.scene.add(this.bathroom.object, this.conure.object);
     this.scent.register(this.biscuitTreat.scent);
     this.attention.register(this.biscuitTreat.attention);
@@ -1193,6 +1197,7 @@ export class Game {
     this.biscuitTreat.update();
     this.frontDoor.update(playing ? dt : 0);
     this.halloweenDecor.update(dt);
+    this.updateGarageGlow(dt, playing);
     this.household.update(dt, { effect: this.routine.effect, place: this.routine.place });
     this.updateBowls(playing ? dt : 0);
     this.updateNapping(playing ? dt : 0, playing);
@@ -1603,6 +1608,13 @@ export class Game {
   }
 
   /** While the ride has the screen: its own buttons, the ride, the leash and the human's words, then its picture. */
+  /** The Garage door pulses blue when he's near it or looks at it, while a ride can be asked for there. */
+  private updateGarageGlow(dt: number, playing: boolean): void {
+    const c = this.moke?.controller;
+    const available = playing && !!c && !this.ride?.active && (this.rideOffer?.garageBark.enabled ?? false);
+    this.garageGlow.update(dt, !!c && doorGlowWanted({ x: c.position.x, z: c.position.z, heading: c.heading }, available));
+  }
+
   private updateRide(dt: number, elapsed: number, enteredPlay: boolean): void {
     const ride = this.ride!;
     const playing = this.state === 'playing';

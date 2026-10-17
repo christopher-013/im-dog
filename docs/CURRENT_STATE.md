@@ -30,7 +30,7 @@ to every open question (D30–D34). Milestones: 6.1 Halloween, 6.2 photo mode, 6
 and the car, 6.5 going for a ride, 6.6 polish and the phone.
 
 ## Current Milestone
-**6.4 the Garage and the car and 6.5 going for a ride** (Phase 6): built 2026-10-17 on the working branch, waiting for the owner (the owner moved them ahead of 6.2 and 6.3). 6.1 Halloween: published, waiting for the owner's verdict. Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
+**6.4 the Garage and the car and 6.5 going for a ride** (Phase 6): built 2026-10-17 and published to the live site, waiting for the owner's verdict (the owner moved them ahead of 6.2 and 6.3). 6.1 Halloween: published, waiting for the owner's verdict. Phase 5 is closed (all of 5.1–5.4 done, published to the live site and tagged
 `phase-5-complete`). Halloween is due 2026-10-31.
 Before Phase 4: Phase 3 is closed. Carried forward from it (`docs/PHASE_3.md` → "Carried forward"): a documented
 browser/device matrix, PWA installation, sustained phone performance and post-fix phone audio
@@ -52,8 +52,8 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code (2026-10-17, owner request: "start 6.4 garage and the car and 6.5 the ride before the others"; on the
-working branch, **not pushed to `main`**): **6.4 the Garage and the family car** and **6.5 going for a ride**.
+Claude Code (2026-10-17, owner request: "start 6.4 garage and the car and 6.5 the ride before the others"; pushed
+to `main` at the owner's request): **6.4 the Garage and the family car** and **6.5 going for a ride**.
 - **The Garage:** `world/home/Garage.ts` (shell, shelves, bikes, charger, bins), a doorway in the living room's south
   wall left of the TV (`LivingRoom` option `garageDoor`; the opening is a collider: locked in play),
   `world/GarageView.ts` (the door, the roll-up door, the driveway glimpse), `GARAGE` in `layout.ts`.

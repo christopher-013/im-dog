@@ -199,6 +199,16 @@ export class HumanAnimationController {
   private readonly v = new Vector3();
   private readonly w = new Vector3();
 
+  /**
+   * The body's size against the rig (HumanVisual.scale; 1: the rig's own 1.77 m). Everything asked for in metres
+   * (speeds, the seat and the work surface, points to look at and reach for) is turned into the rig's own units, so a
+   * shorter body takes its own strides, sits on the same seat and reaches the same spot.
+   */
+  scale = 1;
+  private readonly rigState = createVisualState();
+  private readonly rigLook: LocalPoint = { x: 0, y: 0, z: 0 };
+  private readonly rigReach: LocalPoint = { x: 0, y: 0, z: 0 };
+
   constructor(private readonly random: () => number = Math.random) {}
 
   /** How much of the walk cycle is showing (0..1): debug and tests. */
@@ -211,7 +221,8 @@ export class HumanAnimationController {
     return this.weights;
   }
 
-  update(dt: number, s: HumanVisualState): HumanAnimationState {
+  update(dt: number, asked: HumanVisualState): HumanAnimationState {
+    const s = this.scale === 1 ? asked : this.toRig(asked);
     this.time += dt;
     if (s.pose === 'fold' || this.weights.has('fold')) {
       this.foldCycle += dt / this.foldLength;
@@ -296,6 +307,20 @@ export class HumanAnimationController {
   }
 
   // ---------------------------------------------------------------- posture: standing, walking, sitting, kneeling
+
+  /** The visual state in the rig's units (see `scale`). */
+  private toRig(s: HumanVisualState): HumanVisualState {
+    const k = 1 / this.scale;
+    const r = Object.assign(this.rigState, s);
+    r.speed = s.speed * k;
+    r.sideSpeed = s.sideSpeed * k;
+    r.seatHeight = s.seatHeight * k;
+    r.surface = s.surface * k;
+    const point = (p: LocalPoint | null, out: LocalPoint) => (p ? ((out.x = p.x * k), (out.y = p.y * k), (out.z = p.z * k), out) : null);
+    r.look = point(s.look, this.rigLook);
+    r.reach = point(s.reach, this.rigReach);
+    return r;
+  }
 
   private buildPosture(dt: number, s: HumanVisualState): void {
     const p = this.posture;

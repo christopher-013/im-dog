@@ -109,6 +109,7 @@ export class RideDirector {
 
   /** At the Garage door: off we go. */
   start(): void {
+    this.humanAnim.scale = this.cast.human.scale ?? 1;
     if (this.active) return;
     this.phase = 'out';
     this.time = 0;

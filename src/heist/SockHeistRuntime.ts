@@ -7,7 +7,7 @@ import { Human } from '../human/Human';
 import { HumanBrain, type HumanIdleDriver, type HumanPlaces } from '../human/HumanBrain';
 import { HumanController } from '../human/HumanController';
 import { NavGrid } from '../human/NavGrid';
-import { StylizedHumanVisual } from '../human/StylizedHumanVisual';
+import { StylizedHumanVisual, type HumanLook } from '../human/StylizedHumanVisual';
 import type { InteractionSystem } from '../interactions/InteractionSystem';
 import type { PickupSystem } from '../interactions/PickupSystem';
 import { CharacterBody, type Vec3Like } from '../physics/CharacterBody';
@@ -42,6 +42,8 @@ export interface HeistRuntimeDeps {
   readonly nav?: NavGrid;
   /** What Moke has figured out (shared with the other Dog Logic moments). */
   readonly memory?: DogLogicMemory;
+  /** Who lives here this visit (see human/household.ts); the household man if not given. */
+  readonly humanLook?: HumanLook;
 }
 
 /** Under something this low (m of headroom), he's out of the human's reach. */
@@ -121,7 +123,7 @@ export class SockHeistRuntime {
         const body = new CharacterBody(physics, start ?? marks.laundry, HUMAN.body);
         const brain = new HumanBrain(places, hands, events);
         if (deps.routine) brain.driver = deps.routine;
-        const human = new Human(brain, new HumanController(body, nav, heading), new StylizedHumanVisual());
+        const human = new Human(brain, new HumanController(body, nav, heading), new StylizedHumanVisual(deps.humanLook));
         scene.add(human.visual.object);
         return human;
       },

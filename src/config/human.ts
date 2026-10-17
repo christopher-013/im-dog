@@ -111,4 +111,9 @@ export const HUMAN = {
   exchangeTime: 1.1,
   /** Putting the sock back in the basket. */
   tidyTime: 0.9,
+  /**
+   * Who lives here this visit, the man or the woman (owner, 2026-10-17: "random… but distributed evenly over time"):
+   * a shuffled round with each of them this many times, one visit at a time, kept in localStorage under `key`.
+   */
+  household: { perRound: 2, key: 'imdog.household' },
 } as const;

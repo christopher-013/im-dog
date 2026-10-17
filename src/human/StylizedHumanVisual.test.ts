@@ -1,7 +1,7 @@
-import { DoubleSide, Mesh, MeshBasicMaterial, Raycaster, SkinnedMesh, Vector3 } from 'three';
+import { Box3, DoubleSide, Mesh, MeshBasicMaterial, Raycaster, SkinnedMesh, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
 import { createVisualState, HumanAnimationController } from './HumanAnimationController';
-import { COURIER_LOOK, StylizedHumanVisual } from './StylizedHumanVisual';
+import { COURIER_LOOK, HOUSEHOLD_LOOK, HOUSEHOLD_WOMAN_LOOK, StylizedHumanVisual } from './StylizedHumanVisual';
 
 describe('StylizedHumanVisual', () => {
   it('is one skinned body: a mesh per material sharing a single skeleton, a dozen or so draw calls', () => {
@@ -116,6 +116,48 @@ describe('StylizedHumanVisual', () => {
     visual.setGoingOut(false);
     expect(shoes.visible).toBe(false);
     visual.dispose();
+  });
+
+  it('the household woman: the same rig, a long dress instead of the shirt and jeans, long hair, a shorter body', () => {
+    const woman = new StylizedHumanVisual(HOUSEHOLD_WOMAN_LOOK);
+    const man = new StylizedHumanVisual(HOUSEHOLD_LOOK);
+    const skinned: SkinnedMesh[] = [];
+    woman.object.traverse((o) => {
+      if (o instanceof SkinnedMesh) skinned.push(o);
+    });
+    for (const mesh of skinned) expect(mesh.skeleton).toBe(skinned[0]!.skeleton);
+    expect(skinned.length).toBeLessThanOrEqual(18);
+    let triangles = 0;
+    for (const geometry of new Set(skinned.map((mesh) => mesh.geometry))) triangles += geometry.getAttribute('position').count / 3;
+    expect(triangles).toBeLessThan(30_000);
+    // No jeans: the dress is her 'shirt' material, down to just above the ankles.
+    expect(woman.object.getObjectByName('Human:jeans')).toBeUndefined();
+    const dress = meshNamed(woman, 'shirt').geometry;
+    dress.computeBoundingBox();
+    expect(dress.boundingBox!.min.y).toBeLessThan(0.12);
+    // Her hair reaches well down her back (rig space, below the shoulders); his doesn't.
+    const lowest = (visual: StylizedHumanVisual) => {
+      const g = meshNamed(visual, 'hair').geometry;
+      g.computeBoundingBox();
+      return g.boundingBox!.min.y;
+    };
+    expect(lowest(woman)).toBeLessThan(1.25);
+    expect(lowest(man)).toBeGreaterThan(1.4);
+    // Shorter: standing, the top of her head is lower than his by about a tenth.
+    expect(woman.scale).toBeCloseTo(0.9, 5);
+    const animation = new HumanAnimationController();
+    const pose = animation.update(0, createVisualState());
+    const top = (visual: StylizedHumanVisual) => {
+      visual.apply(0, pose);
+      visual.object.updateMatrixWorld(true);
+      return new Box3().setFromObject(visual.object, true).max.y;
+    };
+    expect(top(woman)).toBeLessThan(top(man) * 0.93);
+    // She holds things and goes out in shoes like him.
+    expect(woman.hands.right.parent).not.toBeNull();
+    expect(woman.object.getObjectByName('Human:outing:sock')).toBeDefined();
+    woman.dispose();
+    man.dispose();
   });
 
   it('fades to see-through and back', () => {

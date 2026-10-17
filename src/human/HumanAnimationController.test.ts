@@ -53,6 +53,24 @@ describe('HumanAnimationController', () => {
     expect(standing.hipsY).toBeCloseTo(HIP_HEIGHT, 1);
   });
 
+  it('takes a shorter body into account: on the same seat, reaching the same point, its own strides', () => {
+    const k = 0.9;
+    const short = new HumanAnimationController();
+    short.scale = k;
+    // Sitting: the hips (in the body's own units) come down so that, scaled, they sit on the same seat.
+    const seated = run(short, { ...createVisualState(), sit: 1, seatHeight: 0.46 }, 2);
+    expect(seated.hipsY * k).toBeCloseTo(0.46 + HIP_ABOVE_SEAT * k, 2);
+    // Reaching: the scaled wrist ends up where the full-size body's does.
+    const target = { x: -0.1, y: 1.0, z: 0.42 };
+    const wrist = (animation: HumanAnimationController, scale: number) => {
+      const out = run(animation, { ...createVisualState(), pose: 'offer', reach: target }, 2);
+      return jointPosition(out.joints, { x: out.hipsX, y: out.hipsY, z: out.hipsZ }, 'wristR', new Vector3()).multiplyScalar(scale);
+    };
+    const full = wrist(new HumanAnimationController(), 1);
+    const reached = wrist(short, k);
+    expect(reached.distanceTo(full)).toBeLessThan(0.05);
+  });
+
   it('swings the legs while walking and not while standing', () => {
     const a = new HumanAnimationController();
     const walking = { ...createVisualState(), speed: 1.05 };

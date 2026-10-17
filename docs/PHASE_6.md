@@ -207,7 +207,24 @@ before 6.2 photo mode and 6.3 the day.
 - **While they're out:** the house waits. The human's routine, the doorbell and every other activity are frozen (the
   doorbell can't ring for an empty house), and the day clock moves on by the drive's length.
 
-## Decisions (recorded in `DECISIONS.md` as D30–D34)
+## The household woman (owner, 2026-10-17)
+**Asked:** "Add another NPC Human this will be a female who will do all the same activities as the male. The female
+will be a shorter Asian lady wearing a dark green dress that is v neck and down to the ankles. Hair will be light
+brown. It will be random if the NPC will be a male or female but will be distributed evenly over time" (D35).
+- **Who's home:** one of them each visit (the house is still one adult's: never both at once). The pick is random but
+  even: a shuffled round of two visits each, saved in the browser (`imdog.household`), one visit at a time; a private
+  window flips a coin. `?human=man` or `?human=woman` picks one for testing without using up a turn.
+- **Everything the same:** the same brain, routine, body, rig and animation (`src/human/`); only the look differs
+  (`HOUSEHOLD_WOMAN_LOOK`). She folds the laundry, cooks, reads, watches the Padres, runs the Sock Heist (one striped
+  sock on, one bare foot: Moke has the other), plays, feeds him, and takes him for the ride and drives.
+- **Her look:** about 1.60 m (0.9 of his height), a shorter Asian woman with long light-brown hair down her back
+  and locks framing her face, finer arched brows, fuller lashes, softer resting lids, in a fitted dark green V-neck
+  dress with short sleeves, a sash at the waist and a skirt to just above her ankles; black flats to go out.
+- **Shorter, not re-animated:** the body is scaled and the animation turns everything asked for in metres into the
+  rig's own units (`HumanAnimationController.scale`), so she sits on the same seats, reaches the same spots and takes
+  her own strides; her speech bubbles sit lower.
+
+## Decisions (recorded in `DECISIONS.md` as D30–D35)
 - **D30, seasonal content:** Halloween turns on by the device's date (17 Oct – 1 Nov), with a setting to force it on
   or off. It's all built in; nothing is fetched. Winter can follow the same pattern.
 - **D31, the day clock:** a game day of about 20 minutes that drives the lighting and steers the human's routine. Goals
@@ -219,11 +236,14 @@ before 6.2 photo mode and 6.3 the day.
   here, and only together. The house simulation pauses while they're away.
 - **D34, real brands and places:** the car is an original design with no brand marks; the coast is a stylized homage
   to Torrey Pines, built in code; the music is original. (Place names are fine; logos and real songs are not.)
+- **D35, the household woman (owner, 2026-10-17):** a second household human who does everything the man does; one of
+  them lives here each visit, random but even over time.
 
 ## Not in scope
 - Driving the car yourself, or anywhere other than this coastal loop.
 - Getting out at the beach.
-- More residents of the house. The trick-or-treaters only come to the door.
+- More residents at once: one adult lives here each visit, the man or (since 2026-10-17, D35) the woman. The
+  trick-or-treaters only come to the door.
 - More dogs on screen at once ("The Pack" stays a later idea).
 - Winter and other seasons (a later phase).
 - Uploading or sharing photos to any service.

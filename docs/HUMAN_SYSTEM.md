@@ -1,7 +1,9 @@
 # The Human (Phase 4)
 
-One adult lives with Moke (the brief: no other family members). They go about a believable day around the house,
-notice and respond to Moke, and still run the Sock Heist when a sock goes missing. Behaviour, body, animation and
+One adult lives with Moke (the brief: no other family members): the household man or, since Phase 6 (D35), the
+household woman, one of them each visit (random but even over time, `src/human/household.ts`). They go about a
+believable day around the house, notice and respond to Moke, and still run the Sock Heist when a sock goes missing.
+Everything below applies to both; only the look differs. Behaviour, body, animation and
 look are separate (like Moke, D7), so a modelled human could replace the built-in one.
 
 ```
@@ -111,8 +113,13 @@ straight into its seat.
 - **Folding laundry** is a readable cycle (bend into the basket, straighten and shake a piece out wide at chest
   height, fold it in half twice, back down), 5.8–7.6 s per piece. **Petting** uses the hand on Moke's side, the other
   resting on the knee or thigh; the palm lands on his back.
+- **A shorter body (`scale`):** a visual can be smaller than the rig (`HumanVisual.scale`: the woman is 0.9). The
+  controller's `scale` (set by `Human` and the ride from the visual) turns everything asked for in metres (speeds,
+  the seat and work-surface heights, points to look at and reach for) into the rig's own units, so the scaled body
+  sits on the same seat, reaches the same spot and strides at its own length. At 1 the inputs pass straight through.
 - Pure logic, tested (every pose finite standing and sitting; hips onto the seat; walking; blinking; talking; eyes;
-  the attention hierarchy and its limits; petting from a kneel with no arm behind the back).
+  the attention hierarchy and its limits; petting from a kneel with no arm behind the back; a scaled body's seat and
+  reach).
 
 ## Look: `StylizedHumanVisual`
 - Built in code (original; no files): a warm, friendly stylized adult man drawn with Moke's own toon shading and
@@ -137,6 +144,18 @@ straight into its seat.
   before; so does a thrown toy). Activity props (`humanProps.ts`: a paperback, a phone, a mug, a fork, a wooden spoon,
   a knife, the remote, and a two-handed folded cloth) appear when the activity asks. The laundry cloth and larger
   chest-height folding motion make the opening routine readable from Moke's low rear camera.
+- **The household woman (`HOUSEHOLD_WOMAN_LOOK`, `figure: 'woman'`, Phase 6, D35):** the same skeleton and face rig,
+  scaled to 0.9 (about 1.60 m). A fitted, lofted bodice (in at the waist, out over the bust, the shirt's shoulders so
+  the short sleeves meet it) with a **V neckline** laid on it (finely subdivided so it follows the curve into the neck)
+  and a sash over the seam; an **ankle-length A-line skirt**, one lofted piece round both legs, weighted so that in
+  front each side follows its own leg (a raised knee never comes through) and behind each side is shared with the
+  other leg (walking sways it instead of twisting its back panel round; sitting and lounging move both legs together,
+  so it drapes over the knees); bare shins below it and the household feet (one striped sock, one bare: the Sock Heist
+  is hers too). **Long light-brown hair**: a smoother shell with the fringe swept off her forehead, a lofted fall
+  from under the crown out behind her shoulders to the middle of her back (the top moves with her head, the length
+  with her back), and a lock framing each side of her face. Finer arched brows, fuller lashes, softer resting lids
+  (`lidRest`), slimmer hands, a slimmer neck. Her dark dress takes less of the toon rim light (`clothRim`), which
+  would otherwise read as a grey sheen on its shaded side. Black flats to go out. About 29,000 triangles in 11 meshes (his: about 25,000 in 13).
 - Fades see-through when between the camera and Moke (Phase 3 behaviour).
 - **Fallbacks:** an unknown pose is simply idle; a missing prop shows nothing; a future modelled human only has to
   implement `HumanVisual` (`apply(dt, pose)`, `hands`, `setSeeThrough`, `dispose`) and map the rig's joints (or clips)

@@ -52,6 +52,30 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner request: "Add another NPC Human this will be a female who will do all the same
+activities as the male. The female will be a shorter Asian lady wearing a dark green dress that is v neck and down to
+the ankles. Hair will be light brown. It will be random if the NPC will be a male or female but will be distributed
+evenly over time"; D35):
+- **Who's home** (`human/household.ts`, `HUMAN.household` in `config/human.ts`, `Game.whoLivesHere`): one of them per
+  visit (page load), from a shuffled round of two each saved in localStorage (`imdog.household`), so it's random and
+  exactly even over every four visits; a coin flip without storage. `?human=man` / `?human=woman` for testing.
+  `SockHeistRuntime` builds the chosen look (`humanLook`).
+- **Her look** (`HOUSEHOLD_WOMAN_LOOK` in `human/StylizedHumanVisual.ts`, `figure: 'woman'`): see
+  `docs/HUMAN_SYSTEM.md` → Look. New on `HumanLook`, all optional (the man and the courier are unchanged): `figure`,
+  `height`, `clothRim`, `lidRest`. The skeleton and meshes now sit in an inner `body` group scaled by `height`.
+- **Shorter without new animation:** `HumanVisual.scale` and `HumanAnimationController.scale` (metres in → rig units:
+  speeds, seat and surface heights, look and reach points); set by `Human` and `RideDirector.start`. `Human.eyeHeight`
+  scales too (speech bubbles).
+- **Checked:** unit tests (her model: one skeleton, no jeans, the dress to the ankles, long hair, ~10% shorter;
+  scaled seat and reach; the household pick even, random, never long runs, safe without storage). Headless renders of
+  both side by side standing, walking, sitting, kneeling with a treat and lounging; fixed on the way: the skirt's back
+  panel twisting into a grey sheen mid-stride, a raised knee through the skirt, the V neckline dipping under the
+  bodice, the face locks poking out. In the real game with `?human=woman`: her routine (reading, the Padres, relaxing,
+  the phone, chopping carrots, folding, calling Moke) and the whole ride (asking, harness and leash, the Garage, the
+  drive at sunset, home), no console errors.
+- Not checked: a phone; the Sock Heist chase and trade played through with her by hand (same code path as the man);
+  her look from every in-game camera.
+
 Claude Code (2026-10-17, owner request: "Verify how the other cars are on the drive as cars in front disappear...
 Remove the FSD button during the drive and replace with 'Change View'... sunset at the golden hour and the drive ends
 just as the sun is setting... a song more edgy and dark for a brooding drive with purpose... lower deep baselines"):

@@ -40,6 +40,11 @@ import { HUMAN_JOINTS, HUMAN_SKELETON, JOINT_ORDER, type HumanAnimationState, ty
 /** The human's look, kept apart from behaviour so a modelled character could replace it (see HumanRig). */
 export interface HumanVisual {
   readonly object: Object3D;
+  /**
+   * How big the body is against the rig (1: the rig's 1.77 m man). The animation takes it into account
+   * (HumanAnimationController.scale), so a shorter body sits, reaches and strides correctly. Optional: 1 if absent.
+   */
+  readonly scale?: number;
   /** Where held items go (the middle of each palm): the sock (left) and the treat or a toy (right). */
   readonly hands: { readonly left: Object3D; readonly right: Object3D };
   /** Fade toward see-through (they're between the camera and Moke) or back to solid. */
@@ -86,6 +91,20 @@ export interface HumanLook {
   cap: { crown: string; brim: string } | null;
   /** Going out (a ride in the car): both socks on and a pair of low sneakers, over whatever's on their feet at home. */
   outing?: { shoe: string; sole: string; sock: string };
+  /**
+   * Their build (default a man, in the shirt and trousers above): a woman wears a fitted, V-necked, ankle-length dress
+   * in the `shirt` colour (its trim and sash `shirtTrim`; the trouser colours are unused), and her hair is long.
+   */
+  figure?: 'man' | 'woman';
+  /** Standing height against the rig's 1.77 m (default 1): the whole body is scaled (see HumanVisual.scale). */
+  height?: number;
+  /**
+   * How much of the toon shading's warm rim light the clothes catch (default 1). It's added on top, so on a dark
+   * fabric's shaded side it reads as a grey sheen: a dark dress takes less.
+   */
+  clothRim?: number;
+  /** How far the upper lids come down at rest (a share of the eye's height; default 0.2): lower is a softer, hooded eye. */
+  lidRest?: number;
 }
 
 /** The household human: warm tan skin, short black hair, an untucked sage button-down, blue jeans, one striped sock. */
@@ -107,6 +126,34 @@ export const HOUSEHOLD_LOOK: HumanLook = {
   cap: null,
   // Out for a ride: socks on both feet (the same charcoal) and navy sneakers with white soles.
   outing: { shoe: '#2c3446', sole: '#f1eee7', sock: '#34373d' },
+};
+
+/**
+ * The other household human (owner, 2026-10-17): a shorter Asian woman with long light-brown hair, in a dark green,
+ * V-necked dress down to her ankles. She does everything the household man does (same rig, same animation), and,
+ * like him, has one striped sock on and one bare foot (Moke has the other sock).
+ */
+export const HOUSEHOLD_WOMAN_LOOK: HumanLook = {
+  skin: '#efc8a4',
+  lips: '#c9777a',
+  hair: '#a97d56',
+  brow: '#6e5038',
+  iris: '#2c1e17',
+  shirt: '#1e4a33',
+  shirtTrim: '#153826',
+  shirtButton: '#153826',
+  sleeves: 'short',
+  pants: '#1e4a33',
+  pantsSeam: '#153826',
+  pantsFade: false,
+  feet: { kind: 'sockAndBare', sock: '#34373d', stripe: '#9ca3ad' },
+  cap: null,
+  // Out for a ride: socks on both feet and black flats with pale soles.
+  outing: { shoe: '#1d1b1e', sole: '#e3ddd4', sock: '#34373d' },
+  figure: 'woman',
+  height: 0.9,
+  clothRim: 0.3,
+  lidRest: 0.3,
 };
 
 /**
@@ -158,9 +205,11 @@ interface Part {
 }
 
 /**
- * The human (Phase 4, redesigned in the quality pass): a stylized, animated-film-style adult man built in code
- * (original, no files), in a `HumanLook`: the household human (warm tan skin, layered short black hair, an untucked
- * sage button-down shirt, blue jeans, one striped sock: Moke has the other) or the delivery driver. Drawn with Moke's own soft toon shading and thin silhouette line.
+ * The human (Phase 4, redesigned in the quality pass): a stylized, animated-film-style adult built in code
+ * (original, no files), in a `HumanLook`: the household man (warm tan skin, layered short black hair, an untucked
+ * sage button-down shirt, blue jeans, one striped sock: Moke has the other), the household woman (Phase 6: long
+ * light-brown hair, a dark green V-neck dress to her ankles, shorter) or the delivery driver. Drawn with Moke's own soft
+ * toon shading and thin silhouette line.
  *
  * One skinned body on the HumanRig skeleton: every part is built in the rest pose, weighted to its bones (smooth
  * blends at the waist, shoulders, elbows, knees and neck), and merged into one mesh per material with its colours
@@ -170,6 +219,9 @@ interface Part {
 export class StylizedHumanVisual implements HumanVisual {
   readonly object = new Group();
   readonly hands: { left: Object3D; right: Object3D };
+  readonly scale: number;
+  /** The skeleton and meshes, scaled to the look's height (the object itself stays at scale 1). */
+  private readonly body = new Group();
 
   private readonly bones = new Map<BoneName, Bone>();
   private readonly rest = new Map<BoneName, Vector3>();
@@ -183,26 +235,36 @@ export class StylizedHumanVisual implements HumanVisual {
   private readonly handR = new Vector3();
   private readonly eyes = new Vector3();
   private skeleton: Skeleton | null = null;
+  /** The upper lids' resting share of the eye (the look's, or LID.open). */
+  private readonly lidRest: number;
   /** The going-out socks and shoes (hidden at home). */
   private readonly outing: SkinnedMesh[] = [];
 
   constructor(readonly look: HumanLook = HOUSEHOLD_LOOK) {
     this.object.name = 'Human';
+    this.scale = look.height ?? 1;
+    this.lidRest = look.lidRest ?? LID.open;
+    this.object.add(this.body);
     const root = this.buildSkeleton();
-    this.object.add(root);
+    this.body.add(root);
     root.updateMatrixWorld(true);
-    const parts = [...torso(look), ...arms(look), ...legs(look), ...head(look), ...hands(look)];
+    const woman = look.figure === 'woman';
+    const parts = woman
+      ? [...dressTorso(look), ...arms(look), ...dressLegs(look), ...head(look), ...hands(look)]
+      : [...torso(look), ...arms(look), ...legs(look), ...head(look), ...hands(look)];
     this.buildMeshes(parts);
     if (look.outing) {
       this.outing.push(...this.buildMeshes(outingFeet(look.outing), 'Human:outing'));
       this.setGoingOut(false);
     }
     // The skeleton is bound in the rest pose (lids shut, scale 1); open the eyes to their resting look.
-    for (const side of ['L', 'R'] as const) this.bones.get(`lid${side}`)!.scale.y = LID.open;
+    for (const side of ['L', 'R'] as const) this.bones.get(`lid${side}`)!.scale.y = this.lidRest;
     this.hands = { left: this.anchor('wristL', 0, -0.075, 0.01), right: this.anchor('wristR', 0, -0.075, 0.01) };
     this.props = createHumanPropViews();
     this.hands.right.add(this.props.right);
     this.hands.left.add(this.props.left);
+    // Scaled after binding, so the bones' rest matrices are the rig's own.
+    this.body.scale.setScalar(this.scale);
   }
 
   apply(dt: number, pose: HumanAnimationState): void {
@@ -220,7 +282,7 @@ export class StylizedHumanVisual implements HumanVisual {
     smile.scale.set(0.8 + f.smile * 0.35, (0.2 + f.smile * 0.85) * Math.max(0.15, closed), 1);
     smile.visible = closed > 0.05;
     // The irises slide across the eyes (flat, toon-style eyes); the upper lids come down from the top of each eye.
-    const lid = LID.open + f.lids * (1 - LID.open);
+    const lid = this.lidRest + f.lids * (1 - this.lidRest);
     const lookX = Math.max(-1, Math.min(1, f.eyeYaw / 0.3)) * EYE_SHIFT.x;
     const lookY = Math.max(-1, Math.min(1, f.eyePitch / 0.3)) * EYE_SHIFT.y;
     for (const side of ['L', 'R'] as const) {
@@ -230,7 +292,7 @@ export class StylizedHumanVisual implements HumanVisual {
       eye.position.set(rest.x + Math.cos(turn) * lookX, rest.y + lookY, rest.z - Math.sin(turn) * lookX);
       this.bones.get(`lid${side}`)!.scale.y = lid;
       const lash = this.bones.get(`lash${side}`)!;
-      lash.position.y = this.rest.get(`lash${side}`)!.y - (lid - LID.open) * EYE.lid.y * 2 * 0.92;
+      lash.position.y = this.rest.get(`lash${side}`)!.y - (lid - this.lidRest) * EYE.lid.y * 2 * 0.92;
       const brow = this.bones.get(`brow${side}`)!;
       brow.position.y = this.rest.get(`brow${side}`)!.y + f.brows * 0.011;
       brow.rotation.z = (side === 'L' ? -1 : 1) * f.brows * 0.14;
@@ -293,7 +355,7 @@ export class StylizedHumanVisual implements HumanVisual {
       make(`eye${side}`, head, [s * EYE.x, EYE.y, EYE.z]);
       // The lid scales down from the top of the eye; the lash line rides its lower edge.
       make(`lid${side}`, head, [s * EYE.x, EYE.y + EYE.lid.y, EYE.z]);
-      make(`lash${side}`, head, [s * EYE.x, EYE.y + EYE.lid.y - LID.open * EYE.lid.y * 2 * 0.92, EYE.z]);
+      make(`lash${side}`, head, [s * EYE.x, EYE.y + EYE.lid.y - this.lidRest * EYE.lid.y * 2 * 0.92, EYE.z]);
       make(`brow${side}`, head, [s * EYE.x, EYE.y + BROW_ABOVE_EYE, BROW_Z]);
     }
     return this.bones.get('hips')!;
@@ -348,6 +410,7 @@ export class StylizedHumanVisual implements HumanVisual {
       this.geometries.push(merged);
       const material = createToonMaterial('#ffffff', SHADE[name]);
       material.vertexColors = true;
+      if (name === 'shirt' && this.look.clothRim !== undefined) (material.userData.toon as { uRim: { value: Vector2 } }).uRim.value.y *= this.look.clothRim;
       this.materials.push(material);
       const mesh = new SkinnedMesh(merged, material);
       mesh.name = `${prefix}:${name}`;
@@ -355,7 +418,7 @@ export class StylizedHumanVisual implements HumanVisual {
       mesh.castShadow = name !== 'face';
       mesh.receiveShadow = true;
       mesh.frustumCulled = false;
-      this.object.add(mesh);
+      this.body.add(mesh);
       built.push(mesh);
       if (MOKE_LOOK.outline.enabled && OUTLINED.includes(name)) {
         const outline = createSkinnedOutlineMaterial();
@@ -367,7 +430,7 @@ export class StylizedHumanVisual implements HumanVisual {
         line.onBeforeRender = (renderer: WebGLRenderer) => {
           (outline.uniforms.uResolution!.value as Vector2).copy(renderer.getDrawingBufferSize(drawingBuffer));
         };
-        this.object.add(line);
+        this.body.add(line);
         built.push(line);
       }
     }
@@ -593,17 +656,17 @@ const SHIRT: readonly Ring[] = [
   { y: CHEST.y + 0.212, out: 0.076, front: 0.062, back: 0.068, fwd: -0.012 },
 ];
 
-/** How far forward the shirt's front is at height y, down the middle (for the placket and buttons). */
-function shirtFront(y: number): number {
-  for (let i = 0; i < SHIRT.length - 1; i++) {
-    const a = SHIRT[i]!;
-    const b = SHIRT[i + 1]!;
+/** How far forward a garment's front is at height y, down the middle (the shirt's: for the placket and buttons). */
+function shirtFront(y: number, rings: readonly Ring[] = SHIRT): number {
+  for (let i = 0; i < rings.length - 1; i++) {
+    const a = rings[i]!;
+    const b = rings[i + 1]!;
     if (y <= b.y) {
       const t = Math.max(0, (y - a.y) / (b.y - a.y));
       return lerp((a.fwd ?? 0) + a.front, (b.fwd ?? 0) + b.front, t);
     }
   }
-  const last = SHIRT[SHIRT.length - 1]!;
+  const last = rings[rings.length - 1]!;
   return (last.fwd ?? 0) + last.front;
 }
 
@@ -621,36 +684,37 @@ const COLLAR = {
   vBottom: NECK.y - 0.07,
 };
 
-/** The shirt's surface, for laying things flat on it (collar leaves); built on first use. */
-let shirtMesh: Mesh | null = null;
-/** How far forward the shirt's surface is at (x, y), character space. */
-function shirtZ(x: number, y: number): number {
-  shirtMesh ??= new Mesh(loftRings(SHIRT));
+/** Each garment's surface, for laying things flat on it (collar leaves, a neckline); built on first use. */
+const surfaces = new Map<readonly Ring[], Mesh>();
+/** How far forward a garment's surface (the shirt's by default) is at (x, y), character space. */
+function shirtZ(x: number, y: number, rings: readonly Ring[] = SHIRT): number {
+  let mesh = surfaces.get(rings);
+  if (!mesh) surfaces.set(rings, (mesh = new Mesh(loftRings(rings))));
   ray.set(new Vector3(x, y, 1), new Vector3(0, 0, -1));
-  const hit = ray.intersectObject(shirtMesh, false)[0];
-  return hit ? hit.point.z : shirtFront(y);
+  const hit = ray.intersectObject(mesh, false)[0];
+  return hit ? hit.point.z : shirtFront(y, rings);
 }
 
 /**
  * A flat piece lying on the shirt's front: the polygon (x, y) with its edges finely subdivided, each vertex pushed
  * onto the shirt's surface plus `lift`, and `thickness` deep (0: a single surface).
  */
-function onShirt(outline: readonly (readonly [number, number])[], lift: number, thickness = 0): BufferGeometry {
+function onShirt(outline: readonly (readonly [number, number])[], lift: number, thickness = 0, rings: readonly Ring[] = SHIRT, passes = 2): BufferGeometry {
   const shape = new Shape();
   outline.forEach(([x, y], i) => (i === 0 ? shape.moveTo(x, y) : shape.lineTo(x, y)));
   shape.closePath();
   const g = thickness > 0 ? new ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false, curveSegments: 1, steps: 1 }) : new ShapeGeometry(shape);
-  const detailed = subdivide(g);
+  const detailed = subdivide(g, passes);
   const p = detailed.getAttribute('position');
-  for (let i = 0; i < p.count; i++) p.setZ(i, shirtZ(p.getX(i), p.getY(i)) + lift + p.getZ(i));
+  for (let i = 0; i < p.count; i++) p.setZ(i, shirtZ(p.getX(i), p.getY(i), rings) + lift + p.getZ(i));
   detailed.computeVertexNormals();
   return detailed;
 }
 
-/** Splits every triangle into four, twice, so a flat piece can follow a curved surface. */
-function subdivide(source: BufferGeometry): BufferGeometry {
+/** Splits every triangle into four, `passes` times, so a flat piece can follow a curved surface. */
+function subdivide(source: BufferGeometry, passes = 2): BufferGeometry {
   let g = source.index ? source.toNonIndexed() : source;
-  for (let pass = 0; pass < 2; pass++) {
+  for (let pass = 0; pass < passes; pass++) {
     const p = g.getAttribute('position');
     const out: number[] = [];
     const v = (i: number) => [p.getX(i), p.getY(i), p.getZ(i)];
@@ -859,41 +923,199 @@ function legs(look: HumanLook): Part[] {
     parts.push({ geometry: new SphereGeometry(0.052, 12, 8).translate(knee.x, knee.y, knee.z - 0.002), material: 'jeans', color: look.pants, bind: kneeBone });
     const seam = new TorusGeometry(0.057, 0.0045, 5, 20).rotateX(Math.PI / 2);
     parts.push({ geometry: seam.translate(ankle.x, JEANS_LEG[0]!.y + 0.004, ankle.z), material: 'jeans', color: look.pantsSeam, bind: kneeBone });
-    // Ankle and foot, the sole flat on the floor at rest.
-    const feet = look.feet;
-    if (feet.kind === 'shoes') {
-      // A plain black work shoe on each foot: the foot's shape a little bigger (about the ankle, so the sole stays on
-      // the floor), on a slightly paler sole.
-      const bind: Bind = `ankle${side}`;
-      const around = (g: BufferGeometry, sx: number, sy: number, sz: number) => g.translate(-ankle.x, 0, -ankle.z).scale(sx, sy, sz).translate(ankle.x, 0, ankle.z);
-      parts.push({ geometry: new CylinderGeometry(0.038, 0.042, 0.09, 12).translate(ankle.x, ankle.y + 0.02, ankle.z), material: 'sock', color: feet.shoe, bind });
-      parts.push({ geometry: around(foot(ankle), 1.13, 1.18, 1.08), material: 'sock', color: feet.shoe, bind });
-      parts.push({ geometry: around(foot(ankle), 1.17, 0.3, 1.11), material: 'sock', color: feet.sole, bind });
-      continue;
-    }
-    // The left in the striped sock, the right bare (Moke has the other sock).
-    const socked = side === 'L';
-    const material: MaterialName = socked ? 'sock' : 'skin';
-    const color = socked ? feet.sock : look.skin;
-    parts.push({ geometry: new CylinderGeometry(0.035, 0.039, 0.09, 12).translate(ankle.x, ankle.y + 0.02, ankle.z), material, color, bind: `ankle${side}` });
-    parts.push({ geometry: foot(ankle), material, color, bind: `ankle${side}` });
-    if (socked) {
-      for (const y of [ankle.y + 0.04, ankle.y + 0.012]) {
-        const stripe = new TorusGeometry(0.038, 0.0065, 5, 16).rotateX(Math.PI / 2);
-        parts.push({ geometry: stripe.translate(ankle.x, y, ankle.z), material: 'sock', color: feet.stripe, bind: `ankle${side}` });
-      }
-    } else {
-      // Toes, the big toe on the inside.
-      const inward = -Math.sign(ankle.x);
-      for (let k = 0; k < 4; k++) {
-        const toe = new SphereGeometry(0.0135 - k * 0.0015, 8, 6);
-        parts.push({ geometry: toe.translate(ankle.x + inward * (0.02 - k * 0.019), 0.013, ankle.z + 0.172 - k * 0.008), material: 'skin', color: look.skin, bind: `ankle${side}` });
-      }
-    }
+    parts.push(...footParts(look, side));
   }
   return parts;
 }
 const DENIM_FADE = new Color('#7d97b9');
+
+/** One ankle and foot, the sole flat on the floor at rest: in shoes, or (household) the striped sock on the left, the right bare. */
+function footParts(look: HumanLook, side: 'L' | 'R'): Part[] {
+  const parts: Part[] = [];
+  const ankle = jointAt(`ankle${side}`);
+  const feet = look.feet;
+  if (feet.kind === 'shoes') {
+    // A plain black work shoe on each foot: the foot's shape a little bigger (about the ankle, so the sole stays on
+    // the floor), on a slightly paler sole.
+    const bind: Bind = `ankle${side}`;
+    const around = (g: BufferGeometry, sx: number, sy: number, sz: number) => g.translate(-ankle.x, 0, -ankle.z).scale(sx, sy, sz).translate(ankle.x, 0, ankle.z);
+    parts.push({ geometry: new CylinderGeometry(0.038, 0.042, 0.09, 12).translate(ankle.x, ankle.y + 0.02, ankle.z), material: 'sock', color: feet.shoe, bind });
+    parts.push({ geometry: around(foot(ankle), 1.13, 1.18, 1.08), material: 'sock', color: feet.shoe, bind });
+    parts.push({ geometry: around(foot(ankle), 1.17, 0.3, 1.11), material: 'sock', color: feet.sole, bind });
+    return parts;
+  }
+  // The left in the striped sock, the right bare (Moke has the other sock).
+  const socked = side === 'L';
+  const material: MaterialName = socked ? 'sock' : 'skin';
+  const color = socked ? feet.sock : look.skin;
+  parts.push({ geometry: new CylinderGeometry(0.035, 0.039, 0.09, 12).translate(ankle.x, ankle.y + 0.02, ankle.z), material, color, bind: `ankle${side}` });
+  parts.push({ geometry: foot(ankle), material, color, bind: `ankle${side}` });
+  if (socked) {
+    for (const y of [ankle.y + 0.04, ankle.y + 0.012]) {
+      const stripe = new TorusGeometry(0.038, 0.0065, 5, 16).rotateX(Math.PI / 2);
+      parts.push({ geometry: stripe.translate(ankle.x, y, ankle.z), material: 'sock', color: feet.stripe, bind: `ankle${side}` });
+    }
+  } else {
+    // Toes, the big toe on the inside.
+    const inward = -Math.sign(ankle.x);
+    for (let k = 0; k < 4; k++) {
+      const toe = new SphereGeometry(0.0135 - k * 0.0015, 8, 6);
+      parts.push({ geometry: toe.translate(ankle.x + inward * (0.02 - k * 0.019), 0.013, ankle.z + 0.172 - k * 0.008), material: 'skin', color: look.skin, bind: `ankle${side}` });
+    }
+  }
+  return parts;
+}
+
+// ---------------------------------------------------------------- the woman's dress (Phase 6)
+
+/**
+ * The dress's bodice, bottom (just under the sash) to top: fitted, in at the waist, out over the bust, the same
+ * shoulders as the shirt's so the sleeves meet it, closing round the neck like the shirt does (the V is laid on top).
+ */
+const BODICE: readonly Ring[] = [
+  { y: HIPS.y + 0.075, out: 0.143, front: 0.093, back: 0.096, pOut: 0.84 },
+  { y: HIPS.y + 0.12, out: 0.14, front: 0.092, back: 0.094, pOut: 0.85 },
+  { y: CHEST.y - 0.08, out: 0.146, front: 0.097, back: 0.096 },
+  { y: CHEST.y - 0.02, out: 0.157, front: 0.117, back: 0.1, fwd: 0.004 },
+  { y: CHEST.y + 0.05, out: 0.165, front: 0.128, back: 0.102, fwd: 0.006 },
+  { y: CHEST.y + 0.11, out: 0.174, front: 0.108, back: 0.102 },
+  { y: CHEST.y + 0.16, out: 0.193, front: 0.094, back: 0.096, fwd: -0.006 },
+  { y: CHEST.y + 0.186, out: 0.18, front: 0.083, back: 0.086, fwd: -0.008 },
+  { y: CHEST.y + 0.201, out: 0.138, front: 0.072, back: 0.077, fwd: -0.01 },
+  { y: CHEST.y + 0.212, out: 0.05, front: 0.045, back: 0.05, fwd: -0.012 },
+];
+
+/**
+ * The skirt, hem to waist: one piece round both legs, an easy A-line from the hips (never so wide at the hands that
+ * they'd brush through it) out to just above the ankles. Its top tucks under the bodice and the sash.
+ */
+const SKIRT: readonly Ring[] = [
+  { y: 0.1, out: 0.235, front: 0.2, back: 0.214, fwd: 0.006, pOut: 0.9 },
+  { y: 0.3, out: 0.222, front: 0.178, back: 0.194, fwd: 0.005, pOut: 0.88 },
+  { y: 0.5, out: 0.204, front: 0.153, back: 0.17, fwd: 0.004, pOut: 0.86 },
+  { y: 0.7, out: 0.182, front: 0.128, back: 0.148, fwd: 0.002, pOut: 0.84 },
+  { y: 0.8, out: 0.17, front: 0.118, back: 0.14, pOut: 0.82 },
+  { y: 0.88, out: 0.168, front: 0.11, back: 0.133, pOut: 0.8 },
+  { y: HIPS.y - 0.01, out: 0.16, front: 0.102, back: 0.12, pOut: 0.8 },
+  { y: HIPS.y + 0.05, out: 0.148, front: 0.094, back: 0.1, pOut: 0.82 },
+  { y: HIPS.y + 0.1, out: 0.138, front: 0.088, back: 0.09, pOut: 0.84 },
+];
+/** The sash at the waist, over the seam between the bodice and the skirt. */
+const SASH_Y = HIPS.y + 0.085;
+
+function dressTorso(look: HumanLook): Part[] {
+  const parts: Part[] = [];
+  const waist = HIPS.y + 0.1;
+  parts.push({
+    geometry: loftRings(BODICE),
+    material: 'shirt',
+    color: look.shirt,
+    bind: (p) => {
+      if (p.y < waist) return blendY('hips', 'spine', HIPS.y - 0.02, waist)(p);
+      const ax = Math.abs(p.x);
+      // The shoulders ride the collarbones and a little of the arm, as the shirt's do.
+      if (p.y > CHEST.y + 0.06 && ax > 0.09) {
+        const top = Math.min(1, (p.y - CHEST.y - 0.06) / 0.08);
+        const clavicle = Math.min(1, (ax - 0.09) / 0.07) * top;
+        const arm = smoothstep(0.16, 0.21, ax) * top * 0.4;
+        return [
+          ['chest', 1 - clavicle],
+          [p.x > 0 ? 'clavicleL' : 'clavicleR', clavicle - arm],
+          [p.x > 0 ? 'shoulderL' : 'shoulderR', arm],
+        ];
+      }
+      return blendY('spine', 'chest', waist + 0.04, CHEST.y + 0.02)(p);
+    },
+  });
+  // The V neckline: skin laid on the bodice from the neck down toward the bust, edged with a thin band of the trim.
+  const v = { top: CHEST.y + 0.218, half: 0.05, bottom: CHEST.y + 0.075 };
+  // Finely divided, so it follows the bodice's curve in toward the neck instead of dipping under it.
+  parts.push({ geometry: onShirt([[-v.half, v.top], [v.half, v.top], [0, v.bottom]], 0.0025, 0, BODICE, 5), material: 'face', color: look.skin, bind: 'chest' });
+  for (const sx of [1, -1]) {
+    const band: [number, number][] = [
+      [sx * v.half, v.top - 0.006],
+      [sx * (v.half + 0.009), v.top - 0.006],
+      [0, v.bottom - 0.011],
+      [0, v.bottom],
+    ];
+    parts.push({ geometry: onShirt(sx > 0 ? band : band.reverse(), 0.0032, 0, BODICE, 5), material: 'face', color: look.shirtTrim, bind: 'chest' });
+  }
+  // The sash: a soft band round the waist.
+  const sash = new TorusGeometry(0.143, 0.011, 8, 40).rotateX(Math.PI / 2).scale(1, 1.5, 0.67).translate(0, SASH_Y, 0.001);
+  parts.push({ geometry: sash, material: 'shirt', color: look.shirtTrim, bind: blendY('hips', 'spine', HIPS.y, waist) });
+  // A slimmer neck than the man's, from inside the bodice into the head.
+  parts.push({
+    geometry: new CylinderGeometry(0.05, 0.057, 0.15, 18).scale(1, 1, 0.95).translate(0, NECK.y + 0.035, -0.01),
+    material: 'skin',
+    color: look.skin,
+    bind: (p) => {
+      if (p.y < NECK.y + 0.04) return blendY('chest', 'neck', NECK.y - 0.03, NECK.y + 0.02)(p);
+      return blendY('neck', 'head', NECK.y + 0.05, HEAD.y + 0.01)(p);
+    },
+  });
+  return parts;
+}
+
+/**
+ * Below the waist: the skirt, its bare shins and her feet. The skirt is one piece round both legs. In front, each side
+ * follows its own leg (a raised knee never comes through it); behind, each side follows mostly its own leg and partly
+ * the other, so when the legs swing apart (walking) the back sways with the stride instead of twisting round, and when
+ * they move together (sitting, lounging) it follows them all the way, draping over the knees. Above the knees it moves
+ * like the jeans (the seat stays with the pelvis); below them, with the shins.
+ */
+function dressLegs(look: HumanLook): Part[] {
+  const parts: Part[] = [];
+  const hip = jointAt('hipL');
+  const knee = jointAt('kneeL');
+  const hem = SKIRT[0]!.y;
+  const skirt = paint(loftRings(SKIRT), (p, _n, out) => {
+    // Soft folds falling from the hips, and a darker band at the hem.
+    const fold = 0.5 + 0.5 * Math.cos(Math.atan2(p.x, p.z) * 9);
+    out.set(look.shirt).lerp(DRESS_SHADE, fold * 0.18 * smoothstep(0.85, 0.3, p.y));
+    if (p.y < hem + 0.025) out.set(look.shirtTrim);
+  });
+  parts.push({
+    geometry: skirt,
+    material: 'shirt',
+    color: look.shirt,
+    bind: (p) => {
+      const waist = HIPS.y + 0.1;
+      if (p.y > HIPS.y - 0.02) return blendY('hips', 'spine', HIPS.y - 0.02, waist)(p);
+      const own = smoothstep(-0.07, 0.07, p.x);
+      const shared = 0.5 + SKIRT_SPLIT * (2 * smoothstep(-0.12, 0.12, p.x) - 1);
+      const left = lerp(own, shared, smoothstep(0.02, -0.06, p.z));
+      const right = 1 - left;
+      if (p.y > knee.y + 0.13) {
+        const lower = p.z < 0 ? 0.07 * Math.min(1, -p.z / 0.06) : 0;
+        const w = smoothstep(hip.y + 0.02 - lower, hip.y - 0.17 - lower, p.y);
+        return [
+          ['hips', 1 - w],
+          ['hipL', w * left],
+          ['hipR', w * right],
+        ];
+      }
+      const k = smoothstep(knee.y + 0.06, knee.y - 0.06, p.y);
+      return [
+        ['hipL', (1 - k) * left],
+        ['kneeL', k * left],
+        ['hipR', (1 - k) * right],
+        ['kneeR', k * right],
+      ];
+    },
+  });
+  for (const side of ['L', 'R'] as const) {
+    const kneeAt = jointAt(`knee${side}`);
+    const ankle = jointAt(`ankle${side}`);
+    // Bare shins under the skirt, from the knee to the ankle.
+    const shin = limb(new Vector3(kneeAt.x, kneeAt.y + 0.04, kneeAt.z), kneeAt.y + 0.04 - ankle.y - 0.03, [0.048, 0.05, 0.047, 0.041, 0.035, 0.032], 0.94, 14);
+    parts.push({ geometry: shin, material: 'skin', color: look.skin, bind: blendY(`knee${side}`, `hip${side}`, kneeAt.y - 0.03, kneeAt.y + 0.04) });
+    parts.push(...footParts(look, side));
+  }
+  return parts;
+}
+const DRESS_SHADE = new Color('#0f2a1c');
+/** Behind, how much more each side of the skirt follows its own leg than the other (0: both alike … 0.5: its own only). */
+const SKIRT_SPLIT = 0.32;
 
 /**
  * Going out: a sock on each foot (a band of it shows between the shoe and the jeans) and a low sneaker over it, a
@@ -994,7 +1216,7 @@ function onHead(g: BufferGeometry, x: number, y: number, z: number): BufferGeome
 }
 
 /** The lash line: a thin arc along the lid's lower edge, following the eye's curve (head-bone space, at the lash bone). */
-function lashLine(): BufferGeometry {
+function lashLine(radius = 0.001): BufferGeometry {
   const points: Vector3[] = [];
   for (let k = 0; k <= 12; k++) {
     const u = k / 12;
@@ -1002,11 +1224,12 @@ function lashLine(): BufferGeometry {
     const across = Math.max(0, 1 - (x / EYE.lid.x) ** 2);
     points.push(new Vector3(x, -0.0014 * across + 0.0008 * (1 - across), -0.002 + EYE.lid.z * Math.sqrt(across) * 0.92));
   }
-  return new TubeGeometry(new CatmullRomCurve3(points), 16, 0.001, 5, false);
+  return new TubeGeometry(new CatmullRomCurve3(points), 16, radius, 5, false);
 }
 
 function head(look: HumanLook): Part[] {
   const parts: Part[] = [];
+  const woman = look.figure === 'woman';
   const skin = (geometry: BufferGeometry, color = look.skin): Part => ({ geometry, material: 'skin', color, bind: 'head' });
   const face = (geometry: BufferGeometry, color: string, bind: Bind = 'head'): Part => ({ geometry, material: 'face', color, bind });
   parts.push(skin(onHead(SKULL.clone(), 0, 0, 0)));
@@ -1035,14 +1258,15 @@ function head(look: HumanLook): Part[] {
     parts.push(face(eye(glint, 0.0033, 0.0033, front + 0.0009), COLORS.catchLight, `eye${side}`));
     // The upper lid: skin over the eye, scaled down from the top of the eye by its bone (open … shut).
     parts.push(face(eye(new SphereGeometry(1, 20, 12).scale(EYE.lid.x, EYE.lid.y, EYE.lid.z), 0, 0, -0.002), look.skin, `lid${side}`));
-    parts.push(face(eye(lashLine(), 0, EYE.lid.y - LID.open * EYE.lid.y * 2 * 0.92, 0), COLORS.lash, `lash${side}`));
-    // Straight, natural brows: a little fuller toward the middle, tapering outward.
-    const brow = new CapsuleGeometry(0.0039, 0.028, 4, 8).rotateZ(Math.PI / 2);
+    // Her lashes are fuller.
+    parts.push(face(eye(lashLine(woman ? 0.0017 : 0.001), 0, EYE.lid.y - (look.lidRest ?? LID.open) * EYE.lid.y * 2 * 0.92, 0), COLORS.lash, `lash${side}`));
+    // Straight, natural brows, a little fuller toward the middle and tapering outward; hers are finer and arched.
+    const brow = new CapsuleGeometry(woman ? 0.0028 : 0.0039, woman ? 0.03 : 0.028, 4, 8).rotateZ(Math.PI / 2);
     const bp = brow.getAttribute('position');
     for (let i = 0; i < bp.count; i++) {
       const bx = bp.getX(i);
-      const taper = 1 - 0.45 * Math.max(0, (bx * sx) / 0.019);
-      bp.setY(i, bp.getY(i) * taper + 0.004 * (1 - (bx / 0.019) ** 2));
+      const taper = 1 - (woman ? 0.6 : 0.45) * Math.max(0, (bx * sx) / 0.019);
+      bp.setY(i, bp.getY(i) * taper + (woman ? 0.0065 : 0.004) * (1 - (bx / 0.019) ** 2));
     }
     brow.rotateZ(sx * -0.04);
     parts.push(face(onHead(brow, sx * (EYE.x + 0.002), EYE.y + BROW_ABOVE_EYE, BROW_Z), look.brow, `brow${side}`));
@@ -1058,8 +1282,10 @@ function head(look: HumanLook): Part[] {
   // making the hairline, the fringe and the nape (see hairShell). Under a cap it lies flat where the cap covers it,
   // so only the sides above the ears and the back show.
   const capBase = SKULL_CENTER + 0.026;
-  const hair = hairShell(look.hair, look.cap ? (capBase - SKULL_CENTER) / SKULL_SIZE.up : null);
+  // Hers is smoother, the fringe swept back off her forehead, and long (see longHair).
+  const hair = hairShell(look.hair, look.cap ? (capBase - SKULL_CENTER) / SKULL_SIZE.up : null, woman ? { tipFront: 0.03, ridge: 0.003 } : {});
   parts.push({ geometry: onHead(hair, 0, 0, 0), material: 'hair', color: look.hair, bind: 'head' });
+  if (woman) parts.push(...longHair(look));
   if (look.cap) {
     // A peaked cap: a rounded crown over the top of the head, sitting above the ears, a stiff brim curving out over
     // the brow, a button on top.
@@ -1114,7 +1340,9 @@ function hairShades(hair: string): { deep: Color; sheen: Color } {
  * and nape are scalloped by lock tips instead of cut along a line. Below the hairline the shell tucks under the skin.
  * Under a cap (`capAt`: the cap's lower edge, as a height on the unit skull) it lies flat to the scalp above that edge.
  */
-function hairShell(color: string, capAt: number | null): BufferGeometry {
+function hairShell(color: string, capAt: number | null, style: { tipFront?: number; ridge?: number } = {}): BufferGeometry {
+  const tipFront = style.tipFront ?? HAIR.tipFront;
+  const ridge = style.ridge ?? HAIR.ridge;
   const { deep, sheen } = hairShades(color);
   const g = new SphereGeometry(1, 64, 56);
   const p = g.getAttribute('position');
@@ -1135,13 +1363,13 @@ function hairShell(color: string, capAt: number | null): BufferGeometry {
     // The locks only separate once they've grown away from the whorl.
     const grown = smoothstep(0.3, 0.9, fromCrown);
     const front = Math.max(0, Math.cos(around));
-    const tip = HAIR.tipSide + (HAIR.tipFront - HAIR.tipSide) * front + (HAIR.tipBack - HAIR.tipSide) * Math.max(0, -Math.cos(around));
+    const tip = HAIR.tipSide + (tipFront - HAIR.tipSide) * front + (HAIR.tipBack - HAIR.tipSide) * Math.max(0, -Math.cos(around));
     const edge = hairline(around) - tip * lock * grown;
     const inside = smoothstep(edge - 0.01, edge + 0.028, y);
     const top = smoothstep(0.25, 0.95, y);
     // Volume: close at the back and sides, fuller on top and toward the front, a little more on his right (the sweep).
     let thick = 0.007 + 0.02 * top * (0.5 + 0.5 * front) + 0.007 * top * Math.max(0, -Math.sin(around)) * front;
-    thick += HAIR.ridge * (lock - 0.5) * grown * inside;
+    thick += ridge * (lock - 0.5) * grown * inside;
     // The parting: a slight groove on his left.
     thick -= 0.004 * Math.exp(-(((around - 0.5) / 0.1) ** 2)) * smoothstep(0.4, 0.8, y);
     thick = lerp(-0.006, thick, inside);
@@ -1162,6 +1390,46 @@ function hairShell(color: string, capAt: number | null): BufferGeometry {
   return g;
 }
 
+/**
+ * Her long hair (character space, rest pose): falling from under the crown down the back of her head, out over her
+ * shoulders behind them and down to the middle of her back, its ends a soft V; and a lock either side of her face,
+ * from the temples to the jaw. The top moves with her head, the length with her back.
+ */
+const HAIR_FALL: readonly Ring[] = [
+  { y: HEAD.y - 0.44, fwd: -0.137, out: 0.132, front: 0.012, back: 0.022, pOut: 0.6, lift: (a) => 0.06 * Math.sin(a) ** 2 },
+  { y: HEAD.y - 0.36, fwd: -0.141, out: 0.15, front: 0.018, back: 0.03, pOut: 0.7 },
+  { y: HEAD.y - 0.25, fwd: -0.141, out: 0.158, front: 0.022, back: 0.036, pOut: 0.75 },
+  { y: HEAD.y - 0.15, fwd: -0.128, out: 0.155, front: 0.03, back: 0.042 },
+  { y: HEAD.y - 0.08, fwd: -0.092, out: 0.13, front: 0.045, back: 0.06 },
+  { y: HEAD.y, fwd: -0.057, out: 0.122, front: 0.06, back: 0.078 },
+  { y: HEAD.y + 0.07, fwd: -0.042, out: 0.117, front: 0.065, back: 0.085 },
+  { y: HEAD.y + 0.14, fwd: -0.042, out: 0.09, front: 0.05, back: 0.07 },
+];
+
+function longHair(look: HumanLook): Part[] {
+  const { deep, sheen } = hairShades(look.hair);
+  const strands = (g: BufferGeometry) =>
+    paint(g, (p, _n, out) => {
+      // Fine strands down its length, a little sheen on each.
+      const a = Math.atan2(p.x, p.z + 0.1);
+      const streak = 0.5 + 0.5 * Math.cos(a * 22 + p.y * 6);
+      out.copy(deep).lerp(sheen, 0.3 + 0.5 * streak);
+    });
+  const bind = blendY('chest', 'head', HEAD.y - 0.12, HEAD.y + 0.02);
+  const parts: Part[] = [{ geometry: strands(loftRings(HAIR_FALL)), material: 'hair', color: look.hair, bind }];
+  for (const sx of [1, -1]) {
+    const curve = new CatmullRomCurve3([
+      new Vector3(sx * 0.058, HEAD.y + 0.16, HEAD.z + 0.058),
+      new Vector3(sx * 0.1, HEAD.y + 0.1, HEAD.z + 0.066),
+      new Vector3(sx * 0.113, HEAD.y + 0.02, HEAD.z + 0.045),
+      new Vector3(sx * 0.116, HEAD.y - 0.065, HEAD.z + 0.018),
+    ]);
+    const lock = new TubeGeometry(curve, 20, 0.015, 8, false);
+    parts.push({ geometry: strands(lock), material: 'hair', color: look.hair, bind: blendY('neck', 'head', HEAD.y - 0.07, HEAD.y + 0.04) });
+  }
+  return parts;
+}
+
 function hands(look: HumanLook): Part[] {
   const parts: Part[] = [];
   for (const side of ['L', 'R'] as const) {
@@ -1169,8 +1437,9 @@ function hands(look: HumanLook): Part[] {
     const wrist = jointAt(`wrist${side}`);
     const fingers = jointAt(`fingers${side}`);
     const thumb = jointAt(`thumb${side}`);
-    // Palm: a soft slab, palm toward the thigh (±x), thumb forward; a man's hand.
-    const palm = new RoundedBoxGeometry(0.032, 0.094, 0.082, 3, 0.014);
+    // Palm: a soft slab, palm toward the thigh (±x), thumb forward; a man's hand, or her slimmer one.
+    const slim = look.figure === 'woman';
+    const palm = new RoundedBoxGeometry(slim ? 0.027 : 0.032, slim ? 0.088 : 0.094, slim ? 0.074 : 0.082, 3, slim ? 0.012 : 0.014);
     parts.push({ geometry: palm.translate(wrist.x, wrist.y - 0.05, wrist.z + 0.005), material: 'skin', color: look.skin, bind: `wrist${side}` });
     parts.push({
       geometry: new CylinderGeometry(0.029, 0.031, 0.03, 12).scale(0.72, 1, 1).translate(wrist.x, wrist.y + 0.003, wrist.z),
@@ -1181,10 +1450,10 @@ function hands(look: HumanLook): Part[] {
     // Four fingers, curling together from the knuckles.
     for (let k = 0; k < 4; k++) {
       const len = [0.064, 0.072, 0.068, 0.054][k]!;
-      const finger = new CapsuleGeometry(0.01, len - 0.02, 4, 8);
-      parts.push({ geometry: finger.translate(fingers.x, fingers.y - len / 2 + 0.006, fingers.z + 0.031 - k * 0.0205), material: 'skin', color: look.skin, bind: `fingers${side}` });
+      const finger = new CapsuleGeometry(slim ? 0.0085 : 0.01, len - 0.02, 4, 8);
+      parts.push({ geometry: finger.translate(fingers.x, fingers.y - len / 2 + 0.006, fingers.z + (slim ? 0.028 : 0.031) - k * (slim ? 0.0185 : 0.0205)), material: 'skin', color: look.skin, bind: `fingers${side}` });
     }
-    const thumbGeometry = new CapsuleGeometry(0.011, 0.036, 4, 8).rotateX(0.5).rotateZ(sx * 0.2);
+    const thumbGeometry = new CapsuleGeometry(slim ? 0.0095 : 0.011, 0.036, 4, 8).rotateX(0.5).rotateZ(sx * 0.2);
     parts.push({ geometry: thumbGeometry.translate(thumb.x - sx * 0.004, thumb.y - 0.026, thumb.z + 0.012), material: 'skin', color: look.skin, bind: `thumb${side}` });
   }
   return parts;

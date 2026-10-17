@@ -94,6 +94,7 @@ export class Human {
     this.visualPosition.copy(this.renderPosition);
     this.lastPosition.copy(this.renderPosition);
     this.lastHeading = controller.heading;
+    this.animation.scale = visual.scale ?? 1;
   }
 
   /** The fixed step: perceive, decide, move. */
@@ -154,11 +155,12 @@ export class Human {
     return out.copy(this.visualPosition).setY(this.visualPosition.y + this.eyeHeight() + 0.2);
   }
 
-  /** How high their eyes are right now (m above the floor). */
+  /** How high their eyes are right now (m above the floor): a shorter body's are lower. */
   eyeHeight(): number {
     const seat = this.controller.seat;
-    const standing = EYE_STANDING - 0.5 * this.brain.intent.crouch;
-    return seat ? lerp(standing, seat.height + EYE_SITTING_ABOVE_SEAT, smoothstep(SEAT_LOWER_FROM, 1, this.controller.seatBlend)) : standing;
+    const k = this.visual.scale ?? 1;
+    const standing = (EYE_STANDING - 0.5 * this.brain.intent.crouch) * k;
+    return seat ? lerp(standing, seat.height + EYE_SITTING_ABOVE_SEAT * k, smoothstep(SEAT_LOWER_FROM, 1, this.controller.seatBlend)) : standing;
   }
 
   /**

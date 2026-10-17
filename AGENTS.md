@@ -39,6 +39,9 @@ Shared, tool-independent instructions for every coding agent working in this rep
   owner's answers: `docs/PHASE_6.md` (D30–D34): Halloween, photo mode, a day in the life, the Garage and a car ride to
   Torrey Pines (6.1 Halloween is done; the owner moved 6.4 the Garage and 6.5 the ride ahead of 6.2 and 6.3). Add or change milestones only as the owner approves them. Don't add
   more humans, more rooms, outdoors beyond the backyard, more dogs or another mini-game without the owner's approval.
+  The owner added one (D35): **the household woman**, who lives here instead of the man on about half the visits
+  (random but even, `src/human/household.ts`). Gameplay never branches on which of them it is, and lines about the
+  human stay gender-neutral.
   Also carried over: `docs/PHASE_5.md` → "Carried forward", and the Known Issues in `docs/CURRENT_STATE.md`.
 - **Current handoff:** `docs/CURRENT_STATE.md`.
 - **Philosophy.** When in doubt, ask "does this make it more fun to be Moke?"

@@ -66,6 +66,7 @@ import { Treat } from '../heist/Treat';
 import { BowlRefill } from '../human/activities/BowlRefill';
 import { HumanActivityController } from '../human/activities/HumanActivityController';
 import { HumanReactions } from '../human/activities/HumanReactions';
+import { HOUSEHOLD, pickHousehold, type HouseholdId } from '../human/household';
 import { NavGrid } from '../human/NavGrid';
 import { DogBowls, type BowlKind } from '../world/DogBowls';
 import { BOWLS, placeById, TV_SCREENS, type TvScreenSpot } from '../world/home/places';
@@ -511,6 +512,22 @@ export class Game {
     this.registerAttention();
   }
 
+  /**
+   * Who's home this visit: the man or the woman, random but even over time (human/household.ts). `?human=man` or
+   * `?human=woman` picks one for testing without using up a turn.
+   */
+  private whoLivesHere(): HouseholdId {
+    const asked = new URLSearchParams(location.search).get('human');
+    if (asked === 'man' || asked === 'woman') return asked;
+    let storage: Storage | null = null;
+    try {
+      storage = localStorage;
+    } catch {
+      storage = null;
+    }
+    return pickHousehold(storage);
+  }
+
   /** Sock Heist: the human, the treat and the trade (see heist/SockHeistRuntime.ts and docs/SOCK_HEIST.md). */
   private spawnHeist(physics: PhysicsWorld, moke: Moke): void {
     const sock = this.props.find((p) => p.id === 'sock');
@@ -533,6 +550,7 @@ export class Game {
       routine: this.routine,
       nav: this.nav,
       memory: this.logicMemory,
+      humanLook: HOUSEHOLD[this.whoLivesHere()],
     });
     this.events.on('HEIST_COMPLETE', ({ seconds }) => this.completeHeist(seconds));
     this.spawnDogActivities(physics, moke);

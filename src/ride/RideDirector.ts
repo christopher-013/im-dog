@@ -320,7 +320,7 @@ export class RideDirector {
     const pose = this.headOut ? RIDE.dogInCar.headOut : RIDE.dogInCar.headIn;
     const dog = this.cast.dog.object;
     dog.position.set(pose.x, pose.y, pose.z);
-    // Turned toward the window, then (head out) tipped nose-up against the door.
+    // Turned toward the window (and tipped by the pose's pitch, if it has one).
     dog.rotation.order = 'YXZ';
     dog.rotation.set(pose.pitch, pose.heading, 0);
     const s = this.dogAnim.update(dt, { speed: 0, turnRate: 0, headroom: 2 });

@@ -52,6 +52,13 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner: "Don't make the front paws stick outside the car they look like they are coming thru
+the door. Make the dog position in the car same as last time"): back to the earlier head-out pose (same height, turn
+and head lift, no tilt), moved 12 cm in from the door (`RIDE.dogInCar.headOut.x` −0.43 → −0.31), which the old pose
+needed too: its front legs came down outside the door. His head is still out past the glass (mouth at car x ≈ −0.99,
+the glass ≈ −0.9) and the happy wind face stays. Checked with renders from outside the door, the drive's views and
+the whole ride (no errors), and the unit tests. Not checked: a phone.
+
 Claude Code (2026-10-17, owner: "Fix as the dog isn't sticking their head out the car door when driving make that
 the default and make the dog happy with a big smile and tongue wagging during the drive. The air is blowing in their
 face"):

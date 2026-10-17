@@ -18,13 +18,18 @@
 //   minor at 100 BPM on the VI–VII–i climb (B♭, C, Dm): a deep sawtooth bass pulsing in eighths, swelling sawtooth
 //   string pads, a sixteenth-note arpeggio, a big gated snare over a deep kick, and a plain detuned-sawtooth lead
 //   (no slides, barely any vibrato). It replaced "Neon Coastline" and, before it, "Coastline Cruise" (both original
-//   too). Written for this game in that style; no real song is copied.
+//   too). Written for this game in that style; no real song is copied. Now the backup (`MUSIC.rideSong`).
+// - "Sundown Run" (the ride's song, Phase 6): fast synthwave (owner, 2026-10-17: an original "in that style, faster
+//   pumping beat and rolling sixteenth note", after naming a commercial synthwave track the game can't use). A minor
+//   at 118 BPM: four on the floor, a deep sawtooth bass rolling in sixteenths (root, octave on the "and"), wide
+//   sawtooth pads that duck and swell with every kick, a big gated snare, open hats, and a soaring detuned-sawtooth
+//   lead. Written for this game in that genre's style; no real song is copied.
 
 import { MUSIC } from '../config/audio';
 
 type ChordName =
   | 'C6' | 'Cmaj7' | 'F' | 'F6' | 'D7' | 'G7' | 'A7' | 'Fmaj7' | 'Dm7' | 'Gm7' | 'C7' | 'Bbmaj7' | 'Am7'
-  | 'Em' | 'C' | 'D' | 'B7' | 'Am' | 'A' | 'Bm' | 'G' | 'E' | 'Dm' | 'Bb' | 'Gm';
+  | 'Em' | 'C' | 'D' | 'B7' | 'Am' | 'A' | 'Bm' | 'G' | 'E' | 'Dm' | 'Bb' | 'Gm' | 'Fadd9';
 
 interface Chord {
   /** Bass notes (MIDI): the root, and the note for beat 3 (usually the fifth). */
@@ -67,12 +72,14 @@ export const CHORDS: Readonly<Record<ChordName, Chord>> = {
   // "Last Light": dark pads, voiced low.
   Bb: { bass: [46, 41], voicing: [58, 62, 65, 70], tones: [10, 2, 5] },
   Gm: { bass: [43, 50], voicing: [55, 58, 62, 67], tones: [7, 10, 2] },
+  // "Sundown Run": a wide synthwave F, the G on top.
+  Fadd9: { bass: [41, 48], voicing: [60, 65, 67, 69], tones: [5, 9, 0] },
 };
 
 /** A note: MIDI (null = rest), length in beats, and optionally a slide up from this many semitones below. */
 export type Note = readonly [midi: number | null, beats: number, slide?: number];
 
-export type Drum = 'shaker' | 'kick' | 'snare' | 'hat';
+export type Drum = 'shaker' | 'kick' | 'snare' | 'hat' | 'open';
 
 /** How a song is played: the instruments' sounds, and the rhythm section's patterns within a bar. */
 export interface Band {
@@ -105,17 +112,20 @@ export interface Band {
    * 'drive': pumping eighths, root and octave, with the fifth near the end of the bar.
    * 'sequence': a sequencer's sixteenths, the root with the octave on every fourth, the fifth leading into the next bar.
    * 'pulse': a relentless eighth-note root, the octave on the last eighth.
+   * 'roll': rolling sixteenths, the root with the octave on each "and".
    * `wave`: the console's round triangle (the default) or a gritty sawtooth through a low-pass at `tone` (Hz), which
    * opens a little at the start of each note.
    * `octave`: semitones to shift the line by (−12: an octave down, deep).
    */
-  bass: { style: 'twoFeel' | 'bounce' | 'drive' | 'sequence' | 'pulse'; level: number; wave?: 'triangle' | 'saw'; tone?: number; octave?: number };
+  bass: { style: 'twoFeel' | 'bounce' | 'drive' | 'sequence' | 'pulse' | 'roll'; level: number; wave?: 'triangle' | 'saw'; tone?: number; octave?: number };
   /** One bar of percussion: beat, drum, velocity. */
   drums: readonly (readonly [beat: number, drum: Drum, velocity: number])[];
   /** The big 80s snare: a drum's body under a burst of room noise, held, then cut dead by a gate. */
   gatedSnare?: boolean;
   /** A drum machine's deep, booming kick instead of the console's short thump. */
   deepKick?: boolean;
+  /** Sidechain pumping: the chords duck by this much (0..1) on every kick and swell back before the next. */
+  pump?: number;
   /** Chime bells (the `bells` line). */
   bell: { level: number };
   /** A gentle top-end roll-off for the whole band (Hz). */
@@ -433,11 +443,84 @@ const LAST_LIGHT: Song = {
   gain: 1.95,
 };
 
+// ---- "Sundown Run"
+
+/** The climb: up through A minor, F and C to a long G, the hook ringing out over the first chords. */
+const SUNDOWN_A: readonly Note[] = [
+  [76, 2], [72, 1], [74, 1],
+  [76, 1.5], [79, 0.5], [76, 1], [72, 1],
+  [77, 1.5], [76, 0.5], [72, 2],
+  [69, 2], [72, 1], [74, 1],
+  [76, 2], [79, 1], [76, 1],
+  [72, 2], [67, 1], [72, 1],
+  [74, 1.5], [71, 0.5], [74, 2],
+  [79, 3], [null, 1],
+];
+/** The lift: soaring to the high A over F and G, then the E major pulling back round to the top. */
+const SUNDOWN_B: readonly Note[] = [
+  [81, 2], [79, 1], [77, 1],
+  [79, 2], [74, 1], [71, 1],
+  [76, 1.5], [72, 0.5], [76, 1], [81, 1],
+  [81, 3], [79, 0.5], [77, 0.5],
+  [77, 2], [72, 1], [77, 1],
+  [79, 2], [74, 1], [79, 1],
+  [80, 3], [76, 1],
+  [71, 2], [null, 2],
+];
+
+const SUNDOWN_RUN: Song = {
+  id: 'cruise',
+  title: 'Sundown Run',
+  bpm: 118,
+  swing: 0.5,
+  bars: ['Am', 'Am', 'Fadd9', 'Fadd9', 'C', 'C', 'G', 'G', 'Fadd9', 'G', 'Am', 'Am', 'Fadd9', 'G', 'E', 'E'],
+  melody: [...SUNDOWN_A, ...SUNDOWN_B],
+  band: {
+    // A big, bright detuned-sawtooth lead, no slides.
+    lead: { duty: 0.5, tone: 2400, vibrato: 6, level: 0.09, synth: { detune: 10, resonance: 2 } },
+    // A dotted-eighth echo: the lead hanging in the air.
+    echo: { time: 0.381, feedback: 0.35, wet: 0.26 },
+    // Wide sawtooth pads, a chord a bar, pumping with the kick.
+    comp: {
+      steps: [[0, 'down', 1]],
+      ring: 3,
+      spread: 0,
+      duty: 0.5,
+      tone: 1800,
+      level: 0.034,
+      pad: { attack: 0.08, release: 0.4, detune: 14 },
+    },
+    // The rolling sixteenths, deep: an octave down.
+    bass: { style: 'roll', level: 0.25, wave: 'saw', tone: 520, octave: -12 },
+    // Four on the floor, the gated snare on 2 and 4, sixteenth hats, an open hat on every "and".
+    drums: [
+      [0, 'kick', 1],
+      [1, 'kick', 1],
+      [2, 'kick', 1],
+      [3, 'kick', 1],
+      [1, 'snare', 1],
+      [3, 'snare', 1],
+      ...[0.25, 0.75, 1.25, 1.75, 2.25, 2.75, 3.25, 3.75].map((b) => [b, 'hat', 0.35] as const),
+      ...[0.5, 1.5, 2.5, 3.5].map((b) => [b, 'open', 0.8] as const),
+    ],
+    gatedSnare: true,
+    deepKick: true,
+    pump: 0.7,
+    bell: { level: 0 },
+    mellow: 9000,
+  },
+  // Offline render at gain 1: −40.6 dB against "Aloha, Moke"'s −34.1 (measured the same way, 2026-10-17). ×2.1 puts
+  // it within ~0.1 dB of it. Alone, each part: bass −45.0, drums −46.0, lead −46.3, pads −47.9.
+  gain: 2.1,
+};
+
 export const SONGS: Readonly<Record<SongId, Song>> = { hawaiian: ALOHA, japan: IRASSHAIMASE };
 /** Choose Your Dog's theme. */
 export const FIGHT_THEME = PAWS_UP;
 /** The ride's song (Phase 6). */
-export const CRUISE_THEME = LAST_LIGHT;
+export const CRUISE_THEME = { sundownRun: SUNDOWN_RUN, lastLight: LAST_LIGHT }[MUSIC.rideSong];
+/** Both ride songs: the one playing and the backup (`MUSIC.rideSong` picks). */
+export const RIDE_SONGS: readonly Song[] = [SUNDOWN_RUN, LAST_LIGHT];
 export const TUNES: Readonly<Record<TuneId, Song>> = { ...SONGS, fight: FIGHT_THEME, cruise: CRUISE_THEME };
 /** The first song ("Aloha, Moke"). */
 export const SONG = ALOHA;
@@ -504,6 +587,10 @@ export function songEvents(song: Song = SONG): MusicEvent[] {
       // A relentless eighth-note root, the octave on the last eighth.
       const root = chord.bass[0] + (band.bass.octave ?? 0);
       for (let e = 0; e < 8; e++) add('bass', b + e / 2, b + (e + 1) / 2, [e === 7 ? root + 12 : root], e % 2 ? 0.75 : 1);
+    } else if (band.bass.style === 'roll') {
+      // Rolling sixteenths: the root, with the octave on each "and".
+      const root = chord.bass[0] + (band.bass.octave ?? 0);
+      for (let e = 0; e < 16; e++) add('bass', b + e / 4, b + (e + 1) / 4, [e % 4 === 2 ? root + 12 : root], e % 4 === 0 ? 1 : 0.7);
     } else if (band.bass.style === 'sequence') {
       // A sequencer's sixteenths: the root, the octave on every fourth, the fifth on the last two into the next bar.
       const [root, fifth] = chord.bass;
@@ -619,7 +706,7 @@ function pulseWave(ctx: BaseAudioContext, duty: number, harmonics = 24): Periodi
 }
 
 /** Percussion levels. */
-const DRUM_LEVEL: Readonly<Record<Drum, number>> = { shaker: 0.035, kick: 0.24, snare: 0.1, hat: 0.03 };
+const DRUM_LEVEL: Readonly<Record<Drum, number>> = { shaker: 0.035, kick: 0.24, snare: 0.1, hat: 0.03, open: 0.03 };
 
 /**
  * Plays one song through `out` on an AudioContext, a few notes ahead at a time, fading in and out. Also renders
@@ -630,6 +717,8 @@ export class MusicPlayer {
   private readonly leadIn: GainNode;
   /** Where every voice goes (the melody via its echo). */
   private readonly voicesOut: AudioNode;
+  /** Where the chords go: ducked on every kick when the band pumps. */
+  private readonly chordsOut: GainNode;
   private readonly sequencer: MusicSequencer;
   private readonly due: Scheduled[] = [];
   private readonly waves = new Map<number, PeriodicWave>();
@@ -669,6 +758,8 @@ export class MusicPlayer {
     this.leadIn.connect(echo).connect(feedback).connect(echo);
     echo.connect(wet).connect(mellow);
     this.voicesOut = mellow;
+    this.chordsOut = ctx.createGain();
+    this.chordsOut.connect(mellow);
   }
 
   get isPlaying(): boolean {
@@ -756,11 +847,14 @@ export class MusicPlayer {
         return this.noiseHit(time, 'highpass', 6000, DRUM_LEVEL.shaker * event.velocity, 0.045);
       case 'hat':
         return this.noiseHit(time, 'highpass', 7500, DRUM_LEVEL.hat * event.velocity, 0.03);
+      case 'open':
+        return this.noiseHit(time, 'highpass', 7000, DRUM_LEVEL.open * event.velocity, 0.2);
       case 'snare':
         return this.band.gatedSnare
           ? this.gatedSnare(time, event.velocity)
           : this.noiseHit(time, 'bandpass', 1900, DRUM_LEVEL.snare * event.velocity, 0.13);
       case 'kick':
+        this.duck(time);
         return this.band.deepKick ? this.deepKick(event, time) : this.kick(event, time);
     }
   }
@@ -839,7 +933,7 @@ export class MusicPlayer {
     amp.gain.linearRampToValueAtTime(peak, t + attack);
     amp.gain.setValueAtTime(peak, t + Math.max(attack, seconds));
     amp.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(attack, seconds) + release);
-    tone.connect(amp).connect(this.voicesOut);
+    tone.connect(amp).connect(this.chordsOut);
     const oscs = event.notes.flatMap((midi) =>
       [-detune, detune].map((cents) => {
         const osc = ctx.createOscillator();
@@ -896,7 +990,7 @@ export class MusicPlayer {
       amp.gain.setValueAtTime(0.0001, at);
       amp.gain.exponentialRampToValueAtTime(level * event.velocity, at + 0.004);
       amp.gain.exponentialRampToValueAtTime(0.0001, at + ring);
-      osc.connect(tone).connect(amp).connect(this.voicesOut);
+      osc.connect(tone).connect(amp).connect(this.chordsOut);
       osc.start(at);
       osc.stop(at + ring + 0.02);
       osc.onended = () => amp.disconnect();
@@ -977,6 +1071,17 @@ export class MusicPlayer {
     src.connect(tone).connect(amp).connect(this.voicesOut);
     src.start(t, Math.random() * 0.8, decay + 0.015);
     src.onended = () => amp.disconnect();
+  }
+
+  /** Sidechain pumping: on a kick, the chords drop away and swell back before the next beat. */
+  private duck(t: number): void {
+    const depth = this.band.pump;
+    if (!depth) return;
+    const beat = this.sequencer.secondsPerBeat;
+    const g = this.chordsOut.gain;
+    g.setValueAtTime(1, t);
+    g.linearRampToValueAtTime(1 - depth, t + 0.01);
+    g.linearRampToValueAtTime(1, t + beat * 0.8);
   }
 
   /** The big 80s snare: a drum's body under a burst of room noise, held, then cut dead by the gate. */

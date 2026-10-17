@@ -194,8 +194,9 @@ ride?"**
   always on him, third person; the view glides over); the pause screen's **HEAD HOME** skips to the end. It's
   **golden hour**: the sun low over the sea ahead and to the right, sinking as they go and setting on the horizon
   just as the drive ends (the light, the sky, the haze and the clouds warm and darken with it). The cars ahead stay
-  ahead (a little quicker than us); oncoming cars come round out of sight. The original song "Last Light" plays, a
-  dark, brooding 80s synth-pop drive: polysynth, drum machine, a deep bass (it follows the Music setting). About a minute and a quarter (shortened twice at the owner's request, 2026-10-17), never
+  ahead (a little quicker than us); oncoming cars come round out of sight. The original song "Sundown Run" plays, fast
+  synthwave: four on the floor, a rolling sixteenth-note bass, pads pumping with the kick (it follows the Music setting;
+  "Last Light", darker and slower, is kept as the backup, `MUSIC.rideSong`). About a minute and a quarter (shortened twice at the owner's request, 2026-10-17), never
   more than 5.
 - **Home:** after a fade, the car drives in, the roll-up door comes down, the human gets out of the driver's door
   (it opens and shuts), up go the falcon doors, he hops out, they walk back in, the door shuts and locks,

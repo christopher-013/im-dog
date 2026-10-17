@@ -74,7 +74,13 @@ just as the sun is setting... a song more edgy and dark for a brooding drive wit
   `comp.pad`, sawtooth strings; `arp`, a sixteenth-note arpeggio (a new `arp` voice); `deepKick`; and a real gated
   snare with a body and a hard gate). 100 BPM, a new hook over Dm–B♭–C and Gm–B♭–C–A, no slides. Per-part levels and
   the gain are from offline renders (in its gain note). The other tunes are unchanged.
-- Not checked: on a phone; the song by ear.
+- **"Sundown Run"** is now the ride's song; "Last Light" is kept as the backup (owner: "keep that as a back"), picked
+  by `MUSIC.rideSong` in `config/audio.ts`. The owner first asked to use a commercial synthwave track by name: it's
+  all rights reserved (Bandcamp), so it isn't used or copied, and the owner chose an original "in that style, faster
+  pumping beat and rolling sixteenth note". A minor, 118 BPM: four on the floor, a bass rolling in sixteenths (new
+  style `roll`), sawtooth pads ducking on every kick (new `pump`, a chord bus whose gain dips per kick), open hats (new
+  drum `open`), the gated snare and a detuned sawtooth lead. Tests cover both ride songs.
+- Not checked: on a phone; either song by ear.
 
 Claude Code (2026-10-17, owner's phone screenshot: the Dog Logic card "CAR + WINDOW = WIND IN MY EARS" ran off both
 sides; "Fix the wording for this and others so it doesn't get cut off"): the card's equation now wraps between whole

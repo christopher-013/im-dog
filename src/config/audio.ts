@@ -72,4 +72,9 @@ export const MUSIC = {
   /** Notes are scheduled this far ahead (s), topped up this often (s). */
   lookahead: 0.35,
   tick: 0.1,
+  /**
+   * The ride's song: "Sundown Run" (fast synthwave, owner 2026-10-17), or the backup they asked to keep, "Last Light"
+   * (`'lastLight'`).
+   */
+  rideSong: 'sundownRun' as 'sundownRun' | 'lastLight',
 } as const;

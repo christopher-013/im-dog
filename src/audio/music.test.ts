@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CHORDS, FIGHT_THEME, MusicSequencer, SONG, SONGS, TUNES, songEvents, type Note, type Scheduled, type Song } from './music';
+import { MUSIC } from '../config/audio';
+import { CHORDS, FIGHT_THEME, MusicSequencer, RIDE_SONGS, SONG, SONGS, TUNES, songEvents, type Note, type Scheduled, type Song } from './music';
 
 /** Checks a line of notes fills the song exactly, with no note tied over a bar line. */
 function fillsBars(song: Song, notes: readonly Note[]): void {
@@ -21,7 +22,9 @@ describe('the background music', () => {
     expect(Object.keys(TUNES)).toEqual(['hawaiian', 'japan', 'fight', 'cruise']);
   });
 
-  for (const [id, song] of Object.entries(TUNES) as [keyof typeof TUNES, Song][]) {
+  // Every tune, and the ride's backup song too.
+  const backups = RIDE_SONGS.filter((song) => song !== TUNES.cruise).map((song) => [song.id, song] as const);
+  for (const [id, song] of [...(Object.entries(TUNES) as [keyof typeof TUNES, Song][]), ...backups]) {
     describe(`"${song.title}"`, () => {
       it(`is ${BARS[id]} bars, and every line fills every bar exactly, with no note tied over a bar line`, () => {
         expect(song.id).toBe(id);
@@ -111,8 +114,36 @@ describe('the background music', () => {
     expect(song.gain).toBeGreaterThan(1);
   });
 
-  it('"Last Light" (the ride): 80s synth-pop, not the console: a polysynth lead with no slides, pads, an arpeggio, a deep bass', () => {
-    const song = TUNES.cruise;
+  it('the ride plays "Sundown Run", with "Last Light" kept as the backup', () => {
+    expect(MUSIC.rideSong).toBe('sundownRun');
+    expect(TUNES.cruise.title).toBe('Sundown Run');
+    expect(RIDE_SONGS.map((song) => song.title)).toEqual(['Sundown Run', 'Last Light']);
+  });
+
+  it('"Sundown Run" (the ride): fast synthwave, four on the floor, a rolling sixteenth bass, pads pumping with the kick', () => {
+    const song = RIDE_SONGS[0]!;
+    const { band } = song;
+    expect(song.bpm).toBeGreaterThanOrEqual(115);
+    expect(band.lead.synth).toBeDefined();
+    expect(song.melody.every(([, , slide]) => !slide)).toBe(true);
+    expect(band.comp.pad).toBeDefined();
+    expect(band.pump).toBeGreaterThan(0.5);
+    const events = songEvents(song);
+    for (let bar = 0; bar < song.bars.length; bar++) {
+      const inBar = (voice: string) => events.filter((e) => e.voice === voice && e.beat >= bar * 4 && e.beat < bar * 4 + 4);
+      const root = CHORDS[song.bars[bar]!].bass[0] - 12;
+      // Sixteenths: the deep root, the octave on each "and".
+      const bass = inBar('bass');
+      expect(bass.map((e) => e.beat - bar * 4)).toEqual([...Array(16).keys()].map((e) => e / 4));
+      bass.forEach((e, i) => expect(e.notes[0]).toBe(i % 4 === 2 ? root + 12 : root));
+      expect(inBar('kick').map((e) => e.beat - bar * 4)).toEqual([0, 1, 2, 3]);
+      expect(inBar('snare').map((e) => e.beat - bar * 4)).toEqual([1, 3]);
+      expect(inBar('open').map((e) => e.beat - bar * 4)).toEqual([0.5, 1.5, 2.5, 3.5]);
+    }
+  });
+
+  it('"Last Light" (the backup): 80s synth-pop, not the console: a polysynth lead with no slides, pads, an arpeggio, a deep bass', () => {
+    const song = RIDE_SONGS[1]!;
     const { band } = song;
     expect(band.lead.synth).toBeDefined();
     expect(band.lead.vibrato).toBeLessThanOrEqual(6);

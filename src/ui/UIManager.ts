@@ -643,7 +643,10 @@ export class UIManager {
     if (next) window.setTimeout(() => this.showDiscovery(next.first, next.durationMs, next.entry), 450);
   }
 
-  /** Builds "ICON WORD + ICON WORD = WORD ICON" into the card. */
+  /**
+   * Builds "ICON WORD + ICON WORD = WORD ICON" into the card, in pieces that stay whole (each term with the sign before
+   * it), so a long one wraps between them on a narrow screen instead of running off it.
+   */
   private renderEquation(entry: DogLogicEntry): void {
     const equation = this.el('discovery-equation');
     equation.replaceChildren();
@@ -662,11 +665,17 @@ export class UIManager {
       if (className) span.className = className;
       return span;
     };
+    const piece = (...parts: Element[]) => {
+      const span = this.doc.createElement('span');
+      span.className = 'discovery-term';
+      span.append(...parts);
+      equation.append(span);
+    };
     entry.left.forEach((term, i) => {
-      if (i > 0) equation.append(word('+', 'discovery-equals'));
-      equation.append(icon(term.icon), word(term.word));
+      if (i > 0) piece(word('+', 'discovery-equals'), icon(term.icon), word(term.word));
+      else piece(icon(term.icon), word(term.word));
     });
-    equation.append(word('=', 'discovery-equals'), word(entry.right.word), icon(entry.right.icon));
+    piece(word('=', 'discovery-equals'), word(entry.right.word), icon(entry.right.icon));
     equation.classList.toggle('is-long', entry.left.length > 1 || entry.right.word.length > 6);
   }
 

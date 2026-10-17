@@ -52,6 +52,13 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner's phone screenshot: the Dog Logic card "CAR + WINDOW = WIND IN MY EARS" ran off both
+sides; "Fix the wording for this and others so it doesn't get cut off"): the card's equation now wraps between whole
+pieces (each term with its "+" or "=", `.discovery-term`, built in `UIManager.renderEquation` and the starting markup in
+`index.html`), and the card is never wider than the screen. Checked headless at 320×568, 390×844 and 844×390 (a
+fit audit of every Dog Logic equation, all 27 interaction prompts, the longest objective lines and the ride's
+controls toast): the old card overflowed for most equations at 320 px wide; now nothing runs off or is clipped.
+
 Claude Code (2026-10-17, owner request with a photo of their car's front: "Make the headlights more like the actual
 car. When the human goes to the car make sure they are wearing the socks and shoes. When the human enters to exits the
 car have the door open and close so they can get out. The drive is still a little long make it 30 seconds shorter";

@@ -1329,6 +1329,10 @@ html[data-debug] .heist-chip {
   position: absolute;
   left: 50%;
   top: 42%;
+  /* Never wider than the screen (less a margin each side): a long equation wraps instead. */
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
   display: grid;
   justify-items: center;
   gap: 4px;
@@ -1382,13 +1386,22 @@ html[data-debug] .heist-chip {
 
 .discovery-equation {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
-  gap: 0.35em;
+  gap: 0.1em 0.35em;
   margin: 0;
   color: var(--ink);
   font-size: clamp(2rem, 7vw, 3.4rem);
   font-weight: 700;
   line-height: 1.05;
+}
+
+/* One term with the sign before it ("+ WINDOW", "= WIND IN MY EARS"): kept whole; a long equation wraps between them. */
+.discovery-term {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
   white-space: nowrap;
 }
 

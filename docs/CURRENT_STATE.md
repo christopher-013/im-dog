@@ -52,6 +52,22 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code (2026-10-17, owner's phone screenshot of the Garage: "Fix the driver when they are sitting in the car since
+their head goes above the windshield. Fix the headlights as they are too long into the fender and don't look like
+headlights with the white lamps. The drive is beautiful but Make the drive about 20sec shorter"):
+- **Driver's head:** measured it: the man's head top (~1.57 m) was ~5 cm above the glass over the driver's seat (1.52 m).
+  The driver's seat now sits lower, as an SUV's does (`FamilyCar.SEATS.driver.y` 0.62 → 0.5; the passenger seat, the
+  dog's, is unchanged). New test `ride/driverHeadroom.test.ts`: both household humans, posed at the wheel exactly as
+  the ride does, keep at least 5 cm under the glass.
+- **Headlamps** (`FamilyCar`, `LAMP`): an almond lamp at each corner that stops at the corner (no more running back
+  along the fender, no hooked strip); silvery glass over a chrome reflector, two round, softly lit lamps in grey bezels,
+  and a thin light line along the bottom edge only.
+- **Drive ~20 s shorter:** every stretch of the coast kept, driven faster: `SPEED.cruise` 18.5 → 25.5 m/s (about
+  57 mph; exported for the traffic test). Simulated with the drive's own speed curve: 76.5 s → 56.6 s; in the game, 78%
+  of the way took 43 s (was 59 s). The sunset still sets as it ends (it follows progress).
+- Checked: unit tests (699), build; headless renders of the car (front, three-quarter, close) and the whole ride with
+  `?human=man` (no errors; his head under the glass in the Garage). Not checked: a phone.
+
 Claude Code (2026-10-17, owner after seeing the household woman: "Remove the shadow from her face since it looks like
 a beard. Make her features more Asian and skin a shade darker. Make her hair darker and less grey more dark brown.
 Make her shorter compared to the male"): all in `HOUSEHOLD_WOMAN_LOOK` through new optional `HumanLook` settings (the

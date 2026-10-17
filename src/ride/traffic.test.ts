@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { routeCurve } from './coastRoute';
 import { Traffic } from './traffic';
+import { SPEED } from './CoastDrive';
 
 describe('the traffic on the coast road (Phase 6)', () => {
   it('never jumps while in view: the cars ahead stay ahead all the way, and oncoming cars come round out of sight', () => {
-    const cruise = 18.5;
+    const cruise = SPEED.cruise;
     const traffic = new Traffic(routeCurve(), cruise);
     const cars = (traffic as unknown as { cars: { s: number; way: 1 | -1; speed: number }[] }).cars;
     const dt = 1 / 30;

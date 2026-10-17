@@ -38,10 +38,13 @@ import {
  */
 export class FamilyCar {
   readonly object = new Group();
-  /** Where the seats are, in the car's space (cushion top, middle). */
+  /**
+   * Where the seats are, in the car's space (cushion top, middle). The driver's sits lower, as an SUV's does, so a tall
+   * driver's head clears the glass; the passenger's is the dog's, set for his head out of the window.
+   */
   static readonly SEATS = {
     passenger: new Vector3(-0.45, 0.62, 0.42),
-    driver: new Vector3(0.45, 0.62, 0.42),
+    driver: new Vector3(0.45, 0.5, 0.42),
   } as const;
   static readonly SIZE = { length: 5.05, width: 1.98, height: 1.68 } as const;
   /** The passenger window's opening: the dog's head goes out about here (car space). */
@@ -78,8 +81,12 @@ export class FamilyCar {
     const caliper = this.material(new MeshStandardMaterial({ color: '#c8161d', roughness: 0.4 }));
     const disc = this.material(new MeshStandardMaterial({ color: '#7b7f85', metalness: 0.8, roughness: 0.35 }));
     const chrome = this.material(new MeshStandardMaterial({ color: '#d6dae0', metalness: 1, roughness: 0.12, envMap: sky, envMapIntensity: 1.4 }));
-    const lens = this.material(new MeshStandardMaterial({ color: '#1a1d22', metalness: 0.8, roughness: 0.1, envMap: sky, envMapIntensity: 1.3, side: DoubleSide }));
     const lamp = this.material(new MeshStandardMaterial({ color: '#ffffff', emissive: '#f4f8ff', emissiveIntensity: 1.4 }));
+    // The headlamps: a clear, silvery glass over the lamps (light against the black paint, so they read as lamps),
+    // round lamps pale, glassy and softly lit, each in a grey bezel.
+    const headlampGlass = this.material(new MeshStandardMaterial({ color: '#8f9aa6', metalness: 0.85, roughness: 0.08, envMap: sky, envMapIntensity: 1.4, side: DoubleSide }));
+    const bezel = this.material(new MeshStandardMaterial({ color: '#5d6670', metalness: 0.7, roughness: 0.25, envMap: sky, envMapIntensity: 1 }));
+    const lampBulb = this.material(new MeshStandardMaterial({ color: '#e6edf4', emissive: '#dfe8f3', emissiveIntensity: 0.6, metalness: 0.3, roughness: 0.12, envMap: sky, envMapIntensity: 1 }));
     const tail = this.material(new MeshStandardMaterial({ color: '#6a0a10', emissive: '#d0101e', emissiveIntensity: 0.8, roughness: 0.2 }));
     const seat = this.material(new MeshStandardMaterial({ color: '#ece6da', roughness: 0.7 }));
     const cabin = this.material(new MeshStandardMaterial({ color: '#202126', roughness: 0.85, side: DoubleSide }));
@@ -218,27 +225,32 @@ export class FamilyCar {
       this.add(clamp, caliper, group, [x * 0.01, 0.07, -0.16], [0.4, 0, 0]);
     }
 
-    // ---- The nose: the headlamps (like the real car's: long and swept, thin toward the middle and taller at the
-    // corner, wrapping round onto the fender; a smoked lens over chrome and a projector, and the thick light strip
-    // along the bottom hooking up at the outer end), the thin chrome strip across the front, the dark lower intake,
-    // chrome fog-lamp trim; at the back, the tail lamps and a chrome strip.
+    // ---- The nose: the headlamps (an almond-shaped lamp at each front corner, ending at the corner instead of running
+    // on along the fender: silvery glass over a chrome reflector, two round lamps inside it, and a thin light line
+    // along its bottom edge), the thin chrome strip across the front, the dark lower intake, chrome fog-lamp trim; at
+    // the back, the tail lamps and a chrome strip.
     for (const side of [1, -1] as const) {
       const at = (s: number, y: number, out: number) => lampPoint(side, s, y, out);
       const bottom = LAMP.s.map((s, i) => at(s, LAMP.bottom[i]!, 0.006));
       const top = LAMP.s.map((s, i) => at(s, LAMP.top[i]!, 0.004));
-      this.add(this.geometry(ribbon(bottom, top)), lens, this.object);
-      // The chrome inside it, and the projector's round lens at the corner.
+      this.add(this.geometry(ribbon(bottom, top)), headlampGlass, this.object);
+      // The chrome reflector inside it.
       const inner = LAMP.s.slice(1, -1);
       this.add(this.geometry(ribbon(
-        inner.map((s, i) => at(s, LAMP.bottom[i + 1]! + 0.018, 0.007)),
-        inner.map((s, i) => at(s, LAMP.top[i + 1]! - 0.014, 0.007)),
+        inner.map((s, i) => at(s, LAMP.bottom[i + 1]! + 0.012, 0.007)),
+        inner.map((s, i) => at(s, LAMP.top[i + 1]! - 0.01, 0.007)),
       )), chrome, this.object);
-      const eye = at(0.98, (LAMP.bottom[3]! + LAMP.top[3]!) / 2, 0.012);
-      const projector = this.add(this.geometry(new SphereGeometry(1, 12, 8)), lens, this.object, [eye.x, eye.y, eye.z]);
-      projector.scale.set(0.028, 0.028, 0.012);
-      // The light strip: along the bottom, then curling up the outer end.
-      const strip = [...bottom, at(LAMP.s[LAMP.s.length - 1]! + 0.04, LAMP.top[LAMP.top.length - 1]! - 0.01, 0.006)];
-      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(strip), 32, 0.016, 6)), lamp, this.object);
+      // The two lamps: round, bright lenses, the bigger toward the corner.
+      for (const [s, radius] of [[0.58, 0.026], [0.82, 0.031]] as const) {
+        const eye = at(s, (lampEdge(LAMP.bottom, s) + lampEdge(LAMP.top, s)) / 2 + 0.002, 0.012);
+        const ring = this.add(this.geometry(new SphereGeometry(1, 16, 10)), bezel, this.object, [eye.x, eye.y, eye.z]);
+        ring.scale.set(radius + 0.005, radius + 0.005, 0.008);
+        const bulb = this.add(this.geometry(new SphereGeometry(1, 16, 10)), lampBulb, this.object, [eye.x, eye.y, eye.z]);
+        bulb.scale.set(radius, radius, 0.013);
+      }
+      // The light line: thin, along the lens's bottom edge, the length of the lamp and no further.
+      const line = LAMP.s.map((s, i) => at(s, LAMP.bottom[i]! + 0.004, 0.008));
+      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(line), 32, 0.0065, 6)), lamp, this.object);
       for (let i = 0; i < 3; i++) {
         const at = onNose(side * (0.7 + i * 0.05), 0.36 + i * 0.025, 0.004);
         this.add(this.geometry(new BoxGeometry(0.012, 0.09, 0.012)), chrome, this.object, [at.x, at.y, at.z], [0.2, side * 0.5, side * 0.35]);
@@ -383,24 +395,28 @@ const SCREEN_CLEAR = 0.62;
 /** The car's ends (z). */
 const ENDS = { nose: 2.53, tail: -2.52 } as const;
 /**
- * The headlamps, along their length `s` (0 at the inner end, 1 at the nose's corner, past 1 wrapping back along the
- * fender; see `lampPoint`): the bottom edge (where the light strip runs) and the top edge's heights.
+ * The headlamps, along their length `s` (0 at x 0.42, 1 at the nose's corner; see `lampPoint`): the bottom edge (where
+ * the light line runs) and the top edge's heights. An almond: narrow at its inner end, fullest toward the corner, and
+ * stopping short of the corner (owner, 2026-10-17: the old lamp ran on too far into the fender).
  */
 const LAMP = {
-  s: [0, 0.35, 0.7, 1.0, 1.14, 1.26],
-  bottom: [0.775, 0.765, 0.775, 0.8, 0.83, 0.875],
-  top: [0.812, 0.835, 0.868, 0.905, 0.915, 0.92],
+  s: [0.24, 0.46, 0.68, 0.86, 0.97],
+  bottom: [0.79, 0.772, 0.766, 0.776, 0.802],
+  top: [0.828, 0.858, 0.886, 0.908, 0.912],
 } as const;
 
-/**
- * A point on a headlamp (`side` +1 the driver's): `s` 0 → 1 across the nose from x 0.42 to its corner at x 0.86, and on
- * past 1 back along the side of the fender; at height `y`, `out` proud of the paint.
- */
+/** A headlamp edge's height at `s` (between the LAMP stations). */
+function lampEdge(edge: readonly number[], s: number): number {
+  for (let i = 0; i < LAMP.s.length - 1; i++) {
+    const a = LAMP.s[i]!, b = LAMP.s[i + 1]!;
+    if (s <= b) return edge[i]! + (edge[i + 1]! - edge[i]!) * Math.max(0, (s - a) / (b - a));
+  }
+  return edge[edge.length - 1]!;
+}
+
+/** A point on a headlamp (`side` +1 the driver's): `s` 0 → 1 across the nose from x 0.42 to its corner at x 0.86, at height `y`, `out` proud of the paint. */
 function lampPoint(side: 1 | -1, s: number, y: number, out: number): Vector3 {
-  if (s <= 1) return onNose(side * (0.42 + 0.44 * s), y, out);
-  const corner = onNose(side * 0.86, y, 0);
-  const z = corner.z - (s - 1) * 0.42;
-  return new Vector3(side * (sideX(z, y) + out), y, z);
+  return onNose(side * (0.42 + 0.44 * s), y, out);
 }
 
 function smooth01(t: number): number {

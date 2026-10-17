@@ -196,7 +196,7 @@ ride?"**
   just as the drive ends (the light, the sky, the haze and the clouds warm and darken with it). The cars ahead stay
   ahead (a little quicker than us); oncoming cars come round out of sight. The original song "Sundown Run" plays,
   synthwave at 80 BPM: a deep kick on every beat, rolling sixteenths over a pumping sub, a big ringing snare (it follows the Music setting;
-  "Last Light", darker and slower, is kept as the backup, `MUSIC.rideSong`). About a minute and a quarter (shortened twice at the owner's request, 2026-10-17), never
+  "Last Light", darker and slower, is kept as the backup, `MUSIC.rideSong`). Just under a minute (shortened three times at the owner's request, 2026-10-17; the last time by driving faster, 25.5 m/s, so every stretch of the coast stays), never
   more than 5.
 - **Home:** after a fade, the car drives in, the roll-up door comes down, the human gets out of the driver's door
   (it opens and shuts), up go the falcon doors, he hops out, they walk back in, the door shuts and locks,

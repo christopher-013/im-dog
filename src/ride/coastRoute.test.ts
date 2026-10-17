@@ -8,7 +8,7 @@ describe('the ride’s road (Phase 6)', () => {
 
   it('is one smooth way, south from home down the coast: no jumps, a sensible length', () => {
     for (let i = 1; i < path.points.length; i++) expect(path.points[i]!.distanceTo(path.points[i - 1]!)).toBeLessThan(4);
-    // About a minute and a quarter at the drive's speed (owner: shorter than the first version's three, twice).
+    // Just under a minute at the drive's speed (owner: shorter than the first version's three, three times; the last time by driving faster).
     expect(path.length).toBeGreaterThan(1200);
     expect(path.length).toBeLessThan(1500);
     expect(path.points[path.points.length - 1]!.z).toBeGreaterThan(path.points[0]!.z + 1200);

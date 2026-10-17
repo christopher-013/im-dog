@@ -4,7 +4,7 @@ import { CatmullRomCurve3, Vector3 } from 'three';
  * The ride's road (Phase 6, D33/D34): a stylized homage to the drive south from Del Mar along Torrey Pines State Beach
  * (owner, 2026-10-17: "all about the ocean on the right"): down the hill from home to the coast, over the lagoon,
  * along the beach with the sea on the passenger side, then up the grade between the sandstone bluffs to the reserve
- * at the top (owner, 2026-10-17: shorter twice over, now about a minute and a quarter). One way; home is a fade. Pure numbers and maths (tested), shared by the scenery and the car. Metres;
+ * at the top (owner, 2026-10-17: shorter twice over; then driven faster, so just under a minute). One way; home is a fade. Pure numbers and maths (tested), shared by the scenery and the car. Metres;
  * x east, z south, y up; the ocean is to the west, so heading south it's on the right.
  */
 

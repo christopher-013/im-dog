@@ -53,7 +53,7 @@ carries into Phase 2.
 
 ## Last Developer
 Claude Code (2026-10-17, owner request with a photo of their car: "Make the car look more like my Tesla Model X
-including the falcon doors"): **the family car rebuilt** (`world/FamilyCar.ts`).
+including the falcon doors"; pushed to `main` at the owner's request): **the family car rebuilt** (`world/FamilyCar.ts`).
 - One smooth body lofted from shape functions (`section`, `topAt`, `sideX`): a rounded nose and hood, swept-back
   headlamps with their light strip, a thin chrome strip across the nose, a dark lower intake, chrome fog-lamp trim,
   wheel arches cut into the shell, tail lamps; the front doors' and the falcon doors' panels are cut out of the same
@@ -74,7 +74,7 @@ including the falcon doors"): **the family car rebuilt** (`world/FamilyCar.ts`).
 Claude Code (2026-10-17, owner feedback after riding it on the live site: the human see-through in the Garage, the
 trees, the right side of the road, choppy with black empty space, palms, "the ocean on the right with people swimming
 and picnic'ing", like a still of a real Del Mar → Torrey Pines drive, the harness like Moke's real one (a photo), and
-"more edgy like a Miami Vice" music): **the ride reworked**.
+"more edgy like a Miami Vice" music; pushed to `main` at the owner's request): **the ride reworked**.
 - **The see-through human:** the ride begins inside a game frame whose heist update had just faded the human (they
   were between the camera and the dog), and that update doesn't run during the ride, so they stayed faded. The ride
   now keeps them solid every frame (`RideDirector.update`), and they sit at the wheel (seen through the windscreen)

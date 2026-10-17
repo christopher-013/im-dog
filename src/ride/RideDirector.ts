@@ -1,4 +1,4 @@
-import { PerspectiveCamera, Vector3, type Object3D, type Scene, type WebGLRenderer } from 'three';
+import { PerspectiveCamera, Quaternion, Vector3, type Object3D, type Scene, type WebGLRenderer } from 'three';
 import { RIDE } from '../config/ride';
 import { createVisualState, HumanAnimationController } from '../human/HumanAnimationController';
 import type { HumanVisual } from '../human/StylizedHumanVisual';
@@ -79,6 +79,14 @@ export class RideDirector {
   private readonly lastDog = new Vector3();
   private readonly lastHuman = new Vector3();
   private readonly tmp = new Vector3();
+  /** Where he's turning his head on the road (radians: + to his left, + up), where it's got to, and since when. */
+  private readonly lookAim = { yaw: 0, pitch: 0 };
+  private readonly lookNow = { yaw: 0, pitch: 0 };
+  private sinceLook = 99;
+  private autoLookIn = 3;
+  private readonly eye = new Vector3();
+  private readonly eyeLook = new Vector3();
+  private readonly eyeTurn = new Quaternion();
 
   constructor(private readonly cast: RideCast, private readonly hooks: RideHooks) {}
 
@@ -98,6 +106,8 @@ export class RideDirector {
     this.time = 0;
     this.said.clear();
     this.headOut = true;
+    this.lookAim.yaw = this.lookAim.pitch = this.lookNow.yaw = this.lookNow.pitch = 0;
+    this.sinceLook = 99;
     const g = this.cast.garage;
     g.setHouseDoor(0);
     g.setRollUp(0);
@@ -124,6 +134,18 @@ export class RideDirector {
 
   nextView(): void {
     this.drive?.nextView();
+  }
+
+  /**
+   * Look around (on the road): turns his head, by these angles (radians: `yaw` + to his left, `pitch` + up), within
+   * what a dog can turn. His own view (the "his view" shot) follows his head.
+   */
+  look(yaw: number, pitch: number): void {
+    if (this.phase !== 'drive' || (yaw === 0 && pitch === 0)) return;
+    const L = RIDE.look;
+    this.lookAim.yaw = Math.min(L.yaw[1], Math.max(L.yaw[0], this.lookAim.yaw + yaw));
+    this.lookAim.pitch = Math.min(L.pitch[1], Math.max(L.pitch[0], this.lookAim.pitch + pitch));
+    this.sinceLook = 0;
   }
 
   /** "Head home" from the pause screen: on to the last stretch. */
@@ -242,6 +264,19 @@ export class RideDirector {
       if (this.autoViewIn <= 0) { drive.nextView(); this.autoViewIn = 12 + Math.random() * 8; }
       if (this.autoBarkIn <= 0) { this.dogAnim.bark(); this.autoBarkIn = 18 + Math.random() * 15; }
     }
+    // Looking around: where the player turns his head; left alone (or with FSD playing), he takes in the beach and
+    // the sea by himself, a new look every few seconds.
+    this.sinceLook += dt;
+    this.autoLookIn -= dt;
+    if (this.sinceLook > RIDE.look.idle && this.autoLookIn <= 0) {
+      const L = RIDE.look.wander;
+      this.lookAim.yaw = L.yaw[0] + Math.random() * (L.yaw[1] - L.yaw[0]);
+      this.lookAim.pitch = L.pitch[0] + Math.random() * (L.pitch[1] - L.pitch[0]);
+      this.autoLookIn = L.every[0] + Math.random() * (L.every[1] - L.every[0]);
+    }
+    const ease = 1 - Math.exp(-RIDE.look.ease * dt);
+    this.lookNow.yaw += (this.lookAim.yaw - this.lookNow.yaw) * ease;
+    this.lookNow.pitch += (this.lookAim.pitch - this.lookNow.pitch) * ease;
     drive.update(dt, aspect);
     drive.car.setPassengerWindow(1);
     // The dog: head out in the wind (standing up on the seat), or sitting back.
@@ -255,10 +290,28 @@ export class RideDirector {
     s.crouch = 0;
     s.tailWag = Math.max(s.tailWag, 0.9);
     s.wind = this.headOut ? 1 : 0.15;
-    s.headPitch = this.headOut ? 0.12 : 0;
+    s.headYaw = this.lookNow.yaw;
+    s.headPitch = (this.headOut ? 0.12 : 0) + this.lookNow.pitch;
+    s.attention = 1;
     this.cast.dog.update(dt, s);
+    this.seeThroughHisEyes(drive);
     this.sitAtWheel(dt, drive.driverSeat, true);
     if (drive.done && dt >= 0) this.endDrive();
+  }
+
+  /** His view: from just in front of his eyes, the way his head points (the drive's "his view" shot). */
+  private seeThroughHisEyes(drive: CoastDrive): void {
+    const head = this.cast.dog.attachments.head;
+    if (!head) return;
+    this.cast.dog.object.updateMatrixWorld(true);
+    head.getWorldPosition(this.eye);
+    head.getWorldQuaternion(this.eyeTurn);
+    const ahead = this.tmp.set(0, 0, 1).applyQuaternion(this.eyeTurn);
+    const [down, forward] = RIDE.look.eyes;
+    this.eye.addScaledVector(ahead, forward).add(new Vector3(0, -down, 0).applyQuaternion(this.eyeTurn));
+    this.eyeLook.copy(this.eye).addScaledVector(ahead, 10);
+    const car = drive.car.object;
+    drive.setEyes(car.worldToLocal(this.eye), car.worldToLocal(this.eyeLook));
   }
 
   private endDrive(): void {

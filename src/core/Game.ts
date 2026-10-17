@@ -25,7 +25,7 @@ import { WatchTheGame } from '../activities/WatchTheGame';
 import { WatchTv } from '../activities/WatchTv';
 import { FsdPathView } from '../autopilot/FsdPathView';
 import { FullSelfDog, type FsdCommand, type FsdPress, type FsdWorld } from '../autopilot/FullSelfDog';
-import type { Action } from '../config/input';
+import { MOUSE, type Action } from '../config/input';
 import { MISCHIEF_TABLES, PILLOW_SOFAS } from '../config/mischief';
 import { HOME_ACTIVITIES } from '../config/homeActivities';
 import { SITE, USAGE } from '../config/site';
@@ -1575,9 +1575,10 @@ export class Game {
   /** The ride's buttons, in the player's own controls. */
   private rideControls(): string {
     const mode = this.input.mode;
-    if (mode === 'touch') return 'On the ride: Bark, the paw puts his head in or out, Trick changes the view.';
+    if (mode === 'touch') return 'On the ride: drag to look around, Bark, the paw puts his head in or out, Trick changes the view.';
     const g = (a: Action) => actionGlyph(a, mode) ?? '';
-    return `On the ride: ${g('bark')} bark · ${g('interact')} head in or out · ${g('trick')} change the view`;
+    const look = mode === 'gamepad' ? 'right stick' : 'mouse';
+    return `On the ride: ${look} look around · ${g('bark')} bark · ${g('interact')} head in or out · ${g('trick')} change the view`;
   }
 
   /** While the ride has the screen: its own buttons, the ride, the leash and the human's words, then its picture. */
@@ -1593,6 +1594,12 @@ export class Game {
       }
       if (input.wasPressed('interact')) ride.toggleHead();
       if (input.wasPressed('trick')) ride.nextView();
+    }
+    // Looking around turns his head (mouse right / stick right: he looks right; down: he looks down).
+    input.getLookDelta(this.lookDelta);
+    if (playing) {
+      const k = MOUSE.sensitivity * MOUSE.sensitivityScale;
+      ride.look(-this.lookDelta.x * k, -this.lookDelta.y * k * (MOUSE.invertY ? -1 : 1));
     }
     this.barkTimer.update(playing ? dt : 0);
     this.ui.setRideHome(this.state === 'paused' && ride.driving);

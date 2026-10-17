@@ -187,10 +187,11 @@ ride?"**
   surfers out past the break, lifeguard towers, people walking the path beyond the guard rail, pelicans, traffic both
   ways. Then up the grade between the sandstone bluffs to the reserve, the sea below; one way (home is a fade).
   Every tree is a Southern California palm (`ride/palms.ts`: Mexican fan palms, Canary Island date palms, queen
-  palms). His head is out with his ears streaming in the wind. **Bark**, put his **head in or out**, **change the
-  view** (alongside, his face, behind, the drone; the view glides over); the pause screen's **HEAD HOME** skips to the
+  palms). His head is out with his ears streaming in the wind. **Bark**, put his **head in or out**, **look around**
+  (turns his head; left alone he looks about at the beach himself), **change the view** (alongside, **his view**
+  through his own eyes, his face, behind, the drone; the view glides over); the pause screen's **HEAD HOME** skips to the
   end. The original song "Neon Coastline" plays, dramatic 80s synth-pop in the style of mid-80s crime-drama themes (it
-  follows the Music setting). About 3 minutes, never more than 5.
+  follows the Music setting). About 2 minutes (a minute shorter at the owner's request, 2026-10-17), never more than 5.
 - **Home:** after a fade, the car drives in, the roll-up door comes down, up go the falcon doors, he hops out, they walk back in, the door shuts and locks,
   the harness comes off: "Best ride ever, Moke!". **CAR + WINDOW = WIND IN MY EARS.** The human goes back to their day.
 - While they're out the house stands still (the doorbell can't ring for an empty house).

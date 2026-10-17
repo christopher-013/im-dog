@@ -13,6 +13,7 @@ import {
   MeshPhysicalMaterial,
   MeshStandardMaterial,
   Quaternion,
+  RingGeometry,
   SphereGeometry,
   SRGBColorSpace,
   TorusGeometry,
@@ -64,14 +65,16 @@ export class FamilyCar {
       color: '#07080b', metalness: 0.35, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.06, envMap: sky, envMapIntensity: 1.1, side: DoubleSide,
     }));
     const glassLook = { metalness: 0.6, roughness: 0.04, transparent: true, envMap: sky, envMapIntensity: 1.2, side: DoubleSide, depthWrite: false } as const;
-    // Up top and at the back the glass is dark (the roof glass in the falcon doors, the tinted rear window).
     const windscreen = this.material(new MeshStandardMaterial({ color: '#18222c', opacity: 0.45, ...glassLook }));
     const glass = this.material(new MeshStandardMaterial({ color: '#0d1319', opacity: 0.8, ...glassLook }));
-    const roofGlass = this.material(new MeshStandardMaterial({ color: '#07090c', opacity: 0.93, ...glassLook }));
+    // Up top and at the back the glass is black (the windscreen's tinted top over the front seats, the roof glass in
+    // the falcon doors, the rear window): from outside the roof reads as glossy black.
+    const roofGlass = this.material(new MeshStandardMaterial({ color: '#06080b', metalness: 0.6, roughness: 0.05, envMap: sky, envMapIntensity: 1.3, side: DoubleSide }));
     const trim = this.material(new MeshStandardMaterial({ color: '#050506', roughness: 0.4, side: DoubleSide }));
     const rubber = this.material(new MeshStandardMaterial({ color: '#141416', roughness: 0.9, side: DoubleSide }));
-    const rim = this.material(new MeshStandardMaterial({ color: '#2b2e33', metalness: 0.6, roughness: 0.35, envMap: sky }));
-    const spoke = this.material(new MeshStandardMaterial({ color: '#9ba1a8', metalness: 0.85, roughness: 0.25, envMap: sky }));
+    const rim = this.material(new MeshStandardMaterial({ color: '#141518', metalness: 0.55, roughness: 0.36, envMap: sky, envMapIntensity: 0.8, side: DoubleSide }));
+    const caliper = this.material(new MeshStandardMaterial({ color: '#c8161d', roughness: 0.4 }));
+    const disc = this.material(new MeshStandardMaterial({ color: '#7b7f85', metalness: 0.8, roughness: 0.35 }));
     const chrome = this.material(new MeshStandardMaterial({ color: '#d6dae0', metalness: 1, roughness: 0.12, envMap: sky, envMapIntensity: 1.4 }));
     const lens = this.material(new MeshStandardMaterial({ color: '#1a1d22', metalness: 0.8, roughness: 0.1, envMap: sky, envMapIntensity: 1.3, side: DoubleSide }));
     const lamp = this.material(new MeshStandardMaterial({ color: '#ffffff', emissive: '#f4f8ff', emissiveIntensity: 1.4 }));
@@ -92,6 +95,7 @@ export class FamilyCar {
     // the front doors' and the fixed rear windows, with the black pillars between.
     const house = loftGlasshouse();
     this.add(this.geometry(house.windscreen), windscreen, this.object).name = 'windshield';
+    this.add(this.geometry(house.screenTop), roofGlass, this.object);
     this.add(this.geometry(house.rear), roofGlass, this.object).name = 'rear window';
     this.add(this.geometry(house.quarters), glass, this.object);
     this.add(this.geometry(house.pillars), trim, this.object).name = 'roof';
@@ -119,8 +123,10 @@ export class FamilyCar {
       // Chrome along the bottom of the windows (the fixed stretches; the doors carry their own).
       this.add(this.geometry(beltLine(side, GLASS.cowl, DOOR.front)), chrome, this.object);
       this.add(this.geometry(beltLine(side, FALCON.back, GLASS.tail + 0.08)), chrome, this.object);
-      // The A-pillars, along the windscreen's sides.
+      // The A-pillars, along the windscreen's sides, and chrome round the tops of the windows (the fixed stretches).
       this.add(this.geometry(houseLine(side, DOOR.back, GLASS.cowl - 0.02, 0.045)), trim, this.object);
+      this.add(this.geometry(houseLine(side, DOOR.back, GLASS.cowl - 0.02, 0.008, -0.05)), chrome, this.object);
+      this.add(this.geometry(houseLine(side, GLASS.tail + 0.1, FALCON.back - 0.08, 0.008, -0.05)), chrome, this.object);
       // Mirrors: a rounded black shell on a short stalk.
       const mirror = this.add(this.geometry(new SphereGeometry(1, 14, 10)), paint, this.object, [side * 1.05, 1.08, 1.12]);
       mirror.scale.set(0.12, 0.075, 0.075);
@@ -134,6 +140,7 @@ export class FamilyCar {
     this.add(this.geometry(body.doors[1]), paint, this.object).name = 'driver door';
     this.add(this.geometry(doorCard(1, DOOR.back, DOOR.front)), cabin, this.object);
     this.add(this.geometry(beltLine(1, DOOR.front, DOOR.back + 0.01)), chrome, this.object);
+    this.add(this.geometry(handle(1)), chrome, this.object);
     this.passengerDoor.name = 'passenger door';
     this.passengerDoor.position.set(-hingeX, 0, DOOR.front);
     this.object.add(this.passengerDoor);
@@ -141,6 +148,7 @@ export class FamilyCar {
     this.add(this.geometry(body.doors[-1]), paint, this.passengerDoor, local);
     this.add(this.geometry(doorCard(-1, DOOR.back, DOOR.front)), cabin, this.passengerDoor, local);
     this.add(this.geometry(beltLine(-1, DOOR.front, DOOR.back + 0.01)), chrome, this.passengerDoor, local);
+    this.add(this.geometry(handle(-1)), chrome, this.passengerDoor, local);
     this.passengerWindow = this.add(this.geometry(house.windows[-1]), glass, this.passengerDoor, local);
     this.passengerWindow.name = 'passenger window';
 
@@ -170,13 +178,22 @@ export class FamilyCar {
         [doorCard(side, FALCON.back, FALCON.front), cabin],
         [beltLine(side, FALCON.front, FALCON.back), chrome],
         [houseLine(side, FALCON.back + 0.01, FALCON.front - 0.01, 0.03), trim],
+        [houseLine(side, FALCON.back + 0.01, FALCON.front - 0.01, 0.008, -0.05), chrome],
       ];
       for (const [geometry, material] of lower) this.add(this.geometry(geometry), material, elbow).applyMatrix4(fromRim);
       this.falcons.push({ hinge, elbow, side });
     }
 
-    // ---- Wheels: tyres, dark grey aero rims with ten silver spokes, and a cap.
+    // ---- Wheels: tyres round black turbine wheels (ten swept blades, dished toward the hub), and behind them the
+    // brake discs and the red calipers, which stay put while the wheels turn.
     const W = FamilyCar.SIZE.width;
+    const blades = this.geometry(turbine());
+    const tyre = this.geometry(new CylinderGeometry(WHEEL.radius, WHEEL.radius, WHEEL.width, 32, 1, true).rotateZ(Math.PI / 2));
+    const wall = this.geometry(new RingGeometry(WHEEL.rim, WHEEL.radius, 32).rotateY(Math.PI / 2));
+    const barrel = this.geometry(new CylinderGeometry(WHEEL.rim, WHEEL.rim, WHEEL.width - 0.02, 28, 1, true).rotateZ(Math.PI / 2));
+    const lip = this.geometry(new TorusGeometry(WHEEL.rim, 0.012, 6, 36).rotateY(Math.PI / 2));
+    const brake = this.geometry(new CylinderGeometry(0.21, 0.21, 0.025, 24).rotateZ(Math.PI / 2));
+    const clamp = this.geometry(new BoxGeometry(0.075, 0.16, 0.08));
     for (const [x, z] of [[1, AXLES.front], [-1, AXLES.front], [1, AXLES.rear], [-1, AXLES.rear]] as const) {
       const group = new Group();
       group.position.set(x * (W / 2 - 0.17), WHEEL.radius, z);
@@ -184,13 +201,15 @@ export class FamilyCar {
       this.wheels.push(group);
       const spin = new Group();
       group.add(spin);
-      this.add(this.geometry(new CylinderGeometry(WHEEL.radius, WHEEL.radius, WHEEL.width, 28)), rubber, spin, [0, 0, 0], [0, 0, Math.PI / 2]);
-      this.add(this.geometry(new CylinderGeometry(0.27, 0.27, WHEEL.width + 0.012, 28)), rim, spin, [0, 0, 0], [0, 0, Math.PI / 2]);
-      for (let i = 0; i < 10; i++) {
-        const a = (i / 10) * Math.PI * 2;
-        this.add(this.geometry(new BoxGeometry(0.02, 0.22, 0.035)), spoke, spin, [x * (WHEEL.width / 2 + 0.008), Math.cos(a) * 0.13, Math.sin(a) * 0.13], [a, 0, 0]);
-      }
-      this.add(this.geometry(new CylinderGeometry(0.05, 0.05, WHEEL.width + 0.02, 14)), trim, spin, [0, 0, 0], [0, 0, Math.PI / 2]);
+      const face = x * (WHEEL.width / 2);
+      this.add(tyre, rubber, spin);
+      for (const at of [face, -face]) this.add(wall, rubber, spin, [at, 0, 0]);
+      this.add(barrel, rim, spin);
+      this.add(lip, rim, spin, [face - x * 0.006, 0, 0]);
+      this.add(blades, rim, spin, [face - x * 0.012, 0, 0]).scale.x = x;
+      this.add(brake, disc, group, [-x * 0.02, 0, 0]);
+      // The caliper grips the disc toward the back of the car, just above the middle.
+      this.add(clamp, caliper, group, [x * 0.01, 0.07, -0.16], [0.4, 0, 0]);
     }
 
     // ---- The nose: swept-back headlamps (a dark lens, the light strip along its lower edge), the thin chrome strip
@@ -315,7 +334,7 @@ export class FamilyCar {
   }
 }
 
-const WHEEL = { radius: 0.37, width: 0.25 } as const;
+const WHEEL = { radius: 0.37, width: 0.25, rim: 0.275 } as const;
 const AXLES = { front: 1.49, rear: -1.48 } as const;
 const ARCH = 0.45;
 /** The front doors (car z from `back` to `front`), their bottom edge, and how far the passenger's opens. */
@@ -323,12 +342,14 @@ const DOOR = { front: 1.02, back: 0.06, sill: 0.42, openAngle: 1.15 } as const;
 /** The falcon doors (car z from `back` to `front`), and how far each part turns when they're up (radians). */
 const FALCON = { front: -0.02, back: -1.3, lift: 1.2, fold: 0.22 } as const;
 /** The glasshouse: where it starts (the windscreen's foot) and ends (the rear window's), its highest point, and height. */
-const GLASS = { cowl: 1.3, tail: -2.3, apex: -0.35, top: 1.68 } as const;
+const GLASS = { cowl: 1.3, tail: -2.3, apex: -0.6, top: 1.68 } as const;
 /**
  * Round the glasshouse (0 the driver's side at the window line, π/2 the top, π the passenger's): where the side
  * windows give way to the roof and the windscreen, and where each falcon door folds (its elbow).
  */
 const RIM = { pillar: 0.62, elbow: 0.62 } as const;
+/** The windscreen is clear down here (ahead of this z); above the front seats it's tinted black. */
+const SCREEN_CLEAR = 0.62;
 /** The car's ends (z). */
 const ENDS = { nose: 2.53, tail: -2.52 } as const;
 /** The headlamps (x, y on the nose): the light strip along the bottom, the lens's top edge. */
@@ -504,8 +525,8 @@ function loftBody(): { body: BufferGeometry; doors: Record<1 | -1, BufferGeometr
 /** The glasshouse's height along its middle: the windscreen sweeping up into the roof, down the rear window. */
 function roofAt(z: number): number {
   const G = GLASS;
-  if (z >= G.apex) return G.top - (G.top - beltAt(G.cowl)) * Math.min(1, (z - G.apex) / (G.cowl - G.apex)) ** 1.55;
-  return G.top - (G.top - beltAt(G.tail)) * Math.min(1, (G.apex - z) / (G.apex - G.tail)) ** 2.3;
+  if (z >= G.apex) return G.top - (G.top - beltAt(G.cowl)) * Math.min(1, (z - G.apex) / (G.cowl - G.apex)) ** 1.7;
+  return G.top - (G.top - beltAt(G.tail)) * Math.min(1, (G.apex - z) / (G.apex - G.tail)) ** 2.9;
 }
 
 /**
@@ -516,9 +537,9 @@ function houseRim(z: number, a: number, out = new Vector3()): Vector3 {
   const belt = beltAt(z);
   const half = sideX(z, belt) - 0.01;
   const c = Math.cos(a), s = Math.max(0, Math.sin(a));
-  const n = 2.6;
+  const n = 4;
   const up = s ** (2 / n);
-  return out.set(half * Math.sign(c) * Math.abs(c) ** (2 / n) * (1 - 0.2 * up), belt + (roofAt(z) - belt) * up, z);
+  return out.set(half * Math.sign(c) * Math.abs(c) ** (2 / n) * (1 - 0.13 * up), belt + (roofAt(z) - belt) * up, z);
 }
 
 /**
@@ -533,7 +554,7 @@ function loftGlasshouse() {
     const top = a > RIM.pillar && a < Math.PI - RIM.pillar;
     const side = c.x > 0 ? 'R' : 'L';
     if (z > FALCON.front + 0.08) {
-      if (top) return 'windscreen';
+      if (top) return z > SCREEN_CLEAR ? 'windscreen' : 'screenTop';
       return z > DOOR.back + 0.02 ? `window${side}` : 'pillars';
     }
     if (z > FALCON.front) return 'pillars';
@@ -546,6 +567,7 @@ function loftGlasshouse() {
   });
   return {
     windscreen: parts.windscreen,
+    screenTop: parts.screenTop,
     windows: { 1: parts.windowR, [-1]: parts.windowL } as Record<1 | -1, BufferGeometry>,
     pillars: parts.pillars,
     falconTops: { 1: parts.falconTopR, [-1]: parts.falconTopL } as Record<1 | -1, BufferGeometry>,
@@ -597,11 +619,14 @@ function band(side: 1 | -1, a: number, b: number, at: (z: number) => number, wid
   return quadStrip(verts, steps);
 }
 
-/** A thin line along the glasshouse where the side windows meet the roof (`side`), from z `a` to `b`: a pillar. */
-function houseLine(side: 1 | -1, a: number, b: number, width: number): BufferGeometry {
+/**
+ * A thin line along the glasshouse where the side windows meet the roof (`side`), from z `a` to `b`, `width` round it
+ * (radians) and `shift` down the side from that edge: a pillar, the chrome round the windows.
+ */
+function houseLine(side: 1 | -1, a: number, b: number, width: number, shift = 0): BufferGeometry {
   const steps = 20;
   const verts: number[] = [];
-  const angle = side === 1 ? RIM.pillar : Math.PI - RIM.pillar;
+  const angle = side === 1 ? RIM.pillar + shift : Math.PI - RIM.pillar - shift;
   const p = new Vector3(), q = new Vector3();
   for (let i = 0; i <= steps; i++) {
     const z = a + (b - a) * (i / steps);
@@ -610,6 +635,52 @@ function houseLine(side: 1 | -1, a: number, b: number, width: number): BufferGeo
     verts.push(p.x * 1.004, p.y + 0.002, p.z, q.x * 1.004, q.y + 0.002, q.z);
   }
   return quadStrip(verts, steps);
+}
+
+/** A front door's flush handle: a slim chrome bar near its back edge. */
+function handle(side: 1 | -1): BufferGeometry {
+  return band(side, DOOR.back + 0.1, DOOR.back + 0.38, () => 0.95, 0.022, false);
+}
+
+/**
+ * A turbine wheel's face, in the wheel's plane (x 0, facing +x): ten blades sweeping round from the hub to the rim,
+ * dished in toward the hub, and the hub's cap.
+ */
+function turbine(): BufferGeometry {
+  const verts: number[] = [];
+  const index: number[] = [];
+  const blades = 10, steps = 6;
+  for (let i = 0; i < blades; i++) {
+    const a0 = (i / blades) * Math.PI * 2;
+    const base = verts.length / 3;
+    for (let k = 0; k <= steps; k++) {
+      const t = k / steps;
+      const r = 0.065 + (WHEEL.rim - 0.075) * t;
+      const a = a0 + 0.8 * t ** 1.25;
+      const w = 0.015 + 0.03 * t;
+      const x = -0.03 * (1 - t);
+      const cy = r * Math.cos(a), cz = r * Math.sin(a);
+      const py = -Math.sin(a) * w, pz = Math.cos(a) * w;
+      verts.push(x, cy - py, cz - pz, x, cy + py, cz + pz);
+      if (k < steps) {
+        const p = base + k * 2;
+        index.push(p, p + 1, p + 2, p + 1, p + 3, p + 2);
+      }
+    }
+  }
+  // The hub: a little disc.
+  const hub = verts.length / 3;
+  verts.push(-0.032, 0, 0);
+  for (let k = 0; k <= 16; k++) {
+    const a = (k / 16) * Math.PI * 2;
+    verts.push(-0.032, 0.07 * Math.cos(a), 0.07 * Math.sin(a));
+    if (k < 16) index.push(hub, hub + 1 + k, hub + 2 + k);
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute('position', new Float32BufferAttribute(verts, 3));
+  geometry.setIndex(index);
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 /** A strip of quads from pairs of points. */

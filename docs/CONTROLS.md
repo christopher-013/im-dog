@@ -127,10 +127,12 @@ himself. To ask for a ride, stand at the Garage door (in the living room, left o
 |---|---|---|---|
 | Bark | F | the bark button | Bark |
 | Head in or out of the window | E | A | the paw |
-| Change the view (alongside, his face, behind the car, the drone) | Q | the trick button | Trick |
+| Look around (turns his head; in "his view" you see what he sees) | Mouse | Right stick | Drag on the right |
+| Change the view (alongside, his view, his face, behind the car, the drone) | Q | the trick button | Trick |
 | Head home now | Esc → **HEAD HOME** | Start → **HEAD HOME** | ⏸ → **HEAD HOME** |
 
-With FSD on, he says yes most of the time, and the views change and he barks by himself.
+With FSD on, he says yes most of the time, and the views change and he barks by himself. Left alone for a few
+seconds, he looks about at the beach and the sea by himself.
 
 ## First play
 The first time on each kind of controls, a few seconds of how-to:

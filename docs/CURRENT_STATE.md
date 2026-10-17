@@ -54,7 +54,8 @@ carries into Phase 2.
 ## Last Developer
 Claude Code (2026-10-17, owner request with a photo of their car's front: "Make the headlights more like the actual
 car. When the human goes to the car make sure they are wearing the socks and shoes. When the human enters to exits the
-car have the door open and close so they can get out. The drive is still a little long make it 30 seconds shorter"):
+car have the door open and close so they can get out. The drive is still a little long make it 30 seconds shorter";
+pushed to `main` at the owner's request):
 - **Headlamps** (`FamilyCar`, `LAMP`, `lampPoint`): long and swept, thin toward the middle and taller at the corner,
   wrapping onto the fender; a smoked lens over chrome and a projector; the thick light strip along the bottom,
   hooking up at the outer end.

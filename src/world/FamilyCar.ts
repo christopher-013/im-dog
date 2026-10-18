@@ -10,8 +10,10 @@ import {
   Group,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  PlaneGeometry,
   Quaternion,
   RingGeometry,
   SphereGeometry,
@@ -23,16 +25,20 @@ import {
   type Object3D,
   type Texture,
 } from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { CARS } from '../config/cars';
 import { RIDE } from '../config/ride';
 import type { RideCar } from './RideCar';
+import { familyCarPlate } from './familyCarPlate';
 
 /**
  * The family car (Phase 6, D34): an original, code-built black electric SUV modelled on the family's own Model X
  * (owner's photo, 2026-10-17; the photo is private and not in the repo). One smooth sculpted body: a rounded nose and
- * hood, swept-back headlamps with their light strip, a thin chrome strip across the nose, a dark lower intake with
- * chrome fog-lamp trim; a glasshouse in one arc, the panoramic windscreen sweeping up over the cream seats into the
+ * hood, swept-back headlamps with J-shaped running lights and dark corner inlets; a glasshouse in one arc,
+ * the panoramic windscreen sweeping up over the cream seats into the
  * roof and down the rear window, chrome along the windows; and the falcon-wing rear doors, each hinged at the roof's
- * spine and again at the top of its window, rising up and out like wings. No name, logo, badge or number plate.
+ * spine and again at the top of its window, rising up and out like wings. Unbadged; the owner-requested fictional
+ * OUTXTIME rear plate is generated locally, never copied from a personal registration or photo.
  *
  * Its own space: +z is forward, +y up, the floor at y 0; the passenger (right-hand) side is −x. The passenger's front
  * door opens and its window rolls down (the dog sits there for a ride, head out of the window); the falcon doors rise;
@@ -83,17 +89,18 @@ export class FamilyCar implements RideCar {
     const roofGlass = this.material(new MeshStandardMaterial({ color: '#06080b', metalness: 0.6, roughness: 0.05, envMap: sky, envMapIntensity: 1.3, side: DoubleSide }));
     const trim = this.material(new MeshStandardMaterial({ color: '#050506', roughness: 0.4, side: DoubleSide }));
     const rubber = this.material(new MeshStandardMaterial({ color: '#141416', roughness: 0.9, side: DoubleSide }));
-    const rim = this.material(new MeshStandardMaterial({ color: '#141518', metalness: 0.55, roughness: 0.36, envMap: sky, envMapIntensity: 0.8, side: DoubleSide }));
+    const rim = this.material(new MeshStandardMaterial({ color: '#090a0d', metalness: 0.55, roughness: 0.3, envMap: sky, envMapIntensity: 0.65, side: DoubleSide }));
     const caliper = this.material(new MeshStandardMaterial({ color: '#c8161d', roughness: 0.4 }));
     const disc = this.material(new MeshStandardMaterial({ color: '#7b7f85', metalness: 0.8, roughness: 0.35 }));
     const chrome = this.material(new MeshStandardMaterial({ color: '#d6dae0', metalness: 1, roughness: 0.12, envMap: sky, envMapIntensity: 1.4 }));
     const lamp = this.material(new MeshStandardMaterial({ color: '#ffffff', emissive: '#f4f8ff', emissiveIntensity: 1.4 }));
     // The headlamps: a clear, silvery glass over the lamps (light against the black paint, so they read as lamps),
     // round lamps pale, glassy and softly lit, each in a grey bezel.
-    const headlampGlass = this.material(new MeshStandardMaterial({ color: '#8f9aa6', metalness: 0.85, roughness: 0.08, envMap: sky, envMapIntensity: 1.4, side: DoubleSide }));
+    const headlampGlass = this.material(new MeshStandardMaterial({ color: '#25313d', metalness: 0.65, roughness: 0.1, envMap: sky, envMapIntensity: 1.4, side: DoubleSide }));
     const bezel = this.material(new MeshStandardMaterial({ color: '#5d6670', metalness: 0.7, roughness: 0.25, envMap: sky, envMapIntensity: 1 }));
     const lampBulb = this.material(new MeshStandardMaterial({ color: '#e6edf4', emissive: '#dfe8f3', emissiveIntensity: 0.6, metalness: 0.3, roughness: 0.12, envMap: sky, envMapIntensity: 1 }));
     const tail = this.material(new MeshStandardMaterial({ color: '#6a0a10', emissive: '#d0101e', emissiveIntensity: 0.8, roughness: 0.2 }));
+    const tailLens = this.material(new MeshStandardMaterial({ color: '#360912', metalness: 0.25, roughness: 0.18, side: DoubleSide }));
     const seat = this.material(new MeshStandardMaterial({ color: '#ece6da', roughness: 0.7 }));
     const cabin = this.material(new MeshStandardMaterial({ color: '#202126', roughness: 0.85, side: DoubleSide }));
 
@@ -147,6 +154,8 @@ export class FamilyCar implements RideCar {
       this.add(this.geometry(new BoxGeometry(0.12, 0.03, 0.05)), trim, this.object, [side * 0.95, 1.06, 1.13]);
       // Door seams.
       for (const z of [DOOR.front, DOOR.back, FALCON.front, FALCON.back]) this.add(this.geometry(seam(side, z)), trim, this.object);
+      // Sculpted lower sill: a narrow shadow line, not the old slab-like flat door side.
+      this.add(this.geometry(band(side, -1.04, 1.04, () => 0.36, 0.065, false)), trim, this.object);
     }
 
     // ---- The front doors, each on a hinge at its front, its window in it.
@@ -231,10 +240,8 @@ export class FamilyCar implements RideCar {
       this.add(clamp, caliper, group, [x * 0.01, 0.07, -0.16], [0.4, 0, 0]);
     }
 
-    // ---- The nose: the headlamps (an almond-shaped lamp at each front corner, ending at the corner instead of running
-    // on along the fender: silvery glass over a chrome reflector, two round lamps inside it, and a thin light line
-    // along its bottom edge), the thin chrome strip across the front, the dark lower intake, chrome fog-lamp trim; at
-    // the back, the tail lamps and a chrome strip.
+    // ---- Almond-shaped headlamps with recessed reflectors and swept running lights; cleaner dark bumper inlets.
+    // At the back, twin light guides in smoked housings and a thin chrome hatch strip.
     for (const side of [1, -1] as const) {
       const at = (s: number, y: number, out: number) => lampPoint(side, s, y, out);
       const bottom = LAMP.s.map((s, i) => at(s, LAMP.bottom[i]!, 0.006));
@@ -254,25 +261,54 @@ export class FamilyCar implements RideCar {
         const bulb = this.add(this.geometry(new SphereGeometry(1, 16, 10)), lampBulb, this.object, [eye.x, eye.y, eye.z]);
         bulb.scale.set(radius, radius, 0.013);
       }
-      // The light line: thin, along the lens's bottom edge, the length of the lamp and no further.
+      // Signature swept J-shaped daytime light: a long lower stroke rising at the outer tip.
       const line = LAMP.s.map((s, i) => at(s, LAMP.bottom[i]! + 0.004, 0.008));
-      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(line), 32, 0.0065, 6)), lamp, this.object);
-      for (let i = 0; i < 3; i++) {
-        const at = onNose(side * (0.7 + i * 0.05), 0.36 + i * 0.025, 0.004);
-        this.add(this.geometry(new BoxGeometry(0.012, 0.09, 0.012)), chrome, this.object, [at.x, at.y, at.z], [0.2, side * 0.5, side * 0.35]);
+      line.push(at(0.985, 0.867, 0.009), at(0.965, 0.904, 0.009));
+      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(line), 28, 0.009, 6)), lamp, this.object);
+      // Tall dark corner inlet with one low horizontal fog lamp, integrated into the bumper.
+      this.add(this.geometry(ribbon(
+        [0.68, 0.76, 0.84].map((x) => onNose(side * x, 0.36, 0.007)),
+        [0.68, 0.76, 0.84].map((x) => onNose(side * x, 0.59, 0.007)),
+      )), trim, this.object);
+      const fog = [0.69, 0.75, 0.81].map((x) => onNose(side * x, 0.415, 0.014));
+      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(fog), 8, 0.005, 5)), chrome, this.object);
+      // Two red light guides in a smoked, swept rear housing, wrapping round the hatch corners.
+      const xs = [0.39, 0.54, 0.72, 0.87, 0.92];
+      const low = [0.88, 0.865, 0.85, 0.865, 0.91];
+      const high = [1.025, 1.045, 1.06, 1.04, 0.96];
+      this.add(this.geometry(ribbon(
+        xs.map((x, i) => onTail(side * x, low[i]!, 0.012)),
+        xs.map((x, i) => onTail(side * x, high[i]!, 0.012)),
+      )), tailLens, this.object);
+      for (const ys of [low.map((y) => y + 0.025), high.map((y) => y - 0.025)]) {
+        const path = xs.map((x, i) => onTail(side * x, ys[i]!, 0.021));
+        this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(path), 20, 0.009, 6)), tail, this.object);
       }
-      const tailLine = [[0.5, 1.02], [0.68, 1.015], [0.84, 1.0], [0.92, 0.97]].map(([x, y]) => onTail(side * x!, y!, 0.006));
-      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(tailLine), 16, 0.03, 6)), tail, this.object);
+      const reflector = [0.59, 0.71, 0.82].map((x) => onTail(side * x, 0.40, 0.01));
+      this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(reflector), 8, 0.012, 5)), tail, this.object);
     }
-    const nose = [-0.48, -0.24, 0, 0.24, 0.48].map((x) => onNose(x, 0.725 - 0.035 * Math.cos((x / 0.48) * (Math.PI / 2)), 0.006));
-    this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(nose), 24, 0.008, 6)), chrome, this.object).name = 'nose strip';
+    // The small nose inset follows the hood, rather than a bright chrome 'smile' across the bumper.
+    const nose = [-0.46, -0.23, 0, 0.23, 0.46].map((x) => onNose(x, 0.81 - 0.018 * Math.cos(x * Math.PI), 0.005));
+    this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(nose), 24, 0.006, 5)), trim, this.object).name = 'nose strip';
     const intakeLow = [-0.62, -0.31, 0, 0.31, 0.62].map((x) => onNose(x, 0.36, 0.004));
     const intakeHigh = [-0.62, -0.31, 0, 0.31, 0.62].map((x) => onNose(x, 0.47, 0.004));
     this.add(this.geometry(ribbon(intakeLow, intakeHigh)), trim, this.object);
-    const tailStrip = [-0.42, -0.21, 0, 0.21, 0.42].map((x) => onTail(x, 0.86, 0.006));
-    this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(tailStrip), 20, 0.007, 6)), chrome, this.object);
+    const tailStrip = [-0.46, -0.23, 0, 0.23, 0.46].map((x) => onTail(x, 0.955, 0.019));
+    this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(tailStrip), 20, 0.009, 6)), chrome, this.object);
+    // Rear hatch outline, little trailing lip and broad dark lower valance.
+    const hatch = [[-0.48, 0.93], [-0.49, 0.72], [-0.38, 0.56], [0, 0.54], [0.38, 0.56], [0.49, 0.72], [0.48, 0.93]];
+    this.add(this.geometry(new TubeGeometry(new CatmullRomCurve3(hatch.map(([x, y]) => onTail(x!, y!, 0.009))), 36, 0.005, 5)), trim, this.object);
+    const lipLow = [-0.76, -0.4, 0, 0.4, 0.76].map((x) => onTail(x, 1.075, 0.018));
+    const lipHigh = [-0.76, -0.4, 0, 0.4, 0.76].map((x) => onTail(x, 1.087, 0.045));
+    this.add(this.geometry(ribbon(lipLow, lipHigh)), paint, this.object);
+    this.add(this.geometry(ribbon(
+      [-0.82, -0.4, 0, 0.4, 0.82].map((x) => onTail(x, 0.30, 0.006)),
+      [-0.82, -0.4, 0, 0.4, 0.82].map((x) => onTail(x, 0.45, 0.006)),
+    )), trim, this.object);
+    this.licensePlate(trim);
 
     this.setFalconDoors(0);
+    this.batch(this.object);
   }
 
   /** The passenger's front door: 0 shut, 1 wide open. */
@@ -361,6 +397,50 @@ export class FamilyCar implements RideCar {
     return texture;
   }
 
+  private licensePlate(trim: Material): void {
+    // Vertical mounting pocket stands just behind the curved hatch; artwork always faces backward.
+    const z = onTail(0, 0.73, 0.025).z;
+    this.add(this.geometry(roundedBox(0.57, 0.29, 0.035)), trim, this.object, [0, 0.735, z]);
+    const texture = familyCarPlate();
+    if (texture) this.textures.push(texture);
+    const material = this.material(new MeshBasicMaterial({ color: '#ffffff', map: texture, toneMapped: false }));
+    const plate = this.add(this.geometry(new PlaneGeometry(0.51, 0.255)), material, this.object, [0, 0.735, z - 0.02], [0, Math.PI, 0]);
+    plate.name = `${CARS.family.plate} license plate`; plate.userData.marking = CARS.family.plate;
+    plate.castShadow = plate.receiveShadow = false;
+  }
+
+  /** Merge only fixed siblings, never across door hinges, wheel spins or the rolling passenger pane. */
+  private batch(parent: Group): void {
+    const byMaterial = new Map<Material, Mesh[]>();
+    for (const child of [...parent.children]) {
+      if (child instanceof Group) this.batch(child);
+      if (!(child instanceof Mesh) || child.name || Array.isArray(child.material) || child.material.transparent) continue;
+      const meshes = byMaterial.get(child.material) ?? [];
+      meshes.push(child); byMaterial.set(child.material, meshes);
+    }
+    for (const [material, meshes] of byMaterial) {
+      if (meshes.length < 2) continue;
+      const parts = meshes.map((mesh) => {
+        mesh.updateMatrix();
+        const g = mesh.geometry.clone().applyMatrix4(mesh.matrix);
+        // These solid-colour details use no UV textures. Loft strips and primitives can share a draw call.
+        g.deleteAttribute('uv'); return g;
+      });
+      const merged = mergeGeometries(parts);
+      for (const part of parts) part.dispose();
+      if (!merged) throw new Error('Could not batch family car geometry');
+      for (const mesh of meshes) mesh.removeFromParent();
+      this.add(this.geometry(merged), material, parent);
+    }
+    // Shared wheel primitives can be referenced in several parents. Release originals only after all parents merged.
+    if (parent === this.object) {
+      const used = new Set<BufferGeometry>();
+      this.object.traverse((o) => { if (o instanceof Mesh) used.add(o.geometry); });
+      for (const geometry of this.geometries) if (!used.has(geometry)) geometry.dispose();
+      this.geometries.splice(0, this.geometries.length, ...used);
+    }
+  }
+
   private add(geometry: BufferGeometry, material: Material, parent: Object3D, at: [number, number, number] = [0, 0, 0], rotation?: [number, number, number]): Mesh {
     const mesh = new Mesh(geometry, material);
     mesh.position.set(...at);
@@ -436,8 +516,8 @@ function smooth01(t: number): number {
  */
 function topAt(z: number): number {
   if (z > GLASS.cowl) {
-    const hood = 1.07 - 0.18 * ((z - GLASS.cowl) / (2.22 - GLASS.cowl)) ** 1.3;
-    return z <= 2.22 ? hood : 0.89 - 0.38 * ((z - 2.22) / (ENDS.nose - 2.22)) ** 2.2;
+    const hood = 1.07 - 0.17 * ((z - GLASS.cowl) / (2.22 - GLASS.cowl)) ** 1.15;
+    return z <= 2.22 ? hood : 0.90 - 0.28 * ((z - 2.22) / (ENDS.nose - 2.22)) ** 1.35;
   }
   const line = 1.07 + 0.03 * ((GLASS.cowl - z) / 3.6);
   return z >= -2.2 ? line : line - 0.32 * ((-2.2 - z) / (-2.2 - ENDS.tail)) ** 2.2;
@@ -593,7 +673,7 @@ function loftBody(): { body: BufferGeometry; doors: Record<1 | -1, BufferGeometr
 function roofAt(z: number): number {
   const G = GLASS;
   if (z >= G.apex) return G.top - (G.top - beltAt(G.cowl)) * Math.min(1, (z - G.apex) / (G.cowl - G.apex)) ** 1.7;
-  return G.top - (G.top - beltAt(G.tail)) * Math.min(1, (G.apex - z) / (G.apex - G.tail)) ** 2.9;
+  return G.top - (G.top - beltAt(G.tail)) * Math.min(1, (G.apex - z) / (G.apex - G.tail)) ** 2.05;
 }
 
 /**
@@ -723,8 +803,8 @@ function turbine(): BufferGeometry {
     for (let k = 0; k <= steps; k++) {
       const t = k / steps;
       const r = 0.065 + (WHEEL.rim - 0.075) * t;
-      const a = a0 + 0.8 * t ** 1.25;
-      const w = 0.015 + 0.03 * t;
+      const a = a0 + 0.22 * t ** 1.25;
+      const w = 0.011 + 0.009 * t;
       const x = -0.03 * (1 - t);
       const cy = r * Math.cos(a), cz = r * Math.sin(a);
       const py = -Math.sin(a) * w, pz = Math.cos(a) * w;

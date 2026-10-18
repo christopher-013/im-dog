@@ -3,6 +3,7 @@ export const CAR_IDS = ['family', 'delorean'] as const;
 export type CarId = (typeof CAR_IDS)[number];
 export const CARS = {
   storageKey: 'imdog.cars',
+  family: { plate: 'OUTXTIME' },
   delorean: {
     length: 4.4, width: 1.94, height: 1.43,
     wheelRadius: 0.32, wheelWidth: 0.21, frontAxle: 1.26, rearAxle: -1.28,

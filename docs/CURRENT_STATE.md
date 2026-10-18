@@ -52,6 +52,38 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Codex family-car refinement (2026-10-18; **commit and push to main approved by the owner**, alongside the rear-body work below):
+- Refined the Model X-style SUV's nose/hood, swept J-shaped running lights, cleaner corner inlets, rear roof slope,
+  smoked twin-guide tail lamps, hatch outline, lip spoiler, lower valance and dark slim-spoke wheels. The doors,
+  passenger window, seating/head-out positions and shared ride gameplay remain unchanged (`world/FamilyCar.ts`).
+- Added the owner's requested **OUTXTIME** rear plate (final spelling: no spaces), generated on a small canvas
+  (`world/familyCarPlate.ts`, text in `config/cars.ts`). References remain unshipped; the SUV is still unbadged.
+- Batched fixed opaque details by material within their moving assemblies, preserving named meshes and the rolling
+  window. In the same development preview with no occupants, draw calls including shadows fell from **261 to 120**;
+  rendered triangles changed from 78,618 to 81,692. This is a preview comparison, not a phone FPS measurement.
+- Added checks for exact generated plate lettering, outward-facing/unobstructed rear mounting, mesh/triangle budget
+  and resource disposal. Existing garage clearance, raised-door framing and both drivers' headroom checks pass.
+- Final verification: `npm test -- --maxWorkers=2` (**723 tests / 102 files**), `npm run build` (includes strict
+  typecheck and private-reference leak check; **31 files / 18 private references**, none leaked), targeted car checks
+  after the plate spelling change, and `git diff --check`. Browser-inspected front/rear/side views, the exact plate,
+  raised/closed falcon doors and seated passengers; the preview reported no console warnings/errors. No physical
+  device test or new full gameplay playthrough claimed. The owner subsequently requested committing and pushing
+  these changes to `main`; verify deployment status separately from Git push success.
+
+Codex rear-body refinement (2026-10-18; **commit and push approved by the owner**, following published baseline `10a1f26`):
+- Closed the real gaps between the DeLorean's gull-wing door backs, rear windshield and rear fenders. Added a
+  fixed roof crossmember, broad rear pillars, framed/tinted quarter panes and rear glass, solid cabin bulkhead,
+  shoulder surfaces, wheel-arch returns and rear corner/upper-tail closures (`world/DeLoreanCar.ts`). The rear
+  assembly stays fixed when the doors open, and its details are still batched by material. The flux-capacitor Y
+  now faces forward into the cabin rather than backward through the rear shell. No photos or external assets added.
+- `world/cars.test.ts` now checks the formerly missing rear-quarter surfaces with rays on both sides, plus the
+  shoulder, rear glass and opaque bulkhead, with the doors both open and shut. Existing camera framing, passenger
+  poses, headroom, geometry budget and disposal checks also pass. Browser-inspected rear three-quarter and side
+  views, including the seated passengers; no change to ride selection, gameplay or the SUV.
+- Before the SUV work, strict typecheck, targeted car checks and build passed. An initial default-worker full run
+  hit the existing five-second `DogPreview` test timeout; its isolated rerun passed, as did all **720** then-current
+  tests with two workers. The final combined run above also passes with the three new SUV checks.
+
 Codex follow-up (2026-10-18, owner refinement request; **commit and push approved by the owner**):
 - Refined the DeLorean's brushed stainless roughness, inset opening windows, rounded bucket seats, fine 48-fin
   turbine wheels/lugs, headlamp lenses, perforated front hardware, rocker wiring, three-by-four rear exhaust

@@ -158,8 +158,12 @@ export class DeLoreanCar implements RideCar {
       for (const z of [-0.46, 0.54]) this.pipe([local([side * 0.86, 0.50, z]), local([side * 0.86, 0.75, z])], 0.018, dark, door);
     }
 
+    // A complete fixed rear body joins the gull-wing jambs to the hatch, fenders and tail.
+    // Equipment is OUTSIDE this shell, not an open view through the cabin behind the seats.
+    const rearGlass = this.material('#17232b', 0.35, 0.16);
+    rearGlass.transparent = true; rearGlass.opacity = 0.86; rearGlass.depthWrite = false;
+    this.rearBody(silver, dark, rearGlass);
     // The time-machine equipment lives behind the cabin, leaving the doors and both passengers clear.
-    this.panel([[-0.69, 1.38, -0.70], [0.69, 1.38, -0.70], [0.87, 0.87, -1.30], [-0.87, 0.87, -1.30]], glass);
     this.box([1.82, 0.16, 1.0], [0, 0.72, -1.64], silver);
     this.box([1.59, 0.06, 1.03], [0, 0.84, -1.54], dark);
     // Twin tall, rear-facing angular exhaust stacks: silver outer shells, black vanes inside.
@@ -182,7 +186,8 @@ export class DeLoreanCar implements RideCar {
       for (const z of [-1.14, -1.40, -1.66]) this.box([0.045, 0.09, 0.05], [side * 1.03, 0.70, z], alloy);
     }
     this.box([0.33, 0.37, 0.10], [0, 0.99, -0.65], dark);
-    for (const to of [[-0.095, 1.09, -0.708], [0.095, 1.09, -0.708], [0, 0.88, -0.708]] as const) this.pipe([[0, 0.99, -0.708], to], 0.012, white);
+    // The Y faces the passengers/windshield, not backwards through the rear body.
+    for (const to of [[-0.095, 1.09, -0.592], [0.095, 1.09, -0.592], [0, 0.88, -0.592]] as const) this.pipe([[0, 0.99, -0.592], to], 0.012, white);
     // Classic circular reactor deck, wiring looms and silver tanks between the two rear vents.
     this.add(new CylinderGeometry(0.245, 0.245, 0.12, 24), dark, [0, 0.95, -1.30]);
     const reactor = this.add(new TorusGeometry(0.18, 0.024, 6, 24), alloy, [0, 1.018, -1.30]); reactor.rotation.x = Math.PI / 2;
@@ -262,6 +267,49 @@ export class DeLoreanCar implements RideCar {
     // Greeting and boarding commands refer to the SAME two gull wings. A front-door close must not cancel greeting.
     this.doors.passenger.rotation.z = -D.doorLift * Math.max(this.wingsOpen, this.passengerOpen);
     this.doors.driver.rotation.z = D.doorLift * Math.max(this.wingsOpen, this.driverOpen);
+  }
+
+  /** Fixed rear shell: no rear-quarter holes or floating window edges, even with the gull wings raised. */
+  private rearBody(silver: Material, trim: Material, glass: Material): void {
+    const body = new Group(); body.name = 'fixed rear body'; this.object.add(body);
+    const frame = (outer: Point[], inner: Point[]) => {
+      for (let i = 0; i < 4; i++) this.panel([outer[i]!, outer[(i + 1) % 4]!, inner[(i + 1) % 4]!, inner[i]!], silver, body);
+      return this.panel(inner, glass, body);
+    };
+    // Rear roof crossmember and a solid bulkhead below the rear glass. These do not travel with the doors.
+    this.box([1.42, 0.06, 0.15], [0, 1.395, -0.735], silver, body);
+    this.box([1.45, 0.035, 0.14], [0, 1.35, -0.735], trim, body);
+    this.box([1.51, 0.63, 0.075], [0, 0.715, -0.73], trim, body);
+    const hatch: Point[] = [[-0.70, 1.38, -0.80], [0.70, 1.38, -0.80], [0.88, 0.86, -1.33], [-0.88, 0.86, -1.33]];
+    const pane: Point[] = [[-0.61, 1.31, -0.871], [0.61, 1.31, -0.871], [0.77, 0.94, -1.248], [-0.77, 0.94, -1.248]];
+    frame(hatch, pane).name = 'framed rear windshield';
+    for (let i = 1; i < 7; i++) {
+      const t = i / 7, half = 0.61 + 0.16 * t, y = 1.31 - 0.37 * t + 0.002, z = -0.871 - 0.377 * t - 0.002;
+      this.pipe([[-half, y, z], [half, y, z]], 0.002, trim, body);
+    }
+    for (const side of [-1, 1]) {
+      // Broad B/C pillars and the inset fixed quarter pane: the sloping buttress continues into the rear fender.
+      const outer: Point[] = [[side * 0.94, 0.83, -0.69], [side * 0.70, 1.40, -0.69], [side * 0.88, 1.02, -1.34], [side * 0.97, 0.83, -1.57]];
+      const inner: Point[] = [[side * 0.926, 0.88, -0.86], [side * 0.766, 1.25, -0.85], [side * 0.873, 1.02, -1.23], [side * 0.942, 0.88, -1.40]];
+      frame(outer, inner).name = side < 0 ? 'passenger rear quarter window' : 'driver rear quarter window';
+      for (let i = 0; i < 4; i++) this.pipe([inner[i]!, inner[(i + 1) % 4]!], 0.009, trim, body);
+      // Door jamb has actual depth, rather than a freestanding line at the end of the door's glass.
+      this.panel([[side * 0.94, 0.83, -0.69], [side * 0.70, 1.40, -0.69], [side * 0.65, 1.35, -0.72], [side * 0.88, 0.80, -0.72]], trim, body);
+      this.panel([[side * 0.94, 0.36, -0.69], [side * 0.94, 0.83, -0.69], [side * 0.88, 0.80, -0.76], [side * 0.88, 0.36, -0.76]], silver, body);
+      // Seal the shoulder above the wheel and the exposed top edge of the original thin fender panel.
+      this.panel([[side * 0.97, 0.83, -0.69], [side * 0.97, 0.83, -1.57], [side * 0.86, 0.86, -1.57], [side * 0.81, 0.86, -0.78]], silver, body);
+      this.panel([[side * 0.97, 0.83, -1.57], [side * 0.96, 0.80, -2.19], [side * 0.86, 0.80, -2.19], [side * 0.86, 0.86, -1.57]], silver, body);
+      this.panel([[side * 0.97, 0.83, -1.57], [side * 0.88, 1.02, -1.34], [side * 0.82, 1.00, -1.34], [side * 0.86, 0.86, -1.57]], silver, body);
+      // Rolled wheel-arch lip: a narrow strip returns inward over the tire instead of a paper-thin silhouette.
+      for (let i = 0; i < 16; i++) {
+        const a = i * Math.PI / 16, b = (i + 1) * Math.PI / 16;
+        const ay = 0.32 + 0.38 * Math.sin(a), az = D.rearAxle + 0.38 * Math.cos(a);
+        const by = 0.32 + 0.38 * Math.sin(b), bz = D.rearAxle + 0.38 * Math.cos(b);
+        this.panel([[side * 0.968, ay, az], [side * 0.968, by, bz], [side * 0.925, by, bz], [side * 0.925, ay, az]], silver, body);
+      }
+      this.panel([[side * 0.96, 0.80, -2.19], [side * 0.96, 0.35, -2.19], [side * 0.89, 0.35, -2.23], [side * 0.89, 0.80, -2.23]], silver, body);
+    }
+    this.box([1.85, 0.14, 0.13], [0, 0.73, -2.165], silver, body);
   }
 
   private fender(side: number, front: boolean, material: Material): void {

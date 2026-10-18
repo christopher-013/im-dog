@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-10-16. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 ("A Day with Moke", `docs/PHASE_6.md`) is approved and in progress, starting with 6.1 Halloween. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the release-hardening and audit changes below to `main`; verify deployment status in GitHub Actions after the push._
+_Last updated: 2026-10-18. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 ("A Day with Moke", `docs/PHASE_6.md`) is in progress. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the DeLorean follow-up to `main` on 2026-10-18; check deployment status separately from Git push success._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -52,6 +52,53 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Codex follow-up (2026-10-18, owner refinement request; **commit and push approved by the owner**):
+- Refined the DeLorean's brushed stainless roughness, inset opening windows, rounded bucket seats, fine 48-fin
+  turbine wheels/lugs, headlamp lenses, perforated front hardware, rocker wiring, three-by-four rear exhaust
+  cells, reactor deck/tanks and rear lights/exhaust. Geometry remains batched; no external model or photos shipped.
+- Added owner-requested **DMC** front badging, **DeLorean** rear lettering and the fictional **OUTATIME** California
+  plate. `world/deLoreanMarkings.ts` generates the artwork locally (system lettering/vector paths), with owned
+  textures disposed along with the car. This is the explicit D34/D36 exception approved by this request, not a
+  general branding-policy change or a claim of an official licence. No personal registration is used.
+- Garage reveal now cuts to the **front three-quarter camera** as soon as they enter, before the doors rise, and
+  stays there while the dog and human board. `RIDE.garageReveal` controls framing. Taller views widen vertically
+  to keep the complete car and raised doors on screen; normal gameplay/coastal cameras are unchanged.
+- Added regression checks for badges, all texture disposal, and both cars' complete raised-door framing and held
+  boarding camera at desktop and narrow portrait aspect ratios (`ride/garageReveal.test.ts`).
+- Verified: `npm run typecheck`, `npm test` (**719 tests / 102 files**), `npm run build` (private-reference check
+  passed) and `git diff --check`. Browser-inspected the generated plate, badges, body and open doors, and played
+  into the new front-view garage sequence; that fresh game tab reported no console errors. No physical-device
+  test claimed. The preview's Front reveal and License plate views make the refinements easy to inspect.
+
+Codex (2026-10-18, owner-requested second ride car; included in the owner-approved DeLorean release):
+- Reviewed Claude's garage/ride, household selection, passenger poses and recent Phase 6 history. Synced the clean
+  checkout from `3d4a4a0` to `42fb3f2` with a fast-forward. Baseline: typecheck, 703 tests and production build passed.
+- Added a procedural **DeLorean time-machine homage** (`world/DeLoreanCar.ts`): silver wedge body, quad headlights,
+  turbine wheels, two roof-hinged gull wings, rear exhaust stacks/equipment, exposed cables and blue light strips.
+  The supplied reference photo is not stored, imported or distributed. No downloaded model, branding or film audio.
+- `world/cars.ts` draws one of each car in a shuffled pair, persisted as `imdog.cars`. **Each accepted ride** consumes
+  one turn at boarding (not opening the menu or changing scenes). Both cars appear equally in completed pairs;
+  without browser storage the fallback is a fair random pick. Development-only `?car=delorean|family` fixes the
+  choice for visual testing without consuming a turn. There is no player-facing car menu.
+- Both cars implement `RideCar`: per-car seats, window, head-out pose and door/wheel animations. The garage chooses
+  behind the closed door; `RideDirector` passes that same ID into the coast scene and keeps it through the return.
+  Only the selected car is instantiated; replacing it disposes its geometry, materials and reflection texture.
+  The existing SUV's look and the shared activities/input/FSD are unchanged. The lower car has lower seats and
+  window-height close-up camera framing. A stylized open passenger window keeps the existing head-out interaction.
+- Static DeLorean details are batched by material inside each moving assembly. Blue strips are emissive geometry,
+  not new point lights. Tests cover balanced picks/storage failure, door/garage clearance, disposal, both drivers'
+  headroom, all dogs' head-out/paws-in poses, and both cars' full boarding/drive/return sequences.
+- Developer visual check: `http://localhost:5173/scripts/car-preview.html` (not a production build entry).
+  Verification: `npm run typecheck`, `npm test` (**714 tests, 101 files**) and `npm run build` passed; production
+  leak check passed (31 output files / 18 private references). `git diff --check` passed. Browser checks covered
+  garage boarding, the coastal drive, Change View, pause/Head Home and return to the living room; the lower
+  passenger close-up now frames the dog correctly. The model preview covered raised doors, both humans and all
+  three dogs. A fresh production-preview startup reached play without console errors. No physical phone/controller
+  test or claim of measured mobile FPS. The dev console retained a
+  transient HMR export-rename error from editing (resolved by reload), plus existing stand-in-model and shader
+  precision warnings; these are not production-build failures. A house interaction prompt can briefly linger
+  over the ride (existing ride UI issue; not changed by the car addition).
+
 Claude Code (2026-10-17, owner: "Make the garage door pulse with blue light when the dog looks or passes by the door
 to indicate that there is an adventure close by"): `world/GarageDoorGlow.ts` (tested): `doorGlowWanted` says when (a
 ride can be asked for, i.e. `RideOffer.garageBark.enabled`, not mid-ride; he's within `near` 2.2 m of the door, or

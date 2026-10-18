@@ -3,20 +3,21 @@ import { describe, expect, it } from 'vitest';
 import { createVisualState, HumanAnimationController } from '../human/HumanAnimationController';
 import { HOUSEHOLD } from '../human/household';
 import { StylizedHumanVisual } from '../human/StylizedHumanVisual';
-import { FamilyCar } from '../world/FamilyCar';
+import { CAR_IDS } from '../config/cars';
+import { createCar } from '../world/cars';
 
 /** From the head joint to the top of the hair, standing straight (the rig's units). */
 const HEAD_TO_TOP = 0.233;
 
-describe('the driver at the wheel (Phase 6)', () => {
-  const car = new FamilyCar();
+describe.each(CAR_IDS)('the driver at the wheel: %s (Phase 6)', (carId) => {
   for (const [who, look] of Object.entries(HOUSEHOLD)) {
-    it(`the ${who}'s head stays under the glass, with room to spare`, () => {
+    it(`${carId}: the ${who}'s head stays under the glass, with room to spare`, () => {
+      const car = createCar(carId);
       const visual = new StylizedHumanVisual(look);
       const animation = new HumanAnimationController();
       animation.scale = visual.scale ?? 1;
       // Sat back in the driver's seat exactly as the ride puts them there (RideDirector.sitAtWheel).
-      const seat = FamilyCar.SEATS.driver;
+      const seat = car.seats.driver;
       car.object.add(visual.object);
       visual.object.position.set(seat.x, seat.y - 0.17, seat.z - 0.08);
       const pose = { ...createVisualState(), sit: 1, sitStyle: 'lounge' as const, seatHeight: 0.17 };
@@ -29,6 +30,7 @@ describe('the driver at the wheel (Phase 6)', () => {
       expect(glass).toBeDefined();
       expect(top).toBeLessThan(glass!.point.y - 0.05);
       visual.dispose();
+      car.dispose();
     });
   }
 });

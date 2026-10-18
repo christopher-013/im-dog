@@ -1,6 +1,8 @@
 import { BoxGeometry, BufferGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry, SphereGeometry, type Material } from 'three';
 import { GARAGE, WALL } from './home/layout';
-import { FamilyCar } from './FamilyCar';
+import type { CarId } from '../config/cars';
+import { createCar, nextRideCar } from './cars';
+import type { RideCar } from './RideCar';
 
 /**
  * The Garage's moving parts (Phase 6, D32): the door from the living room (locked in play: it only opens for a ride),
@@ -9,7 +11,8 @@ import { FamilyCar } from './FamilyCar';
  */
 export class GarageView {
   readonly object = new Group();
-  readonly car = new FamilyCar();
+  private currentCar: RideCar;
+  get car(): RideCar { return this.currentCar; }
   private readonly houseDoor = new Group();
   private readonly rollUp = new Group();
   private readonly geometries: BufferGeometry[] = [];
@@ -17,7 +20,9 @@ export class GarageView {
   private houseDoorOpen = 0;
   private rollUpOpen = 0;
 
-  constructor() {
+  constructor(private readonly nextCar: CarId | (() => CarId) = nextRideCar) {
+    // The garage is locked/hidden until the first ride. Don't spend a saved turn just by opening the start menu.
+    this.currentCar = createCar(typeof nextCar === 'string' ? nextCar : 'family');
     this.object.name = 'Garage';
     const g = GARAGE;
     // The house door: white, panelled, hung on the east jamb, swinging into the garage.
@@ -65,6 +70,17 @@ export class GarageView {
     // The car, nose in toward the house, passenger side to the east wall.
     this.car.object.position.set(g.car.x, 0, g.car.z);
     this.car.object.rotation.y = g.car.heading;
+    this.object.add(this.car.object);
+  }
+
+  /** Choose once at the start of boarding, behind the closed house door. Keep that car through the return. */
+  prepareRide(): void {
+    const id = typeof this.nextCar === 'string' ? this.nextCar : this.nextCar();
+    if (id === this.car.id) return;
+    this.car.dispose();
+    this.currentCar = createCar(id);
+    this.car.object.position.set(GARAGE.car.x, 0, GARAGE.car.z);
+    this.car.object.rotation.y = GARAGE.car.heading;
     this.object.add(this.car.object);
   }
 

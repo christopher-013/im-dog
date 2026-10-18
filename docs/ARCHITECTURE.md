@@ -128,7 +128,11 @@ src/
     MoveBasis.ts          the camera angle WASD is measured against, locked while keys are held (tested)
     TvCloseUp.ts          the straight-on shot of a TV that fills the view (watching the ballgame) (tested)
   world/
-    GarageView.ts         the Garage's door (locked in play), roll-up door and the family car (FamilyCar.ts, original, unbadged; tested)
+    GarageView.ts         the Garage's locked house door, roll-up door and ride car; selects once per boarding, behind the closed door
+    RideCar.ts            presentation contract: seats/window/head-out pose, doors and rolling wheels; shared by both ride cars
+    cars.ts               factory and persisted shuffled-pair selection; same car ID in garage, coast scene and return (tested)
+    FamilyCar.ts          original unbadged black electric SUV with falcon-wing doors
+    DeLoreanCar.ts        code-built silver time-machine homage with single-hinge gull wings; static details batched by material
     Home.ts               the whole house: the living room + the wing; colliders, landmarks, places, nap and hiding spots (navigation-tested with Rapier)
     home/                 the new wing (Phase 4; see docs/HOME_REFERENCE.md)
       layout.ts           walls, openings, rooms (roomAt), the house's bounds

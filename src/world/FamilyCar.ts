@@ -23,6 +23,8 @@ import {
   type Object3D,
   type Texture,
 } from 'three';
+import { RIDE } from '../config/ride';
+import type { RideCar } from './RideCar';
 
 /**
  * The family car (Phase 6, D34): an original, code-built black electric SUV modelled on the family's own Model X
@@ -36,7 +38,8 @@ import {
  * door opens and its window rolls down (the dog sits there for a ride, head out of the window); the falcon doors rise;
  * the wheels turn. Materials and geometries are its own (dispose()).
  */
-export class FamilyCar {
+export class FamilyCar implements RideCar {
+  readonly id = 'family' as const;
   readonly object = new Group();
   /**
    * Where the seats are, in the car's space (cushion top, middle). The driver's sits lower, as an SUV's does, so a tall
@@ -49,6 +52,9 @@ export class FamilyCar {
   static readonly SIZE = { length: 5.05, width: 1.98, height: 1.68 } as const;
   /** The passenger window's opening: the dog's head goes out about here (car space). */
   static readonly WINDOW = new Vector3(-0.9, 1.22, 0.42);
+  readonly seats = FamilyCar.SEATS;
+  readonly window = FamilyCar.WINDOW;
+  readonly headOut = RIDE.dogInCar.headOut;
   private readonly passengerDoor = new Group();
   private readonly driverDoor = new Group();
   private readonly passengerWindow: Mesh;

@@ -1,10 +1,10 @@
 import { PerspectiveCamera, Vector3, type Object3D, type Scene, type WebGLRenderer } from 'three';
 import { RIDE } from '../config/ride';
+import { fitVerticalFov } from '../camera/ThirdPersonCamera';
 import { createVisualState, HumanAnimationController } from '../human/HumanAnimationController';
 import type { HumanVisual } from '../human/StylizedHumanVisual';
 import { MokeAnimationController } from '../player/MokeAnimationController';
 import type { MokeVisual } from '../player/MokeVisual';
-import { FamilyCar } from '../world/FamilyCar';
 import type { GarageView } from '../world/GarageView';
 import { GARAGE } from '../world/home/layout';
 import type { CoastDrive, DriveView } from './CoastDrive';
@@ -27,7 +27,7 @@ const SPOTS = {
   shots: {
     livingRoom: { cam: [1.0, 1.55, 0.9], look: [2.5, 1.0, 3.2] },
     passengerSide: { cam: [3.2, 1.75, 3.55], look: [2.2, 0.7, 5.9] },
-    front: { cam: [-0.55, 1.65, 3.4], look: [1.6, 0.9, 7.0] },
+    front: RIDE.garageReveal,
   },
 } as const;
 
@@ -125,6 +125,7 @@ export class RideDirector {
     this.lookAim.yaw = this.lookAim.pitch = this.lookNow.yaw = this.lookNow.pitch = 0;
     this.sinceLook = 99;
     const g = this.cast.garage;
+    g.prepareRide();
     g.setHouseDoor(0);
     g.setRollUp(0);
     g.car.setPassengerDoor(0);
@@ -185,10 +186,10 @@ export class RideDirector {
     // Solid all the way: the game fades the human while they're between its camera and the dog, and the ride can
     // begin in the middle of a frame that has just faded them (the game's fading doesn't run again until it's over).
     this.cast.human.setSeeThrough(false);
+    this.camera.aspect = aspect;
     if (this.phase === 'out') this.updateOut(dt);
     else if (this.phase === 'drive') this.updateDrive(dt, aspect, auto);
     else if (this.phase === 'home') this.updateHome(dt);
-    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
   }
 
@@ -221,7 +222,7 @@ export class RideDirector {
     // The Garage: the car greets them, raising its falcon-wing doors; down the passenger side, the front door opens,
     // he hops in.
     if (t < 9) {
-      this.shot(SPOTS.shots.passengerSide);
+      this.shot(SPOTS.shots.front);
       car.setFalconDoors(smoothRange(3.0, 4.6, t));
       const h = along(SPOTS.humanToCar, (t - 2.6) / 3);
       const d = along(SPOTS.dogToCar, (t - 2.8) / 3.2);
@@ -234,7 +235,7 @@ export class RideDirector {
         // The hop: from beside the car up onto the passenger seat, turning to face forward.
         this.hooks.leash(null);
         const k = smoothRange(6.6, 7.3, t);
-        const seat = car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.passenger));
+        const seat = car.object.localToWorld(this.tmp.copy(car.seats.passenger));
         const from = SPOTS.dogToCar[SPOTS.dogToCar.length - 1]!;
         const x = from[0] + (seat.x - from[0]) * k;
         const z = from[1] + (seat.z - from[1]) * k;
@@ -247,7 +248,7 @@ export class RideDirector {
     // shuts; the roll-up door goes up; backing out.
     this.shot(SPOTS.shots.front);
     car.setFalconDoors(1 - smoothRange(9.4, 10.8, t));
-    const seat = car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.passenger));
+    const seat = car.object.localToWorld(this.tmp.copy(car.seats.passenger));
     this.poseDog(dt, [seat.x, seat.z], Math.PI, { y: seat.y, sit: 1, wag: 0.8 });
     this.humanToWheel(dt, t);
     g.setRollUp(smoothRange(OUT.rollUp[0], OUT.rollUp[1], t));
@@ -278,7 +279,8 @@ export class RideDirector {
   /** Into the driver's seat (`k` 0 → 1) or out of it (1 → 0): from the doorway, ducking in. */
   private stepThroughDriverDoor(dt: number, k: number): void {
     const door = SPOTS.humanRound[SPOTS.humanRound.length - 1]!;
-    const seat = this.cast.garage.car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.driver));
+    const car = this.cast.garage.car;
+    const seat = car.object.localToWorld(this.tmp.copy(car.seats.driver));
     // Facing the car in the doorway, turning to face its way (−z here, nose-in) as they settle.
     this.poseHuman(dt, [door[0] + (seat.x - door[0]) * k, door[1] + (seat.z - door[1]) * k], Math.PI / 2 + (Math.PI / 2) * k, { crouch: Math.sin(Math.PI * k) * 0.6 });
   }
@@ -288,7 +290,7 @@ export class RideDirector {
   private async beginDrive(): Promise<void> {
     this.phase = 'loading';
     const { CoastDrive } = await this.hooks.loadDrive();
-    const drive = (this.drive = new CoastDrive());
+    const drive = (this.drive = new CoastDrive(this.cast.garage.car.id));
     // Into the car: the dog in his seat, the human at the wheel.
     drive.dogSeat.add(this.cast.dog.object);
     this.sitAtWheel(0, drive.driverSeat, true);
@@ -324,7 +326,7 @@ export class RideDirector {
     drive.update(dt, aspect);
     drive.car.setPassengerWindow(1);
     // The dog: head out in the wind (standing up on the seat), or sitting back.
-    const pose = this.headOut ? RIDE.dogInCar.headOut : RIDE.dogInCar.headIn;
+    const pose = this.headOut ? drive.car.headOut : RIDE.dogInCar.headIn;
     const dog = this.cast.dog.object;
     dog.position.set(pose.x, pose.y, pose.z);
     // Turned toward the window (and tipped by the pose's pitch, if it has one).
@@ -385,7 +387,7 @@ export class RideDirector {
       this.moveCar(OUTSIDE_Z + (GARAGE.car.z - OUTSIDE_Z) * smoothRange(0.4, 4, t));
       g.setRollUp(1 - smoothRange(4.2, 5.6, t));
       car.setDriverDoor(smoothRange(HOME.door[0], HOME.door[1], t) - smoothRange(HOME.shut[0], HOME.shut[1], t));
-      const seat = car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.passenger));
+      const seat = car.object.localToWorld(this.tmp.copy(car.seats.passenger));
       this.poseDog(dt, [seat.x, seat.z], Math.PI, { y: seat.y, sit: 1, wag: 1 });
       if (t < HOME.out[0]) this.sitAtWheel(dt, car.object);
       else if (t < HOME.out[1]) this.stepThroughDriverDoor(dt, 1 - smoothRange(HOME.out[0], HOME.out[1], t));
@@ -408,7 +410,7 @@ export class RideDirector {
         const h = along([...SPOTS.humanToCar].reverse(), (u - 10) / 3);
         this.poseHuman(dt, h.at, h.heading, {});
       }
-      const seat = car.object.localToWorld(this.tmp.copy(FamilyCar.SEATS.passenger));
+      const seat = car.object.localToWorld(this.tmp.copy(car.seats.passenger));
       const spot = SPOTS.dogToCar[SPOTS.dogToCar.length - 1]!;
       if (u < 8.2) this.poseDog(dt, [seat.x, seat.z], Math.PI, { y: seat.y, sit: 1, wag: 1 });
       else if (u < 8.9) {
@@ -450,10 +452,10 @@ export class RideDirector {
 
   // ---- helpers
 
-  private shot(s: { cam: readonly number[]; look: readonly number[] }): void {
+  private shot(s: { cam: readonly number[]; look: readonly number[]; fov?: number; minHorizontal?: number; maxVertical?: number }): void {
     this.camera.position.set(s.cam[0]!, s.cam[1]!, s.cam[2]!);
     this.camera.lookAt(s.look[0]!, s.look[1]!, s.look[2]!);
-    this.camera.fov = 58;
+    this.camera.fov = s.minHorizontal ? fitVerticalFov(s.fov ?? 58, s.minHorizontal, this.camera.aspect, s.maxVertical ?? 105) : 58;
   }
 
   private moveCar(z: number): void {
@@ -492,7 +494,7 @@ export class RideDirector {
     const human = this.cast.human.object;
     if (human.parent !== parent) parent.add(human);
     human.visible = true;
-    const seat = FamilyCar.SEATS.driver;
+    const seat = this.cast.garage.car.seats.driver;
     if (inSeat) human.position.set(0, -0.17, -0.08);
     else human.position.set(seat.x, seat.y - 0.17, seat.z - 0.08);
     human.rotation.set(0, 0, 0);

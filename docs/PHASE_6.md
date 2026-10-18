@@ -122,8 +122,9 @@ before 6.2 photo mode and 6.3 the day.
 
 ## 6.4 The Garage and the car
 > **Built 2026-10-17** as below. The doorway is solid in play (the door's locked); only the ride's scripted walk goes
-> through it. The car's passenger **front** door opens (on the real car the front doors are hinged; the rear
-> falcon-wing doors are drawn as seams and don't open). Details: `HOME_REFERENCE.md` → "The Garage".
+> through it. The SUV's passenger **front** door swings open, and its rear falcon-wing doors rise to greet them.
+> Since 2026-10-18 the second car has two single-hinge gull-wing doors instead. Details below and in
+> `HOME_REFERENCE.md` → "The Garage".
 
 - **The door:** in the living room's south wall, **to the left of the TV** as you face it from the couch (around
   x 2.4, between the TV console and the room's east corner), a white interior door like the others.
@@ -145,6 +146,19 @@ before 6.2 photo mode and 6.3 the day.
   an affectionate homage, not a copy. **Black** (owner), with dark glass and silver-grey wheels.
 
 ## 6.5 Going for a ride
+**Second car (owner request, 2026-10-18; D36):** a silver DeLorean time-machine homage, built in code from the
+supplied photo as a look reference only: a low wedge, quad rectangular headlights, turbine-style wheels,
+roof-hinged gull wings, exposed cables, rear exhaust stacks/equipment and blue light strips. Follow-up the same day:
+brushed-metal rendering, inset windows, finer turbine wheels, boxed rear exhaust cells and reactor details;
+**DMC/DeLorean badging and the fictional OUTATIME plate**, explicitly requested by the owner, drawn in code.
+No reference image, downloaded model/artwork, personal plate or film audio is shipped. The garage camera moves
+to the front as they enter, before the wings rise, and holds there through both passengers boarding.
+At the start of each accepted ride, one car is
+drawn from a persisted shuffled pair (one SUV, one DeLorean), giving equal turns over time without being a strict
+alternation. With browser storage unavailable, each pick is a fair coin. The car never changes mid-ride: the same
+choice boards in the garage, goes down the coast and returns. Same human/dog gameplay, music and controls; no
+time-travel or driving mechanics. Per-car seats/window/poses keep all three dogs and both humans inside the cabin.
+
 > **Built 2026-10-17.** How it plays: `ACTIVITIES.md` → "Going for a ride"; controls: `CONTROLS.md`. Differences from
 > the plan below: he hops in through the passenger's front door (not a falcon-wing door); the camera shots are his
 > face from just ahead of the window, alongside behind it, behind the car, and a drone (an in-car view looked too

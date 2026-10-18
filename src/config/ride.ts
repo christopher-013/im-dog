@@ -3,6 +3,11 @@
  * Seconds and metres; game coordinates (x east, z south). Where the Garage and the car are: `GARAGE` (layout.ts).
  */
 export const RIDE = {
+  /** Front three-quarter reveal, held through both passengers boarding. Wide enough for raised wings on phones. */
+  garageReveal: {
+    cam: [-0.55, 1.35, 3.35] as const, look: [1.42, 0.95, 6.3] as const,
+    fov: 70, minHorizontal: 94, maxVertical: 135,
+  },
   /** The human offers a ride every 5–10 minutes of play (owner), timed from the last one (taken or declined). */
   offerEvery: [300, 600] as const,
   /** They come over to him and ask from about this close. */

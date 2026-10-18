@@ -32,7 +32,9 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mulberry32 } from '../utils/random';
-import { FamilyCar } from '../world/FamilyCar';
+import type { CarId } from '../config/cars';
+import { createCar } from '../world/cars';
+import type { RideCar } from '../world/RideCar';
 import { BeachLife } from './beachLife';
 import { BEACH, BIKE_LANE, coastX, drivePath, LAGOON, landHeight, ROAD_HALF, roadAt, routeCurve, samplePath, smooth } from './coastRoute';
 import { palmGeometry, type PalmKind } from './palms';
@@ -103,7 +105,7 @@ const UP = new Vector3(0, 1, 0);
 export class CoastDrive {
   readonly scene = new Scene();
   readonly camera = new PerspectiveCamera(55, 16 / 9, 0.1, 3200);
-  readonly car = new FamilyCar();
+  readonly car: RideCar;
   /** In the car's space: put the dog's visual in here (the passenger seat), and the human's (the driver's). */
   readonly dogSeat = new Group();
   readonly driverSeat = new Group();
@@ -142,7 +144,8 @@ export class CoastDrive {
   private readonly from = { pos: new Vector3(), look: new Vector3(), fov: 55 };
   private blend = 1;
 
-  constructor() {
+  constructor(car: CarId = 'family') {
+    this.car = createCar(car);
     this.scene.name = 'Coast drive';
     this.scene.fog = new Fog('#f2c7a0', 220, 1700);
     const clouds = this.clouds();
@@ -177,8 +180,8 @@ export class CoastDrive {
     this.scene.add(this.traffic.object);
 
     this.car.object.add(this.dogSeat, this.driverSeat);
-    this.dogSeat.position.copy(FamilyCar.SEATS.passenger);
-    this.driverSeat.position.copy(FamilyCar.SEATS.driver);
+    this.dogSeat.position.copy(this.car.seats.passenger);
+    this.driverSeat.position.copy(this.car.seats.driver);
     this.car.setPassengerWindow(1);
     this.scene.add(this.car.object);
     this.light(0);
@@ -227,7 +230,7 @@ export class CoastDrive {
 
   /** The car's window in the world (for a look-at). */
   windowWorld(out: Vector3): Vector3 {
-    return this.car.object.localToWorld(out.copy(FamilyCar.WINDOW));
+    return this.car.object.localToWorld(out.copy(this.car.window));
   }
 
   /** The ground's height as built, road and all (bilinear over the land's grid; the sea's 0 where it's lower). */
@@ -299,6 +302,13 @@ export class CoastDrive {
     const shot = SHOTS[this.view];
     pos.set(shot.pos[0], shot.pos[1], shot.pos[2]);
     look.set(shot.look[0], shot.look[1], shot.look[2]);
+    // Keep the window close-ups on the passenger, not the taller SUV's empty roofline.
+    if (this.view === 'face' || this.view === 'alongside') {
+      const dy = this.car.window.y - 1.22;
+      const dz = this.car.seats.passenger.z - 0.42;
+      pos.y += dy; look.y += dy;
+      pos.z += dz; look.z += dz;
+    }
     if (this.blend >= 1) return shot.fov;
     const k = this.blend * this.blend * (3 - 2 * this.blend);
     pos.lerpVectors(this.from.pos, pos, k);

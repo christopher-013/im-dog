@@ -45,7 +45,7 @@ describe('the Garage (Phase 6, D32)', () => {
   });
 
   it('the car: black, unbadged, the passenger door opens and its window rolls down', () => {
-    const garage = new GarageView();
+    const garage = new GarageView('family');
     const car = garage.car;
     const names: string[] = [];
     car.object.traverse((o) => names.push(o.name.toLowerCase()));

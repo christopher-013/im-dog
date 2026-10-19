@@ -114,6 +114,7 @@ export class RideDirector {
   }
 
   get returning(): boolean { return this.homeRequested || this.phase === 'home'; }
+  get departing(): boolean { return this.phase === 'out' || this.phase === 'loading'; }
 
   /** At the Garage door: off we go. */
   start(): void {
@@ -138,6 +139,8 @@ export class RideDirector {
     g.car.setPassengerWindow(0);
     g.car.setFalconDoors(0);
     g.car.setDriverDoor(0);
+    // A wall-close follow camera may have hidden the dog before this handoff.
+    this.cast.dog.object.visible = true;
     this.place(this.cast.dog.object, SPOTS.dogAtDoor, 0);
     this.place(this.cast.human.object, SPOTS.humanAtDoor, 0);
     this.lastDog.copy(this.cast.dog.object.position);
@@ -192,9 +195,11 @@ export class RideDirector {
   update(dt: number, aspect: number, auto: boolean): void {
     if (!this.active) return;
     this.time += dt;
+    this.cast.garage.car.updatePresentation?.(this.time);
     // Solid all the way: the game fades the human while they're between its camera and the dog, and the ride can
     // begin in the middle of a frame that has just faded them (the game's fading doesn't run again until it's over).
     this.cast.human.setSeeThrough(false);
+    this.cast.dog.object.visible = true;
     this.camera.aspect = aspect;
     if (this.phase === 'out') this.updateOut(dt);
     else if (this.phase === 'drive') this.updateDrive(dt, aspect, auto);
@@ -301,7 +306,9 @@ export class RideDirector {
     const { CoastDrive } = await this.hooks.loadDrive();
     const drive = (this.drive = new CoastDrive(this.cast.garage.car.id));
     // Into the car: the dog in his seat, the human at the wheel.
+    this.hooks.leash(null);
     drive.dogSeat.add(this.cast.dog.object);
+    this.cast.dog.object.visible = true;
     this.sitAtWheel(0, drive.driverSeat, true);
     this.phase = 'drive';
     this.time = 0;

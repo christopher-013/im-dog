@@ -1,6 +1,6 @@
 import {
   AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CatmullRomCurve3, ConeGeometry, CylinderGeometry, DataTexture, DoubleSide,
-  EquirectangularReflectionMapping, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry,
+  EquirectangularReflectionMapping, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, NormalBlending, PlaneGeometry,
   RepeatWrapping, RGBAFormat, Shape, ShapeGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector3,
   type Material, type Object3D, type Texture,
 } from 'three';
@@ -9,6 +9,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { CARS } from '../config/cars';
 import type { RideCar } from './RideCar';
 import { deLoreanMarking } from './deLoreanMarkings';
+import { hoverAltitude } from '../ride/hover';
+import { fluxCapacitor } from './fluxCapacitor';
 
 type Point = readonly [number, number, number];
 const D = CARS.delorean;
@@ -19,7 +21,7 @@ const D = CARS.delorean;
  * turbine wheels, exposed cables, blue flux bands, twin rear vents and a little lit Y behind the seats.
  * DMC/DeLorean badges and OUTATIME plate are generated artwork, explicitly requested by the owner.
  * No photograph, downloaded model/artwork, personal registration or film audio is included.
- * Static details are batched by material within each moving assembly; no real lights or per-frame effects.
+ * Static details are batched by material within each moving assembly; animated effects use no real lights.
  */
 export class DeLoreanCar implements RideCar {
   readonly id = 'delorean' as const;
@@ -34,6 +36,7 @@ export class DeLoreanCar implements RideCar {
   private readonly suspension = new Group();
   private readonly aura = new Group();
   private readonly glowMaterials: MeshBasicMaterial[] = [];
+  private wheelGlow!: Mesh;
   private hoverNow = 0;
   private readonly geometries = new Set<BufferGeometry>();
   private readonly materials = new Set<Material>();
@@ -44,6 +47,7 @@ export class DeLoreanCar implements RideCar {
   private driverOpen = 0;
   private wingsOpen = 0;
   private windowDown = 0;
+  private readonly flux = fluxCapacitor();
 
   constructor() {
     this.object.name = 'Silver time machine';
@@ -193,7 +197,7 @@ export class DeLoreanCar implements RideCar {
     }
     this.box([0.33, 0.37, 0.10], [0, 0.99, -0.65], dark);
     // The Y faces the passengers/windshield, not backwards through the rear body.
-    for (const to of [[-0.095, 1.09, -0.592], [0.095, 1.09, -0.592], [0, 0.88, -0.592]] as const) this.pipe([[0, 0.99, -0.592], to], 0.012, white);
+    // Animated Y is added after batching so its time uniform stays independently controlled.
     // Classic circular reactor deck, wiring looms and silver tanks between the two rear vents.
     this.add(new CylinderGeometry(0.245, 0.245, 0.12, 24), dark, [0, 0.95, -1.30]);
     const reactor = this.add(new TorusGeometry(0.18, 0.024, 6, 24), alloy, [0, 1.018, -1.30]); reactor.rotation.x = Math.PI / 2;
@@ -254,6 +258,8 @@ export class DeLoreanCar implements RideCar {
     // Keep the movable window separate; everything else can share one draw per material/assembly.
     this.passengerGlass!.name = 'passenger window';
     this.batch(this.object);
+    this.object.add(this.flux);
+    this.geometries.add(this.flux.geometry); this.materials.add(this.flux.material);
     this.buildHoverAura();
     this.setHover(0, 0);
   }
@@ -272,6 +278,7 @@ export class DeLoreanCar implements RideCar {
   get passengerWindowDown(): number { return this.windowDown; }
   roll(distance: number): void { for (const wheel of this.wheels) wheel.rotation.x += distance / D.wheelRadius * (1 - this.hoverNow); }
   get hoverAmount(): number { return this.hoverNow; }
+  updatePresentation(time: number): void { this.flux.material.uniforms.time!.value = time; }
   setHover(amount: number, time: number): void {
     this.hoverNow = clamp(amount);
     const k = this.hoverNow * this.hoverNow * (3 - 2 * this.hoverNow);
@@ -285,7 +292,9 @@ export class DeLoreanCar implements RideCar {
     this.suspension.scale.y = k;
     this.aura.visible = k > 0.001;
     const pulse = 0.92 + 0.08 * Math.sin(time * 4);
-    this.glowMaterials.forEach((m, i) => { m.opacity = k * pulse * (i === 0 ? 0.48 : 0.30); });
+    this.glowMaterials.forEach((m, i) => { m.opacity = k * pulse * (i === 0 ? D.hover.poolOpacity : D.hover.plumeOpacity); });
+    // Track the road, not the chassis: four separate blue pools stay under the hovering tyres as it bobs.
+    this.wheelGlow.position.y = 0.05 - hoverAltitude(time, D.hover);
   }
   dispose(): void {
     for (const g of this.geometries) g.dispose();
@@ -295,7 +304,7 @@ export class DeLoreanCar implements RideCar {
     this.object.removeFromParent();
   }
 
-  /** Two cheap transparent draws: a soft underbody ellipse and four merged fading thruster plumes. No lights. */
+  /** Two cheap transparent draws: four merged road pools and four fading thruster plumes. No lights. */
   private buildHoverAura(): void {
     this.aura.name = 'Hover aura'; this.object.add(this.aura);
     for (const plume of [false, true]) {
@@ -308,18 +317,19 @@ export class DeLoreanCar implements RideCar {
       const mask = new DataTexture(data, size, size, RGBAFormat); mask.needsUpdate = true;
       this.detailTextures.push(mask);
       const material = new MeshBasicMaterial({ color: D.hover.color, alphaMap: mask, transparent: true,
-        opacity: 0, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, toneMapped: false });
+        opacity: 0, depthWrite: false, blending: plume ? AdditiveBlending : NormalBlending, side: DoubleSide, toneMapped: false });
       this.materials.add(material); this.glowMaterials.push(material);
       let geometry: BufferGeometry;
-      if (!plume) geometry = new PlaneGeometry(2.8, 4.6).rotateX(-Math.PI / 2).translate(0, -0.10, 0);
-      else {
-        const parts = this.wheelPivots.map(({ x, side, pivot }) => new ConeGeometry(0.30, 0.65, 12, 1, true)
-          .translate(x + side * D.hover.wheelOut, -0.17, pivot.position.z));
+      {
+        const parts = this.wheelPivots.map(({ x, side, pivot }) => plume
+          ? new ConeGeometry(0.33, 0.75, 12, 1, true).translate(x + side * D.hover.wheelOut, -0.22, pivot.position.z)
+          : new PlaneGeometry(1.1, 1.1).rotateX(-Math.PI / 2).translate(x + side * D.hover.wheelOut, 0, pivot.position.z));
         geometry = mergeGeometries(parts)!;
         parts.forEach((g) => g.dispose());
       }
       const mesh = this.add(geometry, material, [0, 0, 0], this.aura);
       mesh.name = plume ? 'Hover thrusters' : 'Hover underglow'; mesh.castShadow = mesh.receiveShadow = false;
+      if (!plume) this.wheelGlow = mesh;
     }
   }
 

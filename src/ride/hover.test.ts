@@ -1,11 +1,38 @@
-import { Mesh, Vector3, type Object3D } from 'three';
+import { Mesh, NormalBlending, Vector3, type MeshBasicMaterial, type Object3D } from 'three';
 import { describe, expect, it } from 'vitest';
 import { CARS } from '../config/cars';
 import { DeLoreanCar } from '../world/DeLoreanCar';
 import { CoastDrive } from './CoastDrive';
 import { drivePath, routeCurve, samplePath } from './coastRoute';
+import { hoverAltitude } from './hover';
 
 describe('DeLorean hover presentation', () => {
+  it('puts four stronger blue pools under the wheels and keeps them on the road as the body bobs', () => {
+    const car = new DeLoreanCar();
+    const pool = car.object.getObjectByName('Hover underglow') as Mesh;
+    const positions = pool.geometry.attributes.position!;
+    expect(positions.count).toBe(16); // four merged quads, not one chassis-wide glow
+    const centres: Vector3[] = [];
+    for (let i = 0; i < positions.count; i += 4) {
+      const centre = new Vector3();
+      for (let j = 0; j < 4; j++) centre.add(new Vector3().fromBufferAttribute(positions, i + j));
+      centres.push(centre.multiplyScalar(0.25));
+    }
+    expect(new Set(centres.map((p) => p.x.toFixed(2))).size).toBe(2);
+    expect(new Set(centres.map((p) => p.z.toFixed(2))).size).toBe(2);
+    for (const time of [4, 5, 6]) {
+      car.object.position.y = hoverAltitude(time, CARS.delorean.hover);
+      car.setHover(1, time); car.object.updateMatrixWorld(true);
+      for (const centre of centres) {
+        expect(pool.localToWorld(centre.clone()).y).toBeCloseTo(0.05);
+        expect(Math.abs(centre.x)).toBeCloseTo(0.91 + CARS.delorean.hover.wheelOut);
+      }
+      const material = pool.material as MeshBasicMaterial;
+      expect(material.blending).toBe(NormalBlending); // preserve blue rather than bleaching it on sunlit asphalt
+      expect(material.opacity).toBeGreaterThan(0.60);
+    }
+    car.dispose();
+  });
   it('folds all four wheels outward/down, faces their hubs toward the road and resets without drift', () => {
     const car = new DeLoreanCar();
     const pivots: Object3D[] = [];

@@ -256,6 +256,7 @@ export class CoastDrive {
     this.time += dt;
     const hover = this.car.hover;
     this.car.setHover?.(hover ? hoverDeployment(this.time, hover) : 0, this.time);
+    this.car.updatePresentation?.(this.time);
     // Speed: easing up from the start, easing to a stop at the top.
     const left = this.path.length - this.distance;
     const target = Math.min(SPEED.cruise, 1.2 + left * 0.4);

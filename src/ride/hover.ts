@@ -1,5 +1,4 @@
 import type { RideCar } from '../world/RideCar';
-import { smooth } from './coastRoute';
 
 type Hover = NonNullable<RideCar['hover']>;
 
@@ -9,6 +8,7 @@ export function hoverDeployment(time: number, hover: Hover): number {
 }
 
 export function hoverAltitude(time: number, hover: Hover): number {
-  const lift = smooth(hover.liftDelay, hover.liftDelay + hover.liftSeconds, time);
+  const k = Math.max(0, Math.min(1, (time - hover.liftDelay) / hover.liftSeconds));
+  const lift = k * k * (3 - 2 * k);
   return lift * (hover.height + hover.bob * Math.sin(time * hover.bobRate));
 }

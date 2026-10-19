@@ -2,6 +2,8 @@ import { Quaternion, Scene, SkinnedMesh, Vector3 } from 'three';
 import { describe, expect, it, vi } from 'vitest';
 import { CAR_IDS } from '../config/cars';
 import { RIDE } from '../config/ride';
+import { MOKE_DOG_LOOK } from '../config/dogLooks';
+import { Harness } from '../player/Harness';
 import { StylizedHumanVisual } from '../human/StylizedHumanVisual';
 import { ToonMokeVisual } from '../player/ToonMokeVisual';
 import { GarageView } from '../world/GarageView';
@@ -19,9 +21,11 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
       loadDrive: async () => module, done, fade() {}, music() {}, say() {}, leash() {}, harnessOff() {},
     });
     ride.start();
+    expect(ride.departing).toBe(true);
     for (let i = 0; i < 19 * 30; i++) ride.update(1 / 30, 16 / 9, false);
     await Promise.resolve();
     expect(ride.driving).toBe(true);
+    expect(ride.departing).toBe(false);
     ride.update(1, 16 / 9, false);
     ride.headHome(); ride.headHome();
     expect(ride.returning).toBe(true);
@@ -43,6 +47,9 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     const dog = new ToonMokeVisual();
     const human = new StylizedHumanVisual();
     scene.add(garage.object, dog.object, human.object);
+    const harness = new Harness(MOKE_DOG_LOOK.harness);
+    harness.wear(dog, human.hands.left);
+    scene.add(harness.leash);
     const log: string[] = [];
     let ended: { dog: readonly number[]; human: readonly number[] } | null = null;
     let loaded: Promise<unknown> | null = null;
@@ -52,15 +59,20 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
       music: (on) => log.push(`music ${on}`),
       fade: (a) => fades.push(a),
       say: (text) => log.push(text),
-      leash: (hand) => log.push(hand ? 'leash on' : 'leash off'),
-      harnessOff: () => log.push('harness off'),
+      leash: (hand) => { log.push(hand ? 'leash on' : 'leash off'); harness.wear(dog, hand); },
+      harnessOff: () => { log.push('harness off'); harness.takeOff(); },
       done: (dogAt, _dh, humanAt) => { ended = { dog: dogAt, human: humanAt }; },
     });
+    // Reproduce a wall-close follow camera hiding the dog immediately before the ride takes ownership.
+    dog.object.visible = false;
     ride.start();
     expect(ride.active).toBe(true);
+    expect(dog.object.visible).toBe(true);
     const dt = 1 / 30;
     // The game can fade the human (in its way) in the very frame the ride starts: they're solid again at once.
     human.setSeeThrough(true);
+    // The previous house frame can still hide him after start; the cinematic must restore him on its update.
+    dog.object.visible = false;
     let body: SkinnedMesh | undefined;
     human.object.traverse((o) => { if (!body && o instanceof SkinnedMesh) body = o; });
     const solid = () => (body!.material as { opacity: number }).opacity === 1;
@@ -69,6 +81,9 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     let doorOpened = false, inTheCar = false, rolledUp = false;
     for (let i = 0; i < 20 / dt && !loaded; i++) {
       ride.update(dt, 16 / 9, false);
+      harness.update();
+      expect(dog.object.visible).toBe(true);
+      if (harness.leash.visible) expect(dog.object.getObjectByName('harness')).toBeDefined();
       doorOpened ||= garage.houseDoorOpenness > 0.95;
       rolledUp ||= garage.rollUpOpenness > 0.95;
       inTheCar ||= dog.object.position.y >= garage.car.seats.passenger.y && dog.object.position.z > 5.5;
@@ -94,6 +109,11 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     expect(ride.driving).toBe(true);
     const drive = (ride as unknown as { drive: CoastDrive }).drive;
     expect(drive.car.id).toBe(carId);
+    expect(dog.object.visible).toBe(true);
+    expect(dog.object.parent).toBe(drive.dogSeat);
+    harness.update();
+    expect(harness.worn).toBe(true);
+    expect(harness.leash.visible).toBe(false);
     expect(drive.dogSeat.position.equals(garage.car.seats.passenger)).toBe(true);
     expect(drive.driverSeat.position.equals(garage.car.seats.driver)).toBe(true);
     // The lower coupe needs its own window-height camera framing; no empty SUV roofline close-up.
@@ -143,11 +163,14 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     expect(garage.car.object.position.z).toBeCloseTo(GARAGE.car.z);
     expect(garage.houseDoorOpenness).toBe(0);
     expect(garage.rollUpOpenness).toBe(0);
+    expect(harness.worn).toBe(false);
+    expect(harness.leash.visible).toBe(false);
     expect(ended!.dog[1]).toBeLessThan(3);
     expect(ended!.human[1]).toBeLessThan(3);
     ride.dispose();
     garage.dispose();
     dog.dispose();
     human.dispose();
+    harness.dispose();
   }, 60_000);
 });

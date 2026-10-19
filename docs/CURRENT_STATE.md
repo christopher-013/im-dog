@@ -52,6 +52,50 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Codex ride excitement + animated flux capacitor (2026-10-18; **owner approved commit/push to main**, together with
+the passenger/hover fixes below):
+- **Go On A Drive** starts playful bark pairs immediately, continuing through the wait, harness and garage
+  boarding until coast-drive entry. Cancellation/return stops them; pause freezes the cadence. Presentation
+  only: these barks never trigger other NPC/activity reactions, answer another offer or randomly growl.
+- Replaced the static cabin Y with a small animated blue-white capacitor panel: inward-moving charges, local
+  electrical filaments and a breathing halo. One additive draw, no extra lights/particles or geometry allocation
+  per frame. Optional `RideCar.updatePresentation(time)` keeps car-specific effects outside shared gameplay;
+  garage/return, coast and development preview all drive it. Simulation pause freezes the effect.
+- Verified strict typecheck, production build/private-reference guard (31 files / 18 references, none leaked),
+  full tests **736 / 105 files**, and diff whitespace check. Added cadence/pause/reset/no-catch-up tests,
+  capacitor ownership/disposal/time tests and coast-pause coverage. Existing both-car lifecycle tests pass.
+- Desktop browser: capacitor visible through the windshield with no shader errors; door request immediately
+  increases the bark count, repeated barks continue without input, and pausing holds that count unchanged.
+  On coast entry the count stops at 25 and remains unchanged with FSD off; Moke is aboard.
+  No physical phone/controller or subjective listening test claimed. Only the known missing-final-model warning.
+- New files: `ride/RideExcitement.ts` and test, `world/fluxCapacitor.ts` and test. Also changed `Game`, ride/car
+  config, `RideCar`, `DeLoreanCar`, `RideDirector` and test, `CoastDrive`, `scripts/car-preview.html`, activity/asset
+  docs and this handoff. Previous passenger/hover changes are preserved below.
+
+Codex passenger visibility + hover refinement (2026-10-18; **included in the owner-approved commit above**, owner bug report):
+- Reproduced the missing dog with failing regression checks in **both cars**: a wall-close follow camera can set
+  the dog's root `visible=false`, and ride ownership previously never restored it (unlike the human). This also
+  explains a visible standalone leash apparently ending at nothing. `RideDirector` now restores the dog at start,
+  every ride update and coast-scene transfer. Coast entry explicitly disconnects the walking leash.
+- `Game` now hands rendering over immediately when a fixed update starts a ride; it no longer runs the rest of
+  that house frame's controller/visibility logic afterward. Further fixed steps in that batch leave the house
+  frozen. This removes the same-frame opportunity to overwrite/hide the newly owned ride visuals.
+- Lowered the DeLorean's body lift from **1.05 m to 0.65 m**, with slightly smaller bobbing. Replaced the broad glow
+  with four separate, merged blue wheel-pool quads; pools stay on the road as the body bobs. Brighter light-blue
+  plumes and normal-blended pools keep their blue on sunlit asphalt. Still two transparent effect meshes and no
+  new lights, particles, assets or physics. Tuning is in `config/cars.ts`.
+- Expanded the real ride tests to include hidden-at-start and hidden-on-handoff dogs, passenger-seat parenting,
+  and the actual harness/leash lifecycle in both cars. A new glow test checks all four pool positions, intensity,
+  blending and road-relative height as the body bobs. Existing geometry/disposal, early-return and portrait
+  framing checks still pass.
+- Verified: strict typecheck, full `npm test -- --maxWorkers=2` (**731 tests / 103 files**), production build and
+  private-reference check (**31 files / 18 references**, none leaked), and `git diff --check`. Desktop browser:
+  inspected the model preview, played a DeLorean ride with **Moke visibly in the passenger seat**, checked the
+  lower flight and blue wheel lighting, then selected Head Home. No console errors; only the known missing-final-
+  `moke.glb` stand-in warning. No physical phone/controller testing claimed.
+- Changed: `core/Game.ts`, `ride/RideDirector.ts`, `ride/RideDirector.test.ts`, `ride/hover.ts`,
+  `ride/hover.test.ts`, `world/DeLoreanCar.ts`, `config/cars.ts`, and this handoff plus activity/asset docs.
+
 Codex hover ride (2026-10-18; **commit and push to main approved by the owner**; preserves the garage-drive changes below):
 - The DeLorean now opens its coast ride with a short wide-camera takeoff. Four wheel pivots rotate the hubs down,
   extend the tyres outward/lower and expose suspension struts. Lift starts before they can clip through the road.

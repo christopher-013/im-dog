@@ -166,7 +166,13 @@ timings: `config/halloween.ts`.
 ### Going for a ride (`RideOffer.ts`, `ride/`; Phase 6, D33)
 Owner follow-up, 2026-10-18: the DeLorean's coast ride now begins with a wide shot of all four wheels rotating
 outward/down into hover mode, then lifting above the road; it stays airborne along the same route, with gentle
-bobbing, a light-blue underbody aura and four soft thruster plumes. It is grounded in the garage and on return.
+bobbing at about **0.65 m** (lowered from 1.05 m in the owner's follow-up), four brighter light-blue road pools
+under its tyres and matching thruster plumes. The pools stay on the road as the body bobs, rather than floating
+with the chassis. It is grounded in the garage and on return.
+The cabin flux capacitor has a blue-white animated Y: charge travels toward the center, with a breathing glow
+and small electrical filaments. It runs in boarding, the coast scene and return; pause freezes its clock.
+After the door's **Go On A Drive** request, the dog gives playful bark pairs while waiting and boarding,
+stopping on coast-drive entry, cancellation or pause. These are presentation barks, not NPC/activity events.
 The SUV still drives normally. Optional `RideCar.hover` presentation data/animation keeps the shared ride free
 of car-id gameplay branches. **Head Home** is directly on the ride HUD as well as the pause menu; it fades into
 the existing return sequence. No free flight, physics simulation or time travel.

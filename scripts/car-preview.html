@@ -54,6 +54,7 @@ document.querySelector('#hover').onclick=()=>{hovering=!hovering;hoverTime=0;};
 let last=performance.now();
 function frame(now=performance.now()){
   const dt=Math.min((now-last)/1000,0.05),p=car.headOut,s=car.seats.passenger;last=now;
+  car.updatePresentation?.(now/1000);
   hoverTime=hovering?hoverTime+dt:0;
   const lift=car.hover?hoverAltitude(hoverTime,car.hover):0;
   car.setHover?.(car.hover?hoverDeployment(hoverTime,car.hover):0,hoverTime);car.object.position.y=lift;

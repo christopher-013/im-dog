@@ -35,6 +35,8 @@ export const RIDE = {
   /** Don't hold the dog indefinitely if another activity claims the human before the request starts. */
   requestWait: 10,
   requestSpeed: 2.05,
+  /** Playful bark pairs after Go On A Drive, until the coast drive starts (seconds between barks). */
+  excitedBarks: [0.45, 1.8] as const,
   /** They set off but can't get to him or the door: give up after this long. */
   walkTimeout: 40,
   /**

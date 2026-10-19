@@ -80,6 +80,7 @@ import { CharacterBody } from '../physics/CharacterBody';
 import { PhysicsWorld } from '../physics/PhysicsWorld';
 import type { Vec3Like } from '../physics/CharacterBody';
 import { BarkTimer, barkOrGrowl } from '../player/Bark';
+import { RideExcitement } from '../ride/RideExcitement';
 import type { MoveIntent } from '../player/Locomotion';
 import { Moke } from '../player/Moke';
 import { pickTrick, type Trick } from '../player/Tricks';
@@ -168,6 +169,7 @@ export class Game {
   private readonly announcer = new Announcer();
   private readonly wisps = new ScentWisps();
   private readonly barkTimer = new BarkTimer();
+  private readonly rideExcitement = new RideExcitement();
   private readonly audio = new AudioManager();
   private readonly nose = new Vector3();
   private readonly screenPoint = new Vector3();
@@ -1168,6 +1170,12 @@ export class Game {
 
     // The world only advances while playing; menus and pause freeze it.
     const alpha = this.fixedStep.advance(playing ? dt : 0, this.fixedUpdate);
+    // The ride can start inside a fixed step. Hand over NOW, before the house poses/hides the dog again.
+    if (this.ride?.active) {
+      this.updateRide(dt, elapsed, enteredPlay);
+      return;
+    }
+    this.updateRideExcitement(playing ? dt : 0);
     this.updateAttention(dt);
     if (this.toiletPaper?.grabbing && this.moke) {
       this.moke.lookAt = BATHROOM.paper;
@@ -1241,7 +1249,7 @@ export class Game {
   }
 
   private readonly fixedUpdate = (step: number): void => {
-    if (!this.moke || !this.physics) return;
+    if (!this.moke || !this.physics || this.ride?.active) return;
     const c = this.moke.controller;
     this.updateMoveIntent(step);
     const glideTarget = this.rest.glideTarget;
@@ -1643,6 +1651,7 @@ export class Game {
       ride.look(-this.lookDelta.x * k, -this.lookDelta.y * k * (MOUSE.invertY ? -1 : 1));
     }
     this.barkTimer.update(playing ? dt : 0);
+    this.updateRideExcitement(playing ? dt : 0);
     this.ui.setRideHome(this.state === 'paused' && ride.driving);
     this.ui.setRideView(true, ride.driving ? ride.viewName : null, ride.returning);
     this.gfx.syncSize(this.camera);
@@ -1654,6 +1663,16 @@ export class Game {
     else this.gfx.render(this.scene, this.camera);
     this.frameStats.record(elapsed);
     this.debug.update(dt);
+  }
+
+  /** The committed door request stays excited through boarding, not on the road or on return. */
+  private updateRideExcitement(dt: number): void {
+    const waiting = !!this.rideOffer?.requested && (this.ride?.active
+      ? this.ride.departing : this.rideOffer.holdsDog);
+    if (!this.rideExcitement.update(dt, waiting) || !this.moke || !this.barkTimer.tryBark()) return;
+    this.audio.play('bark'); // always playful; no NPC/activity bark side effects
+    if (this.ride?.active) this.ride.bark();
+    else this.moke.animation.bark();
   }
 
   /** Home from the ride: their bodies where the cinematic left them, the human back to their day, a Dog Logic moment. */

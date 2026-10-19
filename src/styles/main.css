@@ -2098,6 +2098,17 @@ html[data-input='touch'][data-paw-open] .fsd {
   background: rgba(43, 37, 48, 0.4);
 }
 
+.ride-home-button {
+  min-height: 44px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ride-home-button:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
 .fsd-button:active {
   transform: scale(0.96);
 }

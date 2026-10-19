@@ -164,17 +164,24 @@ console, on the family-room mantel and on the patio; paper bats strung over the 
 timings: `config/halloween.ts`.
 
 ### Going for a ride (`RideOffer.ts`, `ride/`; Phase 6, D33)
+Owner follow-up, 2026-10-18: the DeLorean's coast ride now begins with a wide shot of all four wheels rotating
+outward/down into hover mode, then lifting above the road; it stays airborne along the same route, with gentle
+bobbing, a light-blue underbody aura and four soft thruster plumes. It is grounded in the garage and on return.
+The SUV still drives normally. Optional `RideCar.hover` presentation data/animation keeps the shared ride free
+of car-id gameplay branches. **Head Home** is directly on the ride HUD as well as the pause menu; it fades into
+the existing return sequence. No free flight, physics simulation or time travel.
+
 Every 5–10 minutes of play (owner; timed from the last offer, taken or not, and only while nothing else has the
 human, the course isn't running and no show is on), the human comes over to the dog: **"Moke, want to go for a
 ride?"**
-- **He can ask** (owner, 2026-10-17): standing at the Garage door in the living room, **Bark at the Garage Door**
-  (the paw; any bark right there counts too). He barks and looks at the door, and the human comes over as soon as
-  they're free (the same conditions as above): **"Barking at the Garage, Moke? Do you want to go for a ride?"**
-  Then yes or no as below; a no puts the 5–10 minutes back on the clock, but he can ask again. FSD asks now and then
-  too (at most every 10 minutes). Where: `RIDE.askAt` (`config/ride.ts`).
+- **Go On A Drive** (owner refinement, 2026-10-18): at the Garage door in the living room, this single paw action
+  commits the trip; no bark or second yes is required. The dog stays at the selected spot while the free human
+  hurries over at 2.05 m/s and fits the harness, then the existing leash/boarding sequence starts. A plain bark there
+  is still a shortcut. Busy humans/other blocked ride conditions hide the action; interrupted or timed-out requests
+  release the dog. FSD uses the same action (at most every 10 minutes). Where: `RIDE.askAt` (`config/ride.ts`).
 - **The door glows** (owner, 2026-10-17: "pulse with blue light when the dog looks or passes by the door to
   indicate that there is an adventure close by"): while a ride can be asked for, the Garage door pulses a soft light blue
-  (round its edges, a little on the floor) when he's within 2.2 m of it or looking at it from up to 6.5 m away in
+  (the entire door face plus a soft edge halo and floor pool) when he's within 2.2 m of it or looking at it from up to 6.5 m away in
   the living room; it fades out when he turns away or leaves. `world/GarageDoorGlow.ts`, tuning `RIDE.doorGlow`.
 - **Yes:** Go for a Ride! (the paw), or a bark near them. They kneel and put on his **harness** (a soft mesh vest:
   Moke's light blue with a teal buckle, like his real one; each dog's own colours, `DogLook.harness`; over any costume) and clip on the **leash**, "Yes? Let's go! Harness on…", and walk him to the Garage door, the

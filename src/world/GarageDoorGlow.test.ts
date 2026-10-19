@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { Mesh, type MeshBasicMaterial } from 'three';
+import { describe, expect, it, vi } from 'vitest';
 import { RIDE } from '../config/ride';
 import { doorGlowWanted, GarageDoorGlow } from './GarageDoorGlow';
 import { GARAGE } from './home/layout';
@@ -33,9 +34,38 @@ describe('the Garage door glow (Phase 6)', () => {
     for (let i = 0; i < 60; i++) glow.update(1 / 60, true);
     expect(glow.strength).toBe(1);
     expect(glow.object.visible).toBe(true);
+    const material = (glow.object.children[0] as Mesh).material as MeshBasicMaterial;
+    const before = material.opacity;
+    glow.update(0.25 / RIDE.doorGlow.pulse, true);
+    expect(material.opacity).not.toBeCloseTo(before);
     for (let i = 0; i < 120; i++) glow.update(1 / 60, false);
     expect(glow.strength).toBe(0);
     expect(glow.object.visible).toBe(false);
     glow.dispose();
+  });
+
+  it('fills the door centre as well as its outline, and disposes both generated alpha masks', () => {
+    const masks: Uint8ClampedArray[] = [];
+    vi.stubGlobal('document', { createElement: () => {
+      let image: { data: Uint8ClampedArray };
+      const canvas = { width: 0, height: 0, getContext: () => ctx };
+      const ctx = {
+        canvas,
+        createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+        putImageData: (img: { data: Uint8ClampedArray }) => { image = img; masks.push(img.data.slice()); },
+        getImageData: () => image ?? { data: new Uint8ClampedArray(canvas.width * canvas.height * 4) },
+        createRadialGradient: () => ({ addColorStop() {} }), fillRect() {},
+      };
+      return canvas;
+    } });
+    try {
+      const glow = new GarageDoorGlow();
+      // Second image is the door gradient converted from alpha to the greyscale alphaMap (green channel).
+      expect(masks[1]![(128 * 128 + 64) * 4 + 1]).toBeGreaterThan(170);
+      const textures = glow.object.children.map((o) => ((o as Mesh).material as MeshBasicMaterial).alphaMap!);
+      const dispose = textures.map((t) => vi.spyOn(t, 'dispose'));
+      glow.dispose();
+      for (const spy of dispose) expect(spy).toHaveBeenCalledTimes(1);
+    } finally { vi.unstubAllGlobals(); }
   });
 });

@@ -21,7 +21,7 @@ export interface UIHandlers {
   onFsd?(): void;
   /** A tap or click on the full-screen TV: stop watching. */
   onTvExit?(): void;
-  /** Going for a ride: the pause screen's HEAD HOME. */
+  /** Going for a ride: Head Home in the HUD or pause menu. */
   onRideHome?(): void;
   /** Going for a ride: the Change View button (on the road, in the FSD button's place). */
   onRideView?(): void;
@@ -124,6 +124,11 @@ export class UIManager {
     this.el('btn-play').addEventListener('click', () => this.handlers?.onPlay());
     this.el('btn-resume').addEventListener('click', () => this.handlers?.onResume());
     this.el('btn-ride-home').addEventListener('click', () => this.handlers?.onRideHome?.());
+    this.el('btn-ride-home-now').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.handlers?.onRideHome?.();
+      (e.currentTarget as HTMLElement).blur();
+    });
     this.el('btn-ride-view').addEventListener('click', (e) => {
       this.handlers?.onRideView?.();
       (e.currentTarget as HTMLElement).blur();
@@ -369,10 +374,15 @@ export class UIManager {
    * Going for a ride: the FSD button gives way (`riding`), and on the road (`view`: the current view's name) the Change
    * View button takes its place.
    */
-  setRideView(riding: boolean, view: string | null): void {
+  setRideView(riding: boolean, view: string | null, returning = false): void {
     const button = this.el<HTMLButtonElement>('btn-ride-view');
     if (button.hidden !== (view === null)) button.hidden = view === null;
     if (view !== null && this.el('ride-view-name').textContent !== view) this.el('ride-view-name').textContent = view;
+    const home = this.el<HTMLButtonElement>('btn-ride-home-now');
+    home.hidden = view === null;
+    home.disabled = returning;
+    const label = returning ? 'Heading Home…' : 'Head Home';
+    if (home.textContent !== label) home.textContent = label;
     const fsd = this.el<HTMLButtonElement>('btn-fsd');
     if (fsd.hidden !== riding) {
       fsd.hidden = riding;

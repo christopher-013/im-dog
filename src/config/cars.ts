@@ -8,6 +8,12 @@ export const CARS = {
     length: 4.4, width: 1.94, height: 1.43,
     wheelRadius: 0.32, wheelWidth: 0.21, frontAxle: 1.26, rearAxle: -1.28,
     doorLift: 1.10,
+    hover: {
+      wheelDelay: 0.8, wheelSeconds: 2.4, liftDelay: 0.6, liftSeconds: 3.2,
+      height: 1.05, bob: 0.045, bobRate: 1.7, wheelOut: 0.10, wheelDrop: 0.17,
+      color: '#82d5ff', revealSeconds: 5.5, revealBlend: 1.0,
+      camera: { pos: [-4.8, 1.65, 5.8] as const, look: [0, 0.55, 0] as const, fov: 55 },
+    },
     passenger: [-0.45, 0.39, 0.10] as const,
     driver: [0.45, 0.27, 0.10] as const,
     window: [-0.91, 1.02, 0.10] as const,

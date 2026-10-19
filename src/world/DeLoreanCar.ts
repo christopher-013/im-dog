@@ -1,5 +1,5 @@
 import {
-  BackSide, BoxGeometry, BufferGeometry, CatmullRomCurve3, CylinderGeometry, DataTexture, DoubleSide,
+  AdditiveBlending, BackSide, BoxGeometry, BufferGeometry, CatmullRomCurve3, ConeGeometry, CylinderGeometry, DataTexture, DoubleSide,
   EquirectangularReflectionMapping, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PlaneGeometry,
   RepeatWrapping, RGBAFormat, Shape, ShapeGeometry, SRGBColorSpace, TorusGeometry, TubeGeometry, Vector3,
   type Material, type Object3D, type Texture,
@@ -27,8 +27,14 @@ export class DeLoreanCar implements RideCar {
   readonly seats = { passenger: new Vector3(...D.passenger), driver: new Vector3(...D.driver) };
   readonly window = new Vector3(...D.window);
   readonly headOut = D.headOut;
+  readonly hover = D.hover;
   private readonly doors = { passenger: new Group(), driver: new Group() };
   private readonly wheels: Group[] = [];
+  private readonly wheelPivots: { pivot: Group; side: number; x: number }[] = [];
+  private readonly suspension = new Group();
+  private readonly aura = new Group();
+  private readonly glowMaterials: MeshBasicMaterial[] = [];
+  private hoverNow = 0;
   private readonly geometries = new Set<BufferGeometry>();
   private readonly materials = new Set<Material>();
   private readonly reflection: DataTexture;
@@ -215,9 +221,17 @@ export class DeLoreanCar implements RideCar {
     }
 
     // Fine radial turbine slots, dark recessed dishes and five visible lug bolts, rather than wagon-wheel spokes.
+    this.suspension.name = 'Hover suspension'; this.suspension.position.y = 0.45;
+    this.object.add(this.suspension);
     for (const x of [-0.91, 0.91]) for (const z of [D.frontAxle, D.rearAxle]) {
-      const wheel = new Group(); wheel.position.set(x, D.wheelRadius, z);
-      this.object.add(wheel); this.wheels.push(wheel);
+      const pivot = new Group(); pivot.position.set(x, D.wheelRadius, z);
+      pivot.name = `Hover wheel pivot ${x < 0 ? 'passenger' : 'driver'} ${z > 0 ? 'front' : 'rear'}`;
+      const wheel = new Group(); pivot.add(wheel);
+      this.object.add(pivot); this.wheels.push(wheel);
+      this.wheelPivots.push({ pivot, side: Math.sign(x), x });
+      // Fixed upper struts are exposed as the tyres rotate down/out, rather than hovering unattached.
+      this.box([0.065, 0.30, 0.09], [x, -0.15, z], alloy, this.suspension);
+      this.box([0.23, 0.055, 0.08], [x, -0.05, z], dark, this.suspension);
       const tire = this.add(new CylinderGeometry(D.wheelRadius, D.wheelRadius, D.wheelWidth, 24), rubber, [0, 0, 0], wheel);
       tire.rotation.z = Math.PI / 2;
       const sign = Math.sign(x), face = sign * (D.wheelWidth / 2 + 0.003);
@@ -240,6 +254,8 @@ export class DeLoreanCar implements RideCar {
     // Keep the movable window separate; everything else can share one draw per material/assembly.
     this.passengerGlass!.name = 'passenger window';
     this.batch(this.object);
+    this.buildHoverAura();
+    this.setHover(0, 0);
   }
 
   setPassengerDoor(open: number): void { this.passengerOpen = clamp(open); this.poseDoors(); }
@@ -254,13 +270,57 @@ export class DeLoreanCar implements RideCar {
   get driverDoorOpen(): number { return this.driverOpen; }
   get falconDoorsOpen(): number { return this.wingsOpen; }
   get passengerWindowDown(): number { return this.windowDown; }
-  roll(distance: number): void { for (const wheel of this.wheels) wheel.rotation.x += distance / D.wheelRadius; }
+  roll(distance: number): void { for (const wheel of this.wheels) wheel.rotation.x += distance / D.wheelRadius * (1 - this.hoverNow); }
+  get hoverAmount(): number { return this.hoverNow; }
+  setHover(amount: number, time: number): void {
+    this.hoverNow = clamp(amount);
+    const k = this.hoverNow * this.hoverNow * (3 - 2 * this.hoverNow);
+    for (const { pivot, side, x } of this.wheelPivots) {
+      pivot.position.x = x + side * D.hover.wheelOut * k;
+      pivot.position.y = D.wheelRadius - D.hover.wheelDrop * k;
+      // Outer turbine faces turn downward. Spin is on the child, independent of this folding axle.
+      pivot.rotation.z = -side * Math.PI / 2 * k;
+    }
+    this.suspension.visible = k > 0.001;
+    this.suspension.scale.y = k;
+    this.aura.visible = k > 0.001;
+    const pulse = 0.92 + 0.08 * Math.sin(time * 4);
+    this.glowMaterials.forEach((m, i) => { m.opacity = k * pulse * (i === 0 ? 0.48 : 0.30); });
+  }
   dispose(): void {
     for (const g of this.geometries) g.dispose();
     for (const m of this.materials) m.dispose();
     this.reflection.dispose();
     for (const texture of this.detailTextures) texture.dispose();
     this.object.removeFromParent();
+  }
+
+  /** Two cheap transparent draws: a soft underbody ellipse and four merged fading thruster plumes. No lights. */
+  private buildHoverAura(): void {
+    this.aura.name = 'Hover aura'; this.object.add(this.aura);
+    for (const plume of [false, true]) {
+      const size = 32, data = new Uint8Array(size * size * 4);
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const radius = Math.hypot((x / (size - 1) - 0.5) * 2, (y / (size - 1) - 0.5) * 2);
+        const a = plume ? (y / (size - 1)) ** 1.5 : Math.max(0, 1 - radius) ** 1.4;
+        data.set([a * 255, a * 255, a * 255, 255], (y * size + x) * 4);
+      }
+      const mask = new DataTexture(data, size, size, RGBAFormat); mask.needsUpdate = true;
+      this.detailTextures.push(mask);
+      const material = new MeshBasicMaterial({ color: D.hover.color, alphaMap: mask, transparent: true,
+        opacity: 0, depthWrite: false, blending: AdditiveBlending, side: DoubleSide, toneMapped: false });
+      this.materials.add(material); this.glowMaterials.push(material);
+      let geometry: BufferGeometry;
+      if (!plume) geometry = new PlaneGeometry(2.8, 4.6).rotateX(-Math.PI / 2).translate(0, -0.10, 0);
+      else {
+        const parts = this.wheelPivots.map(({ x, side, pivot }) => new ConeGeometry(0.30, 0.65, 12, 1, true)
+          .translate(x + side * D.hover.wheelOut, -0.17, pivot.position.z));
+        geometry = mergeGeometries(parts)!;
+        parts.forEach((g) => g.dispose());
+      }
+      const mesh = this.add(geometry, material, [0, 0, 0], this.aura);
+      mesh.name = plume ? 'Hover thrusters' : 'Hover underglow'; mesh.castShadow = mesh.receiveShadow = false;
+    }
   }
 
   private poseDoors(): void {

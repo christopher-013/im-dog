@@ -3,6 +3,8 @@
  * Seconds and metres; game coordinates (x east, z south). Where the Garage and the car are: `GARAGE` (layout.ts).
  */
 export const RIDE = {
+  /** HUD or pause-menu Head Home: a short fade into the existing garage return, never a road teleport. */
+  headHomeFade: 0.7,
   /** Front three-quarter reveal, held through both passengers boarding. Wide enough for raised wings on phones. */
   garageReveal: {
     cam: [-0.55, 1.35, 3.35] as const, look: [1.42, 0.95, 6.3] as const,
@@ -26,10 +28,13 @@ export const RIDE = {
   /** Where the human stands to open the Garage door (in the living room, in front of it). */
   doorStand: { x: 2.45, z: 2.45 },
   /**
-   * The dog can ask too (owner, 2026-10-17): **Bark at the Garage Door** from about here (or any bark this close to
-   * it), and the human comes over and offers a ride. He looks at the door while he barks (`lookAt`, s).
+   * Go On A Drive at the Garage door commits to the ride, without a second answer. A bark nearby is a shortcut.
+   * He waits here while the human hurries over. `lookAt`/`lookFor` keep his eyes on the door.
    */
   askAt: { x: 2.45, z: 2.55, reach: 1.0, lookAt: { x: 2.45, y: 1.0, z: 3.0 }, lookFor: 2.5 },
+  /** Don't hold the dog indefinitely if another activity claims the human before the request starts. */
+  requestWait: 10,
+  requestSpeed: 2.05,
   /** They set off but can't get to him or the door: give up after this long. */
   walkTimeout: 40,
   /**
@@ -68,8 +73,8 @@ export const RIDE = {
   },
   lines: {
     ask: 'Moke, want to go for a ride?',
-    /** When he's asked by barking at the Garage door. */
-    asked: 'Barking at the Garage, Moke? Do you want to go for a ride?',
+    /** Already accepted at the door; no question or second confirmation. */
+    asked: 'A drive, Moke? Let’s get your harness on!',
     yes: 'Yes? Let’s go! Harness on…',
     no: 'Okay, maybe later.',
     home: 'Best ride ever, Moke!',

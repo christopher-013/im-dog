@@ -120,8 +120,9 @@ screen always opens on Moke, in the middle. There's no switching dog mid-game: r
 ## Going for a ride (Phase 6)
 When the human asks "want to go for a ride?", **Go for a Ride!** on the paw (E / A / tap the paw) says yes, and so
 does a bark nearby; walk away or ignore them and it's a no. On the leash to the Garage he walks at their heel by
-himself. To ask for a ride, stand at the Garage door (in the living room, left of the TV) and press the paw for
-**Bark at the Garage Door** (or just bark there): the human comes and asks. In the car:
+himself. At the Garage door (in the living room, left of the TV), **Go On A Drive** (E / A / paw) starts the trip
+directly: the dog waits by the door, the human hurries over and fits the harness, with no second confirmation.
+A bark there is also a shortcut. The entire door pulses light blue while a drive is available. In the car:
 
 | | Keyboard and mouse | Controller | Touch |
 |---|---|---|---|
@@ -130,6 +131,12 @@ himself. To ask for a ride, stand at the Garage door (in the living room, left o
 | Change the view (alongside, his face, behind the car, the drone); or the **Change View** button (FSD's place) | E or Q | A or the trick button | the paw or Trick |
 | Head in or out of the window | Space (Jump) | the jump button | Jump (hold the paw) |
 | Head home now | Esc → **HEAD HOME** | Start → **HEAD HOME** | ⏸ → **HEAD HOME** |
+
+**Head Home** is also directly on the ride screen (click/tap), above Change View, for either car. It fades into
+the normal return-home sequence without finishing the route. Repeated presses are ignored while returning.
+The DeLorean starts with a short wide-camera takeoff: its wheels fold down into hover mode, then it floats above
+the road with a soft light-blue aura for the rest of the ride. The SUV stays on its wheels. Flight is scripted;
+there are no piloting controls.
 
 With FSD on, he says yes most of the time, and the views change and he barks by himself. Left alone for a few
 seconds, he looks about at the beach and the sea by himself.

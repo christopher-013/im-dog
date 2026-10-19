@@ -1,6 +1,7 @@
 import { Quaternion, Scene, SkinnedMesh, Vector3 } from 'three';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { CAR_IDS } from '../config/cars';
+import { RIDE } from '../config/ride';
 import { StylizedHumanVisual } from '../human/StylizedHumanVisual';
 import { ToonMokeVisual } from '../player/ToonMokeVisual';
 import { GarageView } from '../world/GarageView';
@@ -9,6 +10,33 @@ import type { CoastDrive } from './CoastDrive';
 import { RideDirector } from './RideDirector';
 
 describe('going for a ride: the ride itself (Phase 6)', () => {
+  it.each(CAR_IDS)('%s: Head Home during takeoff/start fades promptly, ignores repeats, pauses safely and restores the parked car', async (id) => {
+    const scene = new Scene(), garage = new GarageView(id);
+    const dog = new ToonMokeVisual(), human = new StylizedHumanVisual();
+    scene.add(garage.object, dog.object, human.object);
+    const module = await import('./CoastDrive'), done = vi.fn();
+    const ride = new RideDirector({ scene, garage, dog, human }, {
+      loadDrive: async () => module, done, fade() {}, music() {}, say() {}, leash() {}, harnessOff() {},
+    });
+    ride.start();
+    for (let i = 0; i < 19 * 30; i++) ride.update(1 / 30, 16 / 9, false);
+    await Promise.resolve();
+    expect(ride.driving).toBe(true);
+    ride.update(1, 16 / 9, false);
+    ride.headHome(); ride.headHome();
+    expect(ride.returning).toBe(true);
+    ride.update(0, 16 / 9, false);
+    expect(ride.driving).toBe(true);
+    for (let i = 0; i < (RIDE.headHomeFade + 0.1) * 30; i++) ride.update(1 / 30, 16 / 9, false);
+    expect(ride.driving).toBe(false);
+    expect(dog.object.parent).toBe(scene);
+    for (let i = 0; i < 20 * 30; i++) ride.update(1 / 30, 16 / 9, false);
+    expect(ride.active).toBe(false);
+    expect(done).toHaveBeenCalledTimes(1);
+    expect(garage.car.object.getObjectByName('Hover aura')?.visible ?? false).toBe(false);
+    expect(garage.houseDoorOpenness).toBe(0);
+    ride.dispose(); garage.dispose(); dog.dispose(); human.dispose();
+  });
   it.each(CAR_IDS)('%s: out to the car, the drive, home again: every step happens, and they end up back in the living room', async (carId) => {
     const scene = new Scene();
     const garage = new GarageView(carId);
@@ -70,7 +98,8 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     expect(drive.driverSeat.position.equals(garage.car.seats.driver)).toBe(true);
     // The lower coupe needs its own window-height camera framing; no empty SUV roofline close-up.
     drive.setView('face');
-    for (let i = 0; i < 45; i++) ride.update(dt, 16 / 9, false);
+    // Let the optional takeoff reveal finish before checking the actual passenger close-up.
+    for (let i = 0; i < 7 * 30; i++) ride.update(dt, 16 / 9, false);
     drive.scene.updateMatrixWorld(true);
     const inShot = dog.attachments.head!.getWorldPosition(new Vector3()).project(drive.camera);
     expect(Math.abs(inShot.x)).toBeLessThan(0.95);

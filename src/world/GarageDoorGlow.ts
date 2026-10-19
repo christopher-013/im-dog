@@ -29,7 +29,7 @@ export function doorGlowWanted(dog: GlowWatcher, rideAvailable: boolean, tuning 
 }
 
 /**
- * The Garage door's blue glow (Phase 6): light seeping round the edges of the door from the living room's side, and
+ * The Garage door's blue glow (Phase 6): a filled tint over the entire door, a soft halo round its edges, and
  * a little of it pooled on the floor in front, pulsing gently: an adventure close by. Blue planes whose gradients
  * (drawn in code) say how much of it shows: a tint, not added light, so it stays blue on the pale walls (no lights,
  * no files). Hidden (no draw calls) when it's off.
@@ -44,8 +44,9 @@ export class GarageDoorGlow {
     this.object.name = 'Garage door glow';
     const d = GARAGE.houseDoor;
     const color = new Color(tuning.color);
-    // Round the door: a soft band of light at its edges, fading out into the wall and in over the door.
+    // Full door face plus a soft halo into the wall; the centre must not fade to a dark hole.
     const halo = this.plane(d.width + 0.5, d.height + 0.3, frameGradient(d.width / (d.width + 0.5), d.height / (d.height + 0.3)), color);
+    halo.name = 'Garage door face glow';
     halo.position.set(DOOR.x, (d.height + 0.3) / 2 - 0.05, DOOR.z - 0.035);
     halo.rotation.y = Math.PI;
     // On the floor in front of the door.
@@ -74,7 +75,7 @@ export class GarageDoorGlow {
 
   dispose(): void {
     for (const m of this.materials) {
-      m.map?.dispose();
+      m.alphaMap?.dispose();
       m.dispose();
     }
     this.object.traverse((o) => {
@@ -105,7 +106,7 @@ function texture(ctx: CanvasRenderingContext2D | null): CanvasTexture | null {
   return ctx ? new CanvasTexture(ctx.canvas) : null;
 }
 
-/** A band of light round a door-shaped hole: brightest at the door's edge (`dw`, `dh`: its share of the plane). */
+/** Filled door with a soft outer halo (`dw`, `dh`: the door's share of the plane). */
 function frameGradient(dw: number, dh: number): CanvasTexture | null {
   const W = 128, H = 256;
   const ctx = canvas(W, H);
@@ -115,12 +116,12 @@ function frameGradient(dw: number, dh: number): CanvasTexture | null {
   const left = (W * (1 - dw)) / 2, right = W - left, top = H * (1 - dh);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      // Distance to the door's outline (outside the door, and a little inside it), in plane units.
+      // Keep a visible base across the whole door, slightly brighter at the frame, fading only outside it.
       const outX = x < left ? left - x : x > right ? x - right : 0;
       const outY = y < top ? top - y : 0;
       const inside = outX === 0 && outY === 0;
       const edge = inside ? Math.min(x - left, right - x, y - top) : Math.hypot(outX, outY);
-      const fall = inside ? Math.exp(-edge / 6) : Math.exp(-edge / 12);
+      const fall = inside ? 0.72 + 0.28 * Math.exp(-edge / 6) : Math.exp(-edge / 12);
       // Nothing left by the plane's own edges (sides and top), so no straight line shows where it ends.
       const border = Math.min(1, Math.min(x, W - 1 - x, y) / 10);
       const a = Math.min(1, fall) * border * 255;

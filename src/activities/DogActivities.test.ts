@@ -542,35 +542,67 @@ describe('Going for a ride: the offer (real house and household human)', () => {
     expect(w.offer.running).toBe(false);
   }, 60_000);
 
-  it('he can ask: Bark at the Garage Door (or any bark right there), and the human comes and offers a ride', async () => {
+  it('Go On A Drive commits once, holds the dog immediately and goes straight to harness/boarding without an answer', async () => {
     const w = await rideWorld(63);
-    let barked = 0;
-    const offer = new RideOffer({ routine: w.routine, onHarness: () => {}, onAtDoor: () => {}, onGarageBark: () => barked++, random: () => 0.5 });
+    let requested = 0, boarded = 0;
+    const harness: boolean[] = [];
+    const offer = new RideOffer({ routine: w.routine, onHarness: (on) => harness.push(on), onAtDoor: () => boarded++, onGarageRequest: () => requested++, random: () => 0.5 });
     const director = new DogActivityDirector([offer]);
     const at = RIDE.askAt;
     Object.assign(w.moke, { x: at.x, z: at.z });
     w.step(director);
-    expect(offer.garageBark.enabled).toBe(true);
-    offer.garageBark.interact();
-    expect(barked).toBe(1);
+    expect(offer.garageRide.enabled).toBe(true);
+    expect(offer.garageRide.label).toBe('Go On A Drive');
+    expect(offer.garageRide.type).toBe('RIDE');
+    offer.garageRide.interact();
+    offer.garageRide.interact();
+    expect(requested).toBe(1);
     expect(offer.requested).toBe(true);
-    expect(offer.garageBark.enabled).toBe(false);
-    for (let i = 0; i < 60 / DT && !offer.asking; i++) w.step(director);
-    expect(offer.asking).toBe(true);
+    expect(offer.holdsDog).toBe(true);
+    expect(offer.waitingForHuman).toBe(true);
+    expect(offer.garageRide.enabled).toBe(false);
+    let hurried = false;
+    for (let i = 0; i < 40 / DT && boarded === 0; i++) {
+      w.step(director);
+      hurried ||= w.human.brain.intent.speed === RIDE.requestSpeed;
+      expect(offer.asking).toBe(false);
+      expect(offer.interactable.enabled).toBe(false);
+    }
+    expect(boarded).toBe(1);
+    expect(hurried).toBe(true);
+    expect(harness).toEqual([true]);
     expect(w.said).toContain(RIDE.lines.asked);
-    const h = w.human.controller.position;
-    expect(Math.hypot(h.x - at.x, h.z - at.z)).toBeLessThan(RIDE.askFrom + 0.3);
-    // Declined this time: asking again is up to him (the prompt's back), not 5-10 minutes away.
-    for (let i = 0; i < (RIDE.answerWithin + 1) / DT; i++) w.step(director);
-    expect(offer.running).toBe(false);
+    expect(w.said).not.toContain(RIDE.lines.ask);
+    offer.home();
     for (let i = 0; i < 3 / DT; i++) w.step(director);
-    expect(offer.garageBark.enabled).toBe(true);
+    expect(offer.holdsDog).toBe(false);
+    expect(offer.garageRide.enabled).toBe(true);
     // A plain bark there asks too; a bark anywhere else doesn't.
     offer.noteBark({ x: -2, y: 0, z: -2 });
     expect(offer.requested).toBe(false);
     offer.noteBark({ x: at.x + 0.3, y: 0, z: at.z });
     expect(offer.requested).toBe(true);
+    offer.cancel();
+    expect(offer.holdsDog).toBe(false);
   }, 60_000);
+
+  it('releases pending requests on interruption or timeout, and refuses them while the human is busy', async () => {
+    const w = await rideWorld(64);
+    const { offer } = w;
+    offer.request();
+    expect(offer.holdsDog).toBe(true);
+    offer.update(DT, { ...w.ctx, heistRunning: true });
+    expect(offer.holdsDog).toBe(false);
+    offer.request();
+    expect(offer.holdsDog).toBe(true);
+    // No director step to claim the human: this pending request must expire, not hold the dog forever.
+    offer.update(RIDE.requestWait + DT, w.ctx);
+    expect(offer.holdsDog).toBe(false);
+    w.routine.claim({ id: 'busy-test', update: () => true, cancel() {} });
+    expect(offer.garageRide.enabled).toBe(false);
+    offer.request();
+    expect(offer.requested).toBe(false);
+  });
 
   it('a bark is a yes too; walking off (or ignoring them) is a no: "Okay, maybe later."', async () => {
     const w = await rideWorld(62);

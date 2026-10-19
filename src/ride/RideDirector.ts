@@ -80,6 +80,8 @@ export class RideDirector {
   private phase: Phase = 'off';
   private time = 0;
   private drive: CoastDrive | null = null;
+  private homeRequested = false;
+  private homeFade = 0;
   private readonly dogAnim = new MokeAnimationController();
   private readonly humanAnim = new HumanAnimationController();
   private readonly humanPose = createVisualState();
@@ -111,12 +113,16 @@ export class RideDirector {
     return this.phase === 'drive';
   }
 
+  get returning(): boolean { return this.homeRequested || this.phase === 'home'; }
+
   /** At the Garage door: off we go. */
   start(): void {
     this.humanAnim.scale = this.cast.human.scale ?? 1;
     if (this.active) return;
     this.phase = 'out';
     this.time = 0;
+    this.homeRequested = false;
+    this.homeFade = 0;
     this.said.clear();
     this.headOut = true;
     this.pantIn = RIDE.pant.every[0];
@@ -156,6 +162,7 @@ export class RideDirector {
 
   /** The view on the road, as the Change View button names it. */
   get viewName(): string {
+    if (this.drive?.revealingHover) return 'Takeoff';
     return VIEW_NAMES[this.drive?.view ?? 'alongside'];
   }
 
@@ -171,9 +178,11 @@ export class RideDirector {
     this.sinceLook = 0;
   }
 
-  /** "Head home" from the pause screen: on to the last stretch. */
+  /** HUD or pause-menu Head Home: fade out where we are and use the normal garage return. Idempotent. */
   headHome(): void {
-    this.drive?.skipHome();
+    if (!this.driving || this.homeRequested) return;
+    this.homeRequested = true;
+    this.homeFade = 0;
   }
 
   /**
@@ -303,7 +312,11 @@ export class RideDirector {
     const drive = this.drive!;
     // Fading in from the Garage, and out again at the end.
     const left = drive.length * (1 - drive.progress);
-    this.hooks.fade(Math.max(1 - this.time / 1.2, smoothRange(40, 8, left)));
+    if (this.homeRequested) {
+      this.homeFade += dt;
+      this.hooks.fade(Math.min(1, this.homeFade / RIDE.headHomeFade));
+      if (this.homeFade >= RIDE.headHomeFade) { this.endDrive(); return; }
+    } else this.hooks.fade(Math.max(1 - this.time / 1.2, smoothRange(40, 8, left)));
     if (auto && dt > 0) {
       this.autoViewIn -= dt;
       this.autoBarkIn -= dt;

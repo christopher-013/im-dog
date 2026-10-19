@@ -11,7 +11,7 @@ button,select{padding:10px;background:white;border:1px solid #888;border-radius:
 <select aria-label="Car"><option value="delorean">DeLorean</option><option value="family">Family SUV</option></select>
 <select aria-label="Dog"><option value="moke">Moke</option><option value="dougie">Dougie</option><option value="nori">Nori</option></select>
 <select aria-label="Human"><option value="man">Man</option><option value="woman">Woman</option></select>
-<button id="doors">Open doors</button><button id="occupants">Board passengers</button>
+<button id="doors">Open doors</button><button id="occupants">Board passengers</button><button id="hover">Hover mode</button>
 <select aria-label="View"><option value="front">Front three-quarter</option><option value="headon">Front reveal</option><option value="side">Passenger side</option><option value="rear">Rear three-quarter</option><option value="plate">License plate</option><option value="face">Window close-up</option></select>
 <output></output></nav>
 <script type="module">
@@ -23,6 +23,7 @@ import { MokeAnimationController } from '/src/player/MokeAnimationController.ts'
 import { StylizedHumanVisual } from '/src/human/StylizedHumanVisual.ts';
 import { HOUSEHOLD } from '/src/human/household.ts';
 import { HumanAnimationController, createVisualState } from '/src/human/HumanAnimationController.ts';
+import { hoverAltitude, hoverDeployment } from '/src/ride/hover.ts';
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
 renderer.shadowMap.enabled=true;document.body.append(renderer.domElement);
@@ -36,11 +37,12 @@ const camera=new THREE.PerspectiveCamera(43,innerWidth/innerHeight,0.05,100);
 function fit(){camera.aspect=innerWidth/innerHeight;camera.fov=2*Math.atan(Math.tan(43*Math.PI/360)*Math.max(1,1.12/camera.aspect))*180/Math.PI;camera.updateProjectionMatrix();}
 fit();
 const selects=[...document.querySelectorAll('select')];
-let car,dog,human,open=false,boarded=false;
+let car,dog,human,open=false,boarded=false,hovering=false,hoverTime=0;
 const dogAnim=new MokeAnimationController(), humanAnim=new HumanAnimationController();
 function rebuild(){
   car?.dispose();dog?.dispose();human?.dispose();
   car=createCar(selects[0].value);dog=new ToonMokeVisual(dogById(selects[1].value).look);
+  document.querySelector('#hover').disabled=!car.hover;hoverTime=0;
   human=new StylizedHumanVisual(HOUSEHOLD[selects[2].value]);humanAnim.scale=human.scale??1;
   scene.add(car.object);car.object.add(dog.object,human.object);pose();
 }
@@ -48,15 +50,21 @@ function pose(){car.setFalconDoors(open?1:0);car.setPassengerWindow(boarded?1:0)
 selects.slice(0,3).forEach(s=>s.onchange=rebuild);
 document.querySelector('#doors').onclick=()=>{open=!open;pose();};
 document.querySelector('#occupants').onclick=()=>{boarded=!boarded;pose();};
+document.querySelector('#hover').onclick=()=>{hovering=!hovering;hoverTime=0;};
 let last=performance.now();
 function frame(now=performance.now()){
   const dt=Math.min((now-last)/1000,0.05),p=car.headOut,s=car.seats.passenger;last=now;
+  hoverTime=hovering?hoverTime+dt:0;
+  const lift=car.hover?hoverAltitude(hoverTime,car.hover):0;
+  car.setHover?.(car.hover?hoverDeployment(hoverTime,car.hover):0,hoverTime);car.object.position.y=lift;
   dog.object.position.set(s.x+p.x,s.y+p.y,s.z+p.z);dog.object.rotation.order='YXZ';dog.object.rotation.set(p.pitch,p.heading,0);
   const state=dogAnim.update(dt,{speed:0,turnRate:0,headroom:2});state.headPitch=p.headPitch;state.tailWag=1;dog.update(dt,state);
   const h=car.seats.driver;human.object.position.set(h.x,h.y-0.17,h.z-0.08);
   human.apply(dt,humanAnim.update(dt,{...createVisualState(),sit:1,sitStyle:'lounge',seatHeight:0.17}));
   const views={front:[-5,2.5,6],headon:[0,1.8,6],side:[-6,1.5,0],rear:[-5,2.8,-6],plate:[0,0.8,-3.1],face:[-1.9,car.window.y,1.9]};
-  camera.position.set(...views[selects[3].value]);camera.lookAt(selects[3].value==='face'?new THREE.Vector3(-0.9,car.window.y,car.window.z):selects[3].value==='plate'?new THREE.Vector3(0,0.55,-2.2):new THREE.Vector3(0,0.85,0));
+  camera.position.set(...views[selects[3].value]);camera.position.y+=lift;
+  const look=selects[3].value==='face'?new THREE.Vector3(-0.9,car.window.y,car.window.z):selects[3].value==='plate'?new THREE.Vector3(0,0.55,-2.2):new THREE.Vector3(0,0.85,0);
+  look.y+=lift;camera.lookAt(look);
   renderer.render(scene,camera);document.querySelector('output').textContent=`${renderer.info.render.calls} draws · ${renderer.info.render.triangles.toLocaleString()} triangles`;
   requestAnimationFrame(frame);
 }

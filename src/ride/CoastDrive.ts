@@ -32,6 +32,7 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { mulberry32 } from '../utils/random';
+import { fitVerticalFov } from '../camera/ThirdPersonCamera';
 import type { CarId } from '../config/cars';
 import { createCar } from '../world/cars';
 import type { RideCar } from '../world/RideCar';
@@ -39,6 +40,7 @@ import { BeachLife } from './beachLife';
 import { BEACH, BIKE_LANE, coastX, drivePath, LAGOON, landHeight, ROAD_HALF, roadAt, routeCurve, samplePath, smooth } from './coastRoute';
 import { palmGeometry, type PalmKind } from './palms';
 import { Traffic } from './traffic';
+import { hoverAltitude, hoverDeployment } from './hover';
 
 /**
  * The camera shots, in the order "change the view" goes through them: alongside (just behind his window on the sea
@@ -203,9 +205,14 @@ export class CoastDrive {
     return this.distance >= this.path.length - 0.01;
   }
 
+  get revealingHover(): boolean {
+    const h = this.car.hover;
+    return !!h && this.time < h.revealSeconds + h.revealBlend;
+  }
+
   /** Roughly how long the whole drive takes at the usual speeds (s). */
   get expectedDuration(): number {
-    return this.path.length / SPEED.cruise + SPEED.ease + 6;
+    return this.path.length / SPEED.cruise + SPEED.ease + 6 + (this.car.hover?.revealSeconds ?? 0);
   }
 
   /** Next camera shot (gliding over from this one). */
@@ -247,10 +254,14 @@ export class CoastDrive {
 
   update(dt: number, aspect: number): void {
     this.time += dt;
+    const hover = this.car.hover;
+    this.car.setHover?.(hover ? hoverDeployment(this.time, hover) : 0, this.time);
     // Speed: easing up from the start, easing to a stop at the top.
     const left = this.path.length - this.distance;
     const target = Math.min(SPEED.cruise, 1.2 + left * 0.4);
-    this.speed += (target - this.speed) * Math.min(1, dt / (this.time < SPEED.ease ? 1.6 : 0.9));
+    // The coupe deploys on the road before accelerating; other vehicles keep their usual start.
+    const takingOff = hover && this.time < hover.revealSeconds;
+    this.speed += ((takingOff ? 0 : target) - this.speed) * Math.min(1, dt / (this.time < SPEED.ease ? 1.6 : 0.9));
     // Within a hand's breadth of the end: there.
     const step = left < 0.2 ? left : Math.min(left, this.speed * dt);
     if (left < 0.2) this.speed = 0;
@@ -288,8 +299,11 @@ export class CoastDrive {
     const car = this.car.object;
     car.position.copy(tmpPos);
     car.position.y += 0.02;
+    const hover = this.car.hover;
+    const altitude = hover ? hoverAltitude(this.time, hover) : 0;
+    car.position.y += altitude;
     // Nose along the way (smoothly: the heading comes from either side of here), pitched with the slope.
-    tmpA.copy(tmpPos).add(tmpDir);
+    tmpA.copy(tmpPos).add(tmpDir); tmpA.y += altitude;
     car.lookAt(tmpA);
     // The sun's shadow box follows the car (the low sun, out over the sea).
     this.sun.position.copy(tmpPos).addScaledVector(this.sunset.dir, 150);
@@ -309,11 +323,21 @@ export class CoastDrive {
       pos.y += dy; look.y += dy;
       pos.z += dz; look.z += dz;
     }
-    if (this.blend >= 1) return shot.fov;
-    const k = this.blend * this.blend * (3 - 2 * this.blend);
-    pos.lerpVectors(this.from.pos, pos, k);
-    look.lerpVectors(this.from.look, look, k);
-    return this.from.fov + (shot.fov - this.from.fov) * k;
+    let fov = shot.fov;
+    if (this.blend < 1) {
+      const k = this.blend * this.blend * (3 - 2 * this.blend);
+      pos.lerpVectors(this.from.pos, pos, k); look.lerpVectors(this.from.look, look, k);
+      fov = this.from.fov + (shot.fov - this.from.fov) * k;
+    }
+    const hover = this.car.hover;
+    if (hover && this.time < hover.revealSeconds + hover.revealBlend) {
+      const k = smooth(hover.revealSeconds, hover.revealSeconds + hover.revealBlend, this.time);
+      pos.lerpVectors(tmpPos.set(...hover.camera.pos), pos, k);
+      look.lerpVectors(tmpDir.set(...hover.camera.look), look, k);
+      const revealFov = fitVerticalFov(hover.camera.fov, 68, this.camera.aspect, 115);
+      fov = revealFov + (fov - revealFov) * k;
+    }
+    return fov;
   }
 
   private aim(): void {

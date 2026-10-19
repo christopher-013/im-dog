@@ -15,8 +15,8 @@ interface RideOfferDeps {
   onAtDoor(): void;
   /** Anything else that should hold off an offer right now (the course, a show on TV…). */
   canOffer?(): boolean;
-  /** He barked at the Garage door (the prompt): the game's bark, and a look at the door. */
-  onGarageBark?(): void;
+  /** Direct request accepted: stand up, stop other poses and look at the door. No bark/second confirmation. */
+  onGarageRequest?(): void;
   random?: () => number;
 }
 
@@ -27,17 +27,18 @@ type Step = 'done' | 'approach' | 'ask' | 'harness' | 'lead' | 'away';
  * over: "Moke, want to go for a ride?". **Go for a Ride!** (or a bark) is a yes; wandering off or ignoring them is a
  * no ("Okay, maybe later."). Yes: they kneel and put his harness on, clip on the leash, and walk him to the Garage
  * door (the game keeps him at their side on the leash). There the ride takes over (`onAtDoor`), and the human stays
- * borrowed until the game calls `home()`. Only the human offers; the dog can't ask (owner).
+ * borrowed until the game calls `home()`. Go On A Drive at the Garage door commits immediately, holds the dog
+ * nearby and brings the human over at a brisk walk; that path skips the question/answer step.
  */
 export class RideOffer extends DogActivity {
   readonly id = 'rideOffer' as const;
   readonly name = 'Go for a Ride';
   readonly needsHuman = true;
   readonly interactable: Interactable;
-  /** Bark at the Garage Door: the dog asks for a ride (owner, 2026-10-17). */
-  readonly garageBark: Interactable;
-  /** He's asked (barked at the Garage door): the human comes as soon as they're free. */
+  readonly garageRide: Interactable;
+  /** Committed at the Garage door: the human comes as soon as they're free. */
   requested = false;
+  private requestElapsed = 0;
   private step: Step = 'done';
   private elapsed = 0;
   private due: number;
@@ -58,22 +59,21 @@ export class RideOffer extends DogActivity {
       interact: () => offer.accept(),
     };
     const ask = tuning.askAt;
-    this.garageBark = {
-      id: 'garage:bark', type: 'BARK', label: 'Bark at the Garage Door', interactionDistance: ask.reach, priority: 30, requiresFacing: false,
+    this.garageRide = {
+      id: 'garage:ride', type: 'RIDE', label: 'Go On A Drive', interactionDistance: ask.reach, priority: 30, requiresFacing: false,
       position: { x: ask.x, y: 0, z: ask.z },
-      get enabled() { return offer.state === 'AVAILABLE' && !offer.requested; },
-      interact: () => {
-        deps.onGarageBark?.();
-        offer.request();
-      },
+      get enabled() { return offer.state === 'AVAILABLE' && !offer.requested && deps.routine.available && (deps.canOffer?.() ?? true); },
+      interact: () => offer.request(),
     };
   }
 
-  /** He's asked for a ride (barked at the Garage door): the human comes over and offers one as soon as they can. */
+  /** One action commits the ride; repeat presses cannot start another one. */
   request(): void {
-    if (this.state !== 'AVAILABLE') return;
+    if (!this.garageRide.enabled) return;
     this.requested = true;
+    this.requestElapsed = 0;
     this.due = 0;
+    this.deps.onGarageRequest?.();
   }
 
   /** They're asking right now ("want to go for a ride?"), waiting for his answer. */
@@ -88,7 +88,13 @@ export class RideOffer extends DogActivity {
 
   /** He's said yes: from the harness going on until he's home, he's the ride's (FSD hands over). */
   get holdsDog(): boolean {
-    return this.running && (this.step === 'harness' || this.step === 'lead' || this.step === 'away');
+    return this.waitingForHuman || (this.running && (this.step === 'lead' || this.step === 'away'));
+  }
+
+  /** Remain where he chose the door action, or while the harness is being fitted (never steered by input/FSD). */
+  get waitingForHuman(): boolean {
+    return (this.requested && this.state === 'AVAILABLE') ||
+      (this.running && (this.step === 'harness' || (this.requested && this.step === 'approach')));
   }
 
   /** Out on the ride (from the Garage door until `home()`). */
@@ -115,7 +121,7 @@ export class RideOffer extends DogActivity {
 
   override get objective(): string | null {
     if (this.asking) return 'Want to go for a ride? Say yes!';
-    if (this.running && this.step === 'approach' && this.requested) return 'Your human heard you at the Garage door…';
+    if (this.running && this.step === 'approach' && this.requested) return 'Going on a drive! Your human is coming…';
     if (this.leading) return 'Off to the Garage on your leash…';
     return null;
   }
@@ -141,8 +147,18 @@ export class RideOffer extends DogActivity {
   }
 
   override update(dt: number, ctx: DogActivityContext): void {
+    if (this.requested && this.state === 'AVAILABLE') {
+      this.requestElapsed += dt;
+      if (ctx.heistRunning || !(this.deps.canOffer?.() ?? true) || this.requestElapsed > this.tuning.requestWait) this.cancel();
+    }
     if (this.state === 'AVAILABLE' && !ctx.heistRunning) this.due -= dt;
     super.update(dt, ctx);
+  }
+
+  override cancel(): void {
+    // A direct request already holds the dog before the director can claim the human.
+    if (this.requested && this.state === 'AVAILABLE') this.onCancel();
+    else super.cancel();
   }
 
   protected wants(): boolean {
@@ -180,13 +196,13 @@ export class RideOffer extends DogActivity {
     const d = flatDistance(s.position, s.moke);
     switch (this.step) {
       case 'approach':
-        walkTo(intent, s.moke, HUMAN.move.walkSpeed, t.askFrom * 0.8);
+        walkTo(intent, s.moke, this.requested ? t.requestSpeed : HUMAN.move.walkSpeed, t.askFrom * 0.8);
         intent.lookAt = s.moke;
         if (d <= t.askFrom) {
           this.deps.routine.say(this.requested ? t.lines.asked : t.lines.ask, 'happy', intent);
           this.said = true;
           this.activate();
-          this.go('ask');
+          this.go(this.requested ? 'harness' : 'ask');
         } else if (this.elapsed > t.walkTimeout || (s.stuck ?? 0) > 4) {
           this.cancel();
           return false;
@@ -203,7 +219,7 @@ export class RideOffer extends DogActivity {
       case 'harness':
         // Over to him, down on one knee, harness on.
         if (d > 0.6) {
-          walkTo(intent, s.moke, HUMAN.move.walkSpeed, 0.45);
+          walkTo(intent, s.moke, this.requested ? t.requestSpeed : HUMAN.move.walkSpeed, 0.45);
           if (this.elapsed > t.walkTimeout / 2) {
             this.cancel();
             return false;

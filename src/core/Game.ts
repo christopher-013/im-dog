@@ -231,7 +231,7 @@ export class Game {
   private ride: RideDirector | null = null;
   private harness: Harness | null = null;
   private readonly heelSpot = { x: 0, y: 0, z: 0 };
-  /** Seconds left looking at the Garage door (he's just barked at it to ask for a ride). */
+  /** Seconds left looking at the Garage door after requesting a drive. */
   private garageLook = 0;
   private costume: DogCostume | null = null;
   /** Halloween: the pumpkin biscuit the human brings him after the trick-or-treaters. */
@@ -740,15 +740,15 @@ export class Game {
       routine: this.routine,
       onHarness: (on) => this.harnessOn(on),
       onAtDoor: () => this.startRide(),
-      canOffer: () => this.course.phase === 'idle' && !this.watchTv?.watching && !this.watchGame?.watchingScreen,
-      // Bark at the Garage Door: a bark (it asks), and a long look at the door.
-      onGarageBark: () => {
-        this.bark();
+      canOffer: () => !heist.heist.running && this.course.phase === 'idle' && !this.watchTv?.watching && !this.watchGame?.watchingScreen,
+      onGarageRequest: () => {
+        this.rest.standUp();
+        this.moke?.animation.releaseHolds();
         this.garageLook = RIDE.askAt.lookFor;
       },
     });
     this.interactions.register(this.rideOffer.interactable);
-    this.interactions.register(this.rideOffer.garageBark);
+    this.interactions.register(this.rideOffer.garageRide);
     const self = this;
     this.ride = new RideDirector(
       // The dog's visual changes with the dog chosen (Choose Your Dog), so it's looked up each time.
@@ -1251,7 +1251,10 @@ export class Game {
     if (watching && (this.moveIntent.x !== 0 || this.moveIntent.z !== 0)) this.watchGame?.stop();
     this.watchTv?.update({ position: c.position, heading: c.heading, speed: c.actualSpeed, carrying: this.toiletPaper?.holdingPaper ? 'paper' : this.pickup?.carried?.id ?? null, napping: this.rest.lying });
     const tv = this.watchGame?.watchingScreen ?? this.watchTv?.watching ?? null;
-    if (tv && !glideTarget && !paperTarget) {
+    if (this.rideOffer?.waitingForHuman) {
+      // Hold at the selected spot; retain collision/gravity, but discard player/FSD movement and jump input.
+      c.glideTo(step, c.position, c.heading, 0, 0);
+    } else if (tv && !glideTarget && !paperTarget) {
       c.glideTo(step, c.position, Math.atan2(tv.x - c.position.x, tv.z - c.position.z), 0, HOME_ACTIVITIES.watchGame.turnRate);
     } else if (glideTarget) {
       c.glideTo(step, glideTarget, this.rest.glideHeading(c), REST.settleSpeed, REST.settleTurnRate);
@@ -1299,7 +1302,7 @@ export class Game {
   private updateMoveIntent(step: number): void {
     const input = this.input.state;
     // Watching TV full screen: he sits still (any button ends it, in frame()).
-    if (this.watchTv?.watching) {
+    if (this.watchTv?.watching || this.rideOffer?.waitingForHuman) {
       this.moveIntent.x = this.moveIntent.z = 0;
       this.moveIntent.walk = this.moveIntent.run = false;
       return;
@@ -1362,10 +1365,14 @@ export class Game {
     // A button pressed by the player, or by FSD while it drives (D27: one input path either way).
     const presses = this.fsdCmd?.presses;
     const pressed = (action: Action) => input.wasPressed(action) || (presses?.has(action as FsdPress) ?? false);
-    if (pressed('interact') && !this.toiletPaper?.grabbing && !this.toiletPaper?.holdingPaper) {
+    if (pressed('interact') && !this.rideOffer?.holdsDog && !this.toiletPaper?.grabbing && !this.toiletPaper?.holdingPaper) {
       this.moke?.animation.cancelTrick();
       // Nothing to use here: the paw (or E) sniffs instead, so a phone can hunt for treats without a sniff button.
       if (!this.interactions.interact() && !this.rest.holdsMoke && !this.moke?.animation.performingTrick && this.scent.start()) this.audio.play('sniff');
+    }
+    if (this.rideOffer?.holdsDog) {
+      if (pressed('bark')) this.bark();
+      return;
     }
     // Any fresh movement key (or a jump) gets him up out of his bed.
     const moved = ['moveForward', 'moveBackward', 'moveLeft', 'moveRight', 'jump'] as const;
@@ -1611,7 +1618,7 @@ export class Game {
   /** The Garage door pulses blue when he's near it or looks at it, while a ride can be asked for there. */
   private updateGarageGlow(dt: number, playing: boolean): void {
     const c = this.moke?.controller;
-    const available = playing && !!c && !this.ride?.active && (this.rideOffer?.garageBark.enabled ?? false);
+    const available = playing && !!c && !this.ride?.active && (this.rideOffer?.garageRide.enabled ?? false);
     this.garageGlow.update(dt, !!c && doorGlowWanted({ x: c.position.x, z: c.position.z, heading: c.heading }, available));
   }
 
@@ -1637,7 +1644,7 @@ export class Game {
     }
     this.barkTimer.update(playing ? dt : 0);
     this.ui.setRideHome(this.state === 'paused' && ride.driving);
-    this.ui.setRideView(true, ride.driving ? ride.viewName : null);
+    this.ui.setRideView(true, ride.driving ? ride.viewName : null, ride.returning);
     this.gfx.syncSize(this.camera);
     ride.update(playing ? dt : 0, this.camera.aspect, this.fsdOn);
     this.harness?.update();

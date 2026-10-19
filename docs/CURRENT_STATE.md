@@ -52,6 +52,55 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Codex hover ride (2026-10-18; **commit and push to main approved by the owner**; preserves the garage-drive changes below):
+- The DeLorean now opens its coast ride with a short wide-camera takeoff. Four wheel pivots rotate the hubs down,
+  extend the tyres outward/lower and expose suspension struts. Lift starts before they can clip through the road.
+  It remains about 1.05 m above the scripted road with slight bobbing; the SUV still drives on the road. The garage
+  model stays grounded for boarding and return. `RideCar.hover` is an optional presentation capability, not an id
+  branch in shared gameplay; tuning is in `config/cars.ts`, pure curves in `ride/hover.ts`.
+- A soft light-blue underbody aura and merged thruster plumes use two generated 32×32 masks and two transparent
+  meshes (no extra lights, particles or physics). All resources are owned/disposed with the car; spinning tyres
+  stop in full hover mode. `scripts/car-preview.html` has a development-only Hover mode toggle.
+- Added a direct **Head Home** HUD button for both cars, above Change View. It uses the existing return sequence
+  after a 0.7-second fade rather than jumping forward along the road. Repeated clicks disable the button; pausing
+  freezes the fade. The pause-menu button remains. Home/normal gameplay removes the HUD button.
+- Automated tests cover wheel fold direction/reset, hover-only height, paused poses, portrait takeoff framing,
+  both cars' early return during takeoff/start, duplicate requests and grounded garage cleanup. Existing disposal,
+  model budgets, garage reveal and passenger camera checks still pass.
+- Verified: `npm test -- --maxWorkers=2` (**730 tests / 103 files**), strict typecheck, production build and
+  private-reference leak check (**31 files / 18 references**, none leaked), plus `git diff --check`. Browser:
+  hover-mode model preview; actual DeLorean coast flight with seated passengers and view changes; direct HUD Head
+  Home click, disabled return label, normal garage/home cleanup and drive prompt available again. No console errors;
+  only the expected missing-final-`moke.glb` warning. Narrow portrait framing was tested by automated projection,
+  not a physical phone or touch-device playtest. No GPU/FPS improvement claim.
+- Changed for hover/return: `world/DeLoreanCar.ts`, `world/RideCar.ts`, `config/cars.ts`, `config/ride.ts`,
+  `ride/CoastDrive.ts`, `ride/hover.ts`, `ride/hover.test.ts`, `ride/RideDirector.ts`, `ride/RideDirector.test.ts`,
+  `ride/garageReveal.test.ts`, `core/Game.ts`, `ui/UIManager.ts`, `styles/main.css`, `index.html`,
+  `scripts/car-preview.html` and the relevant assets/controls/activity/phase/decision/handoff docs. The owner
+  subsequently approved committing and pushing these changes; check deployment status separately from Git push.
+
+Codex garage-drive interaction (2026-10-18; **commit and push approved by the owner**, owner-requested refinement):
+- Replaced the garage's bark prompt with **Go On A Drive** (`garage:ride`, shared RIDE action). Selecting it commits
+  the ride directly and skips the human's second question; normal timed human invitations still ask yes/no.
+  The human approaches at a brisk configurable 2.05 m/s. FSD uses the same door interaction.
+- While waiting for the human/harness, the dog stays by the selected spot; movement, jump, tricks and competing
+  interactions cannot pull them away. Camera control and barking remain available. The existing leash walk then
+  takes over. Busy/blocked requests are disabled; pending requests release on cancellation, heist interruption or
+  a ten-second claim timeout, and started approaches retain their existing stuck/timeout exits.
+- The garage glow now fills the entire door face while retaining its edge halo and floor pool. Corrected disposal
+  of the two generated alpha-map textures. Added direct-to-boarding/replay, duplicate-request, faster-approach,
+  cancellation/timeout and filled-mask/texture-disposal regression checks.
+- Verified: strict typecheck; targeted activity/FSD/glow tests (**70 passed**); full `npm test -- --maxWorkers=2`
+  (**725 passed / 102 files**); production build and private-reference check (**31 files / 18 references**, no
+  leaks); `git diff --check`. Desktop browser: reached the new prompt, selected it once with no bark, tried moving
+  backward/jumping while held, entered the drive, used Head Home and confirmed the door action became available
+  again. Inspected the whole-face blue pulse. No console errors; only the expected missing-final-`moke.glb`
+  stand-in warning. No physical-device or controller hardware test claimed.
+- Changed: `activities/RideOffer.ts`, `core/Game.ts`, `autopilot/FullSelfDog.ts`, `config/ride.ts`,
+  `world/GarageDoorGlow.ts`, `activities/DogActivities.test.ts`, `world/GarageDoorGlow.test.ts`, plus this handoff
+  and `docs/ACTIVITIES.md`, `docs/CONTROLS.md`, `docs/PHASE_6.md`, `docs/DECISIONS.md`. Included in the owner's
+  subsequent commit/push approval with the hover ride.
+
 Codex family-car refinement (2026-10-18; **commit and push to main approved by the owner**, alongside the rear-body work below):
 - Refined the Model X-style SUV's nose/hood, swept J-shaped running lights, cleaner corner inlets, rear roof slope,
   smoked twin-guide tail lamps, hatch outline, lip spoiler, lower valance and dark slim-spoke wheels. The doors,

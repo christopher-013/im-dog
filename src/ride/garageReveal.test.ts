@@ -24,6 +24,8 @@ describe.each(CAR_IDS)('front garage reveal: %s', (id) => {
     const point = new Vector3(); let maxX = 0, maxY = 0;
     garage.car.object.traverse((node) => {
       if (!(node instanceof Mesh)) return;
+      // Hidden flight effects/suspension do not contribute to the parked car's rendered framing.
+      for (let parent: import('three').Object3D | null = node; parent; parent = parent.parent) if (!parent.visible) return;
       const positions = node.geometry.attributes.position!;
       for (let i = 0; i < positions.count; i++) {
         point.fromBufferAttribute(positions, i).applyMatrix4(node.matrixWorld).project(ride.camera);

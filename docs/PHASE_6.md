@@ -173,8 +173,9 @@ time-travel or driving mechanics. Per-car seats/window/poses keep all three dogs
   - **No:** wander off or ignore it for 15 seconds. "Okay, maybe later."
   
   FSD says yes most of the time.
-- **Asking** (owner, 2026-10-17): at the Garage door the prompt reads **Bark at the Garage Door**; he barks and looks
-  at it, and the human comes over: "Barking at the Garage, Moke? Do you want to go for a ride?" FSD asks sometimes.
+- **Go On A Drive** (owner refinement, 2026-10-18): one action at the Garage door commits the trip, holds the dog
+  nearby and brings the human over faster, straight to fitting the harness without a second yes. The whole door
+  pulses light blue, not just its edges. FSD uses the same action. Human-initiated invitations still ask yes/no.
 - **Harness and leash:** the human crouches and puts on a **harness** (each dog's own colour, worn over the collar,
   attached to the visual like the costumes) and clips on the **leash** (a line from the harness to their hand). Then
   they walk him to the garage door: on the leash he follows them, and the player can still look around, bark and wag.
@@ -182,6 +183,10 @@ time-travel or driving mechanics. Per-car seats/window/poses keep all three dogs
   human lifts him onto the **front passenger seat** and buckles the harness to the seat. They get in on the driver's
   side, the roll-up door goes up, and they back out.
 - **The drive** (a separate scene, not the house):
+  - **DeLorean hover ride** (owner follow-up, 2026-10-18): a short, wide-camera takeoff shows its four wheels folding
+    into hover mode; it floats above the same road throughout the ride with a light-blue aura/thruster glow.
+    The family SUV remains on the road. Both cars now have a direct **Head Home** HUD button to fade into the normal
+    home sequence early (the pause-menu option remains). No piloting or time travel.
   - **The route** (changed by the owner, 2026-10-17, after playing it: "the ocean on the right with people swimming
     and picnic'ing", like a real Del Mar → Torrey Pines drive): out of the neighbourhood and down to the coast, over
     the lagoon, then **south** along Torrey Pines State Beach in the right-hand lane, and up the grade between the

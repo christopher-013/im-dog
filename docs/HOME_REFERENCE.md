@@ -27,6 +27,18 @@ ends of the table.) Walking out of the hallway: the dining room is on your left 
 ## Room by room
 
 ### The Garage (Phase 6, D32)
+**Exterior departure view (owner follow-up, 2026-10-19):** the coast scene's lightweight home façade is modelled
+from the owner's supplied exterior photos: tan two-story stucco, a front gable, dark blue-green shutters,
+white window trim, the white-posted porch and upstairs garage window with small corbels. These are procedural
+shapes/colours, not photo textures. Private numbers and security signs are omitted. The owner's subsequent
+neighbor references add **12 neighboring homes**: six distinct Craftsman/stucco/cottage-style designs, with
+varied gables/hip roofs, porches, stone column bases, railings, arched entries, garage sides, siding and windows.
+Mirrored plans and changed palettes differentiate repeated styles; four background homes omit fine details.
+Frontage sidewalks/curb drops and a street running across the front establish a neighborhood. The car starts
+on its driveway and turns onto that through street before the coast section. This is ride scenery only:
+no new playable rooms, physics, free driving or duplicate house simulation. `ride/departureHome.ts`,
+`ride/departureRoute.ts`, `config/ride.ts`.
+
 A standard two-car garage behind the living room. Its white door is in the living room's south wall, to the left of
 the TV as you face it from the couch; it stays locked except when the human takes the dog out for a ride. Inside:
 sealed concrete, white walls, a light over each bay, steel shelving with blue storage bins and boxes on the north wall,

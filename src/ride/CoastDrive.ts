@@ -41,6 +41,9 @@ import { BEACH, BIKE_LANE, coastX, drivePath, LAGOON, landHeight, ROAD_HALF, roa
 import { palmGeometry, type PalmKind } from './palms';
 import { Traffic } from './traffic';
 import { hoverAltitude, hoverDeployment } from './hover';
+import { departureHome } from './departureHome';
+import { DEPARTURE_HOME } from '../config/ride';
+import { departureRoute } from './departureRoute';
 
 /**
  * The camera shots, in the order "change the view" goes through them: alongside (just behind his window on the sea
@@ -113,7 +116,8 @@ export class CoastDrive {
   readonly driverSeat = new Group();
   view: DriveView = 'alongside';
   private readonly curve = routeCurve();
-  private readonly path = drivePath(this.curve);
+  private readonly departure = departureRoute(drivePath(this.curve));
+  private readonly path = this.departure.path;
   private distance = 0;
   private speed = 0;
   private time = 0;
@@ -188,6 +192,16 @@ export class CoastDrive {
     this.scene.add(this.car.object);
     this.light(0);
     this.place(0);
+    // Fixed in the world at home, never parented to the moving/hovering car.
+    const home = departureHome(this.departure.heightAt);
+    home.position.copy(this.departure.origin);
+    home.rotation.y = this.departure.yaw;
+    home.traverse((node) => {
+      if (!(node instanceof Mesh)) return;
+      this.geometries.push(node.geometry);
+      this.materials.push(node.material as Material);
+    });
+    this.scene.add(home);
     this.aim();
   }
 
@@ -212,7 +226,8 @@ export class CoastDrive {
 
   /** Roughly how long the whole drive takes at the usual speeds (s). */
   get expectedDuration(): number {
-    return this.path.length / SPEED.cruise + SPEED.ease + 6 + (this.car.hover?.revealSeconds ?? 0);
+    return this.path.length / SPEED.cruise + SPEED.ease + 6 + (this.car.hover?.revealSeconds ?? 0) +
+      this.departure.joinDistance * (1 / DEPARTURE_HOME.street.speed - 1 / SPEED.cruise);
   }
 
   /** Next camera shot (gliding over from this one). */
@@ -259,7 +274,7 @@ export class CoastDrive {
     this.car.updatePresentation?.(this.time);
     // Speed: easing up from the start, easing to a stop at the top.
     const left = this.path.length - this.distance;
-    const target = Math.min(SPEED.cruise, 1.2 + left * 0.4);
+    const target = Math.min(this.distance < this.departure.joinDistance + 5 ? DEPARTURE_HOME.street.speed : SPEED.cruise, 1.2 + left * 0.4);
     // The coupe deploys on the road before accelerating; other vehicles keep their usual start.
     const takingOff = hover && this.time < hover.revealSeconds;
     this.speed += ((takingOff ? 0 : target) - this.speed) * Math.min(1, dt / (this.time < SPEED.ease ? 1.6 : 0.9));
@@ -500,6 +515,9 @@ export class CoastDrive {
 
   /** The land: one height field, the road cut in, coloured by what it is. */
   private terrain(): Mesh {
+    const origin = this.departure.origin;
+    const yaw = this.departure.yaw, cos = Math.cos(yaw), sin = Math.sin(yaw);
+    const lot = DEPARTURE_HOME.lot;
     // (West of the shore it's under the sea, which hides it: only a strip of sea floor is needed.)
     const minX = -385, maxX = 100, minZ = -520, maxZ = 1720, step = 5;
     const nx = Math.round((maxX - minX) / step) + 1, nz = Math.round((maxZ - minZ) / step) + 1;
@@ -530,6 +548,13 @@ export class CoastDrive {
         // Level with the road across it and its shoulders, blending back into the land beyond.
         const k = 1 - smooth(ROAD_HALF + 2.5, ROAD_HALF + 15, best);
         y = y * (1 - k) + (roadY - 0.25) * k;
+        // The house lot is level with the driveway instead of being buried by the coast's rolling terrain.
+        const dx = x - origin.x, dz = z - origin.z;
+        const lx = cos * dx - sin * dz, lz = sin * dx + cos * dz;
+        const edge = Math.min(lx - lot.minX, lot.maxX - lx, lz - lot.minZ, lot.maxZ - lz);
+        let level = smooth(-lot.blend, 0, edge);
+        if (lx > 0 && best < ROAD_HALF + 2.5) level = 0; // preserve the existing downhill road cut
+        y += (origin.y + this.departure.heightAt(lx) - 0.16 - y) * level;
         h[j * nx + i] = y;
         nearRoad[j * nx + i] = best;
       }
@@ -736,6 +761,7 @@ export class CoastDrive {
     const spots = new Map<string, Matrix4[]>();
     const q = new Quaternion();
     const plant = (type: number, x: number, z: number) => {
+      if (this.inDepartureLot(x, z)) return;
       const y = this.groundAt(x, z);
       if (y < 0.6 || x < coastX(z) + 6) return;
       const key = `${type}:${Math.floor(z / stretch)}`;
@@ -825,7 +851,7 @@ export class CoastDrive {
       const u = s / L;
       const p = this.curve.getPointAt(u);
       // Only up the hill round home, not down by the coast.
-      if (p.z > -300) continue;
+      if (p.z > -300 || s < DEPARTURE_HOME.street.extent + 20) continue;
       this.curve.getTangentAt(u, tangent);
       const len = Math.hypot(tangent.x, tangent.z) || 1;
       for (const side of [-1, 1]) {
@@ -855,6 +881,14 @@ export class CoastDrive {
       }
     }
     return group;
+  }
+
+  /** The detailed home/driveways own this lot; don't plant generic coast palms through them. */
+  private inDepartureLot(x: number, z: number): boolean {
+    const dx = x - this.departure.origin.x, dz = z - this.departure.origin.z;
+    const cos = Math.cos(this.departure.yaw), sin = Math.sin(this.departure.yaw);
+    const lx = cos * dx - sin * dz, lz = sin * dx + cos * dz, lot = DEPARTURE_HOME.lot;
+    return lx > lot.minX && lx < lot.maxX && lz > lot.minZ && lz < lot.maxZ;
   }
 
   /** Signs: the lagoon, the beach, and the reserve at the top (place names only; original signs). */

@@ -14,7 +14,7 @@ export const CARS = {
       wheelDelay: 0.8, wheelSeconds: 2.4, liftDelay: 0.6, liftSeconds: 3.2,
       height: 0.65, bob: 0.03, bobRate: 1.7, wheelOut: 0.10, wheelDrop: 0.17,
       color: '#65cfff', poolOpacity: 0.72, plumeOpacity: 0.62, revealSeconds: 5.5, revealBlend: 1.0,
-      camera: { pos: [-4.8, 1.65, 5.8] as const, look: [0, 0.55, 0] as const, fov: 55 },
+      camera: { pos: [-8.8, 3.5, 11] as const, look: [-3, 2, -5] as const, fov: 57 },
     },
     passenger: [-0.45, 0.39, 0.10] as const,
     driver: [0.45, 0.27, 0.10] as const,

@@ -2,6 +2,33 @@
  * Going for a ride (Phase 6, D33): the human's offer, the harness and leash, the walk to the Garage, and the drive.
  * Seconds and metres; game coordinates (x east, z south). Where the Garage and the car are: `GARAGE` (layout.ts).
  */
+/** Home exterior in the coast scene: metres in the departure car's yaw frame, +z down the road. */
+export const DEPARTURE_HOME = {
+  garageFront: -10, houseFront: -10.6, houseWidth: 9.2, houseDepth: 7.5,
+  street: { center: 14, halfWidth: 5.8, extent: 80, speed: 6.5, joinAt: 22 },
+  neighbors: [
+    { x: -24, z: 0, heading: 0, scale: 0.95, style: 'craftsman', wall: 'neighborSage', mirror: false, background: false },
+    { x: 24, z: 0, heading: 0, scale: 1.0, style: 'villa', wall: 'neighborPeach', mirror: false, background: false },
+    { x: -24, z: 39, heading: Math.PI, scale: 0.95, style: 'gables', wall: 'neighborCream', mirror: false, background: false },
+    { x: 2, z: 39, heading: Math.PI, scale: 0.95, style: 'courtyard', wall: 'wall', mirror: false, background: false },
+    { x: -48, z: 0, heading: 0, scale: 0.95, style: 'cottage', wall: 'neighborBlue', mirror: false, background: false },
+    { x: -72, z: 0, heading: 0, scale: 0.9, style: 'tower', wall: 'neighborCream', mirror: false, background: false },
+    { x: -48, z: 39, heading: Math.PI, scale: 0.95, style: 'villa', wall: 'neighborSage', mirror: true, background: false },
+    { x: -72, z: 39, heading: Math.PI, scale: 0.9, style: 'craftsman', wall: 'neighborCream', mirror: true, background: false },
+    { x: -24, z: -34, heading: 0, scale: 0.9, style: 'courtyard', wall: 'neighborPeach', mirror: true, background: true },
+    { x: 0, z: -34, heading: 0, scale: 0.85, style: 'gables', wall: 'neighborBlue', mirror: true, background: true },
+    { x: 24, z: -34, heading: 0, scale: 0.9, style: 'tower', wall: 'neighborSage', mirror: true, background: true },
+    { x: -24, z: 76, heading: Math.PI, scale: 0.9, style: 'cottage', wall: 'neighborCream', mirror: true, background: true },
+  ],
+  /** A level lot under the backdrop, softly joined to the existing hill. */
+  lot: { minX: -90, maxX: 48, minZ: -61, maxZ: 99, blend: 5 },
+  colors: { wall: '#c0a47d', trim: '#f6f0df', roof: '#676357', concrete: '#cfcac0', shutters: '#285052',
+    glass: '#536f7b', entry: '#634d37', dark: '#343b3e', bins: '#507c9b', lawn: '#7fa15a', hedge: '#507447',
+    asphalt: '#3a3c41', stripe: '#e9c13c', mulch: '#674b37', neighborSage: '#9da99a',
+    neighborCream: '#dfd6bf', neighborPeach: '#c99d83', neighborBlue: '#8e9da8',
+    neighborTile: '#a16d53', neighborStone: '#85867d' },
+} as const;
+
 export const RIDE = {
   /** HUD or pause-menu Head Home: a short fade into the existing garage return, never a road teleport. */
   headHomeFade: 0.7,

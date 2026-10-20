@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Home departure visual check — development only</title>
+<style>body{margin:0}canvas{display:block}nav{position:fixed;top:12px;left:12px;background:#fffe;padding:12px;border-radius:8px;font:14px system-ui}button,input{margin:4px}output{display:block}</style>
+<nav><button id="play">Play / pause</button><label>Car <select id="car"><option value="delorean">DeLorean</option><option value="family">Family SUV</option></select></label><label>View <select id="view"><option value="ride">Ride camera</option><option value="street">Street overview</option><option value="neighbor">Neighbor detail</option></select></label><label>Neighbor <select id="neighbor"></select></label><label>Ride time <input id="time" type="range" min="0" max="20" step="0.05" value="3.8"></label><output></output></nav>
+<script type="module">
+import { WebGLRenderer, PerspectiveCamera, Vector3 } from 'three';
+import { CoastDrive } from '../src/ride/CoastDrive.ts';
+const renderer=new WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;document.body.append(renderer.domElement);
+let drive,time=0,playing=false,last=performance.now();
+const overview=new PerspectiveCamera(55,innerWidth/innerHeight,0.1,3200);
+const slider=document.querySelector('#time'),output=document.querySelector('output'),car=document.querySelector('#car'),view=document.querySelector('#view'),neighbor=document.querySelector('#neighbor');
+function inspectView(){const home=drive.scene.getObjectByName('Departure home and garage');home.updateMatrixWorld(true);let position=new Vector3(-42,55,85),target=new Vector3(-5,0,12);if(view.value==='neighbor'){const n=home.userData.neighbors[Number(neighbor.value)||0],axis=new Vector3(0,1,0),origin=new Vector3(n.x,n.y,n.z);position=new Vector3(-12,5.5,9).multiplyScalar(n.scale).applyAxisAngle(axis,n.heading).add(origin);target=new Vector3(0,2.8,-11).multiplyScalar(n.scale).applyAxisAngle(axis,n.heading).add(origin);}overview.position.copy(home.localToWorld(position));overview.lookAt(home.localToWorld(target));}
+function seek(t){drive?.dispose();drive=new CoastDrive(car.value);time=0;while(time<t){const dt=Math.min(1/60,t-time);drive.update(dt,innerWidth/innerHeight);time+=dt;}if(!neighbor.options.length)drive.scene.getObjectByName('Departure home and garage').userData.neighbors.forEach((n,i)=>{const option=document.createElement('option');option.value=String(i);option.textContent=`${i+1}: ${n.name}${n.background?' (background)':''}`;neighbor.append(option);});inspectView();}
+slider.oninput=()=>{playing=false;seek(Number(slider.value));};
+car.onchange=()=>{playing=false;seek(Number(slider.value));};
+view.onchange=inspectView;neighbor.onchange=()=>{view.value='neighbor';inspectView();};
+document.querySelector('#play').onclick=()=>{playing=!playing;};
+seek(Number(slider.value));
+function frame(now){const dt=Math.min((now-last)/1000,0.05);last=now;if(playing){drive.update(dt,innerWidth/innerHeight);time+=dt;slider.value=String(time);}else drive.update(0,innerWidth/innerHeight);overview.aspect=innerWidth/innerHeight;overview.updateProjectionMatrix();renderer.render(drive.scene,view.value==='ride'?drive.camera:overview);output.textContent=`${time.toFixed(2)}s · ${renderer.info.render.calls} draws`;requestAnimationFrame(frame);}
+addEventListener('resize',()=>renderer.setSize(innerWidth,innerHeight));requestAnimationFrame(frame);
+</script></html>

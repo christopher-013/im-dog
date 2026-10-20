@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-10-18. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 ("A Day with Moke", `docs/PHASE_6.md`) is in progress. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the DeLorean follow-up to `main` on 2026-10-18; check deployment status separately from Git push success._
+_Last updated: 2026-10-19. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 ("A Day with Moke", `docs/PHASE_6.md`) is in progress. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the DeLorean follow-up to `main` on 2026-10-18; check deployment status separately from Git push success._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -52,6 +52,77 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Codex distinct neighbors + background homes (2026-10-19; **owner approved commit/push to main**, owner references):
+- Preserved the player's referenced façade and driveway route. Replaced scaled copies of it with six different
+  neighbor architectures: Craftsman porch/stone bases/railings, tiled villa/arched door, ivory twin gables,
+  sandstone courtyard, blue one-story cottage and entry tower. Side/rear windows prevent blank walls in reverse
+  shots. Profiles differ in geometry/topology, roof silhouettes, storeys, porch, garage side and window layout.
+- Expanded from **4 to 12 neighbors**. Each has a unique profile/colour/mirror combination. Eight frontage homes
+  join the road; four background homes have shorter local paths and omit small garage/siding/railing detail.
+  All remain original code-built scenery; supplied photos, addresses, people, logos and plate numbers are not
+  copied, stored or shipped. No new gameplay area or characters, lights, textures or physics.
+- `config/neighborhood.ts` owns profiles and the shared driveway-offset helper. `ride/neighborHouses.ts` builds
+  the geometry; `departureHome` still batches the entire block (**20 meshes/materials**, versus 14 previously).
+  Curbs on both sides now derive their gaps from the actual mirrored garage/driveway offsets. Terrain coverage
+  extends to the background row; the original coast cut, driveway turn and both cars' behavior are preserved.
+- Added tests proving six different geometry signatures/silhouettes, simpler far-house geometry, 12 unique
+  combinations/background count, and retained surface clearance, apron joins, framing and resource disposal.
+  The development preview adds a Neighbor detail selector to inspect every house without altering gameplay.
+- Browser: inspected the Craftsman and twin-gabled façades in detail and the neighborhood/takeoff composition;
+  console clean. No physical-phone/controller performance or listening claim.
+- Verified: strict typecheck/production build with private-reference guard (**31 files / 18 references**, none
+  leaked), full `npm test -- --maxWorkers=2` (**745 tests / 108 files**), and `git diff --check`.
+- Files added: `config/neighborhood.ts`, `ride/neighborHouses.ts` and test. Modified since prior handoff:
+  `config/ride.ts`, `ride/departureHome.ts` and test, `scripts/takeoff-preview.html`, activity/asset/home-reference
+  docs and this handoff. Earlier uncommitted departure-route work is preserved.
+
+Codex photo-referenced frontage + neighborhood street (2026-10-19; **included in the owner-approved commit above**, owner refinement):
+- Refined the previous backdrop using the owner's four exterior photographs: tan two-story stucco, left front
+  gable, blue-green board shutters, white tall windows, white-posted recessed porch, garage lintel/corbels and
+  roof detail. No photograph was copied/stored/shipped; no address/house number or security sign is reproduced.
+  Four neighboring façades reuse/scalably vary the same geometry, on both sides of the street.
+- The driveway is now concrete up to the road, with sidewalk gaps/curb drops. The road runs across the front
+  of the homes, continuing to either side, not straight out of the garage. `departureRoute` prefixes the coast
+  path with a perpendicular driveway and smooth turn into its original lane. A **6.5 m/s** neighborhood cap
+  applies before highway acceleration. DeLorean wheel takeoff is still on the driveway; SUV stays grounded.
+- Replaced overlapping generic near-home boxes with the detailed neighborhood and excluded procedural palms
+  from the house/driveway lot. Terrain matches the neighborhood grade without burying the original road cut.
+  All façades and paving batch to **14 meshes/materials**, no new textures, lights, physics or per-frame geometry.
+- Tests add driveway/street surface raycasts (including opposite neighbors), grounded-SUV surface clearance
+  over the entire turn, route continuity/tangency, and preserve portrait/landscape hover framing, world-fixed
+  scenery, resource disposal and both-car round trips. The hover test now samples the actual departure-prefixed
+  route rather than the old coast-only route. The dev preview can select either car and a street overview/time.
+- Browser: inspected the façade, neighborhood layout, SUV mid-turn and coast entry using the actual CoastDrive
+  preview. Console clean. Physical phone/controller performance and listening are not claimed.
+- Verified: `npm test -- --maxWorkers=2` **742 tests / 107 files**, `npm run build` including strict typecheck
+  and the private-reference guard (**31 files / 18 references**, none leaked), and `git diff --check`.
+- Changed since previous handoff: `ride/departureHome.ts` and test, new `ride/departureRoute.ts` and test,
+  `ride/CoastDrive.ts`, `ride/hover.test.ts`, `config/ride.ts`, `config/cars.ts`, `scripts/takeoff-preview.html`,
+  and activity/asset/home-reference docs plus this handoff. Prior uncommitted backdrop work is preserved/refined.
+
+Codex home departure backdrop (2026-10-19; **included in the owner-approved commit above**, owner request):
+- The hover reveal used to switch to the coast scene without the home it had just left. Added an exterior-only
+  house façade and open two-car garage behind its starting position, with white fascia, windows, entry, driveway,
+  lawn/planting and blue storage bins. Garage sizes reuse `GARAGE`; palette matches the stylized home. This is
+  background scenery, not another playable room or a duplicate house simulation. Both cars share the scenery.
+- Anchored it once to the departure position/yaw, never to the car, so it remains behind as the drive accelerates.
+  Levelled the lot into the existing terrain; the apron ends behind the car rather than covering the road.
+  Slightly wider/higher hover camera keeps the house/garage and wheel deployment together in view.
+- Static scenery reuses `StaticSceneBuilder`, batched to ten meshes/materials; no per-frame geometry, extra lights,
+  textures, colliders, external assets or private references. Coast disposal owns all retained resources.
+- Added two tests: portrait/landscape takeoff framing, open-bay raycast, fixed-world placement after driving,
+  nonintersection with the departing car, mesh budget and exactly-once resource disposal. Existing hover and
+  both-car lifecycle checks also pass. Development-only `scripts/takeoff-preview.html` provides a time slider
+  for inspecting the actual coast scene's takeoff at any point; it is not a production page.
+- Final validation: `npm test -- --maxWorkers=2` **738 tests / 106 files**, `npm run build` (including strict
+  typecheck and private-reference check: **31 files / 18 references**, none leaked), and `git diff --check` passed.
+- Browser: inspected the takeoff in the real `CoastDrive` preview, adjusted the façade/camera composition, and
+  played the normal game from the door request through boarding/coast entry and requested Head Home. No new
+  console errors/warnings; game only reports the known missing final `moke.glb`. No physical phone/controller
+  testing claimed; portrait coverage is a projection regression test.
+- Changed: `config/ride.ts`, `config/cars.ts`, `ride/CoastDrive.ts`, new `ride/departureHome.ts` and test,
+  new `scripts/takeoff-preview.html`, `docs/ACTIVITIES.md`, `docs/ASSETS.md`, and this handoff.
+
 Codex ride excitement + animated flux capacitor (2026-10-18; **owner approved commit/push to main**, together with
 the passenger/hover fixes below):
 - **Go On A Drive** starts playful bark pairs immediately, continuing through the wait, harness and garage

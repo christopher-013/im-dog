@@ -169,6 +169,19 @@ outward/down into hover mode, then lifting above the road; it stays airborne alo
 bobbing at about **0.65 m** (lowered from 1.05 m in the owner's follow-up), four brighter light-blue road pools
 under its tyres and matching thruster plumes. The pools stay on the road as the body bobs, rather than floating
 with the chassis. It is grounded in the garage and on return.
+Owner follow-up, 2026-10-19: the takeoff shot now has the house, open two-car garage and driveway behind the car,
+with a slightly wider camera showing the departure surroundings. This is a lightweight fixed exterior in the
+coast scene, not a new playable space; it stays at home as the car heads down the road. Both cars share the
+same starting scenery. The owner's subsequent photo references refine it to a tan two-story stucco façade,
+front gable, blue-green shutters, white trim/porch posts and a garage upstairs window. Further owner refinement:
+**12 neighbors** now use six distinct architectural designs: Craftsman porch, tiled villa, twin gables, courtyard,
+single-story cottage and entry tower. Roof silhouettes, porch/railing/column shapes, garage sides, windows,
+siding, colours and mirrored layouts vary; four houses form a simpler background row. The player's house is
+unchanged. No house numbers, people, photo textures or security signs are reproduced.
+The driveway now meets a **through street across the frontage**, with dropped-curb openings, rather than an
+asphalt road starting at the garage. Both cars start on the concrete driveway, turn slowly onto the street
+(6.5 m/s neighborhood cap), then accelerate along the existing coast lane. Only the DeLorean takes off; the SUV
+stays on the paving. `departureRoute.ts` supplies the continuous driveway/turn prefix; the coast remains scripted.
 The cabin flux capacitor has a blue-white animated Y: charge travels toward the center, with a breathing glow
 and small electrical filaments. It runs in boarding, the coast scene and return; pause freezes its clock.
 After the door's **Go On A Drive** request, the dog gives playful bark pairs while waiting and boarding,

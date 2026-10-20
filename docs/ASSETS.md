@@ -71,6 +71,18 @@ procedural shader on one small panel: moving Y-shaped charge, blue-white electri
 halo. No downloaded textures, extra scene lights, film effects or audio. Existing synthesized bark audio is
 reused for the door-request excitement; no new sound asset.
 
+Home departure neighborhood (`src/ride/departureHome.ts`, owner requests 2026-10-19): **original code-built**
+photo-referenced tan two-story façade, gable/tiled roof detail, blue-green shutters, white windows/porch posts,
+open garage, driveway and planting. Owner's next references added Craftsman columns/stone bases/railings,
+board siding, twin gables, tiled villas/arched entries, courtyard walls, cottages and entry towers: **12 neighbors,
+six architectural designs**, with different colours, mirrors, windows/porches and roof silhouettes. Background
+houses omit fine detailing. Garage/driveway layouts feed the curb cuts so variants don't obstruct their aprons.
+The main house remains unchanged. Garage dimensions reuse `GARAGE`. Through-street,
+sidewalk and dropped-curb geometry joins the existing coast road. Twenty batched materials cover the entire
+neighborhood. Supplied private photographs are visual references only: not stored, imported, distributed or
+used as textures. No address/house number, security-company sign, person, vehicle registration, downloaded asset,
+extra light or physics. Neighbor design data: `config/neighborhood.ts`; geometry: `ride/neighborHouses.ts`.
+
 ## Temporary assets that must be replaced before release
 
 Owner-requested household additions (2026-09-27): the front door, doorstep, parcel (plain canvas "amazon"

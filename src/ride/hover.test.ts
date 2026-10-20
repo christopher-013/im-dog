@@ -5,6 +5,7 @@ import { DeLoreanCar } from '../world/DeLoreanCar';
 import { CoastDrive } from './CoastDrive';
 import { drivePath, routeCurve, samplePath } from './coastRoute';
 import { hoverAltitude } from './hover';
+import { departureRoute } from './departureRoute';
 
 describe('DeLorean hover presentation', () => {
   it('puts four stronger blue pools under the wheels and keeps them on the road as the body bobs', () => {
@@ -65,7 +66,7 @@ describe('DeLorean hover presentation', () => {
 
   it.each(['family', 'delorean'] as const)('%s: takeoff capability controls height, pause and wide reveal framing', (id) => {
     const drive = new CoastDrive(id);
-    const path = drivePath(routeCurve()), road = new Vector3(), direction = new Vector3();
+    const path = departureRoute(drivePath(routeCurve())).path, road = new Vector3(), direction = new Vector3();
     const flying = id === 'delorean';
     expect(!!drive.car.hover).toBe(flying);
     for (let i = 0; i < 135; i++) drive.update(1 / 30, 390 / 844);

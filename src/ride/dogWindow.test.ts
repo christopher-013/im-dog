@@ -101,3 +101,25 @@ describe.each(CAR_IDS)('%s: the alongside shot', (carId) => {
     drive.dispose(); dog.dispose();
   });
 });
+
+describe('Change View during the takeoff shot', () => {
+  it('glides on to the road views without a jump, and only while the takeoff shot is showing', () => {
+    const family = new CoastDrive('family');
+    expect(family.skipReveal()).toBe(false);
+    family.dispose();
+    const drive = new CoastDrive('delorean');
+    for (let i = 0; i < 30; i++) drive.update(1 / 30, 16 / 9);
+    expect(drive.revealingHover).toBe(true);
+    const before = drive.camera.position.clone();
+    expect(drive.skipReveal()).toBe(true);
+    expect(drive.revealingHover).toBe(false);
+    drive.update(0, 16 / 9);
+    expect(drive.camera.position.distanceTo(before)).toBeLessThan(0.001);
+    for (let i = 0; i < 30 * RIDE.cameraTour.manualBlend + 2; i++) drive.update(1 / 30, 16 / 9);
+    // Now on the alongside shot, close beside the car (the takeoff shot stands well off).
+    const car = drive.car.object.getWorldPosition(new Vector3());
+    expect(drive.camera.position.distanceTo(car)).toBeLessThan(5);
+    expect(drive.skipReveal()).toBe(false);
+    drive.dispose();
+  });
+});

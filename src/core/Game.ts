@@ -235,6 +235,9 @@ export class Game {
   private readonly heelSpot = { x: 0, y: 0, z: 0 };
   /** Seconds left looking at the Garage door after requesting a drive. */
   private garageLook = 0;
+  /** Waiting for the human after Go On A Drive: the stick's been let go, so a fresh push means he's off (never mind). */
+  private rideWalkAway = false;
+  private readonly rideStick = { x: 0, y: 0 };
   private costume: DogCostume | null = null;
   /** Halloween: the pumpkin biscuit the human brings him after the trick-or-treaters. */
   private readonly biscuitTreat = new Treat('pumpkin', 3, 'pumpkin');
@@ -1380,6 +1383,13 @@ export class Game {
       // Nothing to use here: the paw (or E) sniffs instead, so a phone can hunt for treats without a sniff button.
       if (!this.interactions.interact() && !this.rest.holdsMoke && !this.moke?.animation.performingTrick && this.scent.start()) this.audio.play('sniff');
     }
+    // Still waiting for the human after Go On A Drive: walking off calls it off (not a stick already held then).
+    if (this.rideOffer?.waitingForHuman) {
+      const stick = input.getMoveAxis(this.rideStick);
+      const push = Math.hypot(stick.x, stick.y);
+      if (push < 0.2) this.rideWalkAway = true;
+      else if (push > 0.5 && this.rideWalkAway) this.rideOffer.withdraw();
+    } else this.rideWalkAway = false;
     if (this.rideOffer?.holdsDog) {
       if (pressed('bark')) this.bark();
       return;

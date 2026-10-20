@@ -623,11 +623,38 @@ describe('Going for a ride: the offer (real house and household human)', () => {
     // No director step to claim the human: this pending request must expire, not hold the dog forever.
     offer.update(RIDE.requestWait + DT, w.ctx);
     expect(offer.holdsDog).toBe(false);
+    // And they say so, rather than it quietly lapsing.
+    expect(w.said).toContain(RIDE.lines.busy);
     w.routine.claim({ id: 'busy-test', update: () => true, cancel() {} });
     expect(offer.garageRide.enabled).toBe(false);
     offer.request();
     expect(offer.requested).toBe(false);
   });
+
+  it('Go On A Drive: walking off before the human gets there calls it off; once the harness is going on, it cannot', async () => {
+    const w = await rideWorld(65);
+    const { offer } = w;
+    Object.assign(w.moke, { x: RIDE.askAt.x, z: RIDE.askAt.z });
+    offer.request();
+    offer.withdraw();
+    expect(offer.requested).toBe(false);
+    expect(offer.holdsDog).toBe(false);
+    offer.request();
+    for (let i = 0; i < 2 / DT && !offer.running; i++) w.step(w.director);
+    expect(offer.running).toBe(true); // the human is on the way
+    offer.withdraw();
+    expect(offer.running).toBe(false);
+    expect(offer.holdsDog).toBe(false);
+    w.step(w.director); // the human lets go of the role on their next update
+    expect(w.routine.available).toBe(true);
+    w.tick(3);
+    offer.request();
+    expect(offer.requested).toBe(true);
+    for (let i = 0; i < 40 / DT && !(offer.running && offer.waitingForHuman && !offer.anticipatingRide); i++) w.step(w.director);
+    offer.withdraw(); // harness under way
+    expect(offer.running).toBe(true);
+    expect(offer.holdsDog).toBe(true);
+  }, 60_000);
 
   it('a bark is a yes too; walking off (or ignoring them) is a no: "Okay, maybe later."', async () => {
     const w = await rideWorld(62);

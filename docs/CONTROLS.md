@@ -122,13 +122,15 @@ When the human asks "want to go for a ride?", **Go for a Ride!** on the paw (E /
 does a bark nearby; walk away or ignore them and it's a no. On the leash to the Garage he walks at their heel by
 himself. At the Garage door (in the living room, left of the TV), **Go On A Drive** (E / A / paw) starts the trip
 directly: the dog waits by the door, the human hurries over and fits the harness, with no second confirmation.
+Walking off before the human gets there (a fresh push of the move keys/stick) calls it off; if the human can't come
+within 10 seconds, they say "Maybe later, Moke!" (owner, 2026-10-20).
 His playful waiting barks stop as soon as the human begins harness preparation, before the harness is finished.
 A bark there is also a shortcut. The entire door pulses light blue while a drive is available. In the car:
 
 | | Keyboard and mouse | Controller | Touch |
 |---|---|---|---|
 | Bark | F | the bark button | Bark |
-| Look around (turns his head to the beach ahead, beside or behind) | Mouse | Right stick | Drag on the right |
+| Look around (turns his head to the beach ahead, beside or behind) | Mouse | Right stick | Drag anywhere (the Move stick hides on the ride) |
 | Change the view (alongside, his face, behind the car, the drone); or the **Change View** button (FSD's place) | E or Q | A or the trick button | the paw or Trick |
 | Head in or out of the window | Space (Jump) | the jump button | Jump (hold the paw) |
 | Head home now | Esc → **HEAD HOME** | Start → **HEAD HOME** | ⏸ → **HEAD HOME** |
@@ -137,7 +139,8 @@ A bark there is also a shortcut. The entire door pulses light blue while a drive
 the normal return-home sequence without finishing the route. Repeated presses are ignored while returning.
 The DeLorean starts with a short wide-camera takeoff: its wheels fold down into hover mode, then it floats above
 the road with a soft light-blue aura for the rest of the ride. The SUV stays on its wheels. Flight is scripted;
-there are no piloting controls.
+there are no piloting controls. Change View during the takeoff shot (the button reads "Takeoff") glides straight on
+to the road views; the car still takes off as usual (owner, 2026-10-20).
 
 Every full ride shows four longer automatic shots: alongside, his face at the window, behind, then drone.
 Each covers a quarter of the route, with 2.4-second glides; the last shot stays until arrival (no repeated loop).

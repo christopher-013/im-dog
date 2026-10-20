@@ -52,8 +52,8 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
-Claude Code review of Codex's ride work and the phone ride fixes (2026-10-20; committed and pushed to the
-working branch `claude/milestones-5-9-qagq4b`, **not** to `main`, which needs the owner's go-ahead):
+Claude Code review of Codex's ride work and the phone ride fixes (2026-10-20; **owner approved commit/push to
+main**):
 - **"Dog wasn't visible on the ride"** (the owner's phone screenshot of 2026-10-17, His face view, with the house's
   doorbell line still showing): the published build then let the house's frame finish after the ride began inside a
   fixed step, so a wall-close camera's "hide the dog" and the doorbell's HUD line stuck. Codex's `64c26ac` (hand
@@ -69,10 +69,15 @@ working branch `claude/milestones-5-9-qagq4b`, **not** to `main`, which needs th
 - **Fixed: the doorbell could ring during the ride offer** (harness, leash walk) and stay ringing through the whole
   drive. The bell now waits while a ride's been asked for, offered or is under way (`DoorDelivery` `canRing`), and
   no ride is offered (or Go On A Drive enabled) while it rings. Test added.
+- **Owner's design answers (2026-10-20), done:** after Go On A Drive, if the human can't come within 10 s they say
+  "Maybe later, Moke!" (`RIDE.lines.busy`), and a fresh push of the move stick/keys before the human arrives calls it
+  off (`RideOffer.withdraw`; a stick already held when asking doesn't count; once the harness is going on it's too
+  late). Change View during the DeLorean's takeoff shot glides on to the road views (`CoastDrive.skipReveal`); the car
+  still takes off as usual. The owner chose to **keep** the departure house as Codex built it.
 - Review notes (no change needed): no per-frame allocations in the new car/hover/flux code; the drive draws fewer
   calls than before Codex's car rebuild (about 250–340 vs 450–490 at the start, headless); the `?car=` override is
   development-only; storage reads are guarded; preview pages under `scripts/` aren't in the build; no secrets.
-- Verified: typecheck, `npm test` (109 files, 764 tests), `npm run build` with the leak check, headless rides on a
+- Verified: typecheck, `npm test` (109 files, 766 tests), `npm run build` with the leak check, headless rides on a
   portrait touch screen (both cars, Head Home from the HUD, the house after). Not verified on a real phone.
 
 Codex longer ride shots (2026-10-19; **owner approved commit/push to main**, owner refinement):

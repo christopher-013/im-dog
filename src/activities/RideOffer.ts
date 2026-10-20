@@ -154,10 +154,22 @@ export class RideOffer extends DogActivity {
   override update(dt: number, ctx: DogActivityContext): void {
     if (this.requested && this.state === 'AVAILABLE') {
       this.requestElapsed += dt;
-      if (ctx.heistRunning || !(this.deps.canOffer?.() ?? true) || this.requestElapsed > this.tuning.requestWait) this.cancel();
+      if (this.requestElapsed > this.tuning.requestWait) {
+        // They couldn't come: say so (owner, 2026-10-20), rather than letting it quietly lapse.
+        this.deps.routine.say(this.tuning.lines.busy, 'happy');
+        this.cancel();
+      } else if (ctx.heistRunning || !(this.deps.canOffer?.() ?? true)) this.cancel();
     }
     if (this.state === 'AVAILABLE' && !ctx.heistRunning) this.due -= dt;
     super.update(dt, ctx);
+  }
+
+  /**
+   * He's walked off (the player moved) before the human got to him: never mind the drive (owner, 2026-10-20: the
+   * player is never stuck waiting). Once they're putting his harness on, it's too late to wander off.
+   */
+  withdraw(): void {
+    if (this.requested && (this.state === 'AVAILABLE' || (this.running && this.step === 'approach'))) this.cancel();
   }
 
   override cancel(): void {

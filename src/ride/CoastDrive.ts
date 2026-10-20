@@ -148,6 +148,8 @@ export class CoastDrive {
   private readonly from = { pos: new Vector3(), look: new Vector3(), fov: 55, clearance: 0.3 };
   private blend = 1;
   private blendSeconds: number = RIDE.cameraTour.manualBlend;
+  /** The takeoff shot was skipped (Change View). */
+  private revealSkipped = false;
 
   constructor(car: CarId = 'family') {
     this.car = createCar(car);
@@ -220,7 +222,23 @@ export class CoastDrive {
 
   get revealingHover(): boolean {
     const h = this.car.hover;
-    return !!h && this.time < h.revealSeconds + h.revealBlend;
+    return !!h && !this.revealSkipped && this.time < h.revealSeconds + h.revealBlend;
+  }
+
+  /**
+   * Change View during the takeoff shot (owner, 2026-10-20): glide straight on to the road views. The car still
+   * takes off as usual; only the camera moves on. False if there's no takeoff shot showing.
+   */
+  skipReveal(): boolean {
+    if (!this.revealingHover) return false;
+    this.currentShot(tmpA, tmpB);
+    this.from.pos.copy(tmpA); this.from.look.copy(tmpB);
+    this.from.fov = this.camera.fov;
+    this.from.clearance = this.cameraClearance();
+    this.revealSkipped = true;
+    this.blend = 0;
+    this.blendSeconds = RIDE.cameraTour.manualBlend;
+    return true;
   }
 
   /** Roughly how long the whole drive takes at the usual speeds (s). */
@@ -357,7 +375,7 @@ export class CoastDrive {
       fov = this.from.fov + (fov - this.from.fov) * k;
     }
     const hover = this.car.hover;
-    if (hover && this.time < hover.revealSeconds + hover.revealBlend) {
+    if (hover && !this.revealSkipped && this.time < hover.revealSeconds + hover.revealBlend) {
       const k = smooth(hover.revealSeconds, hover.revealSeconds + hover.revealBlend, this.time);
       pos.lerpVectors(tmpPos.set(...hover.camera.pos), pos, k);
       look.lerpVectors(tmpDir.set(...hover.camera.look), look, k);

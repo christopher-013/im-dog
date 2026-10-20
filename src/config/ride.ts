@@ -111,6 +111,8 @@ export const RIDE = {
     asked: 'A drive, Moke? Let’s get your harness on!',
     yes: 'Yes? Let’s go! Harness on…',
     no: 'Okay, maybe later.',
+    /** Go On A Drive, but they couldn't come in time (`requestWait`). */
+    busy: 'Maybe later, Moke!',
     home: 'Best ride ever, Moke!',
   },
 } as const;

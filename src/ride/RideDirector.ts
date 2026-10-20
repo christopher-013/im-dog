@@ -164,6 +164,8 @@ export class RideDirector {
 
   nextView(): void {
     if (!this.drive) return;
+    // During the takeoff shot, a tap goes on to the road's first view (the tour carries on from there).
+    if (this.drive.skipReveal()) return;
     this.drive.nextView();
     this.cameraTour.manual();
   }

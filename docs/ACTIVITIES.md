@@ -199,7 +199,9 @@ ride?"**
   commits the trip; no bark or second yes is required. The dog stays at the selected spot while the free human
   hurries over at 2.05 m/s and fits the harness, then the existing leash/boarding sequence starts. A plain bark there
   is still a shortcut. Busy humans/other blocked ride conditions hide the action; interrupted or timed-out requests
-  release the dog. FSD uses the same action (at most every 10 minutes). Where: `RIDE.askAt` (`config/ride.ts`).
+  release the dog. A timed-out request (`RIDE.requestWait`, 10 s) is said aloud ("Maybe later, Moke!", `RIDE.lines.busy`),
+  and walking off before the human arrives calls it off (owner, 2026-10-20). The doorbell waits while a ride's asked
+  for, offered or under way, and no ride is offered while it rings. FSD uses the same action (at most every 10 minutes). Where: `RIDE.askAt` (`config/ride.ts`).
 - **The door glows** (owner, 2026-10-17: "pulse with blue light when the dog looks or passes by the door to
   indicate that there is an adventure close by"): while a ride can be asked for, the Garage door pulses a soft light blue
   (the entire door face plus a soft edge halo and floor pool) when he's within 2.2 m of it or looking at it from up to 6.5 m away in

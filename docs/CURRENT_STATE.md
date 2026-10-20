@@ -52,6 +52,19 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code, Inside for every car and an even camera tour (2026-10-20; owner request; committed and pushed to the
+working branch `claude/milestones-5-9-qagq4b`, **not** to `main` yet):
+- **Inside views**: the DeLorean (`CARS.delorean.cabinView`: between the seats, over the time circuits; its amber
+  gauges now have rims and needles) and the family SUV (`FamilyCar.cabinView`; a tall centre screen with a coast map
+  and the route to Torrey Pines and a cluster behind the wheel, `world/familyCarScreens.ts`).
+- **Even tour**: `RideCameraTour` is time-based now: each view's share is the tour's elapsed time against that plus
+  `CoastDrive.remainingSeconds` (street + coast + a little for the stop). All five views in every car; measured shares
+  in the full-ride test are about 11.6–12.5 s each (test: every share ≥ 8 s, longest < 1.25 × shortest).
+- **Phone HUD** (`main.css`, touch mode): Change View hidden (the paw changes the view); Head Home fixed at the bottom
+  centre (12 px up). Checked headless at 390×844 with touch: hidden, and centred at the bottom.
+- `npm test`: 110 files, 796 tests; typecheck and build clean. Browser (headless): Inside in the SUV and the DeLorean
+  (desktop) and the black car (phone). Not on a real phone.
+
 Claude Code, cockpit scenes and the reshaped black car (2026-10-20; owner request; committed and pushed to the working
 branch `claude/milestones-5-9-qagq4b`, **not** to `main` yet):
 - **The black car reshaped** from the owner's side-on photo, scaled by its wheels: axles moved back (front overhang

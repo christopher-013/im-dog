@@ -2114,6 +2114,26 @@ html[data-input='touch'][data-paw-open] .fsd {
   opacity: 0.65;
 }
 
+/* On a phone (owner, 2026-10-20): the paw changes the view, so no Change View button; Head Home sits low in the
+   middle, out of the picture's way. */
+html[data-input='touch'] .ride-view-button {
+  display: none;
+}
+
+html[data-input='touch'] .ride-home-button {
+  position: fixed;
+  left: 50%;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  min-width: 0;
+  min-height: 40px;
+  padding: 7px 22px;
+}
+
+html[data-input='touch'] .ride-home-button:active {
+  transform: translateX(-50%) scale(0.96);
+}
+
 .fsd-button:active {
   transform: scale(0.96);
 }

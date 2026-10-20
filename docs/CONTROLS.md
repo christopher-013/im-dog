@@ -135,6 +135,9 @@ A bark there is also a shortcut. The entire door pulses light blue while a drive
 | Head in or out of the window | Space (Jump) | the jump button | Jump (hold the paw) |
 | Head home now | Esc → **HEAD HOME** | Start → **HEAD HOME** | ⏸ → **HEAD HOME** |
 
+On a phone (owner, 2026-10-20) there's no Change View button (the paw changes the view), and **Head Home** sits low in
+the middle of the screen, out of the picture's way.
+
 **Head Home** is also directly on the ride screen (click/tap), above Change View, for either car. It fades into
 the normal return-home sequence without finishing the route. Repeated presses are ignored while returning.
 The DeLorean starts with a short wide-camera takeoff: its wheels fold down into hover mode, then it floats above
@@ -144,10 +147,10 @@ to the road views; the car still takes off as usual (owner, 2026-10-20). Before 
 driveway, the DeLorean and the black talking car each play a short cockpit scene (the button reads "Cockpit"); Change
 View skips it too.
 
-Every full ride shows four longer automatic shots: alongside, his face at the window, behind, then drone (in the black
-talking car, **Inside**, over the console to the lit dash and the voice box, takes Behind's place; Change View offers
-both there).
-Each covers a quarter of the route, with 2.4-second glides; the last shot stays until arrival (no repeated loop).
+Every full ride shows all five views automatically, in order: alongside, his face at the window, **Inside** (from
+between the seats to the dash: the black car's voice box and lit panels, the DeLorean's time circuits, the SUV's map
+screen), behind, then drone. Each gets an even share of the time on the road (about 12 seconds; owner, 2026-10-20),
+with 2.4-second glides; the last shot stays until arrival (no repeated loop).
 Change View still works immediately and holds your chosen view for 14 seconds before the route schedule resumes.
 Pause freezes it; Head Home stops the tour. Manual choices and ending early take priority over showing every view.
 With FSD on, he says yes most of the time and barks by himself. Left alone for a few

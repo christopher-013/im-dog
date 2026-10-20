@@ -51,6 +51,7 @@ export class DeLoreanCar implements RideCar {
   private readonly flux = fluxCapacitor();
   private readonly circuits = new TimeCircuits();
   readonly intro = D.intro;
+  readonly cabinView = D.cabinView;
 
   constructor() {
     this.object.name = 'Silver time machine';
@@ -138,9 +139,13 @@ export class DeLoreanCar implements RideCar {
     this.materials.add(face);
     const display = this.add(new PlaneGeometry(...tc.size), face, [0, 0, 0], unit);
     display.name = 'Time circuit display'; display.userData.marking = 'time circuits';
-    for (const x of [-0.3, -0.48]) {
+    for (const [x, needle] of [[-0.3, 0.7], [-0.48, -0.4]] as const) {
       const gauge = this.add(new CylinderGeometry(0.055, 0.055, 0.02, 20), amber, [x, 0.76, 0.6]);
       gauge.rotation.x = Math.PI / 2 - 0.3;
+      // A dark rim, and its needle, on the face toward the seats.
+      const face: Point = [x, 0.76 - 0.011 * Math.sin(0.3), 0.6 - 0.011 * Math.cos(0.3)];
+      this.add(new TorusGeometry(0.056, 0.007, 6, 20), dark, face).rotation.x = -0.3;
+      this.box([0.005, 0.045, 0.004], [face[0] + Math.sin(needle) * 0.018, face[1] + Math.cos(needle) * 0.018, face[2] - 0.002], dark, this.object, [-0.3, 0, -needle]);
     }
     for (const s of Object.values(this.seats)) {
       this.add(new RoundedBoxGeometry(0.51, 0.10, 0.53, 2, 0.035), seat, [s.x, s.y - 0.05, s.z]);

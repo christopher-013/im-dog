@@ -32,6 +32,8 @@ export const CARS = {
       /** Where the unit sits (car space), and its face's size (m). */
       at: [0.06, 0.66, 0.6] as const, size: [0.4, 0.3] as const,
     },
+    /** The Inside view on the road: from between the seats (the flux capacitor behind), over the time circuits. */
+    cabinView: { pos: [0, 1.17, -0.32] as const, look: [0.04, 0.72, 0.62] as const, fov: 62 },
     /** The flux capacitor surges (brighter, faster, more arcs) as the cockpit scene reaches it: from, to (s). */
     fluxSurge: [4.6, 6.6] as const,
     /**

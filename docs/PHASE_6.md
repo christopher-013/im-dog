@@ -167,6 +167,8 @@ doors (both swing open to greet). Rides now draw from a shuffled round of all th
 Follow-up the same day: the black car reshaped after the owner's photos (long hood, far-back raked windshield, bubble
 hatch, beak, flared arches), and **cockpit scenes** as the drive begins: KITT's voice box talking and its dash and yoke;
 the DeLorean's time circuits being set (Nov 05 1955 06:00 / today / Oct 26 1985 01:21) and its flux capacitor surging.
+Then an **Inside** view for every car, a camera tour giving all five views even time, and a cleaner phone HUD (no Change
+View button; Head Home at the bottom centre).
 
 > **Built 2026-10-17.** How it plays: `ACTIVITIES.md` → "Going for a ride"; controls: `CONTROLS.md`. Differences from
 > the plan below: he hops in through the passenger's front door (not a falcon-wing door); the camera shots are his

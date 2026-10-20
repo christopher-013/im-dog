@@ -274,6 +274,17 @@ export class CoastDrive {
     return true;
   }
 
+  /**
+   * About how many seconds of the drive are left from here: the rest of the slow street out of the neighbourhood, the
+   * coast at cruising speed, and a little for the easing to a stop at the top (for the camera tour's even shares;
+   * measured: about 12 s a view, all five, in each car).
+   */
+  get remainingSeconds(): number {
+    const left = this.path.length - this.distance;
+    const street = Math.min(left, Math.max(0, this.departure.joinDistance + 5 - this.distance));
+    return street / DEPARTURE_HOME.street.speed + (left - street) / SPEED.cruise + Math.min(2, left / 30);
+  }
+
   /** Roughly how long the whole drive takes at the usual speeds (s). */
   get expectedDuration(): number {
     return this.path.length / SPEED.cruise + SPEED.ease + 6 + (this.car.hover?.revealSeconds ?? 0) + (this.car.intro?.seconds ?? 0) * 0.7 +

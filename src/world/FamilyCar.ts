@@ -30,6 +30,7 @@ import { CARS } from '../config/cars';
 import { RIDE } from '../config/ride';
 import type { RideCar } from './RideCar';
 import { familyCarPlate } from './familyCarPlate';
+import { familyCenterScreen, familyClusterScreen } from './familyCarScreens';
 
 /**
  * The family car (Phase 6, D34): an original, code-built black electric SUV modelled on the family's own Model X
@@ -61,6 +62,8 @@ export class FamilyCar implements RideCar {
   readonly seats = FamilyCar.SEATS;
   readonly window = FamilyCar.WINDOW;
   readonly headOut = RIDE.dogInCar.headOut;
+  /** The Inside view on the road: from behind the front seats, between them, to the dash and its screens. */
+  readonly cabinView = { pos: [0, 1.45, -0.2], look: [0, 1.0, 1.1], fov: 62 } as const;
   private readonly passengerDoor = new Group();
   private readonly driverDoor = new Group();
   private readonly passengerWindow: Mesh;
@@ -139,6 +142,20 @@ export class FamilyCar implements RideCar {
     }
     const wheel = this.add(this.geometry(new TorusGeometry(0.17, 0.022, 8, 24)), trim, this.object, [FamilyCar.SEATS.driver.x, 1.03, 0.9], [-1.0, 0, 0]);
     wheel.name = 'steering wheel';
+    // The tall centre display over the dash (a map of the coast and the route), and the little cluster behind the wheel.
+    for (const [name, art, size, at, tilt] of [
+      ['Centre screen', familyCenterScreen(), [0.26, 0.35], [0, 1.08, 0.88], -0.35],
+      ['Driver cluster', familyClusterScreen(), [0.22, 0.07], [FamilyCar.SEATS.driver.x, 1.06, 0.97], -0.4],
+    ] as const) {
+      if (art) this.textures.push(art);
+      const lit = this.material(new MeshBasicMaterial({ color: art ? '#ffffff' : '#15181c', map: art, toneMapped: false }));
+      const screen = this.add(this.geometry(new PlaneGeometry(...size)), lit, this.object, [...at]);
+      screen.rotation.order = 'YXZ'; screen.rotation.set(tilt, Math.PI, 0);
+      screen.name = name; screen.castShadow = screen.receiveShadow = false;
+      // A black bezel just behind it (a box looks the same turned about y, so only the tilt, mirrored).
+      this.add(this.geometry(new BoxGeometry(size[0] + 0.02, size[1] + 0.02, 0.02)), trim, this.object,
+        [at[0], at[1] + Math.sin(tilt) * 0.012, at[2] + Math.cos(tilt) * 0.012], [-tilt, 0, 0]);
+    }
 
     for (const side of [1, -1] as const) {
       // Chrome along the bottom of the windows (the fixed stretches; the doors carry their own).

@@ -332,7 +332,7 @@ export class RideDirector {
       this.hooks.fade(Math.min(1, this.homeFade / RIDE.headHomeFade));
       if (this.homeFade >= RIDE.headHomeFade) { this.endDrive(); return; }
     } else this.hooks.fade(Math.max(1 - this.time / 1.2, smoothRange(40, 8, left)));
-    const view = this.cameraTour.update(dt, !drive.introPlaying && !drive.revealingHover && !this.homeRequested, drive.progress, drive.views);
+    const view = this.cameraTour.update(dt, !drive.introPlaying && !drive.revealingHover && !this.homeRequested, drive.remainingSeconds, drive.views);
     if (view) drive.setView(view, RIDE.cameraTour.blend);
     if (auto && dt > 0) {
       this.autoBarkIn -= dt;

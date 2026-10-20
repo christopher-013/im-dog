@@ -15,7 +15,7 @@ import { tourViews } from './RideCameraTour';
 describe('going for a ride: the ride itself (Phase 6)', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it.each(CAR_IDS)('%s: a full ride shows every view once for at least 12 seconds, even with FSD off', async (id) => {
+  it.each(CAR_IDS)('%s: a full ride shows every view once, each for an even share, even with FSD off', async (id) => {
     vi.spyOn(Math, 'random').mockReturnValue(0.5); // deterministic gaze/pant timing in the face-shot assertion
     const scene = new Scene(), garage = new GarageView(id);
     const dog = new ToonMokeVisual(), human = new StylizedHumanVisual();
@@ -37,20 +37,22 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
       updateDog(dt, state);
     });
     const dt = 1 / 30;
+    const tour = tourViews(drive.views);
+    const durations: Partial<Record<DriveView, number>> = Object.fromEntries(tour.map((v) => [v, 0]));
+    // Only the tour's own time (not the cockpit scene or the takeoff shot, which come first).
+    const count = (view: DriveView) => { if (!drive.introPlaying && !drive.revealingHover) durations[view] = (durations[view] ?? 0) + dt; };
     // Takeoff and the slow neighborhood start stay with the opening shot, not a seven-second cycle.
-    for (let i = 0; i < 10 * 30; i++) ride.update(dt, 16 / 9, false);
+    for (let i = 0; i < 10 * 30; i++) { const view = drive.view; ride.update(dt, 16 / 9, false); count(view); }
     expect(setView).not.toHaveBeenCalled();
     const pausedCamera = drive.camera.position.clone();
     for (let i = 0; i < 100; i++) ride.update(0, 16 / 9, false);
     expect(drive.camera.position.equals(pausedCamera)).toBe(true);
-    const tour = tourViews(drive.views);
-    const durations: Partial<Record<DriveView, number>> = Object.fromEntries(tour.map((v) => [v, v === 'alongside' ? 10 : 0]));
     let sinceChange = 0;
     // Run through actual arrival (not an estimated ride time) to prove all four shots fit in BOTH cars' trips.
     for (let i = 0; i < 180 * 30 && ride.driving; i++) {
       const previous = drive.view;
       ride.update(dt, 16 / 9, false);
-      durations[previous] = (durations[previous] ?? 0) + dt;
+      count(previous);
       sinceChange = previous === drive.view ? sinceChange + dt : 0;
       if (ride.driving && drive.view === 'face' && sinceChange > RIDE.cameraTour.blend + 1) {
         drive.scene.updateMatrixWorld(true);
@@ -60,10 +62,13 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
       }
     }
     expect(ride.driving).toBe(false);
-    // Four shots, once each: the black car tours Inside in Behind's place.
+    // Every view once, Inside included, in every car.
     expect(setView.mock.calls.map(([view]) => view)).toEqual(tour.slice(1));
-    expect(tour.includes('cabin')).toBe(id === 'kitt');
-    for (const seconds of Object.values(durations)) expect(seconds).toBeGreaterThanOrEqual(12);
+    expect(tour).toEqual(['alongside', 'face', 'cabin', 'chase', 'drone']);
+    // Even shares (owner, 2026-10-20): every view a fair while, none hogging the drive.
+    const shares = Object.values(durations);
+    for (const seconds of shares) expect(seconds).toBeGreaterThanOrEqual(8);
+    expect(Math.max(...shares)).toBeLessThan(Math.min(...shares) * 1.25);
     expect(setView.mock.calls.every(([, blend]) => blend === RIDE.cameraTour.blend)).toBe(true);
     expect(happyFace).toBe(true);
     // A fresh trip resets the schedule; manual changes still receive their full hold.
@@ -73,6 +78,8 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     await Promise.resolve();
     const secondDrive = (ride as unknown as { drive: CoastDrive }).drive;
     expect(secondDrive.view).toBe('alongside');
+    // (A tap during the cockpit scene or takeoff skips that first; then it changes the view.)
+    while (secondDrive.introPlaying || secondDrive.revealingHover) ride.nextView();
     ride.nextView();
     const manual = secondDrive.view;
     for (let i = 0; i < (RIDE.cameraTour.manualHold - 0.5) * 30; i++) ride.update(dt, 16 / 9, false);

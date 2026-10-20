@@ -64,11 +64,12 @@ export const RIDE = {
   requestSpeed: 2.05,
   /** Playful bark pairs after Go On A Drive, until harness preparation begins (seconds between barks). */
   excitedBarks: [0.45, 1.8] as const,
-  /** One view per quarter of the route, no repeated cycling. Manual choices temporarily take priority. */
+  /**
+   * Every view once, each for an equal share of the time on the road (owner, 2026-10-20: every car has Inside now), no
+   * repeated cycling. Manual choices temporarily take priority.
+   */
   cameraTour: {
-    views: ['alongside', 'face', 'chase', 'drone'] as const,
-    /** A car with an Inside view (the black car): Inside instead of Behind (Behind is still on Change View). */
-    cabinViews: ['alongside', 'face', 'cabin', 'drone'] as const,
+    views: ['alongside', 'face', 'cabin', 'chase', 'drone'] as const,
     manualHold: 14, blend: 2.4, manualBlend: 0.9,
   },
   /** They set off but can't get to him or the door: give up after this long. */

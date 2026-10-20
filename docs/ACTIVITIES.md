@@ -164,6 +164,13 @@ console, on the family-room mantel and on the patio; paper bats strung over the 
 timings: `config/halloween.ts`.
 
 ### Going for a ride (`RideOffer.ts`, `ride/`; Phase 6, D33)
+Owner request, 2026-10-20 (Inside for every car): the DeLorean (over its time circuits, the flux capacitor behind)
+and the family SUV (its tall centre screen with a map of the coast and the route to Torrey Pines, and a little cluster
+behind the wheel, drawn in code) have the Inside view too. The camera tour shows all five views on every ride, each for
+an even share of the time on the road (the drive estimates the seconds it has left: `CoastDrive.remainingSeconds`;
+about 12 s a view in each car), so all are seen before the drive ends. On phones the paw changes the view (no Change
+View button) and Head Home sits at the bottom centre.
+
 Owner request, 2026-10-20 (cockpit scenes): as the drive begins, the car rolls slowly out of the driveway while the
 camera is inside. **Black talking car** (7.6 s): its voice box talking close up, then over to the yoke and the lit dash,
 and back for the road through the windshield, gliding into Alongside. **DeLorean** (9.4 s, stopping at the end of the

@@ -42,7 +42,7 @@ import { palmGeometry, type PalmKind } from './palms';
 import { Traffic } from './traffic';
 import { hoverAltitude, hoverDeployment } from './hover';
 import { departureHome } from './departureHome';
-import { DEPARTURE_HOME } from '../config/ride';
+import { DEPARTURE_HOME, RIDE } from '../config/ride';
 import { departureRoute } from './departureRoute';
 
 /**
@@ -56,7 +56,7 @@ export type DriveView = (typeof DRIVE_VIEWS)[number];
 /** Each shot in the car's space (+z ahead, −x the passenger side, the sea's): where the camera is, what it looks at. */
 const SHOTS: Record<DriveView, { pos: readonly [number, number, number]; look: readonly [number, number, number]; fov: number }> = {
   alongside: { pos: [-2.55, 1.6, -2.6], look: [-0.9, 1.15, 6], fov: 55 },
-  face: { pos: [-1.75, 1.2, 2.0], look: [-1.12, 1.4, 0.45], fov: 46 },
+  face: { pos: [-2.35, 1.35, 1.15], look: [-1.12, 1.4, 0.45], fov: 42 },
   chase: { pos: [-1.0, 3.1, -9.5], look: [-0.7, 1.3, 9], fov: 55 },
   drone: { pos: [-17, 16, -15], look: [-6, 0, 22], fov: 55 },
 };
@@ -66,9 +66,6 @@ const SHOTS: Record<DriveView, { pos: readonly [number, number, number]; look: r
  * in under a minute (owner, 2026-10-17: "about 20sec shorter" than at 18.5, every stretch of it kept).
  */
 export const SPEED = { cruise: 25.5, ease: 5 } as const;
-/** Changing the view glides over this long (s). */
-const VIEW_BLEND = 0.9;
-
 /**
  * The sunset (owner, 2026-10-17: "during sunset at the golden hour, and the drive ends just as the sun is setting"):
  * the way the sun is (x, z: southwest, out over the sea, ahead and to the right going south, so it's in view), how high it is at
@@ -147,8 +144,9 @@ export class CoastDrive {
   /** The land's heights as built (the road cut in): for keeping the camera above it. */
   private ground!: { minX: number; minZ: number; step: number; nx: number; nz: number; h: Float32Array };
   /** The view it's gliding from (car space), and how far into the glide (0..1; 1 = there). */
-  private readonly from = { pos: new Vector3(), look: new Vector3(), fov: 55 };
+  private readonly from = { pos: new Vector3(), look: new Vector3(), fov: 55, clearance: 0.3 };
   private blend = 1;
+  private blendSeconds: number = RIDE.cameraTour.manualBlend;
 
   constructor(car: CarId = 'family') {
     this.car = createCar(car);
@@ -235,12 +233,16 @@ export class CoastDrive {
     this.setView(DRIVE_VIEWS[(DRIVE_VIEWS.indexOf(this.view) + 1) % DRIVE_VIEWS.length]!);
   }
 
-  setView(view: DriveView): void {
+  setView(view: DriveView, blendSeconds: number = RIDE.cameraTour.manualBlend): void {
     if (view === this.view) return;
-    this.currentShot(this.from.pos, this.from.look);
+    // Sample into scratch vectors first: manual input can interrupt a still-blending automatic shot.
+    this.currentShot(tmpA, tmpB);
+    this.from.pos.copy(tmpA); this.from.look.copy(tmpB);
     this.from.fov = this.camera.fov;
+    this.from.clearance = this.cameraClearance();
     this.view = view;
     this.blend = 0;
+    this.blendSeconds = blendSeconds;
   }
 
   /** Head home now: straight on to the last stretch. */
@@ -290,7 +292,7 @@ export class CoastDrive {
     this.animateBirds();
     this.life.update(dt, this.time);
     this.traffic.update(dt, this.distance);
-    this.blend = Math.min(1, this.blend + dt / VIEW_BLEND);
+    this.blend = Math.min(1, this.blend + dt / this.blendSeconds);
     this.camera.aspect = aspect;
     this.aim();
   }
@@ -339,11 +341,12 @@ export class CoastDrive {
       pos.y += dy; look.y += dy;
       pos.z += dz; look.z += dz;
     }
-    let fov = shot.fov;
+    // A portrait phone still needs enough horizontal room for the face as he turns toward the scenery.
+    let fov = this.view === 'face' ? fitVerticalFov(shot.fov, 40, this.camera.aspect, 95) : shot.fov;
     if (this.blend < 1) {
       const k = this.blend * this.blend * (3 - 2 * this.blend);
       pos.lerpVectors(this.from.pos, pos, k); look.lerpVectors(this.from.look, look, k);
-      fov = this.from.fov + (shot.fov - this.from.fov) * k;
+      fov = this.from.fov + (fov - this.from.fov) * k;
     }
     const hover = this.car.hover;
     if (hover && this.time < hover.revealSeconds + hover.revealBlend) {
@@ -356,6 +359,13 @@ export class CoastDrive {
     return fov;
   }
 
+  /** Blend the drone's terrain clearance too, so a slow glide doesn't jump ten metres at its start/end. */
+  private cameraClearance(): number {
+    const target = this.view === 'drone' ? 10 : 0.3;
+    const k = this.blend * this.blend * (3 - 2 * this.blend);
+    return this.from.clearance + (target - this.from.clearance) * k;
+  }
+
   private aim(): void {
     const car = this.car.object;
     car.updateMatrixWorld();
@@ -364,7 +374,7 @@ export class CoastDrive {
     car.localToWorld(tmpA);
     car.localToWorld(tmpB);
     // Never under the ground (the drone over the bluffs, a shot on a bank): lifted clear of it.
-    const clear = this.groundAt(tmpA.x, tmpA.z) + (this.view === 'drone' ? 10 : 0.3);
+    const clear = this.groundAt(tmpA.x, tmpA.z) + this.cameraClearance();
     if (tmpA.y < clear) tmpA.y = clear;
     cam.position.copy(tmpA);
     cam.up.copy(UP);

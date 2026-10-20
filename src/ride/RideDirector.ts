@@ -8,6 +8,7 @@ import type { MokeVisual } from '../player/MokeVisual';
 import type { GarageView } from '../world/GarageView';
 import { GARAGE } from '../world/home/layout';
 import type { CoastDrive, DriveView } from './CoastDrive';
+import { RideCameraTour } from './RideCameraTour';
 
 /** The views' names on the Change View button. */
 const VIEW_NAMES: Readonly<Record<DriveView, string>> = { alongside: 'Alongside', face: 'His face', chase: 'Behind', drone: 'Drone' };
@@ -86,7 +87,7 @@ export class RideDirector {
   private readonly humanAnim = new HumanAnimationController();
   private readonly humanPose = createVisualState();
   private headOut = true;
-  private autoViewIn = 15;
+  private readonly cameraTour = new RideCameraTour();
   private autoBarkIn = 20;
   /** A happy pant now and then with his head out: when the next one starts, how long it lasts, and how far out it is. */
   private pantIn = 3;
@@ -126,6 +127,8 @@ export class RideDirector {
     this.homeFade = 0;
     this.said.clear();
     this.headOut = true;
+    this.cameraTour.reset();
+    this.autoBarkIn = 20;
     this.pantIn = RIDE.pant.every[0];
     this.pantLeft = 0;
     this.pant = 0;
@@ -160,7 +163,9 @@ export class RideDirector {
   }
 
   nextView(): void {
-    this.drive?.nextView();
+    if (!this.drive) return;
+    this.drive.nextView();
+    this.cameraTour.manual();
   }
 
   /** The view on the road, as the Change View button names it. */
@@ -189,8 +194,8 @@ export class RideDirector {
   }
 
   /**
-   * Each rendered frame while it's active (dt 0 when paused). `auto`: FSD's playing, so the ride changes the view and
-   * barks now and then by itself.
+   * Each rendered frame while it's active (dt 0 when paused). Views tour on every ride; `auto` adds FSD's occasional
+   * playful bark animation.
    */
   update(dt: number, aspect: number, auto: boolean): void {
     if (!this.active) return;
@@ -324,10 +329,10 @@ export class RideDirector {
       this.hooks.fade(Math.min(1, this.homeFade / RIDE.headHomeFade));
       if (this.homeFade >= RIDE.headHomeFade) { this.endDrive(); return; }
     } else this.hooks.fade(Math.max(1 - this.time / 1.2, smoothRange(40, 8, left)));
+    const view = this.cameraTour.update(dt, !drive.revealingHover && !this.homeRequested, drive.progress);
+    if (view) drive.setView(view, RIDE.cameraTour.blend);
     if (auto && dt > 0) {
-      this.autoViewIn -= dt;
       this.autoBarkIn -= dt;
-      if (this.autoViewIn <= 0) { drive.nextView(); this.autoViewIn = 12 + Math.random() * 8; }
       if (this.autoBarkIn <= 0) { this.dogAnim.bark(); this.autoBarkIn = 18 + Math.random() * 15; }
     }
     // Looking around: where the player turns his head; left alone (or with FSD playing), he takes in the beach and

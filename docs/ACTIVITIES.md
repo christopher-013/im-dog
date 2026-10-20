@@ -184,8 +184,10 @@ asphalt road starting at the garage. Both cars start on the concrete driveway, t
 stays on the paving. `departureRoute.ts` supplies the continuous driveway/turn prefix; the coast remains scripted.
 The cabin flux capacitor has a blue-white animated Y: charge travels toward the center, with a breathing glow
 and small electrical filaments. It runs in boarding, the coast scene and return; pause freezes its clock.
-After the door's **Go On A Drive** request, the dog gives playful bark pairs while waiting and boarding,
-stopping on coast-drive entry, cancellation or pause. These are presentation barks, not NPC/activity events.
+After the door's **Go On A Drive** request, the dog gives playful bark pairs while awaiting the human.
+They stop as soon as the human arrives and starts harness preparation (before the harness is finished), and
+do not resume during the leash walk/boarding. Cancellation resets them; pause freezes the clock.
+These are presentation barks, not NPC/activity events; the player's ordinary bark control still works.
 The SUV still drives normally. Optional `RideCar.hover` presentation data/animation keeps the shared ride free
 of car-id gameplay branches. **Head Home** is directly on the ride HUD as well as the pause menu; it fades into
 the existing return sequence. No free flight, physics simulation or time travel.
@@ -223,8 +225,16 @@ ride?"**
   2026-10-17). **Bark**, put his **head in or out** (Jump), **look
   around** (turns his head; left alone he looks about at the beach himself), **change the view** with the paw or
   Trick, or the **Change View** button that takes FSD's place on the road (alongside, his face, behind, the drone;
-  always on him, third person; the view glides over); the pause screen's **HEAD HOME** skips to the end. It's
-  **golden hour**: the sun low over the sea ahead and to the right, sinking as they go and setting on the horizon
+  always on him, third person; the view glides over); the pause screen's **HEAD HOME** skips to the end.
+  An automatic tour runs on **every ride**, not just FSD: one pass alongside → face → behind → drone, one view per
+  quarter of the route, with 2.4-second glides. The opening includes the wheel-deployment reveal; the last view
+  holds through arrival, without looping. This adapts to each car's takeoff/neighborhood timing; full-ride tests
+  verify all four views last at least 12 seconds in both cars. Manual Change View keeps its quicker glide and
+  holds that choice for 14 seconds before the route schedule resumes; pause/return freeze the tour. Manual
+  overrides or ending the ride early naturally take priority over completing the automatic tour.
+  Face shots look more directly through the passenger window, with portrait-safe horizontal framing while he
+  enjoys the wind, looks about and occasionally pants. Drone clearance glides too (no sudden vertical jump).
+  It's **golden hour**: the sun low over the sea ahead and to the right, sinking as they go and setting on the horizon
   just as the drive ends (the light, the sky, the haze and the clouds warm and darken with it). The cars ahead stay
   ahead (a little quicker than us); oncoming cars come round out of sight. The original song "Sundown Run" plays,
   synthwave at 80 BPM: a deep kick on every beat, rolling sixteenths over a pumping sub, a big ringing snare (it follows the Music setting;
@@ -234,8 +244,8 @@ ride?"**
   (it opens and shuts), up go the falcon doors, he hops out, they walk back in, the door shuts and locks,
   the harness comes off: "Best ride ever, Moke!". **CAR + WINDOW = WIND IN MY EARS.** The human goes back to their day.
 - While they're out the house stands still (the doorbell can't ring for an empty house).
-- **FSD** says yes most of the time (85%), stands still for the harness, and on the road the views change and he
-  barks by himself.
+- **FSD** says yes most of the time (85%), stands still for the harness, and adds occasional playful bark
+  animations on the road. The automatic views run with FSD on or off.
 
 ### Dinner Helper (`KitchenBeg.ts`, owner-requested addition, 2026-09-27)
 While the human chops carrots at the island (meal prep or the prep stage of dinner), stand within 1.15 m with an

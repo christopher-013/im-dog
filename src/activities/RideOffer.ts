@@ -81,6 +81,11 @@ export class RideOffer extends DogActivity {
     return this.running && this.step === 'ask' && this.said;
   }
 
+  /** Playful request barks only until the human arrives and starts harness preparation, not through boarding. */
+  get anticipatingRide(): boolean {
+    return this.requested && (this.state === 'AVAILABLE' || (this.running && this.step === 'approach'));
+  }
+
   /** The harness is on and they're walking him to the Garage door: he follows on the leash. */
   get leading(): boolean {
     return this.running && this.step === 'lead';

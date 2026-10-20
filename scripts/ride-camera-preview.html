@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ride camera visual check — development only</title>
+<style>body{margin:0}canvas{display:block}nav{position:fixed;top:12px;left:12px;background:#fffe;padding:12px;border-radius:8px;font:14px system-ui}select,input{margin:4px}output{display:block}</style>
+<nav><label>Car <select id="car"><option value="delorean">DeLorean</option><option value="family">Family SUV</option></select></label><label>Dog <select id="dog"></select></label><label>Drive time <input id="time" type="range" min="0" max="70" step="0.1" value="35"></label><output></output></nav>
+<script type="module">
+import { Scene, WebGLRenderer } from 'three';
+import { DOGS } from '../src/config/dogs.ts';
+import { GarageView } from '../src/world/GarageView.ts';
+import { ToonMokeVisual } from '../src/player/ToonMokeVisual.ts';
+import { StylizedHumanVisual } from '../src/human/StylizedHumanVisual.ts';
+import { Harness } from '../src/player/Harness.ts';
+import { RideDirector } from '../src/ride/RideDirector.ts';
+import * as coast from '../src/ride/CoastDrive.ts';
+const renderer = new WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;document.body.append(renderer.domElement);
+const car=document.querySelector('#car'),dogSelect=document.querySelector('#dog'),slider=document.querySelector('#time'),output=document.querySelector('output');
+for(const profile of DOGS){const option=document.createElement('option');option.value=profile.id;option.textContent=profile.name;dogSelect.append(option);}dogSelect.value='moke';
+let ride,garage,dog,human,harness,revision=0;
+async function seek(){
+  const run=++revision;
+  ride?.dispose();garage?.dispose();dog?.dispose();human?.dispose();harness?.dispose();
+  const scene=new Scene(),profile=DOGS.find(d=>d.id===dogSelect.value);
+  garage=new GarageView(car.value);dog=new ToonMokeVisual(profile.look);human=new StylizedHumanVisual();
+  scene.add(garage.object,dog.object,human.object);harness=new Harness(profile.look.harness);harness.wear(dog,null);
+  ride=new RideDirector({scene,garage,dog,human},{loadDrive:async()=>coast,fade(){},music(){},say(){},leash(hand){harness.wear(dog,hand);},harnessOff(){harness.takeOff();},done(){}});
+  ride.start();
+  for(let i=0;i<19*30;i++)ride.update(1/30,innerWidth/innerHeight,false);
+  await Promise.resolve();if(run!==revision)return;
+  // Exercise the real director's automatic tour with FSD OFF, then freeze it for inspection.
+  let time=0,target=Number(slider.value);
+  while(time<target){const dt=Math.min(1/30,target-time);ride.update(dt,innerWidth/innerHeight,false);time+=dt;}
+  output.textContent=`${time.toFixed(1)}s · ${ride.viewName} · FSD off · paused for inspection`;
+}
+slider.onchange=seek;dogSelect.onchange=seek;car.onchange=()=>{slider.value=car.value==='family'?'30':'35';seek();};
+addEventListener('resize',()=>renderer.setSize(innerWidth,innerHeight));
+function frame(){if(ride){ride.update(0,innerWidth/innerHeight,false);ride.render(renderer);}requestAnimationFrame(frame);}
+await seek();requestAnimationFrame(frame);
+</script></html>

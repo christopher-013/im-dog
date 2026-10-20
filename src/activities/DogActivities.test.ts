@@ -28,6 +28,7 @@ import { TreatHunt } from './TreatHunt';
 import { DoorDelivery } from './DoorDelivery';
 import { RideOffer } from './RideOffer';
 import { RIDE } from '../config/ride';
+import { RideExcitement } from '../ride/RideExcitement';
 import { KitchenBeg } from './KitchenBeg';
 import { DinnerBeg } from './DinnerBeg';
 import { CourseReward } from './CourseReward';
@@ -561,21 +562,33 @@ describe('Going for a ride: the offer (real house and household human)', () => {
     expect(offer.holdsDog).toBe(true);
     expect(offer.waitingForHuman).toBe(true);
     expect(offer.garageRide.enabled).toBe(false);
-    let hurried = false;
+    let hurried = false, quietForHarness = false, barks = 0;
+    const excitement = new RideExcitement();
+    expect(offer.anticipatingRide).toBe(true);
     for (let i = 0; i < 40 / DT && boarded === 0; i++) {
       w.step(director);
+      const bark = excitement.update(DT, offer.anticipatingRide);
+      if (bark) barks++;
+      // Already quiet while held for the harness, BEFORE its completion callback, not just once in the car.
+      if (offer.running && offer.waitingForHuman && !offer.anticipatingRide && harness.length === 0) quietForHarness = true;
+      if (quietForHarness) expect(bark).toBe(false);
       hurried ||= w.human.brain.intent.speed === RIDE.requestSpeed;
       expect(offer.asking).toBe(false);
       expect(offer.interactable.enabled).toBe(false);
     }
     expect(boarded).toBe(1);
     expect(hurried).toBe(true);
+    expect(barks).toBeGreaterThan(0);
+    expect(quietForHarness).toBe(true);
+    expect(offer.anticipatingRide).toBe(false);
+    for (let i = 0; i < 10 / DT; i++) expect(excitement.update(DT, offer.anticipatingRide)).toBe(false);
     expect(harness).toEqual([true]);
     expect(w.said).toContain(RIDE.lines.asked);
     expect(w.said).not.toContain(RIDE.lines.ask);
     offer.home();
     for (let i = 0; i < 3 / DT; i++) w.step(director);
     expect(offer.holdsDog).toBe(false);
+    expect(offer.anticipatingRide).toBe(false);
     expect(offer.garageRide.enabled).toBe(true);
     // A plain bark there asks too; a bark anywhere else doesn't.
     offer.noteBark({ x: -2, y: 0, z: -2 });

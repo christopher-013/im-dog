@@ -52,6 +52,47 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Codex longer ride shots (2026-10-19; **owner approved commit/push to main**, owner refinement):
+- Replaced the seven-second repeating camera cycle with one pass through alongside → face → behind → drone.
+  Each view covers one quarter of the actual route, adapting to different takeoff/neighborhood timing in both
+  cars. Only three automatic transitions; the final drone shot stays through arrival. Kept the 2.4-second
+  glides, pause/takeoff/return guards and manual controls (now a 14-second hold). Manual overrides and an early
+  Head Home take priority over completing the tour. No change to route speed or trip duration.
+- Both-car full-ride regression runs through actual arrival with FSD off: all four views shown exactly once,
+  each held at least 12 seconds, happy window pose retained, pause safe, next-trip reset/manual override intact.
+  Updated the development preview's default face-shot times and scrub range to match the slower schedule.
+- Changed: `config/ride.ts`, `ride/RideCameraTour.ts` and test, `ride/RideDirector.ts` and test,
+  `scripts/ride-camera-preview.html`, activity/control docs and this handoff. Earlier harness/framing changes
+  below are included in the same owner-approved commit. Check deployment separately from Git push success.
+- Verified: full suite **756 tests / 109 files**, production build/strict typecheck, private-reference guard
+  (**31 files / 18 references**, none leaked), and `git diff --check`. Browser preview: DeLorean face at 35 s,
+  behind at 50 s, drone at 65 s; SUV face at 30 s. Console clean. No physical-device/performance/listening claim.
+
+Codex harness bark cutoff + gentle ride camera tour (2026-10-19; **included in the owner-approved commit above**, owner request):
+- Fixed the committed door request's bark gate: `RideOffer.anticipatingRide` ends when the human reaches the dog
+  and starts harness preparation, before fitting finishes. No more automatic request barks during the leash
+  walk, boarding or coast scene. Manual barking is preserved; cancellation resets the presentation timer.
+- Every ride now tours alongside → face → behind → face → drone → face, with 7-second shots and 2.4-second
+  glides. No FSD requirement. Takeoff finishes first; pause and the return fade freeze the tour. Manual view
+  changes retain their quicker transition, then hold 12 seconds. New trips reset the clock.
+- Moved the face camera outboard of the passenger window for a more direct, unobstructed face shot; portrait
+  FOV preserves horizontal room for head turns. Existing happy wind/wag/look/pant animation is retained, as is
+  the player's head-in/out choice. Drone terrain clearance and interrupted camera blends no longer jump.
+- Added a development-only `scripts/ride-camera-preview.html`: actual `RideDirector`/cast, FSD off, scrub and
+  freeze any automatic shot for both cars and all dogs. This helper is not a production build entry.
+- Verification: **756 tests / 109 files**, production build/strict typecheck, private-reference guard
+  (**31 files / 18 references**, none leaked), and `git diff --check`. Real-house regression proves request
+  barking ends before harness completion; both-car integration proves the tour works with FSD off, repeats
+  face shots and respects pause/manual override. Framing tests cover all 3 dogs × both cars × portrait/landscape
+  and autonomous yaw extremes, including interruption/drone continuity.
+- Browser: played door request → boarding → takeoff → automatic ride views with FSD off, observed the bark count
+  stay fixed through boarding, and paused/resumed the ride. Inspected settled actual-director face shots in
+  both cars with the new preview (Moke's face and occasional happy pant visible); preview console clean.
+  No physical-phone/controller performance or listening claim. Final `moke.glb` is still carried forward.
+- Files: `activities/RideOffer.ts` + real-house test, `core/Game.ts`, `config/ride.ts`, `ride/RideExcitement.ts`,
+  new `ride/RideCameraTour.ts` + test, `ride/RideDirector.ts` + test, `ride/CoastDrive.ts`, `ride/dogWindow.test.ts`,
+  the development preview, activity/control docs and this handoff. No decision or external asset change.
+
 Codex distinct neighbors + background homes (2026-10-19; **owner approved commit/push to main**, owner references):
 - Preserved the player's referenced façade and driveway route. Replaced scaled copies of it with six different
   neighbor architectures: Craftsman porch/stone bases/railings, tiled villa/arched door, ivory twin gables,

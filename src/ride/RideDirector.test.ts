@@ -1,5 +1,5 @@
 import { Quaternion, Scene, SkinnedMesh, Vector3 } from 'three';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CAR_IDS } from '../config/cars';
 import { RIDE } from '../config/ride';
 import { MOKE_DOG_LOOK } from '../config/dogLooks';
@@ -12,6 +12,71 @@ import type { CoastDrive } from './CoastDrive';
 import { RideDirector } from './RideDirector';
 
 describe('going for a ride: the ride itself (Phase 6)', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each(CAR_IDS)('%s: a full ride shows every view once for at least 12 seconds, even with FSD off', async (id) => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.5); // deterministic gaze/pant timing in the face-shot assertion
+    const scene = new Scene(), garage = new GarageView(id);
+    const dog = new ToonMokeVisual(), human = new StylizedHumanVisual();
+    scene.add(garage.object, dog.object, human.object);
+    const module = await import('./CoastDrive');
+    const ride = new RideDirector({ scene, garage, dog, human }, {
+      loadDrive: async () => module, done() {}, fade() {}, music() {}, say() {}, leash() {}, harnessOff() {},
+    });
+    ride.start();
+    for (let i = 0; i < 19 * 30; i++) ride.update(1 / 30, 16 / 9, false);
+    await Promise.resolve();
+    const drive = (ride as unknown as { drive: CoastDrive }).drive;
+    const setView = vi.spyOn(drive, 'setView');
+    let happyFace = false;
+    const updateDog = dog.update.bind(dog);
+    vi.spyOn(dog, 'update').mockImplementation((dt, state) => {
+      // VisualState is reused each frame: inspect at the call, don't retain its mutable reference.
+      happyFace ||= drive.view === 'face' && state.wind === 1 && state.tailWag >= 0.9 && state.tongue > 0.8;
+      updateDog(dt, state);
+    });
+    const dt = 1 / 30;
+    // Takeoff and the slow neighborhood start stay with the opening shot, not a seven-second cycle.
+    for (let i = 0; i < 10 * 30; i++) ride.update(dt, 16 / 9, false);
+    expect(setView).not.toHaveBeenCalled();
+    const pausedCamera = drive.camera.position.clone();
+    for (let i = 0; i < 100; i++) ride.update(0, 16 / 9, false);
+    expect(drive.camera.position.equals(pausedCamera)).toBe(true);
+    const durations = { alongside: 10, face: 0, chase: 0, drone: 0 };
+    let sinceChange = 0;
+    // Run through actual arrival (not an estimated ride time) to prove all four shots fit in BOTH cars' trips.
+    for (let i = 0; i < 180 * 30 && ride.driving; i++) {
+      const previous = drive.view;
+      ride.update(dt, 16 / 9, false);
+      durations[previous] += dt;
+      sinceChange = previous === drive.view ? sinceChange + dt : 0;
+      if (ride.driving && drive.view === 'face' && sinceChange > RIDE.cameraTour.blend + 1) {
+        drive.scene.updateMatrixWorld(true);
+        const head = dog.attachments.head!.getWorldPosition(new Vector3()).project(drive.camera);
+        expect(Math.abs(head.x)).toBeLessThan(0.95);
+        expect(Math.abs(head.y)).toBeLessThan(0.95);
+      }
+    }
+    expect(ride.driving).toBe(false);
+    expect(setView.mock.calls.map(([view]) => view)).toEqual(['face', 'chase', 'drone']);
+    for (const seconds of Object.values(durations)) expect(seconds).toBeGreaterThanOrEqual(12);
+    expect(setView.mock.calls.every(([, blend]) => blend === RIDE.cameraTour.blend)).toBe(true);
+    expect(happyFace).toBe(true);
+    // A fresh trip resets the schedule; manual changes still receive their full hold.
+    for (let i = 0; i < 20 * 30; i++) ride.update(dt, 16 / 9, false);
+    ride.start();
+    for (let i = 0; i < 19 * 30; i++) ride.update(dt, 16 / 9, false);
+    await Promise.resolve();
+    const secondDrive = (ride as unknown as { drive: CoastDrive }).drive;
+    expect(secondDrive.view).toBe('alongside');
+    ride.nextView();
+    const manual = secondDrive.view;
+    for (let i = 0; i < (RIDE.cameraTour.manualHold - 0.5) * 30; i++) ride.update(dt, 16 / 9, false);
+    expect(secondDrive.view).toBe(manual);
+    ride.headHome();
+    ride.dispose(); garage.dispose(); dog.dispose(); human.dispose();
+  }, 60_000);
+
   it.each(CAR_IDS)('%s: Head Home during takeoff/start fades promptly, ignores repeats, pauses safely and restores the parked car', async (id) => {
     const scene = new Scene(), garage = new GarageView(id);
     const dog = new ToonMokeVisual(), human = new StylizedHumanVisual();

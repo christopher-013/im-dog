@@ -1665,10 +1665,9 @@ export class Game {
     this.debug.update(dt);
   }
 
-  /** The committed door request stays excited through boarding, not on the road or on return. */
+  /** The committed door request quiets as soon as the human begins harness preparation. */
   private updateRideExcitement(dt: number): void {
-    const waiting = !!this.rideOffer?.requested && (this.ride?.active
-      ? this.ride.departing : this.rideOffer.holdsDog);
+    const waiting = !!this.rideOffer?.anticipatingRide && !this.ride?.active;
     if (!this.rideExcitement.update(dt, waiting) || !this.moke || !this.barkTimer.tryBark()) return;
     this.audio.play('bark'); // always playful; no NPC/activity bark side effects
     if (this.ride?.active) this.ride.bark();

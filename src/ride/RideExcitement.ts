@@ -1,6 +1,6 @@
 import { RIDE } from '../config/ride';
 
-/** Happy bark pairs while waiting/boarding. Presentation only: no activity bark events. */
+/** Happy bark pairs while awaiting the human, stopping at harness preparation. No activity bark events. */
 export class RideExcitement {
   private left = 0;
   private beat = 0;

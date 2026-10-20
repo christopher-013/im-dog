@@ -122,6 +122,7 @@ When the human asks "want to go for a ride?", **Go for a Ride!** on the paw (E /
 does a bark nearby; walk away or ignore them and it's a no. On the leash to the Garage he walks at their heel by
 himself. At the Garage door (in the living room, left of the TV), **Go On A Drive** (E / A / paw) starts the trip
 directly: the dog waits by the door, the human hurries over and fits the harness, with no second confirmation.
+His playful waiting barks stop as soon as the human begins harness preparation, before the harness is finished.
 A bark there is also a shortcut. The entire door pulses light blue while a drive is available. In the car:
 
 | | Keyboard and mouse | Controller | Touch |
@@ -138,7 +139,11 @@ The DeLorean starts with a short wide-camera takeoff: its wheels fold down into 
 the road with a soft light-blue aura for the rest of the ride. The SUV stays on its wheels. Flight is scripted;
 there are no piloting controls.
 
-With FSD on, he says yes most of the time, and the views change and he barks by himself. Left alone for a few
+Every full ride shows four longer automatic shots: alongside, his face at the window, behind, then drone.
+Each covers a quarter of the route, with 2.4-second glides; the last shot stays until arrival (no repeated loop).
+Change View still works immediately and holds your chosen view for 14 seconds before the route schedule resumes.
+Pause freezes it; Head Home stops the tour. Manual choices and ending early take priority over showing every view.
+With FSD on, he says yes most of the time and barks by himself. Left alone for a few
 seconds, he looks about at the beach and the sea by himself.
 
 ## First play

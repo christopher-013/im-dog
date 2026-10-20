@@ -158,6 +158,12 @@ drawn from a persisted shuffled pair (one SUV, one DeLorean), giving equal turns
 alternation. With browser storage unavailable, each pick is a fair coin. The car never changes mid-ride: the same
 choice boards in the garage, goes down the coast and returns. Same human/dog gameplay, music and controls; no
 time-travel or driving mechanics. Per-car seats/window/poses keep all three dogs and both humans inside the cabin.
+**Third car (owner request, 2026-10-20; D37):** the black talking car, a KITT homage built in code: a low glossy
+black T-top coupe with the red scanner sweeping back and forth across its nose, black and silver slotted wheels and a
+big curved rear hatch. Inside, seen through clear glass and from a new **Inside** view: the lit dash (bar graphs,
+screens, rows of lit buttons), an aircraft-style yoke, and the voice box between the seats, its three columns of red
+bars talking every few seconds beside ALT/OIL PRESS… and AUX/SAT COMM… buttons and NORMAL CRUISE. Conventional
+doors (both swing open to greet). Rides now draw from a shuffled round of all three cars, each once per round.
 
 > **Built 2026-10-17.** How it plays: `ACTIVITIES.md` → "Going for a ride"; controls: `CONTROLS.md`. Differences from
 > the plan below: he hops in through the passenger's front door (not a falcon-wing door); the camera shots are his

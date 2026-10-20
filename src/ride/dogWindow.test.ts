@@ -5,6 +5,7 @@ import { CAR_IDS } from '../config/cars';
 import { RIDE } from '../config/ride';
 import { CoastDrive } from './CoastDrive';
 import { DeLoreanCar } from '../world/DeLoreanCar';
+import { KittCar } from '../world/KittCar';
 import { MokeAnimationController } from '../player/MokeAnimationController';
 import { ToonMokeVisual } from '../player/ToonMokeVisual';
 
@@ -30,6 +31,36 @@ describe('DeLorean passenger window', () => {
     for (const end of ['front_L', 'front_R', 'hind_L', 'hind_R']) {
       const leg = dog.object.getObjectByName(`hip_${end}`)!;
       expect(new Box3().setFromObject(leg).min.x).toBeGreaterThan(-0.93);
+    }
+    car.dispose(); dog.dispose();
+  });
+});
+
+describe('Black talking car passenger window', () => {
+  it.each(DOGS)('$name: head out above the sill, paws inside the door', (profile) => {
+    const car = new KittCar();
+    const dog = new ToonMokeVisual(profile.look);
+    const seat = new Group(); seat.position.copy(car.seats.passenger);
+    car.object.add(seat); seat.add(dog.object);
+    const p = car.headOut;
+    dog.object.position.set(p.x, p.y, p.z);
+    dog.object.rotation.order = 'YXZ'; dog.object.rotation.set(p.pitch, p.heading, 0);
+    const animation = new MokeAnimationController();
+    for (let i = 0; i < 120; i++) {
+      const state = animation.update(1 / 60, { speed: 0, turnRate: 0, headroom: 2 });
+      state.sit = state.rest = 0; state.headPitch = p.headPitch; state.wind = 1;
+      dog.update(1 / 60, state);
+    }
+    car.object.updateMatrixWorld(true);
+    const mouth = dog.attachments.mouth.getWorldPosition(new Vector3());
+    // The sill's about 0.8 m up at x ±0.91; the roof's at 1.3.
+    expect(mouth.y).toBeGreaterThan(0.85);
+    expect(mouth.y).toBeLessThan(1.25);
+    expect(mouth.x).toBeLessThan(-0.94);
+    // Paws inside the door's outer skin (x ±0.92).
+    for (const end of ['front_L', 'front_R', 'hind_L', 'hind_R']) {
+      const leg = dog.object.getObjectByName(`hip_${end}`)!;
+      expect(new Box3().setFromObject(leg).min.x).toBeGreaterThan(-0.915);
     }
     car.dispose(); dog.dispose();
   });

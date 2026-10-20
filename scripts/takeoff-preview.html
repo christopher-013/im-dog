@@ -3,7 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Home departure visual check — development only</title>
 <style>body{margin:0}canvas{display:block}nav{position:fixed;top:12px;left:12px;background:#fffe;padding:12px;border-radius:8px;font:14px system-ui}button,input{margin:4px}output{display:block}</style>
-<nav><button id="play">Play / pause</button><label>Car <select id="car"><option value="delorean">DeLorean</option><option value="family">Family SUV</option></select></label><label>View <select id="view"><option value="ride">Ride camera</option><option value="street">Street overview</option><option value="neighbor">Neighbor detail</option></select></label><label>Neighbor <select id="neighbor"></select></label><label>Ride time <input id="time" type="range" min="0" max="20" step="0.05" value="3.8"></label><output></output></nav>
+<nav><button id="play">Play / pause</button><label>Car <select id="car"><option value="delorean">DeLorean</option><option value="family">Family SUV</option><option value="kitt">Black talking car</option></select></label><label>View <select id="view"><option value="ride">Ride camera</option><option value="street">Street overview</option><option value="neighbor">Neighbor detail</option></select></label><label>Neighbor <select id="neighbor"></select></label><label>Ride time <input id="time" type="range" min="0" max="20" step="0.05" value="3.8"></label><output></output></nav>
 <script type="module">
 import { WebGLRenderer, PerspectiveCamera, Vector3 } from 'three';
 import { CoastDrive } from '../src/ride/CoastDrive.ts';

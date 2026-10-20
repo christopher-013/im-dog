@@ -50,13 +50,15 @@ import { departureRoute } from './departureRoute';
  * side, looking ahead with him, the beach and the sea on the right), his face (from low down just ahead of his door,
  * looking up and back at him against the sky, the beach behind him), behind the car, and a drone high over the beach behind it.
  */
-export const DRIVE_VIEWS = ['alongside', 'face', 'chase', 'drone'] as const;
+export const DRIVE_VIEWS = ['alongside', 'face', 'cabin', 'chase', 'drone'] as const;
 export type DriveView = (typeof DRIVE_VIEWS)[number];
 
 /** Each shot in the car's space (+z ahead, −x the passenger side, the sea's): where the camera is, what it looks at. */
 const SHOTS: Record<DriveView, { pos: readonly [number, number, number]; look: readonly [number, number, number]; fov: number }> = {
   alongside: { pos: [-2.55, 1.6, -2.6], look: [-0.9, 1.15, 6], fov: 55 },
   face: { pos: [-2.35, 1.35, 1.15], look: [-1.12, 1.4, 0.45], fov: 42 },
+  /** Inside (only a car with a `cabinView`; this is just its stand-in). */
+  cabin: { pos: [0, 1.1, -1.0], look: [0, 0.6, 0.6], fov: 62 },
   chase: { pos: [-1.0, 3.1, -9.5], look: [-0.7, 1.3, 9], fov: 55 },
   drone: { pos: [-17, 16, -15], look: [-6, 0, 22], fov: 55 },
 };
@@ -248,12 +250,18 @@ export class CoastDrive {
   }
 
   /** Next camera shot (gliding over from this one). */
+  /** The views this car has, in Change View's order (Inside only where the car has a cabin to show). */
+  get views(): readonly DriveView[] {
+    return this.car.cabinView ? DRIVE_VIEWS : DRIVE_VIEWS.filter((v) => v !== 'cabin');
+  }
+
   nextView(): void {
-    this.setView(DRIVE_VIEWS[(DRIVE_VIEWS.indexOf(this.view) + 1) % DRIVE_VIEWS.length]!);
+    const views = this.views;
+    this.setView(views[(views.indexOf(this.view) + 1) % views.length]!);
   }
 
   setView(view: DriveView, blendSeconds: number = RIDE.cameraTour.manualBlend): void {
-    if (view === this.view) return;
+    if (view === this.view || !this.views.includes(view)) return;
     // Sample into scratch vectors first: manual input can interrupt a still-blending automatic shot.
     this.currentShot(tmpA, tmpB);
     this.from.pos.copy(tmpA); this.from.look.copy(tmpB);
@@ -350,7 +358,7 @@ export class CoastDrive {
 
   /** The shot as it is now (car space), mid-glide or not. */
   private currentShot(pos: Vector3, look: Vector3): number {
-    const shot = SHOTS[this.view];
+    const shot = this.view === 'cabin' ? this.car.cabinView ?? SHOTS.cabin : SHOTS[this.view];
     pos.set(shot.pos[0], shot.pos[1], shot.pos[2]);
     look.set(shot.look[0], shot.look[1], shot.look[2]);
     // Keep the window close-ups on the passenger, not the taller SUV's empty roofline.
@@ -362,6 +370,8 @@ export class CoastDrive {
     }
     // A portrait phone still needs enough horizontal room for the face as he turns toward the scenery.
     let fov = this.view === 'face' ? fitVerticalFov(shot.fov, 40, this.camera.aspect, 95) : shot.fov;
+    // Inside on a portrait phone: wide enough for the dash from the yoke to the voice box.
+    if (this.view === 'cabin') fov = fitVerticalFov(shot.fov, 64, this.camera.aspect, 105);
     // Alongside on a narrow (portrait) screen: he'd be out of the picture, off to its side. Turn toward his window,
     // keeping the road ahead in it, and widen a little. Unchanged from about 4:3 up.
     if (this.view === 'alongside' && this.camera.aspect < 1.3) {

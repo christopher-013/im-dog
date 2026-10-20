@@ -11,7 +11,7 @@ import type { CoastDrive, DriveView } from './CoastDrive';
 import { RideCameraTour } from './RideCameraTour';
 
 /** The views' names on the Change View button. */
-const VIEW_NAMES: Readonly<Record<DriveView, string>> = { alongside: 'Alongside', face: 'His face', chase: 'Behind', drone: 'Drone' };
+const VIEW_NAMES: Readonly<Record<DriveView, string>> = { alongside: 'Alongside', face: 'His face', cabin: 'Inside', chase: 'Behind', drone: 'Drone' };
 
 type V2 = readonly [number, number];
 type Phase = 'off' | 'out' | 'loading' | 'drive' | 'home';
@@ -331,7 +331,7 @@ export class RideDirector {
       this.hooks.fade(Math.min(1, this.homeFade / RIDE.headHomeFade));
       if (this.homeFade >= RIDE.headHomeFade) { this.endDrive(); return; }
     } else this.hooks.fade(Math.max(1 - this.time / 1.2, smoothRange(40, 8, left)));
-    const view = this.cameraTour.update(dt, !drive.revealingHover && !this.homeRequested, drive.progress);
+    const view = this.cameraTour.update(dt, !drive.revealingHover && !this.homeRequested, drive.progress, drive.views);
     if (view) drive.setView(view, RIDE.cameraTour.blend);
     if (auto && dt > 0) {
       this.autoBarkIn -= dt;

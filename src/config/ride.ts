@@ -67,6 +67,8 @@ export const RIDE = {
   /** One view per quarter of the route, no repeated cycling. Manual choices temporarily take priority. */
   cameraTour: {
     views: ['alongside', 'face', 'chase', 'drone'] as const,
+    /** A car with an Inside view (the black car): Inside instead of Behind (Behind is still on Change View). */
+    cabinViews: ['alongside', 'face', 'cabin', 'drone'] as const,
     manualHold: 14, blend: 2.4, manualBlend: 0.9,
   },
   /** They set off but can't get to him or the door: give up after this long. */

@@ -164,6 +164,13 @@ console, on the family-room mantel and on the patio; paper bats strung over the 
 timings: `config/halloween.ts`.
 
 ### Going for a ride (`RideOffer.ts`, `ride/`; Phase 6, D33)
+Owner request, 2026-10-20 (D37): a third car, the black talking car (a KITT homage). The red scanner sweeps across
+its nose (one bright lamp and a fading trail, about 1.6 s across and back) from the garage on; inside, the lit dash,
+the yoke and the voice box's three red bars (talking for about 3 s in every 6) show through the glass and in the
+Inside view. Its doors both swing open to greet them; the dog rides head out of the passenger window like in the others.
+Rides take turns from a saved shuffled round of all three cars (`imdog.cars`). Car: `world/KittCar.ts`; tuning
+`CARS.kitt` (`config/cars.ts`).
+
 Owner follow-up, 2026-10-18: the DeLorean's coast ride now begins with a wide shot of all four wheels rotating
 outward/down into hover mode, then lifting above the road; it stays airborne along the same route, with gentle
 bobbing at about **0.65 m** (lowered from 1.05 m in the owner's follow-up), four brighter light-blue road pools

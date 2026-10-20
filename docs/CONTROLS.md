@@ -142,7 +142,9 @@ the road with a soft light-blue aura for the rest of the ride. The SUV stays on 
 there are no piloting controls. Change View during the takeoff shot (the button reads "Takeoff") glides straight on
 to the road views; the car still takes off as usual (owner, 2026-10-20).
 
-Every full ride shows four longer automatic shots: alongside, his face at the window, behind, then drone.
+Every full ride shows four longer automatic shots: alongside, his face at the window, behind, then drone (in the black
+talking car, **Inside**, over the console to the lit dash and the voice box, takes Behind's place; Change View offers
+both there).
 Each covers a quarter of the route, with 2.4-second glides; the last shot stays until arrival (no repeated loop).
 Change View still works immediately and holds your chosen view for 14 seconds before the route schedule resumes.
 Pause freezes it; Head Home stops the tour. Manual choices and ending early take priority over showing every view.

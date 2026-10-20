@@ -12,6 +12,8 @@ export interface RideCar {
   /** Optional presentation capability; the shared drive never needs to branch on car id. */
   readonly hover?: typeof CARS.delorean.hover;
   setHover?(amount: number, time: number): void;
+  /** Optional Inside view on the road (car space: camera, what it looks at, vertical FOV): a car with a cabin to see. */
+  readonly cabinView?: { readonly pos: readonly [number, number, number]; readonly look: readonly [number, number, number]; readonly fov: number };
   /** Absolute simulation time, frozen by pause. Optional model-only effects. */
   updatePresentation?(time: number): void;
   setPassengerDoor(open: number): void;

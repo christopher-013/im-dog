@@ -52,6 +52,28 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code, the third ride car (2026-10-20; owner request; committed and pushed to the working branch
+`claude/milestones-5-9-qagq4b`, **not** to `main` yet):
+- **The black talking car (KITT homage, D37)**, `world/KittCar.ts`: a low glossy black T-top coupe built in code
+  (clear-coated paint, long wedge nose, black/silver slotted wheels, big rear hatch, red tail band, lip spoiler),
+  conventional front-hinged doors (both open to greet; `doorSwing` 0.7 rad keeps them inside the garage). The red
+  **scanner** sweeps across the nose (`kittLights.ts`, one additive shader: 8 lamps, a bright head and a fading
+  trail, 1.6 s across and back). **Inside**: the dash's lit panels and the console (`kittDash.ts`, canvas art drawn
+  once), an aircraft-style yoke, two seats, and the **voice box**: three columns of red bars that grow from the middle
+  as it talks (3.4 s in every 6), framed by ALT/OIL PRESS/OIL TEMP/EGT/FUEL and AUX/SAT COMM/ACC/RADAR/MPI and
+  NORMAL CRUISE / AUTO CRUISE / PURSUIT. Tuning: `CARS.kitt` (`config/cars.ts`).
+- **Inside view**: optional `RideCar.cabinView`; `CoastDrive.views` includes `cabin` only for a car with one, and
+  the camera tour shows Inside in Behind's place there (`RIDE.cameraTour.cabinViews`). Change View: "Inside".
+- **Three-car turns**: `pickCar` shuffles a round of all three (Fisher–Yates), saved as `imdog.cars`; a saved
+  leftover must be distinct known ids. `?car=kitt` works in development.
+- Tests: the scanner/voice-box timing and placement, the Inside camera's clear line to the voice box, doors and garage
+  fit, batching/disposal, three-car rounds and storage fallbacks, the dog's head out of its window (paws inside the
+  door) for all three dogs, driver headroom, the garage reveal and the full ride (all automatic for every car).
+  `npm test`: 109 files, 786 tests; typecheck and build clean.
+- Browser (headless, SwiftShader, `?car=kitt`): the garage greet and hop, a close-up of the scanner sweep, and all
+  five road views; the voice box was captured talking in the Inside view. Not checked on a real phone. In the
+  garage's own light the black paint still reads very dark; it shows its sheen on the road.
+
 Claude Code review of Codex's ride work and the phone ride fixes (2026-10-20; **owner approved commit/push to
 main**):
 - **"Dog wasn't visible on the ride"** (the owner's phone screenshot of 2026-10-17, His face view, with the house's

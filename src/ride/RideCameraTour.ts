@@ -15,14 +15,21 @@ export class RideCameraTour {
     this.manualLeft = RIDE.cameraTour.manualHold;
   }
 
-  update(dt: number, ready: boolean, progress: number): DriveView | null {
+  /** `available`: the car's views (a car with an Inside view tours it in Behind's place). */
+  update(dt: number, ready: boolean, progress: number, available: readonly DriveView[] = RIDE.cameraTour.views): DriveView | null {
     if (!ready || dt <= 0) return null;
     this.manualLeft = Math.max(0, this.manualLeft - dt);
     if (this.manualLeft > 0) return null;
-    // Route progress adapts to both cars' different takeoff/start times and slower neighborhood travel.
-    const index = Math.min(RIDE.cameraTour.views.length - 1, Math.floor(Math.max(0, progress) * RIDE.cameraTour.views.length));
+    const views = tourViews(available);
+    // Route progress adapts to the cars' different takeoff/start times and slower neighborhood travel.
+    const index = Math.min(views.length - 1, Math.floor(Math.max(0, progress) * views.length));
     if (index <= this.index) return null;
     this.index = index; // no rapid catch-up sequence after a long frame; hold the last shot through arrival
-    return RIDE.cameraTour.views[this.index]!;
+    return views[this.index]!;
   }
+}
+
+/** The tour's shots for a car with these views. */
+export function tourViews(available: readonly DriveView[]): readonly DriveView[] {
+  return available.includes('cabin') ? RIDE.cameraTour.cabinViews : RIDE.cameraTour.views;
 }

@@ -8,8 +8,9 @@ import { StylizedHumanVisual } from '../human/StylizedHumanVisual';
 import { ToonMokeVisual } from '../player/ToonMokeVisual';
 import { GarageView } from '../world/GarageView';
 import { GARAGE } from '../world/home/layout';
-import type { CoastDrive } from './CoastDrive';
+import type { CoastDrive, DriveView } from './CoastDrive';
 import { RideDirector } from './RideDirector';
+import { tourViews } from './RideCameraTour';
 
 describe('going for a ride: the ride itself (Phase 6)', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -42,13 +43,14 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     const pausedCamera = drive.camera.position.clone();
     for (let i = 0; i < 100; i++) ride.update(0, 16 / 9, false);
     expect(drive.camera.position.equals(pausedCamera)).toBe(true);
-    const durations = { alongside: 10, face: 0, chase: 0, drone: 0 };
+    const tour = tourViews(drive.views);
+    const durations: Partial<Record<DriveView, number>> = Object.fromEntries(tour.map((v) => [v, v === 'alongside' ? 10 : 0]));
     let sinceChange = 0;
     // Run through actual arrival (not an estimated ride time) to prove all four shots fit in BOTH cars' trips.
     for (let i = 0; i < 180 * 30 && ride.driving; i++) {
       const previous = drive.view;
       ride.update(dt, 16 / 9, false);
-      durations[previous] += dt;
+      durations[previous] = (durations[previous] ?? 0) + dt;
       sinceChange = previous === drive.view ? sinceChange + dt : 0;
       if (ride.driving && drive.view === 'face' && sinceChange > RIDE.cameraTour.blend + 1) {
         drive.scene.updateMatrixWorld(true);
@@ -58,7 +60,9 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
       }
     }
     expect(ride.driving).toBe(false);
-    expect(setView.mock.calls.map(([view]) => view)).toEqual(['face', 'chase', 'drone']);
+    // Four shots, once each: the black car tours Inside in Behind's place.
+    expect(setView.mock.calls.map(([view]) => view)).toEqual(tour.slice(1));
+    expect(tour.includes('cabin')).toBe(id === 'kitt');
     for (const seconds of Object.values(durations)) expect(seconds).toBeGreaterThanOrEqual(12);
     expect(setView.mock.calls.every(([, blend]) => blend === RIDE.cameraTour.blend)).toBe(true);
     expect(happyFace).toBe(true);

@@ -164,6 +164,15 @@ console, on the family-room mantel and on the patio; paper bats strung over the 
 timings: `config/halloween.ts`.
 
 ### Going for a ride (`RideOffer.ts`, `ride/`; Phase 6, D33)
+Owner request, 2026-10-20 (cockpit scenes): as the drive begins, the car rolls slowly out of the driveway while the
+camera is inside. **Black talking car** (7.6 s): its voice box talking close up, then over to the yoke and the lit dash,
+and back for the road through the windshield, gliding into Alongside. **DeLorean** (9.4 s, stopping at the end of the
+driveway): the time circuits being keyed in (destination Nov 05 1955 06:00 AM; present time = the player's own clock;
+last time departed Oct 26 1985 01:21 AM), a pan round past the dog to the flux capacitor behind the seats, surging with
+arcs under its red warning labels, then the takeoff shot with the house behind. The dog sits in, watching the dash, then
+puts his head out. Change View skips it. Config: `CARS.kitt.intro`, `CARS.delorean.intro` and `timeCircuits`
+(`config/cars.ts`); `RideCar.intro` / `setIntro`.
+
 Owner request, 2026-10-20 (D37): a third car, the black talking car (a KITT homage). The red scanner sweeps across
 its nose (one bright lamp and a fading trail, about 1.6 s across and back) from the garage on; inside, the lit dash,
 the yoke and the voice box's three red bars (talking for about 3 s in every 6) show through the glass and in the

@@ -164,6 +164,9 @@ big curved rear hatch. Inside, seen through clear glass and from a new **Inside*
 screens, rows of lit buttons), an aircraft-style yoke, and the voice box between the seats, its three columns of red
 bars talking every few seconds beside ALT/OIL PRESS… and AUX/SAT COMM… buttons and NORMAL CRUISE. Conventional
 doors (both swing open to greet). Rides now draw from a shuffled round of all three cars, each once per round.
+Follow-up the same day: the black car reshaped after the owner's photos (long hood, far-back raked windshield, bubble
+hatch, beak, flared arches), and **cockpit scenes** as the drive begins: KITT's voice box talking and its dash and yoke;
+the DeLorean's time circuits being set (Nov 05 1955 06:00 / today / Oct 26 1985 01:21) and its flux capacitor surging.
 
 > **Built 2026-10-17.** How it plays: `ACTIVITIES.md` → "Going for a ride"; controls: `CONTROLS.md`. Differences from
 > the plan below: he hops in through the passenger's front door (not a falcon-wing door); the camera shots are his

@@ -74,7 +74,9 @@ describe.each(CAR_IDS)('%s: the face shot', (carId) => {
     dog.object.position.set(p.x, p.y, p.z);
     dog.object.rotation.order = 'YXZ'; dog.object.rotation.set(p.pitch, p.heading, 0);
     // Finish the takeoff before selecting the passenger shot.
-    for (let i = 0; i < 7 * 30; i++) drive.update(1 / 30, 16 / 9);
+    // Past the cockpit scene and any takeoff shot.
+    for (let i = 0; i < 7 * 30 || ((drive.introPlaying || drive.revealingHover) && i < 40 * 30); i++) drive.update(1 / 30, 16 / 9);
+    for (let i = 0; i < 2 * 30; i++) drive.update(1 / 30, 16 / 9);
     drive.setView('face', RIDE.cameraTour.blend);
     for (let i = 0; i < 3 * 30; i++) drive.update(1 / 30, 16 / 9);
     for (const aspect of [16 / 9, 390 / 844]) {
@@ -113,7 +115,9 @@ describe.each(CAR_IDS)('%s: the alongside shot', (carId) => {
     const p = drive.car.headOut, animation = new MokeAnimationController();
     dog.object.position.set(p.x, p.y, p.z);
     dog.object.rotation.order = 'YXZ'; dog.object.rotation.set(p.pitch, p.heading, 0);
-    for (let i = 0; i < 7 * 30; i++) drive.update(1 / 30, 16 / 9);
+    // Past the cockpit scene and any takeoff shot.
+    for (let i = 0; i < 7 * 30 || ((drive.introPlaying || drive.revealingHover) && i < 40 * 30); i++) drive.update(1 / 30, 16 / 9);
+    for (let i = 0; i < 2 * 30; i++) drive.update(1 / 30, 16 / 9);
     expect(drive.view).toBe('alongside');
     for (const aspect of [16 / 9, 4 / 3, 1, 390 / 844, 360 / 800]) {
       drive.update(0, aspect);

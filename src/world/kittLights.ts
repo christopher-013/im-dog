@@ -54,18 +54,21 @@ export function kittScanner(): Mesh<PlaneGeometry, ShaderMaterial> {
 export function kittVoice(): Mesh<PlaneGeometry, ShaderMaterial> {
   const v = CARS.kitt.voice;
   const material = new ShaderMaterial({
-    uniforms: { time: { value: 0 } },
+    // `talk`: talking now regardless of the schedule (the cockpit scene), 0..1.
+    uniforms: { time: { value: 0 }, talk: { value: 0 } },
     side: DoubleSide, toneMapped: false,
     vertexShader: `varying vec2 vUv;
       void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `
-      uniform float time;
+      uniform float time, talk;
       varying vec2 vUv;
       void main() {
         float cycle = mod(time, ${v.talkEvery.toFixed(2)});
-        float talking = smoothstep(0.0, 0.15, cycle) * (1.0 - smoothstep(${(v.talkFor - 0.2).toFixed(2)}, ${v.talkFor.toFixed(2)}, cycle));
+        float talking = max(talk, smoothstep(0.0, 0.15, cycle) * (1.0 - smoothstep(${(v.talkFor - 0.2).toFixed(2)}, ${v.talkFor.toFixed(2)}, cycle)));
         // Syllables: a lively, uneven level while talking.
-        float level = talking * (0.3 + 0.7 * abs(sin(time * 11.0) * sin(time * 6.7 + 1.3)));
+        // Syllables, and little pauses between words.
+        float words = smoothstep(0.15, 0.35, abs(sin(time * 1.9)));
+        float level = talking * words * (0.3 + 0.7 * abs(sin(time * 11.0) * sin(time * 6.7 + 1.3)));
         float column = floor(vUv.x * 3.0);
         float inColumn = abs(fract(vUv.x * 3.0) - 0.5);
         float reach = level * (column == 1.0 ? 1.0 : 0.62);

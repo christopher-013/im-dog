@@ -43,6 +43,8 @@ describe('home behind the departure shot', () => {
     for (const aspect of [16 / 9, 390 / 844]) {
       const drive = new CoastDrive('delorean');
       const home = drive.scene.getObjectByName('Departure home and garage')!;
+      // Out of the driveway (the cockpit scene), then four seconds into the takeoff.
+      for (let i = 0; i < 30 * 30 && drive.introPlaying; i++) drive.update(1 / 30, aspect);
       for (let i = 0; i < 4 * 30; i++) drive.update(1 / 30, aspect);
       drive.scene.updateMatrixWorld(true); drive.camera.updateMatrixWorld(true);
       for (const point of [new Vector3(GARAGE.car.x, 1.4, DEPARTURE_HOME.garageFront), new Vector3(-8, 5, DEPARTURE_HOME.houseFront)]) {
@@ -82,7 +84,7 @@ describe('home behind the departure shot', () => {
     });
     expect(meshes).toBeLessThanOrEqual(20);
     const releases = [...geometry, ...materials].map((resource) => vi.spyOn(resource, 'dispose'));
-    for (let i = 0; i < 20 * 30; i++) drive.update(1 / 30, 16 / 9);
+    for (let i = 0; i < 30 * 30; i++) drive.update(1 / 30, 16 / 9);
     expect(drive.progress).toBeGreaterThan(0.1);
     expect(home.parent).toBe(drive.scene);
     expect(home.position.equals(position)).toBe(true);

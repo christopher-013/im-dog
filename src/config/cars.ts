@@ -20,6 +20,35 @@ export const CARS = {
     driver: [0.45, 0.27, 0.10] as const,
     window: [-0.91, 1.02, 0.10] as const,
     headOut: { x: -0.34, y: 0.28, z: 0.08, heading: -Math.PI / 2 + 0.25, pitch: -0.2, headPitch: 0.3 },
+    /**
+     * The time circuits (owner, 2026-10-20, the film's times): destination Nov 05 1955 06:00 AM, last time departed
+     * Oct 26 1985 01:21 AM; the present row shows the player's own date and time. In the cockpit scene the destination
+     * is keyed in from `typeFrom` s over `typeFor` s. Months 1–12, 24-hour clock.
+     */
+    timeCircuits: {
+      destination: { year: 1955, month: 11, day: 5, hour: 6, min: 0 },
+      lastDeparted: { year: 1985, month: 10, day: 26, hour: 1, min: 21 },
+      typeFrom: 0.5, typeFor: 2.2,
+      /** Where the unit sits (car space), and its face's size (m). */
+      at: [0.06, 0.66, 0.6] as const, size: [0.4, 0.3] as const,
+    },
+    /** The flux capacitor surges (brighter, faster, more arcs) as the cockpit scene reaches it: from, to (s). */
+    fluxSurge: [4.6, 6.6] as const,
+    /**
+     * Pulling out of the driveway (owner, 2026-10-20): the time circuits being set, close up; a pan round past the dog
+     * to the flux capacitor behind the seats as it surges; then a cut to the takeoff (`CarIntro`). A slow roll, so it
+     * stops at the end of the driveway, the house still behind it for the takeoff shot.
+     */
+    intro: {
+      seconds: 9.4, creep: 1.0, stop: true, blend: 0,
+      shots: [
+        { at: 0, pos: [0.06, 1.04, 0.06] as const, look: [0.07, 0.68, 0.56] as const, fov: 44 },
+        { at: 3.2, pos: [0.05, 1.02, 0.12] as const, look: [0.07, 0.67, 0.56] as const, fov: 40 },
+        { at: 4.6, pos: [0, 1.08, 0.3] as const, look: [-0.5, 0.82, 0.05] as const, fov: 50 },
+        { at: 5.8, pos: [-0.06, 1.12, 0.4] as const, look: [0, 0.99, -0.58] as const, fov: 44 },
+        { at: 8.8, pos: [-0.04, 1.06, 0.18] as const, look: [0, 0.99, -0.58] as const, fov: 38 },
+      ],
+    },
   },
   /**
    * The black talking car (owner, 2026-10-20: KITT from Knight Rider; D37): a low early-80s T-top coupe, built in code.
@@ -27,11 +56,11 @@ export const CARS = {
    */
   kitt: {
     length: 4.73, width: 1.84, height: 1.3,
-    wheelRadius: 0.33, wheelWidth: 0.23, frontAxle: 1.42, rearAxle: -1.14,
+    wheelRadius: 0.32, wheelWidth: 0.23, frontAxle: 1.06, rearAxle: -1.48,
     doorSwing: 0.7,
-    passenger: [-0.4, 0.33, -0.2] as const,
-    driver: [0.4, 0.2, -0.2] as const,
-    window: [-0.9, 1.0, -0.1] as const,
+    passenger: [-0.4, 0.33, -0.5] as const,
+    driver: [0.4, 0.2, -0.5] as const,
+    window: [-0.9, 1.0, -0.42] as const,
     headOut: { x: -0.38, y: 0.33, z: 0.08, heading: -Math.PI / 2 + 0.25, pitch: 0, headPitch: 0.3 },
     /**
      * The red scanner in the nose: `segments` lamps across `width` m; the light sweeps across and back once every
@@ -41,6 +70,19 @@ export const CARS = {
     /** The voice box: talking for `talkFor` s out of every `talkEvery` s (three columns of red bars). */
     voice: { talkEvery: 6, talkFor: 3.4 },
     /** The Inside view: between the two of them, looking down over the console to the dash (car space). */
-    cabinView: { pos: [0, 1.1, -0.55] as const, look: [0, 0.44, 0.42] as const, fov: 64 },
+    cabinView: { pos: [0, 1.08, -0.85] as const, look: [0, 0.46, 0.12] as const, fov: 64 },
+    /**
+     * Pulling out of the driveway (owner, 2026-10-20): the voice box talking, close up; then over to the yoke and the
+     * dash; then back for the road ahead through the windshield, gliding into the drive's views (`CarIntro`).
+     */
+    intro: {
+      seconds: 7.6, creep: 2.4, stop: false, blend: 1.4,
+      shots: [
+        { at: 0, pos: [-0.02, 0.86, -0.42] as const, look: [0, 0.38, 0.12] as const, fov: 40 },
+        { at: 2.8, pos: [0, 0.8, -0.3] as const, look: [0, 0.37, 0.12] as const, fov: 34 },
+        { at: 4.4, pos: [-0.08, 1.02, -0.66] as const, look: [0.34, 0.62, 0.1] as const, fov: 50 },
+        { at: 7.0, pos: [-0.05, 1.06, -0.76] as const, look: [0.12, 0.68, 0.6] as const, fov: 60 },
+      ],
+    },
   },
 } as const;

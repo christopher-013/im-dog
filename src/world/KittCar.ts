@@ -16,8 +16,57 @@ const K = CARS.kitt;
 /** Half the body's width, where its sides are. */
 const W = K.width / 2;
 /** The doors: from the A-pillar (their hinge) back to the B-pillar. */
-const DOOR = { front: 0.62, back: -0.78 } as const;
-const NOSE = 2.32, TAIL = -2.34;
+const DOOR = { front: 0.42, back: -0.98 } as const;
+/** The tail's face; the beak's tip (middle) and the nose's corners, set back. */
+const TAIL = -2.37;
+const NOSE = { tip: 2.36, corner: 2.24 } as const;
+/** The windshield, from its base at the cowl up to the roof; the roof's height and where it ends (the hatch starts). */
+const SCREEN = { base: 0.56, top: -0.2 } as const;
+const ROOF = 1.26, ROOF_END = -0.9;
+/** Where the rear hatch glass meets the deck. */
+const HATCH_END = -2.02;
+/** The hood: from the cowl (`SCREEN.base`) to its front edge, above the beak. */
+const HOOD = { front: 2.16, cowl: 0.84, edge: 0.64 } as const;
+/** The dash's face (toward the seats) and its back (at the firewall). */
+const DASH = { face: 0.17, back: 0.5 } as const;
+/** How steeply the hood falls toward its front corners (for the pop-up lamp lids lying on it). */
+const HOOD_SLOPE = 1.25 * Math.atan2(HOOD.cowl - HOOD.edge, HOOD.front - SCREEN.base);
+/** Wheel arch radius. */
+const ARCH = 0.4;
+
+/** The hood's surface: `u` cowl (0) to front edge (1), `v` −1..1 across. A gentle crown and a raised centre bulge. */
+function hoodPoint(u: number, v: number): Point {
+  const half = W - 0.05 * u * u;
+  const x = v * half;
+  const edge = HOOD.cowl + (HOOD.edge - HOOD.cowl) * Math.pow(u, 1.25);
+  const crown = 0.035 * (1 - v * v);
+  const bulge = 0.028 * (1 - smooth(0.24, 0.34, Math.abs(x))) * (1 - smooth(0.7, 0.95, u));
+  return [x, edge + crown + bulge, SCREEN.base + (HOOD.front - SCREEN.base) * u];
+}
+/** How far forward the beak comes at `x`: flat across the middle (the scanner's), swept back at the corners. */
+function beakZ(x: number): number {
+  const out = Math.max(0, Math.abs(x) - 0.46) / (W - 0.46);
+  return NOSE.tip - (NOSE.tip - NOSE.corner) * out * out;
+}
+/** The scanner's tilt (the beak's upper face leans back) and its centre, `out` m in front of the face. */
+const BEAK_TILT = -Math.atan2(HOOD.edge + 0.035 - 0.47, NOSE.tip - HOOD.front);
+function scannerAt(out: number): Point {
+  const top = hoodPoint(1, 0);
+  const y = (top[1] + 0.47) / 2, z = (top[2] + NOSE.tip) / 2;
+  const n = new Vector3(0, NOSE.tip - top[2], top[1] - 0.47).normalize();
+  return [0, y + n.y * out, z + n.z * out];
+}
+/** The rear hatch glass: `u` roof (0) to deck (1), `v` −1..1 across; a bubble that wraps down at its sides. */
+function hatchPoint(u: number, v: number): Point {
+  const half = 0.62 + (0.86 - 0.62) * u;
+  const middle = ROOF + (0.88 - ROOF) * u + 0.05 * Math.sin(Math.PI * u);
+  const wrap = (0.03 + 0.03 * u) * v * v;
+  return [v * half, middle - wrap, ROOF_END + (HATCH_END - ROOF_END) * u];
+}
+function smooth(a: number, b: number, x: number): number {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
 
 /**
  * The black talking car (owner, 2026-10-20; D37): an original, code-built homage to KITT from Knight Rider: a low,
@@ -34,6 +83,7 @@ export class KittCar implements RideCar {
   readonly window = new Vector3(...K.window);
   readonly headOut = K.headOut;
   readonly cabinView = K.cabinView;
+  readonly intro = K.intro;
   private readonly doors = { passenger: new Group(), driver: new Group() };
   private readonly wheels: Group[] = [];
   private readonly geometries = new Set<BufferGeometry>();
@@ -70,94 +120,103 @@ export class KittCar implements RideCar {
     const red = this.material('#8e0c0f', 0, 0.35, '#ff2418', 0.9);
     const amber = this.material('#b8661a', 0, 0.45, '#ff9a2a', 0.55);
 
-    // ---- the body
+    // ---- the body (proportions from the owner's side-on photo, scaled by its wheels)
     for (const side of [-1, 1] as const) {
       this.side(side, this.frontFender(), paint);
       this.side(side, this.rearQuarter(), paint);
-      // The crease along the flank and the black rocker under it.
-      this.pipe([[side * (W + 0.004), 0.47, 2.25], [side * (W + 0.004), 0.47, DOOR.front]], 0.008, trim);
-      this.pipe([[side * (W + 0.004), 0.47, DOOR.back], [side * (W + 0.004), 0.47, -2.2]], 0.008, trim);
-      this.box([0.05, 0.08, 1.38], [side * (W - 0.03), 0.27, -0.08], trim);
-      // Wheel wells: dark liners over the tyres, so the arches never show daylight through the body.
+      // Flared lips round the wheel arches, the crease along the flank and the black rocker under it.
       for (const axle of [K.frontAxle, K.rearAxle]) {
+        const lip = this.add(new TorusGeometry(ARCH, 0.03, 6, 18, Math.PI), paint, [side * (W + 0.004), 0.33, axle]);
+        lip.rotation.y = Math.PI / 2;
+        // Wheel wells: dark liners over the tyres, so the arches never show daylight through the body.
         this.box([0.28, 0.03, 0.86], [side * 0.79, 0.745, axle], trim);
         this.box([0.02, 0.5, 0.86], [side * 0.65, 0.5, axle], trim);
       }
+      this.pipe([[side * (W + 0.004), 0.5, 2.1], [side * (W + 0.004), 0.5, K.frontAxle + ARCH + 0.04]], 0.007, trim);
+      this.pipe([[side * (W + 0.004), 0.5, K.frontAxle - ARCH - 0.04], [side * (W + 0.004), 0.5, DOOR.front]], 0.007, trim);
+      this.pipe([[side * (W + 0.004), 0.5, DOOR.back], [side * (W + 0.004), 0.5, K.rearAxle + ARCH + 0.04]], 0.007, trim);
+      this.box([0.05, 0.08, K.frontAxle - K.rearAxle - 2 * ARCH - 0.1], [side * (W - 0.03), 0.27, (K.frontAxle + K.rearAxle) / 2], trim);
       // Amber marker at the nose's corner, red at the tail's.
-      this.box([0.012, 0.045, 0.16], [side * (W + 0.006), 0.39, NOSE - 0.18], amber);
-      this.box([0.012, 0.04, 0.12], [side * (W + 0.006), 0.52, -2.12], red);
-      // The beltline under the side glass, behind the door.
-      this.pipe([[side * 0.915, 0.795, DOOR.back], [side * 0.915, 0.82, -1.95]], 0.018, trim);
+      this.box([0.012, 0.045, 0.16], [side * (W + 0.006), 0.42, 2.06], amber);
+      this.box([0.012, 0.04, 0.12], [side * (W + 0.006), 0.56, TAIL + 0.16], red);
     }
-    // The long hood falling to the nose, its raised centre and the closed pop-up lamps near its front corners.
-    const hoodY = (z: number) => 0.76 - (z - DOOR.front) * (0.24 / (NOSE - DOOR.front));
-    this.panel([[-W, 0.76, DOOR.front], [W, 0.76, DOOR.front], [W, 0.52, NOSE], [-W, 0.52, NOSE]], paint);
-    this.panel([[-0.3, hoodY(0.75) + 0.03, 0.75], [0.3, hoodY(0.75) + 0.03, 0.75], [0.26, hoodY(2.1) + 0.03, 2.1], [-0.26, hoodY(2.1) + 0.03, 2.1]], paint);
+    // The long hood: a gentle crown, the raised centre bulge, the closed pop-up lamps near its front corners.
+    this.surface((u, v) => hoodPoint(u, v), 12, 10, paint);
     for (const side of [-1, 1]) {
-      this.panel([[side * 0.3, hoodY(0.75) + 0.03, 0.75], [side * 0.3, hoodY(0.75), 0.75], [side * 0.26, hoodY(2.1), 2.1], [side * 0.26, hoodY(2.1) + 0.03, 2.1]], paint);
-      this.box([0.42, 0.012, 0.3], [side * 0.58, hoodY(2.05) + 0.006, 2.05], trim, this.object, [0.134, 0, 0]);
+      const lid = hoodPoint(0.86, side * 0.62);
+      this.box([0.4, 0.012, 0.26], [lid[0], lid[1] + 0.008, lid[2]], trim, this.object, [HOOD_SLOPE, 0, 0]);
+      // The little triangle between the windshield's corner, the door's glass and the fender top.
+      this.panel([[side * 0.78, 0.85, SCREEN.base], [side * 0.88, 0.83, DOOR.front + 0.05], [side * W, 0.83, DOOR.front + 0.05], [side * W, 0.84, SCREEN.base]], paint);
     }
-    for (const x of [-0.12, 0, 0.12]) this.box([0.06, 0.012, 0.2], [x, hoodY(1.85) + 0.04, 1.85], trim, this.object, [0.134, 0, 0]);
-    // The nose: a sharp black beak over a slotted mouth, the scanner's dark slot across it, an air dam under it.
-    this.panel([[-W, 0.52, NOSE], [W, 0.52, NOSE], [W * 0.97, 0.4, NOSE + 0.07], [-W * 0.97, 0.4, NOSE + 0.07]], paint);
-    this.panel([[-W * 0.97, 0.4, NOSE + 0.07], [W * 0.97, 0.4, NOSE + 0.07], [W * 0.94, 0.25, NOSE - 0.02], [-W * 0.94, 0.25, NOSE - 0.02]], trim);
-    for (let y = 0.27; y < 0.38; y += 0.035) this.box([1.5, 0.012, 0.02], [0, y, NOSE + 0.035 + (y - 0.22) * 0.35], rubber);
-    const tilt = -Math.atan2(0.07, 0.12);
-    const beak = new Vector3(0, 0.07, 0.12).normalize();
-    const slot = this.box([K.scanner.width + 0.06, K.scanner.height + 0.025, 0.01], [0, 0.46 + beak.y * 0.004, NOSE + 0.035 + beak.z * 0.004], trim, this.object, [tilt, 0, 0]);
+    // The nose: the black beak with the scanner across it, a slotted mouth and the air dam under it.
+    this.surface((u, v) => {
+      const x = v * (W - 0.01), top = hoodPoint(1, v);
+      return [x, top[1] + (0.47 - top[1]) * u, top[2] + (beakZ(x) - top[2]) * u];
+    }, 2, 12, paint);
+    this.surface((u, v) => {
+      const x = v * (W - 0.03);
+      return [x, 0.47 - 0.21 * u, beakZ(x) - (0.1 + 0.02 * u) * u];
+    }, 2, 12, trim);
+    for (let y = 0.3; y < 0.44; y += 0.035) this.box([1.36, 0.012, 0.02], [0, y, beakZ(0) - (0.47 - y) * 0.5 + 0.012], rubber);
+    this.box([1.66, 0.05, 0.16], [0, 0.25, beakZ(0) - 0.2], trim);
+    const slot = this.box([K.scanner.width + 0.06, K.scanner.height + 0.025, 0.01], scannerAt(0.004), trim, this.object, [BEAK_TILT, 0, 0]);
     slot.name = 'Scanner slot';
-    this.box([1.72, 0.05, 0.16], [0, 0.245, NOSE - 0.14], trim);
 
-    // ---- the cabin: steep windshield, T-top roof with two glass panels, side and quarter glass, the big rear hatch
-    this.panel([[-0.8, 0.76, 0.64], [0.8, 0.76, 0.64], [0.62, 1.29, -0.1], [-0.62, 1.29, -0.1]], glass);
-    this.box([1.6, 0.02, 0.08], [0, 0.77, 0.66], trim);
-    this.panel([[-0.14, 1.3, -0.1], [0.14, 1.3, -0.1], [0.14, 1.3, -0.86], [-0.14, 1.3, -0.86]], paint);
-    this.panel([[-0.64, 1.29, -0.1], [0.64, 1.29, -0.1], [0.64, 1.3, -0.17], [-0.64, 1.3, -0.17]], paint);
-    this.panel([[-0.66, 1.3, -0.8], [0.66, 1.3, -0.8], [0.66, 1.29, -0.88], [-0.66, 1.29, -0.88]], paint);
+    // ---- the cabin: the raked windshield, the T-top roof with two glass panels, the big wraparound rear hatch
+    this.surface((u, v) => {
+      const half = 0.78 + (0.62 - 0.78) * u;
+      return [v * half, 0.85 + (ROOF - 0.85) * u, SCREEN.base + (SCREEN.top - SCREEN.base) * u + 0.035 * (1 - v * v) * Math.sin(Math.PI * u)];
+    }, 4, 8, glass);
+    this.box([1.5, 0.02, 0.06], [0, 0.86, SCREEN.base - 0.02], trim);
+    this.panel([[-0.62, ROOF, SCREEN.top], [0.62, ROOF, SCREEN.top], [0.64, ROOF + 0.01, SCREEN.top - 0.07], [-0.64, ROOF + 0.01, SCREEN.top - 0.07]], paint);
+    this.panel([[-0.13, ROOF + 0.01, SCREEN.top - 0.07], [0.13, ROOF + 0.01, SCREEN.top - 0.07], [0.13, ROOF + 0.01, ROOF_END + 0.07], [-0.13, ROOF + 0.01, ROOF_END + 0.07]], paint);
+    this.panel([[-0.66, ROOF + 0.01, ROOF_END + 0.07], [0.66, ROOF + 0.01, ROOF_END + 0.07], [0.64, ROOF, ROOF_END], [-0.64, ROOF, ROOF_END]], paint);
     for (const side of [-1, 1]) {
-      this.panel([[side * 0.15, 1.305, -0.17], [side * 0.6, 1.3, -0.17], [side * 0.62, 1.3, -0.8], [side * 0.15, 1.305, -0.8]], darkGlass);
-      this.panel([[side * 0.6, 1.3, -0.1], [side * 0.66, 1.285, -0.08], [side * 0.68, 1.285, -0.86], [side * 0.62, 1.3, -0.86]], paint);
-      // A-pillar, B-pillar, the rear quarter window and the sail panel behind it.
-      this.panel([[side * 0.8, 0.76, 0.64], [side * 0.62, 1.29, -0.1], [side * 0.66, 1.285, -0.08], [side * 0.9, 0.77, 0.6]], paint);
-      this.pipe([[side * 0.905, 0.8, -0.8], [side * 0.68, 1.29, -0.82]], 0.03, trim);
-      this.panel([[side * 0.905, 0.8, -0.84], [side * 0.68, 1.28, -0.86], [side * 0.8, 0.95, -1.4], [side * 0.91, 0.82, -1.5]], darkGlass);
-      this.panel([[side * 0.8, 0.95, -1.4], [side * 0.84, 0.85, -1.95], [side * 0.92, 0.82, -1.95], [side * 0.91, 0.82, -1.5]], paint);
-      this.pipe([[side * 0.66, 1.3, -0.88], [side * 0.84, 0.85, -1.95]], 0.02, trim);
+      this.panel([[side * 0.15, ROOF + 0.012, SCREEN.top - 0.07], [side * 0.6, ROOF + 0.008, SCREEN.top - 0.07], [side * 0.62, ROOF + 0.008, ROOF_END + 0.07], [side * 0.15, ROOF + 0.012, ROOF_END + 0.07]], darkGlass);
+      this.panel([[side * 0.6, ROOF + 0.01, SCREEN.top], [side * 0.645, ROOF - 0.015, SCREEN.top + 0.03], [side * 0.67, ROOF - 0.015, DOOR.back + 0.02], [side * 0.62, ROOF + 0.01, ROOF_END]], paint);
+      // A-pillar, B-pillar, the rear quarter window, and the sail panel down to the deck.
+      this.panel([[side * 0.78, 0.85, SCREEN.base], [side * 0.62, ROOF, SCREEN.top], [side * 0.645, ROOF - 0.015, SCREEN.top + 0.03], [side * 0.88, 0.83, DOOR.front + 0.05]], paint);
+      this.pipe([[side * 0.905, 0.82, DOOR.back - 0.01], [side * 0.67, ROOF - 0.01, DOOR.back + 0.02]], 0.03, trim);
+      const edge = (u: number) => hatchPoint(u, side);
+      this.panel([[side * 0.905, 0.83, DOOR.back - 0.04], [side * 0.67, ROOF - 0.02, DOOR.back], edge(0.42), [side * 0.905, 0.85, -1.6]], darkGlass);
+      this.panel([edge(0.42), edge(1), [side * W, 0.86, HATCH_END], [side * 0.905, 0.85, -1.6]], paint);
+      this.pipe([0, 0.2, 0.42, 0.6, 0.8, 1].map(edge), 0.02, trim);
+      this.pipe([[side * 0.915, 0.82, DOOR.back], [side * 0.915, 0.86, HATCH_END]], 0.016, trim);
     }
-    this.panel([[-0.66, 1.29, -0.88], [0.66, 1.29, -0.88], [0.84, 0.85, -1.95], [-0.84, 0.85, -1.95]], darkGlass);
+    this.surface((u, v) => hatchPoint(u, v), 8, 10, darkGlass);
     // The tail: a short deck, the lip spoiler, the full-width red lamp band with its louvres, the bumper.
-    this.panel([[-W, 0.84, -1.95], [W, 0.84, -1.95], [W, 0.8, TAIL], [-W, 0.8, TAIL]], paint);
-    this.box([1.76, 0.03, 0.16], [0, 0.89, -2.24], paint, this.object, [-0.1, 0, 0]);
-    for (const x of [-0.7, 0.7]) this.box([0.05, 0.06, 0.06], [x, 0.85, -2.24], trim);
-    this.panel([[-W, 0.8, TAIL], [W, 0.8, TAIL], [W, 0.28, TAIL - 0.03], [-W, 0.28, TAIL - 0.03]], paint);
-    this.box([1.62, 0.13, 0.02], [0, 0.64, TAIL - 0.02], red);
-    for (const y of [0.61, 0.64, 0.67]) this.box([1.62, 0.006, 0.01], [0, y, TAIL - 0.035], trim);
-    this.box([0.36, 0.18, 0.02], [0, 0.42, TAIL - 0.025], trim);
-    this.box([1.8, 0.08, 0.06], [0, 0.3, TAIL - 0.02], trim);
-    for (const x of [-0.45, -0.3]) this.add(new CylinderGeometry(0.035, 0.035, 0.1, 10), alloy, [x, 0.22, TAIL - 0.04]).rotation.x = Math.PI / 2;
+    this.surface((u, v) => [v * W, 0.875 - 0.015 * u + 0.012 * (1 - v * v), HATCH_END + (TAIL + 0.05 - HATCH_END) * u], 2, 8, paint);
+    this.box([1.74, 0.035, 0.14], [0, 0.9, TAIL + 0.07], paint, this.object, [-0.15, 0, 0]);
+    for (const x of [-0.72, 0.72]) this.box([0.05, 0.05, 0.06], [x, 0.875, TAIL + 0.08], trim);
+    this.panel([[-W, 0.86, TAIL + 0.05], [W, 0.86, TAIL + 0.05], [W, 0.3, TAIL], [-W, 0.3, TAIL]], paint);
+    this.box([1.66, 0.14, 0.02], [0, 0.67, TAIL + 0.02], red);
+    for (const y of [0.635, 0.67, 0.705]) this.box([1.66, 0.006, 0.01], [0, y, TAIL + 0.005], trim);
+    this.box([0.36, 0.18, 0.02], [0, 0.45, TAIL + 0.005], trim);
+    this.box([1.8, 0.08, 0.06], [0, 0.31, TAIL - 0.01], trim);
+    for (const x of [-0.45, -0.3]) this.add(new CylinderGeometry(0.035, 0.035, 0.1, 10), alloy, [x, 0.22, TAIL - 0.02]).rotation.x = Math.PI / 2;
     // Underneath, between the wheels.
-    this.box([1.3, 0.08, 4.5], [0, 0.2, 0.03], trim);
+    this.box([1.3, 0.08, 4.4], [0, 0.2, 0], trim);
 
     // ---- inside: the floor, the dash and its lit panels, the console with the voice box, the yoke, two seats
-    this.box([1.66, 0.04, 1.62], [0, 0.17, -0.17], cabin);
-    this.box([1.66, 0.6, 0.04], [0, 0.46, DOOR.front], cabin);
-    this.box([1.7, 0.07, 0.4], [0, 0.765, 0.44], cabin);
-    this.box([1.7, 0.24, 0.3], [0, 0.6, 0.48], cabin);
-    this.box([1.6, 0.5, 0.05], [0, 0.48, -0.96], cabin);
-    this.box([1.6, 0.04, 0.98], [0, 0.7, -1.45], cabin);
+    this.box([1.66, 0.04, 1.75], [0, 0.17, -0.38], cabin);
+    this.box([1.66, 0.6, 0.04], [0, 0.46, DASH.back], cabin);
+    this.box([1.7, 0.07, DASH.back - DASH.face], [0, 0.79, (DASH.back + DASH.face) / 2], cabin);
+    this.box([1.7, 0.24, 0.3], [0, 0.63, DASH.face + 0.15], cabin);
+    this.box([1.6, 0.5, 0.05], [0, 0.48, ROOF_END - 0.22], cabin);
+    this.box([1.6, 0.04, 0.85], [0, 0.7, ROOF_END - 0.68], cabin);
     const dashArt = kittDashTexture();
     if (dashArt) this.textures.push(dashArt);
-    const dash = this.add(new PlaneGeometry(1.64, 0.22), this.lit(dashArt), [0, 0.63, 0.328]);
+    const dash = this.add(new PlaneGeometry(1.64, 0.2), this.lit(dashArt), [0, 0.655, DASH.face - 0.002]);
     dash.rotation.y = Math.PI; dash.name = 'Dash panels';
     // The centre stack under the dash (the voice box on its face) and the low console between the seats.
-    this.box([0.36, 0.42, 0.2], [0, 0.39, 0.44], cabin);
-    this.box([0.24, 0.2, 0.5], [0, 0.28, -0.2], cabin);
+    this.box([0.36, 0.38, 0.2], [0, 0.37, DASH.face + 0.1], cabin);
+    this.box([0.24, 0.2, 0.55], [0, 0.28, this.seats.driver.z + 0.08], cabin);
     const stack = new Group(); stack.name = 'Voice box console';
-    stack.position.set(0, 0.39, 0.3); stack.rotation.order = 'YXZ'; stack.rotation.set(-0.1, Math.PI, 0);
+    stack.position.set(0, 0.37, DASH.face - 0.02); stack.rotation.order = 'YXZ'; stack.rotation.set(-0.1, Math.PI, 0);
     this.object.add(stack);
     const consoleArt = kittConsoleTexture();
     if (consoleArt) this.textures.push(consoleArt);
-    const size = { w: 0.26, h: 0.39 };
+    const size = { w: 0.25, h: 0.37 };
     this.add(new PlaneGeometry(size.w, size.h), this.lit(consoleArt), [0, 0, 0], stack).name = 'Console buttons';
     this.voice.scale.set(CONSOLE_BARS.w * size.w, CONSOLE_BARS.h * size.h, 1);
     this.voice.position.set(0, (0.5 - (CONSOLE_BARS.y + CONSOLE_BARS.h / 2)) * size.h, 0.002);
@@ -165,14 +224,14 @@ export class KittCar implements RideCar {
     this.geometries.add(this.voice.geometry); this.materials.add(this.voice.material);
     // The yoke: an aircraft-style wheel, two grips and a bar across the top, on a column from the dash.
     const yoke = new Group(); yoke.name = 'Steering yoke';
-    yoke.position.set(this.seats.driver.x, 0.69, 0.2); yoke.rotation.x = -0.45;
+    yoke.position.set(this.seats.driver.x, 0.71, DASH.face - 0.2); yoke.rotation.x = -0.45;
     this.object.add(yoke);
     this.box([0.3, 0.035, 0.035], [0, 0.08, 0], trim, yoke);
     for (const x of [-0.15, 0.15]) this.add(new RoundedBoxGeometry(0.045, 0.18, 0.05, 2, 0.015), trim, [x, 0, 0], yoke);
     this.box([0.18, 0.03, 0.03], [0, -0.07, 0], trim, yoke);
     this.box([0.11, 0.09, 0.05], [0, 0, 0.012], cabin, yoke);
     this.box([0.035, 0.022, 0.01], [0, 0.01, -0.016], red, yoke);
-    this.pipe([[this.seats.driver.x, 0.69, 0.22], [this.seats.driver.x, 0.62, 0.42]], 0.025, trim);
+    this.pipe([[this.seats.driver.x, 0.71, DASH.face - 0.18], [this.seats.driver.x, 0.64, DASH.face + 0.02]], 0.025, trim);
     for (const s of Object.values(this.seats)) {
       this.add(new RoundedBoxGeometry(0.48, 0.1, 0.5, 2, 0.035), seat, [s.x, s.y - 0.05, s.z]);
       const back = this.add(new RoundedBoxGeometry(0.46, 0.58, 0.1, 2, 0.035), seat, [s.x, s.y + 0.26, s.z - 0.27]);
@@ -191,15 +250,15 @@ export class KittCar implements RideCar {
       this.object.add(door);
       const local = (p: Point): Point => [p[0] - door.position.x, p[1], p[2] - door.position.z];
       const skin = new Shape();
-      skin.moveTo(DOOR.back, 0.24); skin.lineTo(DOOR.back, 0.795); skin.lineTo(DOOR.front, 0.765); skin.lineTo(DOOR.front, 0.24); skin.lineTo(DOOR.back, 0.24);
+      skin.moveTo(DOOR.back, 0.24); skin.lineTo(DOOR.back, 0.82); skin.lineTo(DOOR.front, 0.82); skin.lineTo(DOOR.front, 0.24); skin.lineTo(DOOR.back, 0.24);
       this.sideShape(side, skin, paint, door);
-      this.panel([local([side * 0.86, 0.26, DOOR.back]), local([side * 0.86, 0.78, DOOR.back]), local([side * 0.86, 0.75, DOOR.front - 0.02]), local([side * 0.86, 0.26, DOOR.front - 0.02])], cabin, door);
-      this.pipe([local([side * 0.915, 0.765, DOOR.front]), local([side * 0.915, 0.795, DOOR.back])], 0.018, trim, door);
-      this.pipe([local([side * (W + 0.004), 0.47, DOOR.front]), local([side * (W + 0.004), 0.47, DOOR.back])], 0.008, trim, door);
-      this.box([0.012, 0.03, 0.12], local([side * (W + 0.008), 0.68, -0.6]), trim, door);
-      this.box([0.08, 0.02, 0.03], local([side * (W + 0.03), 0.84, 0.47]), trim, door);
-      this.add(new RoundedBoxGeometry(0.06, 0.08, 0.15, 2, 0.02), paint, local([side * (W + 0.08), 0.86, 0.45]), door);
-      const pane = this.panel([local([side * 0.89, 0.78, 0.58]), local([side * 0.66, 1.28, -0.08]), local([side * 0.68, 1.28, DOOR.back]), local([side * 0.905, 0.8, DOOR.back])], glass, door);
+      this.panel([local([side * 0.86, 0.26, DOOR.back]), local([side * 0.86, 0.8, DOOR.back]), local([side * 0.86, 0.8, DOOR.front - 0.02]), local([side * 0.86, 0.26, DOOR.front - 0.02])], cabin, door);
+      this.pipe([local([side * 0.915, 0.82, DOOR.front]), local([side * 0.915, 0.82, DOOR.back])], 0.016, trim, door);
+      this.pipe([local([side * (W + 0.004), 0.5, DOOR.front]), local([side * (W + 0.004), 0.5, DOOR.back])], 0.007, trim, door);
+      this.box([0.012, 0.03, 0.12], local([side * (W + 0.008), 0.72, DOOR.back + 0.22]), trim, door);
+      this.box([0.08, 0.02, 0.03], local([side * (W + 0.03), 0.87, DOOR.front - 0.06]), trim, door);
+      this.add(new RoundedBoxGeometry(0.06, 0.08, 0.15, 2, 0.02), paint, local([side * (W + 0.08), 0.89, DOOR.front - 0.08]), door);
+      const pane = this.panel([local([side * 0.88, 0.83, DOOR.front + 0.05]), local([side * 0.645, ROOF - 0.015, SCREEN.top + 0.03]), local([side * 0.67, ROOF - 0.015, DOOR.back + 0.02]), local([side * 0.905, 0.82, DOOR.back])], glass, door);
       if (side < 0) passengerGlass = pane;
     }
     this.passengerGlass = passengerGlass!;
@@ -227,8 +286,8 @@ export class KittCar implements RideCar {
 
     this.batch(this.object);
     // The scanner, on the beak's face just in front of its slot (after batching: its shader is its own).
-    this.scanner.position.set(0, 0.46 + beak.y * 0.012, NOSE + 0.035 + beak.z * 0.012);
-    this.scanner.rotation.x = tilt;
+    this.scanner.position.set(...scannerAt(0.012));
+    this.scanner.rotation.x = BEAK_TILT;
     this.object.add(this.scanner);
     this.geometries.add(this.scanner.geometry); this.materials.add(this.scanner.material);
   }
@@ -246,6 +305,11 @@ export class KittCar implements RideCar {
   get falconDoorsOpen(): number { return this.greetOpen; }
   get passengerWindowDown(): number { return this.windowDown; }
   roll(distance: number): void { for (const wheel of this.wheels) wheel.rotation.x += distance / K.wheelRadius; }
+  /** The cockpit scene as they pull out of the driveway: the voice box talks all through it. */
+  setIntro(t: number | null): void {
+    this.voice.material.uniforms.talk!.value = t === null ? 0 : smooth(0.2, 0.6, t);
+  }
+
   /** The scanner sweeps and the voice box talks, on game time (frozen by pause). */
   updatePresentation(time: number): void {
     this.scanner.material.uniforms.time!.value = time;
@@ -265,20 +329,40 @@ export class KittCar implements RideCar {
     this.doors.driver.rotation.y = -K.doorSwing * Math.max(this.greetOpen, this.driverOpen);
   }
 
-  /** The front fender's side, nose to door, its wheel arch cut out (z along, y up). */
+  /** The front fender's side, door to nose, its wheel arch cut out (z along, y up): the top follows the hood's edge. */
   private frontFender(): Shape {
     const s = new Shape(), a = K.frontAxle;
-    s.moveTo(DOOR.front, 0.24); s.lineTo(DOOR.front, 0.765); s.lineTo(NOSE, 0.52); s.lineTo(NOSE + 0.07, 0.4); s.lineTo(NOSE - 0.02, 0.25);
-    s.lineTo(a + 0.4, 0.22); s.absarc(a, 0.33, 0.4, 0, Math.PI, false); s.lineTo(DOOR.front, 0.24);
+    s.moveTo(DOOR.front, 0.24); s.lineTo(DOOR.front, 0.82); s.lineTo(SCREEN.base, 0.84);
+    for (let i = 1; i <= 8; i++) { const p = hoodPoint(i / 8, 1); s.lineTo(Math.min(p[2], NOSE.corner - 0.04), p[1]); }
+    s.lineTo(NOSE.corner, 0.5); s.lineTo(NOSE.corner - 0.03, 0.26);
+    s.lineTo(a + ARCH, 0.24); s.absarc(a, 0.33, ARCH, 0, Math.PI, false); s.lineTo(DOOR.front, 0.24);
     return s;
   }
 
   /** The rear quarter's side, door to tail, its wheel arch cut out. */
   private rearQuarter(): Shape {
     const s = new Shape(), a = K.rearAxle;
-    s.moveTo(DOOR.back, 0.24); s.lineTo(DOOR.back, 0.795); s.lineTo(-1.95, 0.84); s.lineTo(TAIL, 0.8); s.lineTo(TAIL - 0.03, 0.28);
-    s.lineTo(a - 0.4, 0.24); s.absarc(a, 0.33, 0.4, Math.PI, 0, true); s.lineTo(DOOR.back, 0.24);
+    s.moveTo(DOOR.back, 0.24); s.lineTo(DOOR.back, 0.82); s.lineTo(HATCH_END, 0.86); s.lineTo(TAIL + 0.05, 0.86); s.lineTo(TAIL, 0.3);
+    s.lineTo(a - ARCH, 0.24); s.absarc(a, 0.33, ARCH, Math.PI, 0, true); s.lineTo(DOOR.back, 0.24);
     return s;
+  }
+
+  /** A smooth surface over `u` 0..1 and `v` −1..1 (`nu` × `nv` cells), from `point(u, v)` in car space. */
+  private surface(point: (u: number, v: number) => Point, nu: number, nv: number, material: Material): Mesh {
+    const positions: number[] = [], uvs: number[] = [], index: number[] = [];
+    for (let i = 0; i <= nu; i++) for (let j = 0; j <= nv; j++) {
+      const p = point(i / nu, (j / nv) * 2 - 1);
+      positions.push(...p); uvs.push(p[2], p[0]);
+    }
+    for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) {
+      const a = i * (nv + 1) + j, b = a + nv + 1;
+      index.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+    const g = new BufferGeometry();
+    g.setAttribute('position', new Float32BufferAttribute(positions, 3));
+    g.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+    g.setIndex(index); g.computeVertexNormals();
+    return this.add(g, material, [0, 0, 0]);
   }
 
   private side(side: number, shape: Shape, material: Material): void {

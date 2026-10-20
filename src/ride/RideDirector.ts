@@ -164,14 +164,15 @@ export class RideDirector {
 
   nextView(): void {
     if (!this.drive) return;
-    // During the takeoff shot, a tap goes on to the road's first view (the tour carries on from there).
-    if (this.drive.skipReveal()) return;
+    // During the cockpit scene or the takeoff shot, a tap goes on to what's next (the tour carries on from there).
+    if (this.drive.skipIntro() || this.drive.skipReveal()) return;
     this.drive.nextView();
     this.cameraTour.manual();
   }
 
   /** The view on the road, as the Change View button names it. */
   get viewName(): string {
+    if (this.drive?.introPlaying) return 'Cockpit';
     if (this.drive?.revealingHover) return 'Takeoff';
     return VIEW_NAMES[this.drive?.view ?? 'alongside'];
   }
@@ -331,7 +332,7 @@ export class RideDirector {
       this.hooks.fade(Math.min(1, this.homeFade / RIDE.headHomeFade));
       if (this.homeFade >= RIDE.headHomeFade) { this.endDrive(); return; }
     } else this.hooks.fade(Math.max(1 - this.time / 1.2, smoothRange(40, 8, left)));
-    const view = this.cameraTour.update(dt, !drive.revealingHover && !this.homeRequested, drive.progress, drive.views);
+    const view = this.cameraTour.update(dt, !drive.introPlaying && !drive.revealingHover && !this.homeRequested, drive.progress, drive.views);
     if (view) drive.setView(view, RIDE.cameraTour.blend);
     if (auto && dt > 0) {
       this.autoBarkIn -= dt;
@@ -352,31 +353,35 @@ export class RideDirector {
     this.lookNow.pitch += (this.lookAim.pitch - this.lookNow.pitch) * ease;
     drive.update(dt, aspect);
     drive.car.setPassengerWindow(1);
-    // The dog: head out in the wind (standing up on the seat), or sitting back.
-    const pose = this.headOut ? drive.car.headOut : RIDE.dogInCar.headIn;
+    // The dog: head out in the wind (standing up on the seat), or sitting back. In the cockpit scene he sits in,
+    // watching the dash light up (then out goes his head).
+    const intro = drive.introPlaying;
+    const headOut = this.headOut && !intro;
+    const pose = headOut ? drive.car.headOut : RIDE.dogInCar.headIn;
     const dog = this.cast.dog.object;
     dog.position.set(pose.x, pose.y, pose.z);
     // Turned toward the window (and tipped by the pose's pitch, if it has one).
     dog.rotation.order = 'YXZ';
     dog.rotation.set(pose.pitch, pose.heading, 0);
     const s = this.dogAnim.update(dt, { speed: 0, turnRate: 0, headroom: 2 });
-    s.sit = this.headOut ? 0 : 1;
+    s.sit = headOut ? 0 : 1;
     s.rest = 0;
     s.crouch = 0;
     s.tailWag = Math.max(s.tailWag, 0.9);
-    s.wind = this.headOut ? 1 : 0.15;
+    s.wind = headOut ? 1 : 0.15;
     // Now and then (head out), his tongue comes out for a happy pant in the wind, then goes back in.
     const P = RIDE.pant;
     if (this.pantLeft > 0) this.pantLeft -= dt;
-    else if ((this.pantIn -= dt) <= 0 && this.headOut) {
+    else if ((this.pantIn -= dt) <= 0 && headOut) {
       this.pantLeft = P.lasts[0] + Math.random() * (P.lasts[1] - P.lasts[0]);
       this.pantIn = P.every[0] + Math.random() * (P.every[1] - P.every[0]);
     }
-    const panting = this.headOut && this.pantLeft > 0 ? 1 : 0;
+    const panting = headOut && this.pantLeft > 0 ? 1 : 0;
     this.pant += (panting - this.pant) * Math.min(1, dt * 6);
     s.tongue = this.pant;
-    s.headYaw = this.lookNow.yaw;
-    s.headPitch = pose.headPitch + this.lookNow.pitch;
+    // In the cockpit scene: eyes on the dash, toward the middle (his left), and a little down.
+    s.headYaw = intro ? RIDE.dogInCar.dashLook.yaw : this.lookNow.yaw;
+    s.headPitch = pose.headPitch + (intro ? RIDE.dogInCar.dashLook.pitch : this.lookNow.pitch);
     s.attention = 1;
     this.cast.dog.update(dt, s);
     this.sitAtWheel(dt, drive.driverSeat, true);

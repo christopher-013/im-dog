@@ -168,7 +168,7 @@ describe('DeLorean ride presentation', () => {
       triangles += (o.geometry.index?.count ?? o.geometry.attributes.position!.count) / 3;
       for (const m of Array.isArray(o.material) ? o.material : [o.material]) materials.add(m);
     });
-    expect(meshes).toBeLessThan(55);
+    expect(meshes).toBeLessThan(62);
     expect(triangles).toBeLessThan(25_000);
     const disposals = [...geometry, ...materials].map((resource) => vi.spyOn(resource, 'dispose'));
     const textures = new Set<Texture>();

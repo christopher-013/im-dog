@@ -52,6 +52,25 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code, cockpit scenes and the reshaped black car (2026-10-20; owner request; committed and pushed to the working
+branch `claude/milestones-5-9-qagq4b`, **not** to `main` yet):
+- **The black car reshaped** from the owner's side-on photo, scaled by its wheels: axles moved back (front overhang
+  1.30 m, wheelbase 2.54 m), a long crowned hood with a centre bulge, the windshield far back and raked, a short T-top
+  roof, a wraparound bubble hatch, a tapered beak with the scanner across its flat middle, flared arch lips. Cabin,
+  seats (z −0.5), dash, voice box, yoke, window and Inside camera moved to match. `world/KittCar.ts` (smooth
+  `surface()` panels), `CARS.kitt`.
+- **Cockpit scenes** (`RideCar.intro`, `setIntro`): `CoastDrive` plays a car's camera keyframes while it creeps out of
+  the driveway, then glides (KITT) or cuts (DeLorean) on; the DeLorean's takeoff clock starts after it (`hoverTime`).
+  Change View skips it (`skipIntro`); the button reads "Cockpit"; the tour waits; the dog sits in watching the dash
+  (`RIDE.dogInCar.dashLook`). KITT's voice box talks throughout (`talk` uniform). DeLorean: time circuits on the dash
+  (`world/deLoreanCabin.ts`, keyed in over 2.2 s, present row = local clock, redrawn only when it changes), amber
+  gauges, the flux capacitor's case/frame/caps/labels, and a `surge` uniform (brighter, faster, more arcs).
+- Tests: `ride/intro.test.ts` (camera inside, creep speed, skip, KITT talking, flux surge, button name, circuit times);
+  hover, departure, window and ride tests now wait for the cockpit scene. `npm test`: 110 files, 794 tests; typecheck
+  and build clean.
+- Browser (headless, `?car=kitt` / `?car=delorean`): frames from both scenes (voice box, dash and yoke; circuits being
+  keyed in, the pan to the dog, the flux capacitor surging, the takeoff at the end of the driveway). Not on a phone.
+
 Claude Code, the third ride car (2026-10-20; owner request; committed and pushed to the working branch
 `claude/milestones-5-9-qagq4b`, **not** to `main` yet):
 - **The black talking car (KITT homage, D37)**, `world/KittCar.ts`: a low glossy black T-top coupe built in code

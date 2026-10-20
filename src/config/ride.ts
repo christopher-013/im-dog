@@ -82,6 +82,8 @@ export const RIDE = {
   dogInCar: {
     headOut: { x: -0.37, y: 0.24, z: 0.08, heading: -Math.PI / 2 + 0.25, pitch: -0.2, headPitch: 0.3 },
     headIn: { x: 0.0, y: 0.0, z: 0.02, heading: 0, pitch: 0, headPitch: 0 },
+    /** In the car's cockpit scene (pulling out of the driveway): where he looks (the dash, to his left; rad). */
+    dashLook: { yaw: 0.45, pitch: -0.2 },
   },
   /**
    * The Garage door glows (owner, 2026-10-17: "pulse with blue light when the dog looks or passes by the door to

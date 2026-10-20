@@ -69,11 +69,14 @@ describe('DeLorean hover presentation', () => {
     const path = departureRoute(drivePath(routeCurve())).path, road = new Vector3(), direction = new Vector3();
     const flying = id === 'delorean';
     expect(!!drive.car.hover).toBe(flying);
+    // After the cockpit scene (the slow roll out of the driveway), the takeoff.
+    for (let i = 0; i < 30 * 30 && drive.introPlaying; i++) drive.update(1 / 30, 390 / 844);
+    const outOfTheDriveway = drive.progress;
     for (let i = 0; i < 135; i++) drive.update(1 / 30, 390 / 844);
     samplePath(path, drive.progress * drive.length, road, direction);
     const altitude = drive.car.object.position.y - road.y - 0.02;
     if (flying) {
-      expect(drive.progress).toBe(0); // camera can show deployment before accelerating
+      expect(drive.progress).toBeCloseTo(outOfTheDriveway, 3); // camera can show deployment before accelerating
       expect(altitude).toBeGreaterThan(CARS.delorean.hover.height - 0.06);
       expect(altitude).toBeLessThan(CARS.delorean.hover.height + 0.06);
       const aura = drive.car.object.getObjectByName('Hover aura')!;

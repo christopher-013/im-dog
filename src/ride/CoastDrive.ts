@@ -152,9 +152,13 @@ export class CoastDrive {
   private blendSeconds: number = RIDE.cameraTour.manualBlend;
   /** The takeoff shot was skipped (Change View). */
   private revealSkipped = false;
+  /** When the cockpit scene ends (s into the drive; 0 for a car without one), and whether it was cut short. */
+  private introEnd = 0;
+  private introCut = false;
 
   constructor(car: CarId = 'family') {
     this.car = createCar(car);
+    this.introEnd = this.car.intro?.seconds ?? 0;
     this.scene.name = 'Coast drive';
     this.scene.fog = new Fog('#f2c7a0', 220, 1700);
     const clouds = this.clouds();
@@ -224,7 +228,34 @@ export class CoastDrive {
 
   get revealingHover(): boolean {
     const h = this.car.hover;
-    return !!h && !this.revealSkipped && this.time < h.revealSeconds + h.revealBlend;
+    return !!h && !this.revealSkipped && this.hoverTime < h.revealSeconds + h.revealBlend;
+  }
+
+  /** The car's cockpit scene as it pulls out of the driveway (owner, 2026-10-20), if it has one: playing now. */
+  get introPlaying(): boolean {
+    return !!this.car.intro && this.time < this.introEnd;
+  }
+
+  /** The takeoff's own clock: it starts once the cockpit scene's over. */
+  private get hoverTime(): number {
+    return this.time - this.introEnd;
+  }
+
+  /**
+   * Change View during the cockpit scene: on to what comes next (the takeoff, or the road), gliding there. The car
+   * carries on as usual. False if there's no cockpit scene playing.
+   */
+  skipIntro(): boolean {
+    if (!this.introPlaying) return false;
+    this.currentShot(tmpA, tmpB);
+    this.from.pos.copy(tmpA); this.from.look.copy(tmpB);
+    this.from.fov = this.camera.fov;
+    this.from.clearance = this.cameraClearance();
+    this.introEnd = this.time;
+    this.introCut = true;
+    this.blend = 0;
+    this.blendSeconds = RIDE.cameraTour.manualBlend;
+    return true;
   }
 
   /**
@@ -245,16 +276,16 @@ export class CoastDrive {
 
   /** Roughly how long the whole drive takes at the usual speeds (s). */
   get expectedDuration(): number {
-    return this.path.length / SPEED.cruise + SPEED.ease + 6 + (this.car.hover?.revealSeconds ?? 0) +
+    return this.path.length / SPEED.cruise + SPEED.ease + 6 + (this.car.hover?.revealSeconds ?? 0) + (this.car.intro?.seconds ?? 0) * 0.7 +
       this.departure.joinDistance * (1 / DEPARTURE_HOME.street.speed - 1 / SPEED.cruise);
   }
 
-  /** Next camera shot (gliding over from this one). */
   /** The views this car has, in Change View's order (Inside only where the car has a cabin to show). */
   get views(): readonly DriveView[] {
     return this.car.cabinView ? DRIVE_VIEWS : DRIVE_VIEWS.filter((v) => v !== 'cabin');
   }
 
+  /** Next camera shot (gliding over from this one). */
   nextView(): void {
     const views = this.views;
     this.setView(views[(views.indexOf(this.view) + 1) % views.length]!);
@@ -299,14 +330,19 @@ export class CoastDrive {
   update(dt: number, aspect: number): void {
     this.time += dt;
     const hover = this.car.hover;
-    this.car.setHover?.(hover ? hoverDeployment(this.time, hover) : 0, this.time);
+    this.car.setHover?.(hover ? hoverDeployment(this.hoverTime, hover) : 0, this.hoverTime);
     this.car.updatePresentation?.(this.time);
+    this.car.setIntro?.(this.introPlaying ? this.time : null);
     // Speed: easing up from the start, easing to a stop at the top.
     const left = this.path.length - this.distance;
     const target = Math.min(this.distance < this.departure.joinDistance + 5 ? DEPARTURE_HOME.street.speed : SPEED.cruise, 1.2 + left * 0.4);
-    // The coupe deploys on the road before accelerating; other vehicles keep their usual start.
-    const takingOff = hover && this.time < hover.revealSeconds;
-    this.speed += ((takingOff ? 0 : target) - this.speed) * Math.min(1, dt / (this.time < SPEED.ease ? 1.6 : 0.9));
+    // The cockpit scene: a slow roll out of the driveway (easing to a halt before a takeoff). Then the coupe deploys on
+    // the road before accelerating; other vehicles keep their usual start.
+    const intro = this.car.intro;
+    let goal = target;
+    if (intro && this.introPlaying) goal = Math.min(target, intro.creep * (intro.stop ? 1 - smooth(intro.seconds - 1.6, intro.seconds, this.time) : 1));
+    else if (hover && this.hoverTime < hover.revealSeconds) goal = 0;
+    this.speed += (goal - this.speed) * Math.min(1, dt / (this.time < SPEED.ease ? 1.6 : 0.9));
     // Within a hand's breadth of the end: there.
     const step = left < 0.2 ? left : Math.min(left, this.speed * dt);
     if (left < 0.2) this.speed = 0;
@@ -345,7 +381,7 @@ export class CoastDrive {
     car.position.copy(tmpPos);
     car.position.y += 0.02;
     const hover = this.car.hover;
-    const altitude = hover ? hoverAltitude(this.time, hover) : 0;
+    const altitude = hover ? hoverAltitude(this.hoverTime, hover) : 0;
     car.position.y += altitude;
     // Nose along the way (smoothly: the heading comes from either side of here), pitched with the slope.
     tmpA.copy(tmpPos).add(tmpDir); tmpA.y += altitude;
@@ -385,14 +421,37 @@ export class CoastDrive {
       fov = this.from.fov + (fov - this.from.fov) * k;
     }
     const hover = this.car.hover;
-    if (hover && !this.revealSkipped && this.time < hover.revealSeconds + hover.revealBlend) {
-      const k = smooth(hover.revealSeconds, hover.revealSeconds + hover.revealBlend, this.time);
+    // The takeoff shot, on its own clock (after any cockpit scene).
+    if (hover && !this.revealSkipped && this.hoverTime >= 0 && this.hoverTime < hover.revealSeconds + hover.revealBlend) {
+      const k = smooth(hover.revealSeconds, hover.revealSeconds + hover.revealBlend, this.hoverTime);
       pos.lerpVectors(tmpPos.set(...hover.camera.pos), pos, k);
       look.lerpVectors(tmpDir.set(...hover.camera.look), look, k);
       const revealFov = fitVerticalFov(hover.camera.fov, 68, this.camera.aspect, 115);
       fov = revealFov + (fov - revealFov) * k;
     }
+    // The cockpit scene, and (when it ends by itself) its glide out into the road's view.
+    const intro = this.car.intro;
+    if (intro && !this.introCut && !(hover && this.hoverTime >= 0) && this.time < this.introEnd + intro.blend) {
+      const introFov = this.introShot(Math.min(this.time, this.introEnd), tmpPos, tmpDir);
+      const k = intro.blend > 0 ? smooth(this.introEnd, this.introEnd + intro.blend, this.time) : 0;
+      pos.lerpVectors(tmpPos, pos, k);
+      look.lerpVectors(tmpDir, look, k);
+      fov = introFov + (fov - introFov) * k;
+    }
     return fov;
+  }
+
+  /** The cockpit scene's camera `t` s in: gliding from one of the car's shots to the next. */
+  private introShot(t: number, pos: Vector3, look: Vector3): number {
+    const shots = this.car.intro!.shots;
+    let i = 0;
+    while (i < shots.length - 1 && t >= shots[i + 1]!.at) i++;
+    const a = shots[i]!, b = shots[Math.min(i + 1, shots.length - 1)]!;
+    const k = b === a ? 0 : smooth(a.at, b.at, t);
+    pos.set(...a.pos).lerp(tmpLook.set(...b.pos), k);
+    look.set(...a.look).lerp(tmpLook.set(...b.look), k);
+    // A portrait phone still gets the panel's width.
+    return fitVerticalFov(a.fov + (b.fov - a.fov) * k, 52, this.camera.aspect, 100);
   }
 
   /** Blend the drone's terrain clearance too, so a slow glide doesn't jump ten metres at its start/end. */

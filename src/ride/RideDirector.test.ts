@@ -187,8 +187,9 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     expect(drive.driverSeat.position.equals(garage.car.seats.driver)).toBe(true);
     // The lower coupe needs its own window-height camera framing; no empty SUV roofline close-up.
     drive.setView('face');
-    // Let the optional takeoff reveal finish before checking the actual passenger close-up.
-    for (let i = 0; i < 7 * 30; i++) ride.update(dt, 16 / 9, false);
+    // Let the cockpit scene and the optional takeoff reveal finish before checking the actual passenger close-up.
+    for (let i = 0; i < 7 * 30 || ((drive.introPlaying || drive.revealingHover) && i < 40 * 30); i++) ride.update(dt, 16 / 9, false);
+    for (let i = 0; i < 2 * 30; i++) ride.update(dt, 16 / 9, false);
     drive.scene.updateMatrixWorld(true);
     const inShot = dog.attachments.head!.getWorldPosition(new Vector3()).project(drive.camera);
     expect(Math.abs(inShot.x)).toBeLessThan(0.95);

@@ -140,7 +140,9 @@ the normal return-home sequence without finishing the route. Repeated presses ar
 The DeLorean starts with a short wide-camera takeoff: its wheels fold down into hover mode, then it floats above
 the road with a soft light-blue aura for the rest of the ride. The SUV stays on its wheels. Flight is scripted;
 there are no piloting controls. Change View during the takeoff shot (the button reads "Takeoff") glides straight on
-to the road views; the car still takes off as usual (owner, 2026-10-20).
+to the road views; the car still takes off as usual (owner, 2026-10-20). Before that, as they pull out of the
+driveway, the DeLorean and the black talking car each play a short cockpit scene (the button reads "Cockpit"); Change
+View skips it too.
 
 Every full ride shows four longer automatic shots: alongside, his face at the window, behind, then drone (in the black
 talking car, **Inside**, over the console to the lit dash and the voice box, takes Behind's place; Change View offers

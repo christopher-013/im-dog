@@ -11,6 +11,7 @@ import type { RideCar } from './RideCar';
 import { deLoreanMarking } from './deLoreanMarkings';
 import { hoverAltitude } from '../ride/hover';
 import { fluxCapacitor } from './fluxCapacitor';
+import { CIRCUIT_CHARACTERS, labelTape, TimeCircuits } from './deLoreanCabin';
 
 type Point = readonly [number, number, number];
 const D = CARS.delorean;
@@ -48,6 +49,8 @@ export class DeLoreanCar implements RideCar {
   private wingsOpen = 0;
   private windowDown = 0;
   private readonly flux = fluxCapacitor();
+  private readonly circuits = new TimeCircuits();
+  readonly intro = D.intro;
 
   constructor() {
     this.object.name = 'Silver time machine';
@@ -122,9 +125,22 @@ export class DeLoreanCar implements RideCar {
     this.box([0.30, 0.045, 1.01], [0, 1.407, -0.16], silver);
     this.box([1.7, 0.13, 0.29], [0, 0.79, 0.78], dark);
     this.box([0.20, 0.25, 0.75], [0, 0.47, 0.02], dark);
-    // Dashboard's three original time-circuit readouts: coloured bars, no film dates or text texture.
-    for (const [y, mat] of [[0.78, red], [0.73, amber], [0.68, blue]] as const) {
-      for (let i = 0; i < 5; i++) this.box([0.023, 0.018, 0.012], [-0.10 + i * 0.048, y, 0.615], mat);
+    // The time circuits on the centre of the dash (owner, 2026-10-20): destination, present and last time departed,
+    // tilted toward the seats in a dark metal case; two amber-lit gauges on the passenger's side.
+    const tc = D.timeCircuits;
+    const unit = new Group(); unit.name = 'Time circuits';
+    unit.position.set(...tc.at); unit.rotation.order = 'YXZ'; unit.rotation.set(-0.2, Math.PI, 0);
+    this.object.add(unit);
+    this.box([tc.size[0] + 0.03, tc.size[1] + 0.03, 0.1], [0, 0, -0.052], dark, unit);
+    const circuitArt = this.circuits.texture;
+    if (circuitArt) this.detailTextures.push(circuitArt);
+    const face = new MeshBasicMaterial({ color: circuitArt ? '#ffffff' : '#202326', map: circuitArt, toneMapped: false });
+    this.materials.add(face);
+    const display = this.add(new PlaneGeometry(...tc.size), face, [0, 0, 0], unit);
+    display.name = 'Time circuit display'; display.userData.marking = 'time circuits';
+    for (const x of [-0.3, -0.48]) {
+      const gauge = this.add(new CylinderGeometry(0.055, 0.055, 0.02, 20), amber, [x, 0.76, 0.6]);
+      gauge.rotation.x = Math.PI / 2 - 0.3;
     }
     for (const s of Object.values(this.seats)) {
       this.add(new RoundedBoxGeometry(0.51, 0.10, 0.53, 2, 0.035), seat, [s.x, s.y - 0.05, s.z]);
@@ -195,7 +211,18 @@ export class DeLoreanCar implements RideCar {
       this.pipe([[side * 0.94, 0.72, -0.73], [side * 1.04, 0.75, -1.19], [side * 1.04, 0.68, -1.70]], 0.007, yellow);
       for (const z of [-1.14, -1.40, -1.66]) this.box([0.045, 0.09, 0.05], [side * 1.03, 0.70, z], alloy);
     }
-    this.box([0.33, 0.37, 0.10], [0, 0.99, -0.65], dark);
+    // The flux capacitor's case (owner, 2026-10-20: like the film's): grey metal, a rounded black window frame, orange
+    // caps where the Y's tubes meet it, and its two red warning labels.
+    const steel = this.material('#62676d', 0.6, 0.45);
+    const caps = this.material('#c8692a', 0.1, 0.5, '#ff8a3a', 0.35);
+    this.box([0.46, 0.56, 0.08], [0, 0.99, -0.65], steel);
+    for (const y of [-0.2, 0.2]) this.box([0.4, 0.035, 0.025], [0, 0.99 + y, -0.598], dark);
+    for (const x of [-0.185, 0.185]) this.box([0.035, 0.42, 0.025], [x, 0.99, -0.598], dark);
+    for (const [x, y] of [[-0.088, 0.104], [0.088, 0.104], [0, -0.115]] as const) {
+      this.add(new CylinderGeometry(0.016, 0.02, 0.05, 10), caps, [x, 0.99 + y, -0.575]).rotation.x = Math.PI / 2;
+    }
+    this.tape(['DISCONNECT CAPACITOR DRIVE', 'BEFORE OPENING'], [0.3, 0.06], [0, 0.99 + 0.245, -0.606], 'Flux warning label');
+    this.tape(['SHIELD EYES FROM LIGHT'], [0.22, 0.026], [0, 0.99 - 0.07, -0.57], 'Flux eyes label');
     // The Y faces the passengers/windshield, not backwards through the rear body.
     // Animated Y is added after batching so its time uniform stays independently controlled.
     // Classic circular reactor deck, wiring looms and silver tanks between the two rear vents.
@@ -262,6 +289,7 @@ export class DeLoreanCar implements RideCar {
     this.geometries.add(this.flux.geometry); this.materials.add(this.flux.material);
     this.buildHoverAura();
     this.setHover(0, 0);
+    this.setIntro(null);
   }
 
   setPassengerDoor(open: number): void { this.passengerOpen = clamp(open); this.poseDoors(); }
@@ -279,6 +307,16 @@ export class DeLoreanCar implements RideCar {
   roll(distance: number): void { for (const wheel of this.wheels) wheel.rotation.x += distance / D.wheelRadius * (1 - this.hoverNow); }
   get hoverAmount(): number { return this.hoverNow; }
   updatePresentation(time: number): void { this.flux.material.uniforms.time!.value = time; }
+  /**
+   * The cockpit scene as they pull out of the driveway: the destination keyed into the time circuits a character at a
+   * time, the present row reading the player's own clock, and the flux capacitor surging. Null: all set, at rest.
+   */
+  setIntro(t: number | null): void {
+    const tc = D.timeCircuits;
+    const typed = t === null ? CIRCUIT_CHARACTERS : Math.floor(Math.max(0, Math.min(1, (t - tc.typeFrom) / tc.typeFor)) * CIRCUIT_CHARACTERS);
+    this.circuits.draw(typed, new Date());
+    this.flux.material.uniforms.surge!.value = t === null ? 0 : Math.max(0, Math.min(1, (t - D.fluxSurge[0]) / (D.fluxSurge[1] - D.fluxSurge[0])));
+  }
   setHover(amount: number, time: number): void {
     this.hoverNow = clamp(amount);
     const k = this.hoverNow * this.hoverNow * (3 - 2 * this.hoverNow);
@@ -445,6 +483,16 @@ export class DeLoreanCar implements RideCar {
       for (const mesh of meshes) { mesh.removeFromParent(); mesh.geometry.dispose(); this.geometries.delete(mesh.geometry); }
       this.add(merged, mat, [0, 0, 0], parent);
     }
+  }
+  /** A strip of red label tape (unlit art, kept out of batching), facing the seats (+z). */
+  private tape(lines: readonly string[], size: readonly [number, number], at: Point, name: string): void {
+    const texture = labelTape(lines);
+    if (texture) this.detailTextures.push(texture);
+    const material = new MeshBasicMaterial({ color: texture ? '#ffffff' : '#c72a22', map: texture, toneMapped: false });
+    this.materials.add(material);
+    const mesh = this.add(new PlaneGeometry(...size), material, at);
+    mesh.name = name; mesh.userData.marking = 'label';
+    mesh.castShadow = mesh.receiveShadow = false;
   }
   private marking(kind: 'dmc' | 'rear' | 'plate', size: readonly [number, number], at: Point, heading: number, name: string): void {
     const texture = deLoreanMarking(kind);

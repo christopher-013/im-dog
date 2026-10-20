@@ -74,3 +74,30 @@ describe.each(CAR_IDS)('%s: the face shot', (carId) => {
     drive.dispose(); dog.dispose();
   });
 });
+
+describe.each(CAR_IDS)('%s: the alongside shot', (carId) => {
+  it.each(DOGS)('$name: in the picture on a portrait phone as well as on a wide screen', (profile) => {
+    const drive = new CoastDrive(carId), dog = new ToonMokeVisual(profile.look);
+    drive.dogSeat.add(dog.object);
+    const p = drive.car.headOut, animation = new MokeAnimationController();
+    dog.object.position.set(p.x, p.y, p.z);
+    dog.object.rotation.order = 'YXZ'; dog.object.rotation.set(p.pitch, p.heading, 0);
+    for (let i = 0; i < 7 * 30; i++) drive.update(1 / 30, 16 / 9);
+    expect(drive.view).toBe('alongside');
+    for (const aspect of [16 / 9, 4 / 3, 1, 390 / 844, 360 / 800]) {
+      drive.update(0, aspect);
+      for (const yaw of [RIDE.look.wander.yaw[0], 0, RIDE.look.wander.yaw[1]]) {
+        const state = animation.update(0, { speed: 0, turnRate: 0, headroom: 2 });
+        state.headPitch = p.headPitch; state.headYaw = yaw; state.wind = 1;
+        dog.update(0, state);
+        drive.scene.updateMatrixWorld(true);
+        for (const point of [dog.attachments.head!, dog.attachments.mouth]) {
+          const screen = point.getWorldPosition(new Vector3()).project(drive.camera);
+          expect(Math.abs(screen.x)).toBeLessThan(0.9);
+          expect(Math.abs(screen.y)).toBeLessThan(0.9);
+        }
+      }
+    }
+    drive.dispose(); dog.dispose();
+  });
+});

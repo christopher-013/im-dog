@@ -51,6 +51,8 @@ export class TouchInput {
   private enabledNow = false;
   /** Called on every touch, so the input mode can switch to touch. */
   onTouch: (() => void) | null = null;
+  /** No walking (on a ride): a drag anywhere looks around, the move stick's side included. */
+  private lookOnlyNow = false;
 
   private readonly joystick = new VirtualJoystick();
   private look: { id: number; x: number; y: number } | null = null;
@@ -118,6 +120,16 @@ export class TouchInput {
     if (on === this.enabledNow) return;
     this.enabledNow = on;
     if (!on) this.reset();
+  }
+
+  get lookOnly(): boolean {
+    return this.lookOnlyNow;
+  }
+
+  set lookOnly(on: boolean) {
+    if (on === this.lookOnlyNow) return;
+    this.lookOnlyNow = on;
+    if (on && this.joystick.pointerId !== null) this.release(this.joystick.pointerId);
   }
 
   /** Is the RUN toggle on? (For the button's look.) */
@@ -201,7 +213,7 @@ export class TouchInput {
     }
 
     const { x, y, width } = this.local(e);
-    if (x < width * TOUCH.joystickZone) {
+    if (!this.lookOnlyNow && x < width * TOUCH.joystickZone) {
       if (this.joystick.active) return;
       this.capture(e);
       this.joystick.start(e.pointerId, x, y);

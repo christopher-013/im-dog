@@ -36,6 +36,8 @@ interface DeliveryDeps {
   random?: () => number;
   /** Halloween (D30): is it on right now? The next visitors are trick-or-treaters while it is. */
   halloween?: () => boolean;
+  /** Anything that should hold the bell for now (he's going for a ride): the visit waits until it's over. */
+  canRing?: () => boolean;
   /** Halloween: the pumpkin biscuit the human brings him after the trick-or-treaters, and where it can go down. */
   biscuit?: { treat: Treat; scene: Object3D; openFloor(x: number, z: number): boolean };
 }
@@ -105,7 +107,7 @@ export class DoorDelivery extends DogActivity {
 
   override update(dt: number, ctx: DogActivityContext): void {
     if (this.state === 'AVAILABLE') {
-      if (!this.ringing && !this.acknowledged && !ctx.heistRunning) {
+      if (!this.ringing && !this.acknowledged && !ctx.heistRunning && (this.deps.canRing?.() ?? true)) {
         this.due -= dt;
         if (this.due <= 0) {
           this.ringing = true;

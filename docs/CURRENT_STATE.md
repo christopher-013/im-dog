@@ -1,6 +1,6 @@
 # I'M DOG? — Current Development State
 
-_Last updated: 2026-10-19. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 ("A Day with Moke", `docs/PHASE_6.md`) is in progress. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the DeLorean follow-up to `main` on 2026-10-18; check deployment status separately from Git push success._
+_Last updated: 2026-10-20. Repo: **public** `christopher-013/im-dog` (D13). The live game is https://www.im-dog.com, with GitHub Pages also published from owner-approved pushes to `main`. Phases 1–5 are complete (Phase 5 closed 2026-10-16, tagged `phase-5-complete`); Phase 6 ("A Day with Moke", `docs/PHASE_6.md`) is in progress. The Feedback service and anonymous usage counter are live on www.im-dog.com (`docs/FEEDBACK.md`). The owner approved committing and pushing the DeLorean follow-up to `main` on 2026-10-18; check deployment status separately from Git push success._
 
 ## Current Phase
 **Phase 1: complete** (technical prototype), closed by the owner on 2026-09-24 and tagged `phase-1-complete`.
@@ -52,6 +52,29 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code review of Codex's ride work and the phone ride fixes (2026-10-20; committed and pushed to the
+working branch `claude/milestones-5-9-qagq4b`, **not** to `main`, which needs the owner's go-ahead):
+- **"Dog wasn't visible on the ride"** (the owner's phone screenshot of 2026-10-17, His face view, with the house's
+  doorbell line still showing): the published build then let the house's frame finish after the ride began inside a
+  fixed step, so a wall-close camera's "hide the dog" and the doorbell's HUD line stuck. Codex's `64c26ac` (hand
+  over at once, dog shown every ride frame) fixes it; re-checked headless on a 390×844 touch screen with the dog
+  forced hidden right up to the handoff: visible in His face, Alongside and Behind, both cars, HUD "Going for a ride!".
+- **Fixed: Alongside left the dog out of the picture on a portrait phone** (only the car's back corner showed: the
+  shot was framed for landscape). On narrow screens (aspect < 1.3) it turns toward his window and widens a little
+  (vertical FOV at most 75°); 4:3 and wider are unchanged. New test: head and mouth in frame at 16:9, 4:3, 1:1,
+  390×844 and 360×800 for every dog in both cars (fails without the fix).
+- **Fixed: on a ride, touch drags on the left 42% of the screen went to the Move stick**, which does nothing there,
+  so "drag to look around" only worked on the right. On the ride the stick hides and a drag anywhere looks around
+  (`TouchInput.lookOnly`, `html[data-riding]`); back to normal at home. Test added; checked in the browser.
+- **Fixed: the doorbell could ring during the ride offer** (harness, leash walk) and stay ringing through the whole
+  drive. The bell now waits while a ride's been asked for, offered or is under way (`DoorDelivery` `canRing`), and
+  no ride is offered (or Go On A Drive enabled) while it rings. Test added.
+- Review notes (no change needed): no per-frame allocations in the new car/hover/flux code; the drive draws fewer
+  calls than before Codex's car rebuild (about 250–340 vs 450–490 at the start, headless); the `?car=` override is
+  development-only; storage reads are guarded; preview pages under `scripts/` aren't in the build; no secrets.
+- Verified: typecheck, `npm test` (109 files, 764 tests), `npm run build` with the leak check, headless rides on a
+  portrait touch screen (both cars, Head Home from the HUD, the house after). Not verified on a real phone.
+
 Codex longer ride shots (2026-10-19; **owner approved commit/push to main**, owner refinement):
 - Replaced the seven-second repeating camera cycle with one pass through alongside → face → behind → drone.
   Each view covers one quarter of the actual route, adapting to different takeoff/neighborhood timing in both

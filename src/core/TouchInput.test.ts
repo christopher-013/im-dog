@@ -124,6 +124,22 @@ describe('TouchInput (touch controls feeding the shared input state)', () => {
     expect(look.y).toBeCloseTo(-10 * TOUCH.lookScale);
   });
 
+  it('look only (on a ride): a drag on the stick side looks around, and a stick already held lets go', () => {
+    const { root, state, touch, frame } = setup();
+    root.fire('pointerdown', 1, 100, 300);
+    root.fire('pointermove', 1, 100, 300 - TOUCH.joystickRadius);
+    frame();
+    expect(axis(state).y).toBeCloseTo(1);
+    touch.lookOnly = true;
+    frame();
+    expect(axis(state).y).toBeCloseTo(0);
+    root.fire('pointerdown', 3, 120, 250);
+    root.fire('pointermove', 3, 140, 250);
+    frame();
+    expect(axis(state).y).toBeCloseTo(0);
+    expect(state.getLookDelta({ x: 0, y: 0 }).x).toBeCloseTo(20 * TOUCH.lookScale);
+  });
+
   it('runs when the stick is pushed past its ring, and with the RUN toggle', () => {
     const { root, state, frame, openMenu } = setup();
     root.fire('pointerdown', 1, 100, 300);

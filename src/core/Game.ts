@@ -661,6 +661,8 @@ export class Game {
       },
       halloween: () => this.halloween,
       biscuit: { treat: this.biscuitTreat, scene: this.scene, openFloor: (x, z) => nav.isWalkable(x, z) },
+      // Not while he's been asked, has asked or is out on a ride: he couldn't answer it.
+      canRing: () => !this.rideOffer?.requested && !this.rideOffer?.running && !this.ride?.active,
     });
     this.interactions.register(this.delivery.interactable);
     this.scent.register(this.kitchenTreat.scent);
@@ -742,7 +744,7 @@ export class Game {
       routine: this.routine,
       onHarness: (on) => this.harnessOn(on),
       onAtDoor: () => this.startRide(),
-      canOffer: () => !heist.heist.running && this.course.phase === 'idle' && !this.watchTv?.watching && !this.watchGame?.watchingScreen,
+      canOffer: () => !heist.heist.running && this.course.phase === 'idle' && !this.watchTv?.watching && !this.watchGame?.watchingScreen && !this.delivery?.ringing,
       onGarageRequest: () => {
         this.rest.standUp();
         this.moke?.animation.releaseHolds();
@@ -1652,6 +1654,7 @@ export class Game {
     }
     this.barkTimer.update(playing ? dt : 0);
     this.updateRideExcitement(playing ? dt : 0);
+    this.input.touchLookOnly = true;
     this.ui.setRideHome(this.state === 'paused' && ride.driving);
     this.ui.setRideView(true, ride.driving ? ride.viewName : null, ride.returning);
     this.gfx.syncSize(this.camera);
@@ -1693,6 +1696,7 @@ export class Game {
     this.ui.setObjective(null);
     this.ui.setRideHome(false);
     this.ui.setRideView(false, null);
+    this.input.touchLookOnly = false;
     this.dogLogic.discover('car+window=wind');
     this.showVoiceBubble('Best day ever! Wind in my ears!');
     this.followCamera.recenterBehind(this.updateCameraTarget());

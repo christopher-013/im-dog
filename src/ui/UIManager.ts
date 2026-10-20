@@ -383,6 +383,8 @@ export class UIManager {
     home.disabled = returning;
     const label = returning ? 'Heading Home…' : 'Head Home';
     if (home.textContent !== label) home.textContent = label;
+    // No walking on a ride: the move stick gives way (a drag anywhere looks around).
+    document.documentElement.toggleAttribute('data-riding', riding);
     const fsd = this.el<HTMLButtonElement>('btn-fsd');
     if (fsd.hidden !== riding) {
       fsd.hidden = riding;

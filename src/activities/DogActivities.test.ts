@@ -133,7 +133,7 @@ class SearchProbe extends HumanProbe {
 }
 
 describe('Door delivery (the whole house and the household human)', () => {
-  async function deliveryWorld(seed = 41, random: () => number = () => 0, halloween = false) {
+  async function deliveryWorld(seed = 41, random: () => number = () => 0, halloween = false, canRing?: () => boolean) {
     const w = await world(seed);
     let rings = 0, rewards = 0, exchanges = 0, opens = 0, cancels = 0;
     const voices: string[] = [];
@@ -151,6 +151,7 @@ describe('Door delivery (the whole house and the household human)', () => {
       onGuardVoice: (kind) => voices.push(kind), onDefended: () => rewards++, random,
       halloween: () => halloween,
       biscuit: { treat: biscuit, scene, openFloor: () => true },
+      canRing,
     });
     const director = new DogActivityDirector([delivery]);
     const tick = (seconds: number) => { for (let i = 0; i < seconds / DT; i++) w.step(director); };
@@ -193,6 +194,17 @@ describe('Door delivery (the whole house and the household human)', () => {
     w.tick(50);
     expect(w.counts().exchanges).toBe(2);
     expect(w.counts().rewards).toBe(2);
+  }, 60_000);
+
+  it('holds the bell while he is going for a ride, and rings once he is home', async () => {
+    let riding = true;
+    const w = await deliveryWorld(41, () => 0, true, () => !riding);
+    w.tick(200);
+    expect(w.delivery.ringing).toBe(false);
+    expect(w.counts().rings).toBe(0);
+    riding = false;
+    w.waitForRing();
+    expect(w.visitors).toEqual(['trickOrTreat']);
   }, 60_000);
 
   it('once he has barked, the human sets off for the door straight away at a brisk pace, and the visit counts as in progress until it is done', async () => {

@@ -102,6 +102,11 @@ export class InputManager {
     this.touch.enabled = on;
   }
 
+  /** On a ride there's no walking: a touch drag anywhere looks around (the move stick gives way). */
+  set touchLookOnly(on: boolean) {
+    this.touch.lookOnly = on;
+  }
+
   get isPointerLocked(): boolean {
     return document.pointerLockElement === this.surface;
   }

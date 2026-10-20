@@ -1777,6 +1777,11 @@ html[data-input='touch'] .toast {
   box-shadow: 0 0 0 20px rgba(255, 250, 243, 0.1);
 }
 
+html[data-riding] .touch-stick-rest,
+html[data-riding] .touch-stick {
+  display: none;
+}
+
 .touch-stick.is-active {
   display: block;
 }

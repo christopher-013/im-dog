@@ -95,6 +95,7 @@ const tmpPos = new Vector3();
 const tmpDir = new Vector3();
 const tmpA = new Vector3();
 const tmpB = new Vector3();
+const tmpLook = new Vector3();
 const UP = new Vector3(0, 1, 0);
 
 /**
@@ -343,6 +344,13 @@ export class CoastDrive {
     }
     // A portrait phone still needs enough horizontal room for the face as he turns toward the scenery.
     let fov = this.view === 'face' ? fitVerticalFov(shot.fov, 40, this.camera.aspect, 95) : shot.fov;
+    // Alongside on a narrow (portrait) screen: he'd be out of the picture, off to its side. Turn toward his window,
+    // keeping the road ahead in it, and widen a little. Unchanged from about 4:3 up.
+    if (this.view === 'alongside' && this.camera.aspect < 1.3) {
+      const turn = Math.min(1, (1.3 - this.camera.aspect) / 0.8) * 0.75;
+      look.lerp(tmpLook.copy(this.car.window), turn);
+      fov = fitVerticalFov(shot.fov, 40, this.camera.aspect, 75);
+    }
     if (this.blend < 1) {
       const k = this.blend * this.blend * (3 - 2 * this.blend);
       pos.lerpVectors(this.from.pos, pos, k); look.lerpVectors(this.from.look, look, k);

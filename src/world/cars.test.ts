@@ -213,6 +213,15 @@ describe('the black talking car (KITT homage, D37)', () => {
     expect(hits[0]!.object.name).toMatch(/Voice box|Console buttons/);
     car.dispose();
   });
+  it('wears a KITT plate on its rear bumper, the first thing seen from behind', () => {
+    const car = createCar('kitt');
+    const plate = car.object.getObjectByName('KITT license plate')!;
+    expect(plate.userData.marking).toBe('KITT');
+    car.object.updateMatrixWorld(true);
+    const hits = new Raycaster(new Vector3(0, 0.43, -5), new Vector3(0, 0, 1)).intersectObject(car.object, true);
+    expect(hits[0]!.object).toBe(plate);
+    car.dispose();
+  });
   it('fits the garage with both doors swung open, greets with both, boards each side and shuts without drift', () => {
     const garage = new GarageView('kitt');
     const car = garage.car;

@@ -31,7 +31,18 @@ export const ROUTE_POINTS: readonly [number, number, number][] = [
   [-282, 6, 810],
   [-275, 11.5, 890],
   [-264, 21, 965],
+  // Past the top, where the drive ends (`DRIVE_END_Z`): the road carries on, curving off inland and up toward the
+  // hills into the distance (owner, 2026-10-20: it used to stop dead). Scenery only; the car stops at the top.
+  [-249, 29, 1040],
+  [-224, 35, 1110],
+  [-188, 40, 1170],
+  [-142, 44, 1222],
+  [-88, 47, 1265],
+  [-30, 49, 1300],
 ];
+
+/** Where the drive ends: the top of the grade (z). The road goes on beyond it; the car doesn't. */
+export const DRIVE_END_Z = 965;
 
 /** The lagoon (inland of the road, crossed on a low causeway with a rail either side). */
 export const LAGOON = { x: -228, z: -120, rx: 44, rz: 72, y: 0.9 } as const;
@@ -54,8 +65,11 @@ export interface DrivePath {
   length: number;
 }
 
-/** The car's way: along the road in the right-hand lane, start to end, as points with their distances along it. */
-export function drivePath(curve: CatmullRomCurve3, step = 2): DrivePath {
+/**
+ * The car's way: along the road in the right-hand lane, from the start to the top of the grade (`endZ`; the road
+ * carries on past it), as points with their distances along it.
+ */
+export function drivePath(curve: CatmullRomCurve3, step = 2, endZ = DRIVE_END_Z): DrivePath {
   const length = curve.getLength();
   const points: Vector3[] = [];
   const n = Math.ceil(length / step);
@@ -63,6 +77,7 @@ export function drivePath(curve: CatmullRomCurve3, step = 2): DrivePath {
   for (let i = 0; i <= n; i++) {
     const u = i / n;
     const p = curve.getPointAt(u);
+    if (p.z > endZ) break;
     curve.getTangentAt(u, tangent);
     // Right of the way he's going: (−dz, dx) in x–z.
     const len = Math.hypot(tangent.x, tangent.z) || 1;

@@ -1,8 +1,11 @@
 import { CanvasTexture, SRGBColorSpace } from 'three';
 import { CARS } from '../config/cars';
 
-/** Generated fictional registration only; no photograph or private registration is loaded. */
-export function familyCarPlate(): CanvasTexture | null {
+/**
+ * Generated fictional registration only; no photograph or private registration is loaded. `text`: what it says (the
+ * family car's OUTXTIME by default; the black car's KITT).
+ */
+export function familyCarPlate(text: string = CARS.family.plate): CanvasTexture | null {
   if (typeof document === 'undefined') return null;
   const canvas = document.createElement('canvas');
   canvas.width = 512; canvas.height = 256;
@@ -13,7 +16,7 @@ export function familyCarPlate(): CanvasTexture | null {
   g.textAlign = 'center'; g.fillStyle = '#bd2536';
   g.font = 'italic bold 53px Georgia, serif'; g.fillText('California', 256, 68, 390);
   g.fillStyle = '#15366b'; g.font = 'bold 77px monospace';
-  g.fillText(CARS.family.plate, 256, 173, 470);
+  g.fillText(text, 256, 173, 470);
   g.font = '18px sans-serif'; g.fillText('THE GOLDEN STATE', 256, 225);
   g.fillStyle = '#596169';
   for (const x of [30, 482]) for (const y of [22, 234]) {

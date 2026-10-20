@@ -164,6 +164,12 @@ console, on the family-room mantel and on the patio; paper bats strung over the 
 timings: `config/halloween.ts`.
 
 ### Going for a ride (`RideOffer.ts`, `ride/`; Phase 6, D33)
+Owner request, 2026-10-20 (the road's end, clear starts, KITT's rear): the road now carries on past the top of the
+grade, curving off inland and up toward the hills (the drive still ends at the top, fading out); while a drive starts
+(the cockpit scene, the takeoff, the street out of the neighbourhood) no other cars are near, and afterwards the ones
+ahead settle back in front; the black car has a reworked rear (ribbed red lenses at each end, a wing, a rounded bumper)
+and a KITT plate.
+
 Owner request, 2026-10-20 (Inside for every car): the DeLorean (over its time circuits, the flux capacitor behind)
 and the family SUV (its tall centre screen with a map of the coast and the route to Torrey Pines, and a little cluster
 behind the wheel, drawn in code) have the Inside view too. The camera tour shows all five views on every ride, each for

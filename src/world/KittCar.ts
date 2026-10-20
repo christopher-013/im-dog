@@ -10,6 +10,7 @@ import { CARS } from '../config/cars';
 import type { RideCar } from './RideCar';
 import { CONSOLE_BARS, kittConsoleTexture, kittDashTexture } from './kittDash';
 import { kittScanner, kittVoice } from './kittLights';
+import { familyCarPlate } from './familyCarPlate';
 
 type Point = readonly [number, number, number];
 const K = CARS.kitt;
@@ -23,6 +24,10 @@ const NOSE = { tip: 2.36, corner: 2.24 } as const;
 /** The windshield, from its base at the cowl up to the roof; the roof's height and where it ends (the hatch starts). */
 const SCREEN = { base: 0.56, top: -0.2 } as const;
 const ROOF = 1.26, ROOF_END = -0.9;
+/** How far back the tail's face is at `x`: the middle furthest back, the corners swept forward. */
+function tailZ(x: number): number {
+  return TAIL + 0.1 * Math.pow(Math.min(1, Math.abs(x) / W), 2.5);
+}
 /** Where the rear hatch glass meets the deck. */
 const HATCH_END = -2.02;
 /** The hood: from the cowl (`SCREEN.base`) to its front edge, above the beak. */
@@ -138,7 +143,7 @@ export class KittCar implements RideCar {
       this.box([0.05, 0.08, K.frontAxle - K.rearAxle - 2 * ARCH - 0.1], [side * (W - 0.03), 0.27, (K.frontAxle + K.rearAxle) / 2], trim);
       // Amber marker at the nose's corner, red at the tail's.
       this.box([0.012, 0.045, 0.16], [side * (W + 0.006), 0.42, 2.06], amber);
-      this.box([0.012, 0.04, 0.12], [side * (W + 0.006), 0.56, TAIL + 0.16], red);
+      this.box([0.012, 0.04, 0.12], [side * (W + 0.006), 0.6, tailZ(W) + 0.14], red);
     }
     // The long hood: a gentle crown, the raised centre bulge, the closed pop-up lamps near its front corners.
     this.surface((u, v) => hoodPoint(u, v), 12, 10, paint);
@@ -184,16 +189,37 @@ export class KittCar implements RideCar {
       this.pipe([[side * 0.915, 0.82, DOOR.back], [side * 0.915, 0.86, HATCH_END]], 0.016, trim);
     }
     this.surface((u, v) => hatchPoint(u, v), 8, 10, darkGlass);
-    // The tail: a short deck, the lip spoiler, the full-width red lamp band with its louvres, the bumper.
-    this.surface((u, v) => [v * W, 0.875 - 0.015 * u + 0.012 * (1 - v * v), HATCH_END + (TAIL + 0.05 - HATCH_END) * u], 2, 8, paint);
-    this.box([1.74, 0.035, 0.14], [0, 0.9, TAIL + 0.07], paint, this.object, [-0.15, 0, 0]);
-    for (const x of [-0.72, 0.72]) this.box([0.05, 0.05, 0.06], [x, 0.875, TAIL + 0.08], trim);
-    this.panel([[-W, 0.86, TAIL + 0.05], [W, 0.86, TAIL + 0.05], [W, 0.3, TAIL], [-W, 0.3, TAIL]], paint);
-    this.box([1.66, 0.14, 0.02], [0, 0.67, TAIL + 0.02], red);
-    for (const y of [0.635, 0.67, 0.705]) this.box([1.66, 0.006, 0.01], [0, y, TAIL + 0.005], trim);
-    this.box([0.36, 0.18, 0.02], [0, 0.45, TAIL + 0.005], trim);
-    this.box([1.8, 0.08, 0.06], [0, 0.31, TAIL - 0.01], trim);
-    for (const x of [-0.45, -0.3]) this.add(new CylinderGeometry(0.035, 0.035, 0.1, 10), alloy, [x, 0.22, TAIL - 0.02]).rotation.x = Math.PI / 2;
+    // The tail (after the owner's rear three-quarter photo): a short deck, the wing across its end with little end
+    // caps, a black lamp face with a red lens at each end (black ribs across them, a black panel between), the rounded
+    // body-colour bumper under it with the KITT plate in its pocket, a black valance and twin pipes. Its corners sweep
+    // forward (`tailZ`).
+    this.surface((u, v) => [v * W, 0.875 - 0.015 * u + 0.012 * (1 - v * v), HATCH_END + (tailZ(v * W) + 0.04 - HATCH_END) * u], 2, 10, paint);
+    this.surface((u, v) => [v * 0.84, 0.885 + 0.035 * u * u, -2.2 + (tailZ(v * 0.84) + 0.03 + 2.2) * u], 3, 10, paint);
+    for (const side of [-1, 1]) {
+      this.box([0.02, 0.06, 0.15], [side * 0.85, 0.89, tailZ(0.85) + 0.1], paint);
+      this.box([0.06, 0.04, 0.05], [side * 0.6, 0.87, -2.26], trim);
+    }
+    this.surface((u, v) => [v * W, 0.86 - 0.32 * u, tailZ(v * W) + 0.04 * (1 - u)], 3, 12, trim);
+    const strip = (x0: number, x1: number, y0: number, y1: number, out: number, material: Material) =>
+      this.surface((u, v) => {
+        const x = x0 + (x1 - x0) * (v + 1) / 2, y = y1 + (y0 - y1) * u;
+        // On the lamp face (which leans back 4 cm over its height), `out` m proud of it.
+        return [x, y, tailZ(x) + 0.04 * (1 - (0.86 - y) / 0.32) - out];
+      }, 1, 6, material);
+    for (const side of [-1, 1]) {
+      const [a, b] = side < 0 ? [-0.86, -0.3] : [0.3, 0.86];
+      strip(a, b, 0.58, 0.77, 0.006, red);
+      for (const y of [0.612, 0.645, 0.678, 0.711, 0.744]) strip(a, b, y - 0.005, y + 0.005, 0.011, trim);
+    }
+    this.surface((u, v) => [v * W, 0.54 - 0.24 * u, tailZ(v * W) - 0.02 - 0.05 * Math.sin(Math.PI * u) * (1 - 0.6 * v * v)], 4, 12, paint);
+    this.box([1.62, 0.06, 0.08], [0, 0.28, TAIL + 0.02], trim);
+    this.box([0.36, 0.19, 0.02], [0, 0.43, TAIL - 0.068], trim);
+    const plateArt = familyCarPlate(K.plate);
+    if (plateArt) this.textures.push(plateArt);
+    const plate = this.add(new PlaneGeometry(0.3, 0.15), this.lit(plateArt), [0, 0.43, TAIL - 0.08]);
+    plate.rotation.y = Math.PI; plate.name = `${K.plate} license plate`; plate.userData.marking = K.plate;
+    plate.castShadow = plate.receiveShadow = false;
+    for (const x of [-0.45, -0.3]) this.add(new CylinderGeometry(0.035, 0.035, 0.12, 10), alloy, [x, 0.22, TAIL - 0.03]).rotation.x = Math.PI / 2;
     // Underneath, between the wheels.
     this.box([1.3, 0.08, 4.4], [0, 0.2, 0], trim);
 
@@ -342,7 +368,7 @@ export class KittCar implements RideCar {
   /** The rear quarter's side, door to tail, its wheel arch cut out. */
   private rearQuarter(): Shape {
     const s = new Shape(), a = K.rearAxle;
-    s.moveTo(DOOR.back, 0.24); s.lineTo(DOOR.back, 0.82); s.lineTo(HATCH_END, 0.86); s.lineTo(TAIL + 0.05, 0.86); s.lineTo(TAIL, 0.3);
+    s.moveTo(DOOR.back, 0.24); s.lineTo(DOOR.back, 0.82); s.lineTo(HATCH_END, 0.86); s.lineTo(tailZ(W) + 0.04, 0.86); s.lineTo(tailZ(W) - 0.02, 0.3);
     s.lineTo(a - ARCH, 0.24); s.absarc(a, 0.33, ARCH, Math.PI, 0, true); s.lineTo(DOOR.back, 0.24);
     return s;
   }

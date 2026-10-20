@@ -25,6 +25,8 @@ interface Car {
   /** +1: our way (south, in our lane, ahead of us); −1: coming the other way. */
   way: 1 | -1;
   speed: number;
+  /** Going our way: how far ahead of us it settles once we're on the coast (m). */
+  gap: number;
 }
 
 const m = new Matrix4();
@@ -35,6 +37,13 @@ const t = new Vector3();
 const one = new Vector3(1, 1, 1);
 /** How far ahead a car comes round again (m): too far to see it appear. */
 const RESPAWN = 1000;
+/**
+ * While the drive's starting (the cockpit scene, a takeoff, the street out of the neighbourhood; owner, 2026-10-20:
+ * "make all starting drive sequences clear of other cars"), nobody's near: the cars going our way wait this far up
+ * the road (m, more for each), and the oncoming ones further still, out of sight. Afterwards the ones ahead ease back
+ * to their usual gap (closing this much slower than they'd otherwise go, m/s).
+ */
+const CLEAR = { ahead: 260, aheadEach: 80, oncoming: 600, oncomingEach: 140, close: 10 } as const;
 const none = new Vector3(0, 0, 0);
 
 /**
@@ -57,8 +66,8 @@ export class Traffic {
   constructor(private readonly curve: CatmullRomCurve3, cruise: number) {
     this.object.name = 'traffic';
     this.length = curve.getLength();
-    this.cars.push({ s: 60, way: 1, speed: cruise + 0.4 }, { s: 145, way: 1, speed: cruise + 0.9 });
-    for (let i = 0; i < 8; i++) this.cars.push({ s: 120 + i * 140 + this.rand() * 60, way: -1, speed: 12 + this.rand() * 3 });
+    this.cars.push({ s: 60, way: 1, speed: cruise + 0.4, gap: 60 }, { s: 145, way: 1, speed: cruise + 0.9, gap: 145 });
+    for (let i = 0; i < 8; i++) this.cars.push({ s: 120 + i * 140 + this.rand() * 60, way: -1, speed: 12 + this.rand() * 3, gap: 0 });
     const n = this.cars.length;
     const paint = this.material(new MeshStandardMaterial({ roughness: 0.35, metalness: 0.3 }));
     this.body = new InstancedMesh(this.geometry(new BoxGeometry(1.85, 0.7, 4.4).translate(0, 0.62, 0)), paint, n);
@@ -74,15 +83,24 @@ export class Traffic {
       mesh.castShadow = true;
       this.object.add(mesh);
     }
-    this.update(0, 0);
+    this.update(0, 0, true);
   }
 
-  /** Each frame, given how far along the road we are (m). */
-  update(dt: number, ours: number): void {
+  /** Each frame, given how far along the road we are (m), and whether the drive's still starting (keep clear). */
+  update(dt: number, ours: number, starting = false): void {
     this.cars.forEach((car, i) => {
-      car.s += car.way * car.speed * dt;
-      // Past us: round again, far enough ahead to be out of sight (in the haze, or beyond the end of the road).
-      if (car.way === -1 && car.s < ours - 60) car.s = ours + RESPAWN + this.rand() * 400;
+      if (starting) {
+        // Nobody near while it starts: they wait up the road (and don't come on).
+        const away = car.way === 1 ? CLEAR.ahead + i * CLEAR.aheadEach : CLEAR.oncoming + i * CLEAR.oncomingEach;
+        car.s = Math.max(car.s, ours + away);
+      } else {
+        // Ahead of us and further than its usual gap: ease back to it, slower than it'd otherwise go.
+        const slow = car.way === 1 && car.s - ours > car.gap + 15 ? CLEAR.close : 0;
+        car.s += car.way * (car.speed - slow) * dt;
+      }
+      // Past us: round again, far enough ahead to be out of sight (in the haze, or beyond the end of the road). Never
+      // left to vanish off the start of the road (behind us by then).
+      if (car.way === -1 && (car.s < ours - 60 || car.s < 2)) car.s = ours + RESPAWN + this.rand() * 400;
       // Going our way they stay ahead; only a skip ahead (heading home) can leave one behind: on again, out of sight.
       if (car.way === 1 && car.s < ours + 15) car.s = ours + RESPAWN + this.rand() * 200;
       const hidden = car.s < 0 || car.s > this.length;

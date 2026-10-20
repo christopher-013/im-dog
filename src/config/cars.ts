@@ -58,6 +58,8 @@ export const CARS = {
    */
   kitt: {
     length: 4.73, width: 1.84, height: 1.3,
+    /** Its rear plate (owner, 2026-10-20), in the family car's fictional California style. */
+    plate: 'KITT',
     wheelRadius: 0.32, wheelWidth: 0.23, frontAxle: 1.06, rearAxle: -1.48,
     doorSwing: 0.7,
     passenger: [-0.4, 0.33, -0.5] as const,

@@ -365,7 +365,10 @@ export class CoastDrive {
     this.animateShore();
     this.animateBirds();
     this.life.update(dt, this.time);
-    this.traffic.update(dt, this.distance);
+    // While it's starting (the cockpit scene, a takeoff, the street out of the neighbourhood), the road's clear.
+    const starting = this.introPlaying || (!!hover && this.hoverTime < hover.revealSeconds + hover.revealBlend) ||
+      this.distance < this.departure.joinDistance + 30;
+    this.traffic.update(dt, this.distance, starting);
     this.blend = Math.min(1, this.blend + dt / this.blendSeconds);
     this.camera.aspect = aspect;
     this.aim();

@@ -52,6 +52,23 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code, KITT's rear, the road's end and clear starts (2026-10-20; owner request; **owner approved commit/push to
+main**):
+- **KITT's rear** after the owner's rear three-quarter photo (`world/KittCar.ts`): the tail's corners sweep forward
+  (`tailZ`), a wing across the deck end with end caps, a black lamp face with a red ribbed lens at each end and a black
+  panel between, a rounded body-colour bumper, a black valance, twin pipes, and a **KITT** plate in a pocket on the
+  bumper (`CARS.kitt.plate`; `familyCarPlate(text)` now draws any text in the family car's fictional California style).
+- **The road's end**: `ROUTE_POINTS` carry on past the top of the grade, curving inland and up toward the hills; the
+  drive still stops at the top (`drivePath(..., DRIVE_END_Z = 965)`), so its length and timing are unchanged. The
+  road, terrain cut, palms and traffic all follow the longer curve.
+- **Clear starts** (`ride/traffic.ts`): while a drive is starting (a cockpit scene, a takeoff, or the street out of
+  the neighbourhood), the cars going our way wait 260–340 m up the road and the oncoming ones stay 600 m+ away, not
+  moving; afterwards the ones ahead ease back to their usual 60/145 m gaps. Oncoming cars no longer vanish off the
+  start of the road (the DeLorean's long start used to show one coming and disappearing). Checked headless: the
+  nearest car stayed 260 m away through the DeLorean's whole start.
+- `npm test`: 110 files, 798 tests; typecheck and build clean. Browser (headless): KITT's rear and plate, the
+  DeLorean's start, the road's end from the drone and behind. Not on a phone.
+
 Claude Code, Inside for every car and an even camera tour (2026-10-20; owner request; committed and pushed to the
 working branch `claude/milestones-5-9-qagq4b`, **not** to `main` yet):
 - **Inside views**: the DeLorean (`CARS.delorean.cabinView`: between the seats, over the time circuits; its amber

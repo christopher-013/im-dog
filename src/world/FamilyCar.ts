@@ -29,7 +29,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CARS } from '../config/cars';
 import { RIDE } from '../config/ride';
 import type { RideCar } from './RideCar';
-import { familyCarPlate } from './familyCarPlate';
+import { familyCarBadge, familyCarPlate } from './familyCarPlate';
 import { familyCenterScreen, familyClusterScreen } from './familyCarScreens';
 
 /**
@@ -323,6 +323,7 @@ export class FamilyCar implements RideCar {
       [-0.82, -0.4, 0, 0.4, 0.82].map((x) => onTail(x, 0.45, 0.006)),
     )), trim, this.object);
     this.licensePlate(trim);
+    this.badges();
 
     this.setFalconDoors(0);
     this.batch(this.object);
@@ -412,6 +413,27 @@ export class FamilyCar implements RideCar {
     texture.colorSpace = SRGBColorSpace;
     this.textures.push(texture);
     return texture;
+  }
+
+  /**
+   * The T badge (owner, 2026-10-21): on the nose, in the middle under the hood's edge, and a smaller one on the hatch
+   * between the plate and the chrome strip, each laid on the body's surface.
+   */
+  private badges(): void {
+    const art = familyCarBadge();
+    if (art) this.textures.push(art);
+    const material = this.material(new MeshBasicMaterial({ color: art ? '#ffffff' : '#c3c8cd', map: art, transparent: true, alphaTest: 0.2, toneMapped: false }));
+    for (const [name, size, y, front] of [['T badge (nose)', 0.13, 0.7, true], ['T badge (hatch)', 0.085, 0.915, false]] as const) {
+      const at = (dy: number) => (front ? onNose(0, y + dy, 0.006) : onTail(0, y + dy, 0.014));
+      const p = at(0), up = at(0.03), down = at(-0.03);
+      // Tilted with the surface: how far it leans forward (nose) or back (hatch) over a few centimetres.
+      const lean = Math.atan2(up.z - down.z, 0.06);
+      const badge = this.add(this.geometry(new PlaneGeometry(size, size)), material, this.object, [p.x, p.y, p.z]);
+      badge.rotation.order = 'YXZ';
+      badge.rotation.set(front ? lean : -lean, front ? 0 : Math.PI, 0);
+      badge.name = name; badge.userData.marking = 'T';
+      badge.castShadow = badge.receiveShadow = false;
+    }
   }
 
   private licensePlate(trim: Material): void {

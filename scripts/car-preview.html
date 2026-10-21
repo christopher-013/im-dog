@@ -62,9 +62,9 @@ function frame(now=performance.now()){
   const state=dogAnim.update(dt,{speed:0,turnRate:0,headroom:2});state.headPitch=p.headPitch;state.tailWag=1;dog.update(dt,state);
   const h=car.seats.driver;human.object.position.set(h.x,h.y-0.17,h.z-0.08);
   human.apply(dt,humanAnim.update(dt,{...createVisualState(),sit:1,sitStyle:'lounge',seatHeight:0.17}));
-  const views={front:[-5,2.5,6],headon:[0,1.8,6],side:[-6,1.5,0],rear:[-5,2.8,-6],plate:[0,0.8,-3.1],face:[-1.9,car.window.y,1.9]};
+  const views={front:[-5,2.5,6],headon:[0,1.8,6],side:[-6,1.5,0],rear:[-5,2.8,-6],plate:[0,0.95,-3.6],face:[-1.9,car.window.y,1.9]};
   camera.position.set(...views[selects[3].value]);camera.position.y+=lift;
-  const look=selects[3].value==='face'?new THREE.Vector3(-0.9,car.window.y,car.window.z):selects[3].value==='plate'?new THREE.Vector3(0,0.55,-2.2):new THREE.Vector3(0,0.85,0);
+  const look=selects[3].value==='face'?new THREE.Vector3(-0.9,car.window.y,car.window.z):selects[3].value==='plate'?new THREE.Vector3(0,0.68,-2.2):new THREE.Vector3(0,0.85,0);
   look.y+=lift;camera.lookAt(look);
   renderer.render(scene,camera);document.querySelector('output').textContent=`${renderer.info.render.calls} draws · ${renderer.info.render.triangles.toLocaleString()} triangles`;
   requestAnimationFrame(frame);

@@ -147,7 +147,8 @@ to the road views; the car still takes off as usual (owner, 2026-10-20). Before 
 driveway, the DeLorean and the black talking car each play a short cockpit scene (the button reads "Cockpit"); Change
 View skips it too.
 
-Every full ride shows all five views automatically, in order: alongside, his face at the window, **Inside** (from
+Every full ride shows all six views automatically, in order: alongside, his face at the window, **Front** (straight
+on from the road ahead, looking back at the car), **Inside** (from
 between the seats to the dash: the black car's voice box and lit panels, the DeLorean's time circuits, the SUV's map
 screen), behind, then drone. Each gets an even share of the time on the road (about 12 seconds; owner, 2026-10-20),
 with 2.4-second glides; the last shot stays until arrival (no repeated loop).

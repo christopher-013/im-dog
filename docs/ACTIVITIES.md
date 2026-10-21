@@ -164,6 +164,10 @@ console, on the family-room mantel and on the patio; paper bats strung over the 
 timings: `config/halloween.ts`.
 
 ### Going for a ride (`RideOffer.ts`, `ride/`; Phase 6, D33)
+Owner request, 2026-10-21: a sixth view, **Front** (straight on from the road ahead, looking back at the car: KITT's
+scanner, the DeLorean hovering, the SUV's nose), in Change View and in the camera tour (each view still gets an even
+share, about 10 s with six). The family SUV wears a T badge on its nose and hatch (D34 exception).
+
 Owner request, 2026-10-20 (the road's end, clear starts, KITT's rear): the road now carries on past the top of the
 grade, curving off inland and up toward the hills (the drive still ends at the top, fading out); while a drive starts
 (the cockpit scene, the takeoff, the street out of the neighbourhood) no other cars are near, and afterwards the ones

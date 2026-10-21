@@ -16,6 +16,18 @@ describe('family SUV presentation', () => {
     expect(hits[0]!.object).toBe(plate);
     car.dispose();
   });
+  it('wears the owner-requested T badge on its nose and its hatch, on the outside of the body', () => {
+    const car = createCar('family');
+    car.object.updateMatrixWorld(true);
+    for (const [name, from, to] of [['T badge (nose)', 4, -1], ['T badge (hatch)', -4, 1]] as const) {
+      const badge = car.object.getObjectByName(name)!;
+      expect(badge.userData.marking).toBe('T');
+      const y = badge.getWorldPosition(new Vector3()).y;
+      const hits = new Raycaster(new Vector3(0, y, from), new Vector3(0, 0, to)).intersectObject(car.object, true);
+      expect(hits[0]!.object).toBe(badge);
+    }
+    car.dispose();
+  });
   it('draws the exact unspaced lettering locally, without loading an image', () => {
     const fillText = vi.fn();
     const context = { fillText, fillRect() {}, strokeRect() {}, beginPath() {}, arc() {}, fill() {} };

@@ -11,7 +11,7 @@ import type { CoastDrive, DriveView } from './CoastDrive';
 import { RideCameraTour } from './RideCameraTour';
 
 /** The views' names on the Change View button. */
-const VIEW_NAMES: Readonly<Record<DriveView, string>> = { alongside: 'Alongside', face: 'His face', cabin: 'Inside', chase: 'Behind', drone: 'Drone' };
+const VIEW_NAMES: Readonly<Record<DriveView, string>> = { alongside: 'Alongside', face: 'His face', front: 'Front', cabin: 'Inside', chase: 'Behind', drone: 'Drone' };
 
 type V2 = readonly [number, number];
 type Phase = 'off' | 'out' | 'loading' | 'drive' | 'home';

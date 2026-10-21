@@ -50,7 +50,7 @@ import { departureRoute } from './departureRoute';
  * side, looking ahead with him, the beach and the sea on the right), his face (from low down just ahead of his door,
  * looking up and back at him against the sky, the beach behind him), behind the car, and a drone high over the beach behind it.
  */
-export const DRIVE_VIEWS = ['alongside', 'face', 'cabin', 'chase', 'drone'] as const;
+export const DRIVE_VIEWS = ['alongside', 'face', 'front', 'cabin', 'chase', 'drone'] as const;
 export type DriveView = (typeof DRIVE_VIEWS)[number];
 
 /** Each shot in the car's space (+z ahead, −x the passenger side, the sea's): where the camera is, what it looks at. */
@@ -59,6 +59,8 @@ const SHOTS: Record<DriveView, { pos: readonly [number, number, number]; look: r
   face: { pos: [-2.35, 1.35, 1.15], look: [-1.12, 1.4, 0.45], fov: 42 },
   /** Inside (only a car with a `cabinView`; this is just its stand-in). */
   cabin: { pos: [0, 1.1, -1.0], look: [0, 0.6, 0.6], fov: 62 },
+  /** Straight on, from the road ahead, looking back at the car (owner, 2026-10-21). */
+  front: { pos: [0, 1.35, 8.5], look: [0, 0.95, 0], fov: 42 },
   chase: { pos: [-1.0, 3.1, -9.5], look: [-0.7, 1.3, 9], fov: 55 },
   drone: { pos: [-17, 16, -15], look: [-6, 0, 22], fov: 55 },
 };
@@ -422,6 +424,8 @@ export class CoastDrive {
     let fov = this.view === 'face' ? fitVerticalFov(shot.fov, 40, this.camera.aspect, 95) : shot.fov;
     // Inside on a portrait phone: wide enough for the dash from the yoke to the voice box.
     if (this.view === 'cabin') fov = fitVerticalFov(shot.fov, 64, this.camera.aspect, 105);
+    // Straight on, on a portrait phone: the whole car's width still in the picture.
+    if (this.view === 'front') fov = fitVerticalFov(shot.fov, 30, this.camera.aspect, 80);
     // Alongside on a narrow (portrait) screen: he'd be out of the picture, off to its side. Turn toward his window,
     // keeping the road ahead in it, and widen a little. Unchanged from about 4:3 up.
     if (this.view === 'alongside' && this.camera.aspect < 1.3) {

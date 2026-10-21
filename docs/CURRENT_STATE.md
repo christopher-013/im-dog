@@ -52,6 +52,16 @@ a code review of Codex's commits with fixes, and hosting on GitHub Pages. What's
 carries into Phase 2.
 
 ## Last Developer
+Claude Code, the Front view and the SUV's T badge (2026-10-21; owner request; committed and pushed to the working
+branch `claude/milestones-5-9-qagq4b`, **not** to `main` yet):
+- **Front view** (`CoastDrive` `SHOTS.front`: 8.5 m ahead in the car's space, looking back; portrait-fitted), named
+  "Front", sixth in `DRIVE_VIEWS` and the tour (`RIDE.cameraTour.views`); the even tour now gives each of six views
+  about 10 s (the full-ride test: every share ≥ 8 s, longest < 1.25 × shortest).
+- **T badge** on the SUV's nose and hatch (`FamilyCar.badges()`, art `familyCarBadge()`), laid on the body's surface;
+  owner-approved D34 exception recorded in DECISIONS. Test: each badge is what you hit first from in front / behind.
+- The development car preview's plate view now frames the badge too. `npm test`: 110 files, 799 tests; typecheck and
+  build clean. Browser (headless): the Front view in the SUV and KITT, both badges. Not on a phone.
+
 Claude Code, KITT's rear, the road's end and clear starts (2026-10-20; owner request; **owner approved commit/push to
 main**):
 - **KITT's rear** after the owner's rear three-quarter photo (`world/KittCar.ts`): the tail's corners sweep forward

@@ -69,7 +69,7 @@ export const RIDE = {
    * repeated cycling. Manual choices temporarily take priority.
    */
   cameraTour: {
-    views: ['alongside', 'face', 'cabin', 'chase', 'drone'] as const,
+    views: ['alongside', 'face', 'front', 'cabin', 'chase', 'drone'] as const,
     manualHold: 14, blend: 2.4, manualBlend: 0.9,
   },
   /** They set off but can't get to him or the door: give up after this long. */

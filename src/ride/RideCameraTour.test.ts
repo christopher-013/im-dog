@@ -7,13 +7,13 @@ const ALL = RIDE.cameraTour.views;
 describe('the gentle ride camera tour', () => {
   it('gives every view, Inside included, an equal share of the time on the road, and never loops at the end', () => {
     const tour = new RideCameraTour();
-    // A 100-second drive, five views: a new one every 20 seconds.
+    // A 120-second drive, six views: a new one every 20 seconds.
     const shown: string[] = [];
-    for (let t = 0; t < 100; t += 0.5) {
-      const view = tour.update(0.5, true, 100 - t - 0.5, ALL);
+    for (let t = 0; t < 120; t += 0.5) {
+      const view = tour.update(0.5, true, 120 - t - 0.5, ALL);
       if (view) shown.push(`${view}@${t + 0.5}`);
     }
-    expect(shown).toEqual(['face@20', 'cabin@40', 'chase@60', 'drone@80']);
+    expect(shown).toEqual(['face@20', 'front@40', 'cabin@60', 'chase@80', 'drone@100']);
     expect(tour.update(100, true, 0, ALL)).toBeNull();
   });
 
@@ -26,7 +26,7 @@ describe('the gentle ride camera tour', () => {
       const view = tour.update(0.5, true, Math.max(0, remaining), ALL);
       if (view) order.push(view);
     }
-    expect(order).toEqual(['face', 'cabin', 'chase', 'drone']);
+    expect(order).toEqual(['face', 'front', 'cabin', 'chase', 'drone']);
   });
 
   it('freezes during pause/takeoff/return, and never catches up in a burst', () => {
@@ -50,6 +50,6 @@ describe('the gentle ride camera tour', () => {
 
   it('only tours views the car has', () => {
     expect(tourViews(['alongside', 'face', 'chase', 'drone'])).toEqual(['alongside', 'face', 'chase', 'drone']);
-    expect(tourViews(ALL)).toEqual(['alongside', 'face', 'cabin', 'chase', 'drone']);
+    expect(tourViews(ALL)).toEqual(['alongside', 'face', 'front', 'cabin', 'chase', 'drone']);
   });
 });

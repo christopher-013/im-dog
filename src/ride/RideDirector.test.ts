@@ -64,7 +64,7 @@ describe('going for a ride: the ride itself (Phase 6)', () => {
     expect(ride.driving).toBe(false);
     // Every view once, Inside included, in every car.
     expect(setView.mock.calls.map(([view]) => view)).toEqual(tour.slice(1));
-    expect(tour).toEqual(['alongside', 'face', 'cabin', 'chase', 'drone']);
+    expect(tour).toEqual(['alongside', 'face', 'front', 'cabin', 'chase', 'drone']);
     // Even shares (owner, 2026-10-20): every view a fair while, none hogging the drive.
     const shares = Object.values(durations);
     for (const seconds of shares) expect(seconds).toBeGreaterThanOrEqual(8);
